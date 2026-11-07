@@ -194,7 +194,7 @@ const L={
   aiDock:{name:'Anderson Island Ferry Landing',side:'I',ic:'⛴️',desc:'Ferry landing, Anderson Island'},
   store:{name:'General Store (closed)',side:'I',ic:'🏚️',desc:'Closed since Feb 2026. The swap board out front is the island market'},
   dale:{name:'Dale’s Place',side:'I',ic:'🛢️',desc:'End of a gravel road. Has gas. Don’t ask.',hours:()=>[420,1260]},
-  food:{name:'Lakeshore Restaurant',side:'I',ic:'🍔',desc:'The one place left to eat. Takeout',hours:()=>[660,1200]},
+  food:{name:'The Riv',side:'I',ic:'🍔',desc:'Riviera restaurant. Takeout, and Bingo on Wednesday nights',hours:()=>[660,1260]},
   lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
   stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
   gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
@@ -237,7 +237,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.3.1', SAVE_SCHEMA=3;
+const APP_VERSION='1.4.0', SAVE_SCHEMA=4;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -245,10 +245,12 @@ function baseState(){
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
     gossipDay:-1,eagleDay:-1,storeStock:{},log:[],alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
+    ev:{last:{},count:{},history:[],force:[],flags:{}},friends:{},power:null,battery:'ok',
+    bingo:{nights:0,won:0,donated:0,cards:0},
     week:null};
 }
 function newGame(){
-  S=baseState();S.week=genWeek();
+  MQ=[];S=baseState();S.week=genWeek();
   uiNarr=[];
   say('Monday, 5:30 AM. Your alarm goes off in the dark. Work in Lakewood starts at 9:00. The pantry is getting thin.');
   say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
@@ -270,7 +272,7 @@ function genWeek(){
   let storm=null;
   if(r()<0.65){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)};
     const ws=st+20;if(!b.some(x=>ws<x.end&&ws+200>x.start)) b.push({start:ws,end:ws+120+Math.floor(r()*120),cause:'high winds (gale warning)'});}
-  return {b,fog,storm,px,news};
+  return {b,fog,storm,px,news,bingo:Math.floor(r()*BINGO_FOR.length)};
 }
 const day=()=>S.cur;
 const tod=()=>S.t-S.cur*1440;
@@ -432,6 +434,171 @@ function waterTaxi(){
 }
 
 // ---------------- travel ----------------
+// =====================================================================
+// ISLAND EVENTS FRAMEWORK (non-ferry life on the island)
+// ---------------------------------------------------------------------
+// defEvent({id, hook, chance, cond(ctx), run(ctx), priority, cooldown, max})
+//   hook      'night'     while going to bed (ctx.where, ctx.notes[] for the night summary)
+//             'wake'      start of a day, if you woke up at home
+//             'tripStart' before an island trip leaves (can block it with choices)
+//             'tripMid'   during an island trip (ctx.add(min), or block and later ctx.finish(extra))
+//   chance    number or fn(ctx) -> 0..1, rolled each time the hook runs
+//   cond      fn(ctx) -> bool, must be true for the event to fire (even when chained)
+//   priority  higher runs first; an event returning {block:true} or {stop:true} ends the hook
+//   cooldown  days before it can fire again; max = times per week
+// chain(id)   guarantees an event fires the next time its hook runs (if its cond passes):
+//             this is how one event sets off others (a power outage -> the alarm doesn't go off).
+// =====================================================================
+const EV=[];
+function defEvent(e){EV.push(Object.assign({chance:0,priority:0,cooldown:0,max:99},e))}
+function chain(id){if(!S.ev.force.includes(id))S.ev.force.push(id)}
+window.forceEvent=id=>chain(id);
+function fireHook(hook,ctx={}){
+  ctx.hook=hook;let res=null;
+  const list=EV.filter(e=>e.hook===hook).sort((a,b)=>b.priority-a.priority);
+  for(const e of list){
+    const forced=S.ev.force.includes(e.id);
+    if(e.cond&&!e.cond(ctx)) continue;
+    if(!forced){
+      if((S.ev.count[e.id]||0)>=e.max) continue;
+      if(S.ev.last[e.id]!=null&&day()-S.ev.last[e.id]<e.cooldown) continue;
+      const p=typeof e.chance==='function'?e.chance(ctx):e.chance;
+      if(!(Math.random()<p)) continue;
+    } else S.ev.force=S.ev.force.filter(x=>x!==e.id);
+    S.ev.last[e.id]=day();S.ev.count[e.id]=(S.ev.count[e.id]||0)+1;S.ev.history.push({id:e.id,t:S.t});
+    const r=e.run(ctx)||{};
+    if(r.block||r.stop){res=r;break}
+    res=res||r;
+  }
+  return res;
+}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function powerOut(){return S.power&&S.t<S.power.end}
+function meet(id,name,how){if(S.friends[id])return false;S.friends[id]={name,how,day:day()};say(`🤝 New friend: <b>${name}</b> (${how}).`);return true}
+const BINGO_FOR=['Anderson Island Historical Society','Pierce County Fire District #27','Anderson Island Elementary Booster Club'];
+
+// ---- night ----
+defEvent({id:'power_outage',hook:'night',priority:5,max:2,cooldown:2,
+  chance:ctx=>stormNight(day())?0:0.13,
+  run(ctx){
+    const d=day(),start=d*1440+1440+60+Math.floor(Math.random()*180),end=(d+1)*1440+330+120+Math.floor(Math.random()*300);
+    const cause=pick(['a fir came down across a line','a transformer blew with a bang you heard from bed','wind gusts tangled a line by the lake','nobody knows why. It just went out']);
+    S.power={start,end,cause};S.stats.outageNights++;
+    let txt=`⚡ Around ${fmt(start)} the power goes out: ${cause}.`;
+    if(ctx.where==='home'&&S.homeGas>=2){S.homeGas-=2;txt+=' Your generator burns 2 gallons and saves the fridge.'}
+    else if(S.pantry>0&&Math.random()<0.5){S.pantry--;txt+=' By morning, a day of food in the fridge has gone warm.'}
+    ctx.notes.push(txt);outageChain(ctx.where);
+  }});
+function outageChain(where){
+  if(where!=='home') return;
+  if(Math.random()<0.75) chain('alarm_fail');
+  if(Math.random()<0.6) chain('no_water');
+  if(S.cars.some(c=>c.id==='isl'&&c.loc==='home')&&Math.random()<0.35) chain('garage_stuck');
+  if(!S.friends.sam&&Math.random()<0.45) chain('neighbor_ride');
+  else if(S.friends.sam&&Math.random()<0.4) chain('friend_coffee');
+}
+defEvent({id:'starry',hook:'night',chance:0.5,cond:()=>powerOut(),run(ctx){adj('stress',-3);ctx.notes.push('✨ With every light on the island dark, the stars are unreal.')}});
+
+// ---- wake (at home) ----
+const atHomeWake=ctx=>S.loc==='home';
+defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
+  const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
+  say(`⏰ Your alarm clock never went off. The power blinked out overnight and reset it. It’s already <b>${fmt(S.t)}</b>.`);
+  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
+}});
+defEvent({id:'no_water',hook:'wake',priority:6,cond:atHomeWake,run(){adj('stress',5);say('🚿 No power means no well pump, which means no shower. Hat day.')}});
+defEvent({id:'garage_stuck',hook:'wake',priority:6,cond:atHomeWake,run(){S.ev.flags.garage=day();say('🚪 The garage door opener is dead. You’ll have to wrestle the manual release before you can drive.')}});
+defEvent({id:'neighbor_ride',hook:'wake',priority:4,cond:ctx=>atHomeWake(ctx)&&!S.friends.sam,run(){
+  modal('🚪 A knock at the door',`<p>It’s the new neighbor from the place with the blue roof. You’ve waved but never actually talked.</p><p>“Hi! I’m Sam. Power’s out at your place too? I’m headed down to the ferry if you need a ride.”</p>`,[
+    {l:'Take the ride to the ferry landing',s:'Your car stays home. Sam will text when they’re leaving.',fn:()=>{meet('sam','Sam, your new neighbor','gave you a ride during an outage');S.ev.flags.samRide=day();adj('stress',-6);say('Sam will drive you to the ferry landing whenever you’re ready. Look for the 🤝 option.')}},
+    {l:'“Thanks, I’m all set”',s:'You still made a new friend.',fn:()=>{meet('sam','Sam, your new neighbor','introduced themselves during an outage');adj('stress',-3)}}]);
+}});
+defEvent({id:'friend_coffee',hook:'wake',priority:3,cond:ctx=>atHomeWake(ctx)&&!!S.friends.sam,run(){adj('stress',-8);say('☕ Sam knocks with a thermos of coffee brewed on a camp stove. “Figured you didn’t have any either.”')}});
+defEvent({id:'bingo_reminder',hook:'wake',priority:1,cond:()=>day()===2,chance:1,run(){say(`🎱 Tonight: <b>Bingo at the Riv</b>, 6:00 PM, hosted by the American Legion. Proceeds benefit the <b>${BINGO_FOR[S.week.bingo]}</b>.`)}});
+
+// ---- trip start (can block) ----
+defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
+  cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&ctx.car.id==='isl'&&!ctx.o.started,
+  chance:()=>S.battery==='weak'?0.3:(S.power?0.2:0.06),
+  run(ctx){deadBattery(ctx,false);return {block:true}}});
+function deadBattery(ctx,triedNeighbor){
+  const dest=ctx.to,base=dist(ctx.from,dest);S.stats.deadBattery=(S.stats.deadBattery||0)+1;
+  const resume=(extra,msg)=>{S.t+=extra;S.battery='weak';if(msg)say(msg);go(dest,Object.assign({},ctx.o,{started:true}))};
+  const btns=[];
+  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 Sam pulls up in a bathrobe with jumper cables. The Subaru coughs to life.')});
+  else if(!triedNeighbor) btns.push({l:'Knock on the new neighbor’s door',s:'You’ve never actually met them.',fn:()=>{
+    if(Math.random()<0.65){meet('sam','Sam, your new neighbor','jump-started your car');resume(20,'🔋 The new neighbor, Sam, digs out jumper cables. “Welcome to island cars.”')}
+    else{S.t+=12;say('Nobody answers next door. Their car’s gone.');deadBattery(ctx,true);render()}}});
+  if(S.friends.walt) btns.push({l:'Call Walt from the Legion',s:'He always has cables. 25 minutes.',fn:()=>resume(25,'🔋 Walt shows up in his Legion cap with a jump pack and a story about 1979.')});
+  btns.push({l:`Walk to ${L[dest].name}`,s:`${Math.round(base*4)} min. The car stays here.`,fn:()=>go(dest,{m:'walk',min:Math.round(base*4),started:true})});
+  btns.push({l:'Stand by the road and hitch',s:'Maybe.',fn:()=>go(dest,{m:'hitch',min:base+15,started:true})});
+  buzz(120);adj('stress',8);
+  modal('🔋 Click. Click. Nothing.',`<p>You turn the key and the dash lights flicker. The battery is dead${S.power?' (the cold, dark night didn’t help)':''}.</p><p>There’s no auto parts store, tow truck or jump service on the island.${S.battery==='weak'?' This battery is clearly on its way out. Replace it at the gas station in Steilacoom.':''}</p>`,btns);
+}
+
+// ---- trip middle ----
+const islandCar=ctx=>ctx.mode==='car'&&L[ctx.from].side==='I';
+defEvent({id:'garage_release',hook:'tripMid',priority:9,cond:ctx=>islandCar(ctx)&&ctx.from==='home'&&S.ev.flags.garage===day(),chance:1,
+  run(ctx){S.ev.flags.garage=-1;ctx.add(8);say('🚪 You yank the garage door’s manual release and heave it up by hand. +8 minutes.')}});
+defEvent({id:'tree_down',hook:'tripMid',priority:5,max:2,cond:ctx=>L[ctx.from].side==='I',
+  chance:()=>(powerOut()||(S.week.storm&&S.week.storm.day===day()))?0.3:0.03,
+  run(ctx){ctx.add(15);adj('stress',4);say('🌲 A fir is down across the road. You detour the long way around the lake. +15 minutes.')}});
+defEvent({id:'flat_tire',hook:'tripMid',priority:4,max:1,cond:islandCar,chance:0.035,
+  run(ctx){ctx.add(20);adj('stress',6);say('🛞 Thump-thump-thump. A flat. You change it to the donut spare on the gravel shoulder. +20 minutes.')}});
+defEvent({id:'stranded_neighbor',hook:'tripMid',priority:3,max:1,cond:ctx=>islandCar(ctx)&&!S.friends.walt,chance:0.07,
+  run(ctx){
+    modal('🚩 Someone’s waving you down',`<p>An older man in an American Legion cap stands next to a pickup with the hood up.</p><p>“Battery’s dead. Got cables?”</p>`,[
+      {l:'Pull over and help',s:'+15 minutes. Island karma.',fn:()=>{meet('walt','Walt from the American Legion','you jump-started his truck');adj('stress',-2);say('Walt shakes your hand. “You come to bingo Wednesday. First card’s on me.”');ctx.finish(15)}},
+      {l:'Wave and keep going',s:'You have a boat to catch.',fn:()=>{adj('stress',4);say('You wave. You feel bad about it all day.');ctx.finish(0)}}]);
+    return {block:true};
+  }});
+defEvent({id:'deer',hook:'tripMid',priority:1,cond:islandCar,chance:0.12,run(ctx){ctx.add(4);say('🦌 A doe and two fawns stroll across the road and stare at you. You wait.')}});
+defEvent({id:'eagle',hook:'tripMid',priority:0,cond:ctx=>L[ctx.from].side==='I',chance:0.05,run(){adj('stress',-3);say('🦅 A bald eagle lifts off a snag right over the road. Okay, island. You win this round.')}});
+
+// ---- bingo at the Riv ----
+function bingoCard(){const cols=[];for(let c=0;c<5;c++){const pool=[];for(let n=c*15+1;n<=c*15+15;n++)pool.push(n);const col=[];for(let i=0;i<5;i++)col.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);cols.push(col)}cols[2][2]=0;return cols}
+function hasLine(card,called){const m=(c,r)=>card[c][r]===0||called.has(card[c][r]);
+  for(let i=0;i<5;i++){let row=true,col=true;for(let j=0;j<5;j++){if(!m(j,i))row=false;if(!m(i,j))col=false}if(row||col)return true}
+  let a=true,b=true;for(let i=0;i<5;i++){if(!m(i,i))a=false;if(!m(i,4-i))b=false}return a||b}
+function bingoGame(mine,others){
+  const balls=[...Array(75)].map((_,i)=>i+1);for(let i=74;i>0;i--){const j=Math.floor(Math.random()*(i+1));[balls[i],balls[j]]=[balls[j],balls[i]]}
+  const called=new Set();
+  for(const b of balls){called.add(b);const w=mine.filter(c=>hasLine(c,called));const t=others.filter(c=>hasLine(c,called)).length;if(w.length||t)return {called,ball:b,winners:w,others:t}}
+}
+const ballName=n=>'BINGO'[Math.floor((n-1)/15)]+'-'+n;
+function cardHTML(card,called){
+  let h='<table style="border-collapse:collapse;margin:6px auto 10px;font-variant-numeric:tabular-nums"><tr>'+[...'BINGO'].map(L=>`<th style="width:42px;height:28px;background:var(--sound);color:#fff;font-family:Fraunces">${L}</th>`).join('')+'</tr>';
+  for(let r=0;r<5;r++){h+='<tr>';for(let c=0;c<5;c++){const n=card[c][r],hit=n===0||called.has(n);
+    h+=`<td style="width:42px;height:38px;text-align:center;border:1px solid var(--line);font-weight:700;${hit?'background:#e3642e;color:#fff;border-radius:50%':''}">${n===0?'★':n}</td>`}h+='</tr>'}
+  return h+'</table>';
+}
+const BINGO_GAMES=[{n:'Regular',pot:40},{n:'Regular',pot:40},{n:'Early Bird Special',pot:50},{n:'The Big One',pot:100}];
+function playBingo(cards,price){
+  money(-price);S.bingo.nights++;S.bingo.cards+=cards;S.bingo.donated+=Math.round(price*0.5);
+  S.t=Math.max(S.t,day()*1440+1080);
+  const free=S.friends.walt&&!S.ev.flags.waltCard?1:0;if(free)S.ev.flags.waltCard=1;
+  const mine=[...Array(cards+free)].map(bingoCard);const others=[...Array(34)].map(bingoCard);
+  const crowd=Math.round(34*12/3+price);
+  let gi=0,won=0;
+  const next=()=>{
+    if(gi>=BINGO_GAMES.length){
+      S.t=day()*1440+1080+150;adj('stress',-14);if(S.friends.sam)adj('stress',-4);
+      S.bingo.won+=won;S.ev.history.push({id:'bingo',t:S.t});
+      const raised=crowd+Math.round(Math.random()*120);
+      say(`🎱 Bingo night ${won?`paid off: you won <b>${$(won)}</b>`:'was a bust, but a fun one'}. The Legion raised about ${$(raised)} for the ${BINGO_FOR[S.week.bingo]}.`);
+      return modal('🎱 That’s a wrap',`<p>${won?`You walk out <b>${$(won)}</b> richer.`:'No wins tonight.'} The American Legion announces tonight raised about <b>${$(raised)}</b> for the <b>${BINGO_FOR[S.week.bingo]}</b>.</p><p>${S.friends.walt?'Walt':'Someone'} is already stacking chairs. ${S.friends.sam?'Sam drives you home.':'You know half the room by name now.'}</p>`,[{l:'Head home',fn:()=>{afterAction()}}]);
+    }
+    const g=BINGO_GAMES[gi++],res=bingoGame(mine,others),n=res.winners.length+res.others;
+    let prize=0,msg;
+    if(res.winners.length){prize=Math.round(g.pot*res.winners.length/n);won+=prize;money(prize);msg=`<b style="color:var(--good);font-size:20px">BINGO!</b> You win ${$(prize)}${n>1?` (split ${n} ways)`:''}.`;buzz([60,40,60,40,200])}
+    else msg=pick(['A woman two tables over yells BINGO. So close.','“BINGO!” from the back. The room groans.','A kid at the Booster Club table wins it. Everyone claps.','You needed one more. Of course you did.']);
+    const show=res.winners[0]||mine.slice().sort((a,b)=>[...b.flat()].filter(x=>res.called.has(x)).length-[...a.flat()].filter(x=>res.called.has(x)).length)[0];
+    modal(`🎱 Game ${gi} of ${BINGO_GAMES.length}: ${g.n} · ${$(g.pot)} pot`,`<p style="text-align:center;margin:0">Last ball: <b style="font-size:20px">${ballName(res.ball)}</b> · ${res.called.size} called</p>${cardHTML(show,res.called)}<p style="text-align:center">${msg}</p><p style="font-size:12px;color:var(--mute);text-align:center">You have ${mine.length} card${mine.length>1?'s':''}${free?' (one courtesy of Walt)':''}. About ${others.length} other cards in play.</p>`,
+      [{l:gi<BINGO_GAMES.length?'Next game':'Finish the night',fn:next}]);
+  };
+  next();
+}
+
 function travelOpts(dest){
   const base=dist(S.loc,dest), side=L[S.loc].side, car=carHere(), o=[];
   const inj=S.injury&&!S.injury.treated?1.5:1;
@@ -439,6 +606,7 @@ function travelOpts(dest){
   if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
   else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
   if(side==='I'){
+    if(S.friends.sam&&S.ev.flags.samRide===day()&&S.loc==='home'&&dest==='aiDock') o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
     if(!fueled){o.push({m:'walk',l:`🚶 ${Math.round(base*4*inj)} min`,min:Math.round(base*4*inj),dis:!canWalkCarry()});
       o.push({m:'hitch',l:'👍 Hitch a ride',min:base+15,dis:!canWalkCarry()});}
   } else if(!fueled){
@@ -450,13 +618,18 @@ function travelOpts(dest){
   return o;
 }
 function go(dest,o){
-  const car=carHere();
+  const car=carHere(),from=S.loc,island=L[from].side==='I';
+  if(island&&!o.started&&!o.midDone){const r=fireHook('tripStart',{from,to:dest,mode:o.m,o,car});if(r&&r.block){render();return}}
   let min=o.min;
-  if(o.m==='hitch'){S.t+=15;if(Math.random()<0.45){adj('stress',4);say('You stand by the road with your thumb out. Two cars pass. Both wave. Neither stops.');return afterAction()}
+  if(o.m==='friend'&&!o.midDone){S.ev.flags.samRide=-1;say('🤝 Sam drives you down to the landing, talking the whole way about their chickens.');adj('stress',-3);}
+  if(o.m==='hitch'&&!o.midDone){S.t+=15;if(Math.random()<0.45){adj('stress',4);say('You stand by the road with your thumb out. Two cars pass. Both wave. Neither stops.');return afterAction()}
     say('A neighbor in a pickup with a dog in the back stops. “Hop in.” Island rules.');min=dist(S.loc,dest);adj('stress',-3);}
   if(o.cost) money(-o.cost);
-  if(o.m==='car'&&L[S.loc].side==='I'&&Math.random()<0.12){min+=4;say('A doe and two fawns stroll across the road and stare at you. You wait.');}
   if((o.m==='car'||o.m==='ride')&&L[S.loc].side==='M'){const m=tod();if(((m>=420&&m<=540)||(m>=960&&m<=1110))&&Math.random()<0.3){min+=15;say('I-5 near JBLM is a parking lot. Of course it is.');adj('stress',4)}}
+  if(island&&!o.midDone){let extra=0;
+    const r=fireHook('tripMid',{from,to:dest,mode:o.m,o,car:o.m==='car'?car:null,add:n=>{extra+=n},finish:n=>{go(dest,Object.assign({},o,{min:min+extra+(n||0),midDone:true,started:true,cost:0}))}});
+    if(r&&r.block){render();return}
+    min+=extra;}
   S.t+=min;
   if(car&&o.m==='car'){car.loc=dest;car.fuel=Math.max(0,Math.round((car.fuel-min*FUEL_RATE)*10)/10);if(car.fuel<1.5&&car.fuel>0)say(`⛽ The low-fuel light is on in the ${car.name.split(' (')[0].toLowerCase()}. ${car.fuel} gallons left.`);if(car.fuel===0)say('⛽ The engine coughs and dies as you pull in. Totally empty.');}
   S.loc=dest;
@@ -472,6 +645,7 @@ function stash(){
 
 }
 function processTimed(){
+  if(S.power&&S.t>=S.power.end){S.power=null;if(L[S.loc].side==='I')say('💡 The power’s back on. Every appliance in the house beeps at once.')}
   const dl=S.delivery;
   if(dl&&S.t>=dl.due){
     const out=S.week.b.find(b=>dl.due>=b.start&&dl.due<b.end);
@@ -491,20 +665,24 @@ function startDay(){
       say('🤕 Hauling firewood in the dark, you slip on wet cedar needles. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.');}
   }
   if(S.week.news[d]>=0) say('📰 '+NEWS[S.week.news[d]].t);
+  if(S.loc==='home') fireHook('wake',{});
+  S.ev.force=[];
   if(d>0) say(FLAVOR_MORNING[Math.floor(Math.random()*FLAVOR_MORNING.length)]);
 }
 function endDay(where){
   processTimed();
   const d=day(), notes=[];
   if(where==='home') stash();
-  // power outage
+  // island events while you sleep (random outages etc.)
+  const nctx={where,notes};fireHook('night',nctx);
+  // storm power outage
   if(stormNight(d)){
-    S.stats.outageNights++;
+    S.stats.outageNights++;S.power={start:d*1440+1380,end:(d+1)*1440+330+240,cause:'the gale'};if(Math.random()<0.8)outageChain(where);
     if(where==='home'&&S.homeGas>=3){S.homeGas-=3;notes.push('⚡ The wind knocks out the island’s power. Your generator burns 3 gallons of gas keeping the fridge and the heat on.')}
     else {if(S.pantry>0){S.pantry--;}adj('health',-6);adj('stress',8);notes.push(where==='home'?'⚡ The power goes out and you have no gas for the generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.')}
   }
   // eat
-  if(S.ateOut===d){notes.push('🍔 Dinner was takeout from the Lakeshore. The pantry gets a night off.')}
+  if(S.ateOut===d){notes.push('🍔 Dinner was from the Riv. The pantry gets a night off.')}
   else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
@@ -525,8 +703,8 @@ function endDay(where){
   if(where!=='home') S.loc='stDock';
   uiNarr=[];
   say(`${DAYS[d+1]}, 5:30 AM.`);
-  startDay();
   modal(`Good night, ${DAYS[d]}`,`${notes.length?notes.map(n=>'<p>'+n+'</p>').join(''):'<p>A quiet night. The ferry horn sounds once, far off.</p>'}<p>${S.pantry} day${S.pantry===1?'':'s'} of food left in the pantry.</p>`,[{l:`Wake up: ${DAYS[d+1]}`,fn:()=>{}}]);
+  startDay();
   render();
 }
 function afterAction(){
@@ -564,6 +742,15 @@ function actions(){
     a.push({ic:'🪧',l:'Read the sign on the door',s:'“CLOSED. Thank you for 48 years.”',fn:()=>{S.t+=5;say('The hand-lettered sign is still taped to the glass. The gas pumps out front are bagged. The co-op flyer below it says “2027!” with three exclamation points.');afterAction()}});
     a.push({ic:'💬',l:'Check the bulletin board',s:'20 min. Stress −6. Ferry rumors, ride shares, gas talk.',fn:gossip});
   }
+  if(loc==='food'&&d===2){
+    const m2=tod();
+    if(S.bingo.nights>0&&S.ev.history.some(h=>h.id==='bingo'&&Math.floor(h.t/1440)===d)) a.push({ic:'🎱',l:'Bingo’s over for tonight',s:'See you next Wednesday.',dis:true});
+    else if(m2<1080) a.push({ic:'🎱',l:'Bingo tonight at 6:00 PM',s:`Hosted by the American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,dis:true});
+    else if(m2<1200){
+      a.push({ic:'🎱',l:'Play Bingo: 3 cards for $20',s:`American Legion Bingo. Proceeds go to the ${BINGO_FOR[S.week.bingo]}. Four games, about 2½ hours.`,cls:'primary',dis:S.money<20,fn:()=>playBingo(3,20)});
+      a.push({ic:'🎱',l:'Play Bingo: 1 card for $10',s:'Keeping it casual.',dis:S.money<10,fn:()=>playBingo(1,10)});
+    } else a.push({ic:'🎱',l:'Bingo already started',s:'Doors close at 8:00 PM.',dis:true});
+  }
   if(loc==='food'&&open){
     a.push({ic:'🍔',l:'Takeout dinner — $27',s:S.ateOut===d?'Already got dinner tonight.':'Counts as tonight’s food, so the pantry is spared.',dis:S.ateOut===d||S.money<27,fn:()=>{S.ateOut=d;money(-27);S.t+=25;adj('stress',-4);say('A burger and fries in a paper sack. Not cheap, but it’s the only hot meal on the island you didn’t cook.');afterAction()}});
   }
@@ -582,6 +769,7 @@ function actions(){
   if(loc==='gas'&&open){
     const car=carHere();
     if(car){const need=Math.round((car.tank-car.fuel)*10)/10,pr=car.diesel?DIESEL_PRICE:GAS_PRICE;
+      if(car.id==='isl'&&S.battery==='weak') a.push({ic:'🔋',l:'Replace the car battery: $165',s:'No more morning jump-starts.',cls:'primary',dis:S.money<165,fn:()=>{money(-165);S.battery='ok';S.t+=35;say('🔋 New battery installed. The Subaru starts like it means it.');afterAction()}});
       a.push({ic:'⛽',l:`Fill up the ${car.diesel?'diesel truck':'tank'} — $${Math.round(need*pr)}`,s:`${need} gal at $${pr}/gal. Tank: ${car.fuel}/${car.tank}.`,cls:'primary',dis:need<0.5||S.money<need*pr,fn:()=>{money(-need*pr);car.fuel=car.tank;S.t+=10;say(`Full tank. ${need} gallons of ${car.diesel?'diesel':'gas'} for $${Math.round(need*pr)}. Islanders treat this as a sacred ritual now.`);afterAction()}});
     }
   }
@@ -748,6 +936,8 @@ function migrate(d){
   if(!Array.isArray(w.px)||w.px.length<7) w.px=fresh.px;
   w.px.forEach((o,i)=>{for(const g in GOODS) if(!o[g]) o[g]=fresh.px[i][g]});
   if(!Array.isArray(w.news)) w.news=fresh.news.map((n,i)=>i<x.cur?-1:n);
+  if(typeof w.bingo!=='number'||!BINGO_FOR[w.bingo]) w.bingo=fresh.bingo;
+  if(!Array.isArray(x.ev.force)) x.ev.force=[];
   w.news=w.news.map(n=>typeof n==='number'&&n<NEWS.length?n:-1);
   x.week=w;
   if(from>SAVE_SCHEMA) notes.push(`this save is from a newer version (${d.app||'unknown'}). Anything this version doesn’t know about is kept but ignored`);
@@ -859,6 +1049,7 @@ function render(){
   const loc=S.loc,out=activeOutage(),d=day();
   let h=hud();
   if(out) h+=`<div class="alertbar">🚨 Rider Alert: ferry service suspended (${out.cause}).</div>`;
+  else if(powerOut()&&L[S.loc].side==='I') h+=`<div class="alertbar fog">⚡ Power out on the island since ${fmt(S.power.start)}.</div>`;
   else if(S.week.fog[d]&&tod()<660) h+=`<div class="alertbar fog">🌫️ Fog: morning sailings running ${S.week.fog[d]}+ min late.</div>`;
   h+=`<div class="scene">${sceneSVG()}<div class="place"><h2>${L[loc].ic} ${L[loc].name}</h2><div>${L[loc].desc}${L[loc].hours&&loc!=='work'?' · '+hoursTxt(loc):''}</div></div></div>`;
   h+=`<div class="content">${tab==='act'?actView():tab==='ferry'?ferryView():tab==='todo'?todoView():logView()}</div>`;
@@ -874,7 +1065,7 @@ function actView(){
   let h='';
   if(uiNarr.length) h+=`<div class="narr">${uiNarr.slice(-4).map(s=>'<p>'+s+'</p>').join('')}</div>`;
   const cars=S.cars.map(c=>`<span class="tag ${c.fuel<1.5?'bad':c.loc===S.loc?'good':''}">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${c.loc===S.loc?'here':'at '+L[c.loc].name.replace(' Ferry Landing',' landing').replace(' Ferry Terminal',' terminal')} · ⛽${c.fuel}/${c.tank}</span>`).join('');
-  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
+  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
   const acts=actions();
   h+=marketView();
   if(acts.length){h+='<div class="sect">Do something</div>';acts.forEach(a=>{const i=ACTS.push(a.fn)-1;h+=`<button class="act ${a.cls||''}" ${a.dis?'disabled':''} onclick="ACT(${i})"><span class="ic">${a.ic}</span><span class="tx"><b>${a.l}</b>${a.s?'<span>'+a.s+'</span>':''}</span></button>`})}
@@ -927,24 +1118,32 @@ function todoItems(){
   const isl=S.cars.find(c=>c.id==='isl');
   it.push({ok:isl.fuel>=3,fail:false,l:`Keep gas in the ${isl.diesel?'truck':'island car'}`,s:`${isl.fuel}/${isl.tank} gal. No gas on the island: fill up on the mainland, or pay Dale.`,urgent:isl.fuel<1.5});
   if(S.week.storm&&S.week.storm.day>=d) it.push({ok:S.homeGas>=3,fail:false,l:'Generator gas for the storm',s:`Gale on ${DAYS[S.week.storm.day]}. You need 3 gal in the shed or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
+  if(d<=2) it.push({ok:S.bingo.nights>0,fail:d===2&&tod()>=1200&&!S.bingo.nights,l:'Optional: Bingo at the Riv',s:`Wednesday 6:00 PM, American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,urgent:false});
+  if(S.battery==='weak') it.push({ok:false,fail:false,l:'Replace the car battery',s:'Gas station in Steilacoom. Until then, mornings are a gamble.',urgent:false});
   if(S.injury) it.push({ok:S.injury.treated,fail:false,l:'Get your ankle treated',s:'Urgent Care in DuPont, 8 AM–8 PM. Nothing on the island.',urgent:!S.injury.treated});
   return it;
 }
 function todoView(){
+  const fr=Object.values(S.friends);
   return `<div class="sect">This week</div>`+todoItems().map(x=>`<div class="todo"><span class="ck">${x.ok?'✅':x.fail?'❌':x.urgent?'⚠️':'⬜'}</span><div><b>${x.l}</b><span>${x.s}</span></div></div>`).join('')+
+  (fr.length?`<div class="sect">Island friends</div>`+fr.map(f=>`<div class="todo"><span class="ck">🤝</span><div><b>${f.name}</b><span>Met ${DAYS[f.day]}: ${f.how}.</span></div></div>`).join(''):'')+
   `<div class="sect">Survive until Sunday night</div><div class="rules"><p>Out of cash? Ferry fares, rideshares and motels go on the credit card, and it counts against your score.</p><p>Health 0: medevac off the island. Job 0: fired. Stress is everything.</p><p>Score: cash + health + job − stress, plus bonuses for not getting stranded.</p></div>`;
 }
 function logView(){return `<div class="log">${S.log.slice().reverse().map(e=>`<p><em>${DAYS[Math.floor(e.t/1440)].slice(0,3)} ${fmt(e.t)}</em>${e.s}</p>`).join('')}</div>`}
 
 // ---------------- modal & crossing ----------------
 let MB=[];
+let MQ=[];
 function modal(title,body,btns,noClose){
+  if(document.getElementById('mbg')){MQ.push([title,body,btns,noClose]);return}
   MB=btns;
   const el=document.createElement('div');el.className='modal-bg';el.id='mbg';
   el.innerHTML=`<div class="modal"><h2>${title}</h2><div class="mb">${body}</div>${btns.map((b,i)=>`<button class="act ${i===0?'primary':''}" onclick="MBTN(${i})"><span class="tx"><b>${b.l}</b>${b.s?'<span>'+b.s+'</span>':''}</span></button>`).join('')}</div>`;
   document.body.appendChild(el);
 }
-window.MBTN=i=>{const el=document.getElementById('mbg');el&&el.remove();const f=MB[i]&&MB[i].fn;f&&f();if(S&&!S.over&&!document.querySelector('.title,.end'))render()};
+window.MBTN=i=>{const el=document.getElementById('mbg');el&&el.remove();const f=MB[i]&&MB[i].fn;f&&f();
+  if(!document.getElementById('mbg')&&MQ.length&&S&&!S.over){const q=MQ.shift();modal(...q)}
+  if(S&&!S.over&&!document.querySelector('.title,.end'))render()};
 function crossing(side,cap,cap2,done,sail){
   const el=document.createElement('div');el.className='cross';
   const rev=side==='M';
@@ -965,7 +1164,7 @@ function crossing(side,cap,cap2,done,sail){
 function scoreOf(){
   const s=S.stats;
   const cargoVal=Object.keys(GOODS).reduce((a,g)=>a+S.cargo[g]*price(g,'M').sell,0);
-  const bonus=cargoVal-S.drugCharges*300-S.citations*200+(s.stranded===0?150:0)+(S.appt?100:0)+(S.rx?60:0)+(Object.keys(S.worked).length*40);
+  const bonus=Object.keys(S.friends).length*60+S.bingo.won+S.bingo.donated+cargoVal-S.drugCharges*300-S.citations*200+(s.stranded===0?150:0)+(S.appt?100:0)+(S.rx?60:0)+(Object.keys(S.worked).length*40);
   return Math.round(S.money+S.health*4+S.job*4-S.stress*3+bonus);
 }
 function gradeOf(sc){
@@ -976,7 +1175,7 @@ function gradeOf(sc){
   return ['F','Moving Back to the Mainland','The island is beautiful. You’ll visit. On a Tuesday. Not a Friday.'];
 }
 function finish(){S.over=true;endScreen('You made it to Sunday night','You survived a week of island life.')}
-function gameOver(why){S.over=true;document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
+function gameOver(why){S.over=true;MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
 function endScreen(h1,sub,lost){
@@ -997,6 +1196,8 @@ function endScreen(h1,sub,lost){
   <div class="kv"><span>Gallons bought from Dale</span><b>${s.daleGal}</b></div>
   <div class="kv"><span>Gallons you smuggled / citations</span><b>${s.smuggled} / ${S.citations}</b></div>
   <div class="kv"><span>Nights without power</span><b>${s.outageNights}</b></div>
+  <div class="kv"><span>Island friends made</span><b>${Object.keys(S.friends).length?Object.values(S.friends).map(f=>f.name.split(',')[0].split(' from')[0]).join(', '):'none'}</b></div>
+  <div class="kv"><span>Bingo nights / winnings</span><b>${S.bingo.nights} / ${$(S.bingo.won)}</b></div>${S.bingo.nights?`<div class="kv"><span>Your bingo money that went to the ${BINGO_FOR[S.week.bingo]}</span><b>${$(S.bingo.donated)}</b></div>`:''}
   <div class="kv"><span>Trading: bought / sold</span><b>${$(s.bought)} / ${$(s.sold)}</b></div>
   <div class="kv"><span>Drug runs / arrests</span><b>${s.drugRuns} / ${s.arrests}</b></div>
   <div class="kv"><span>Ferry outages this week</span><b>${S.week.b.filter(b=>b.start<S.t).length}</b></div>
