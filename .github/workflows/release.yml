@@ -1,0 +1,68 @@
+# Builds the downloads and publishes a GitHub Release whenever a version tag (v1.2.3) is pushed.
+# Can also be run by hand from the Actions tab ("Run workflow") with a tag name.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v1.3.1)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pillow (for the Windows icon)
+        run: pip install pillow
+
+      - name: Build the single-file offline game
+        run: python3 tools/build-offline.py
+
+      - name: Build the Windows installer
+        run: bash windows/build.sh
+
+      - name: Package the web app
+        run: |
+          mkdir -p out
+          cp offline/IslandTime-offline.html out/
+          cp windows/dist/IslandTime-Setup.exe out/
+          zip -qr "out/IslandTime-web-${TAG#v}.zip" index.html sw.js manifest.webmanifest icons fonts .nojekyll
+          ls -la out
+
+      - name: Write release notes
+        run: |
+          cat > notes.md <<NOTES
+          **Downloads**
+          - **IslandTime-offline.html**: the whole game in one file. Double-click it to play with no internet, no install and no server.
+          - **IslandTime-Setup.exe**: Windows 10/11 installer (per-user, no admin needed). It isn't code-signed, so if SmartScreen warns, choose *More info → Run anyway*.
+          - **IslandTime-web-${TAG#v}.zip**: the installable web app (PWA) for any static host.
+
+          Play in a browser: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          NOTES
+
+      - name: Publish release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" out/* --clobber
+          else
+            gh release create "$TAG" out/* --title "Island Time ${TAG#v}" --notes-file notes.md --target "$GITHUB_SHA"
+          fi

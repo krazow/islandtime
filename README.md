@@ -64,6 +64,8 @@ screenshots/
 
 **Windows installer:** `windows/build.sh` builds it from any OS. It needs Go 1.21+ and Python 3 with Pillow.
 
+**Releases:** push a tag such as `git tag v1.3.2 && git push origin v1.3.2`. The [Release workflow](.github/workflows/release.yml) builds the offline file, the Windows installer and the web-app zip, then publishes them as a GitHub Release.
+
 ## Credits
 
 Fraunces font © The Fraunces Project Authors, used under the [SIL Open Font License 1.1](fonts/Fraunces-OFL.txt). Body text uses DM Sans from Google Fonts when online, otherwise your system font.
