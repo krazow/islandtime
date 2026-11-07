@@ -1,0 +1,8 @@
+windows/dist/
+windows/setup/payload/
+windows/*.syso
+windows/launcher/*.syso
+windows/setup/*.syso
+windows/icon.ico
+windows/icon.png
+__pycache__/

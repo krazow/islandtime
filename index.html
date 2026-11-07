@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Island Time: An Anderson Island Ferry Game</title>
+<meta name="description" content="Survive a week of island life on Anderson Island, WA: ferry breakdowns, groceries, doctor visits and no gas on the island.">
+<meta name="theme-color" content="#12313b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Island Time">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:"Fraunces";src:url("fonts/fraunces-latin-600-normal.woff2") format("woff2");font-weight:600 800;font-style:normal;font-display:swap}</style>
+<style>
+:root{
+  --sound:#1d4b5a; --deep:#12313b; --fir:#2f5d4a; --moss:#6f8f5a; --sand:#f3ecdc; --paper:#fbf8f1;
+  --buoy:#e3642e; --ink:#1b2326; --mute:#6b7478; --line:#ddd4c0; --good:#2f7d4f; --bad:#b8402a; --warn:#c98a12;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{overscroll-behavior:none;margin:0;background:var(--deep);color:var(--ink);font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px}
+#app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--paper);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+h1,h2,h3{font-family:"Fraunces",Georgia,serif;margin:0}
+button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:14px;padding:13px;font-weight:700;font-size:16px}
+.hint{font-size:13px;background:rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;line-height:1.45}
+/* title */
+.title{flex:1;display:flex;flex-direction:column;background:linear-gradient(#1d4b5a,#12313b);color:#fff}
+.title .art{height:250px}
+.title .body{padding:18px 22px 28px;display:flex;flex-direction:column;gap:14px}
+.title h1{font-size:40px;line-height:1;letter-spacing:-.5px}
+.title h1 span{display:block;font-size:17px;font-family:"DM Sans";font-weight:500;letter-spacing:.3px;opacity:.85;margin-top:8px}
+.title p{margin:0;line-height:1.5;opacity:.92;font-size:15px}
+.title ul{margin:0;padding-left:18px;line-height:1.55;font-size:14.5px;opacity:.92}
+.big{background:var(--buoy);color:#fff;border:0;border-radius:14px;padding:16px;font-weight:700;font-size:18px;box-shadow:0 4px 0 #a9441b}
+.big:active{transform:translateY(2px);box-shadow:0 2px 0 #a9441b}
+.small-note{font-size:12px;opacity:.7}
+/* hud */
+.hud{background:var(--deep);color:#fff;padding:10px 14px 10px;position:sticky;top:0;z-index:5}
+.hud-top{display:flex;justify-content:space-between;align-items:baseline}
+.hud-day{font-family:"Fraunces";font-size:20px;font-weight:800}
+.hud-time{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.hud-sub{font-size:12px;opacity:.75;margin-top:1px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.stat{background:rgba(255,255,255,.08);border-radius:9px;padding:5px 4px 6px;text-align:center}
+.stat b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
+.stat small{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.5px}
+.meter{height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin-top:4px;overflow:hidden}
+.meter i{display:block;height:100%}
+/* scene */
+.scene{position:relative;height:170px;overflow:hidden}
+.scene svg{display:block;width:100%;height:100%}
+.place{position:absolute;left:12px;bottom:10px;background:rgba(251,248,241,.94);border-radius:10px;padding:6px 10px;max-width:80%}
+.place h2{font-size:18px}
+.place div{font-size:12px;color:var(--mute)}
+.alertbar{background:var(--bad);color:#fff;font-size:13px;padding:8px 14px;font-weight:500}
+.alertbar.fog{background:#6c7a80}
+/* content */
+.content{flex:1;padding:12px 14px 90px}
+.narr{background:var(--sand);border-left:4px solid var(--fir);border-radius:8px;padding:10px 12px;font-size:14.5px;line-height:1.45;margin-bottom:12px}
+.narr p{margin:0 0 6px}.narr p:last-child{margin:0}
+.sect{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mute);margin:14px 2px 6px;font-weight:700}
+.act{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;color:var(--ink)}
+.act:active{background:var(--sand)}
+.act .ic{font-size:22px;width:30px;text-align:center;flex:none}
+.act .tx{flex:1;min-width:0}
+.act .tx b{display:block;font-weight:700;font-size:15px}
+.act .tx span{display:block;font-size:12.5px;color:var(--mute);margin-top:1px}
+.act.primary{border-color:var(--fir);background:#eef4ee}
+.act.danger{border-color:#e2b3a7}
+.act[disabled]{opacity:.45}
+.dest{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.dest .dn{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.dest .dn b{font-size:15px}.dest .dn span{font-size:11.5px;color:var(--mute);text-align:right}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border:1.5px solid var(--fir);color:var(--fir);background:#fff;border-radius:999px;padding:6px 11px;font-size:13px;font-weight:700}
+.chip:active{background:#e3eee5}
+.chip[disabled]{border-color:var(--line);color:#aaa}
+/* tabs */
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+.tabs button{background:none;border:0;padding:9px 0 10px;font-size:11px;color:var(--mute);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button .ti{font-size:20px}
+.tabs button.on{color:var(--sound)}
+.tabs .dot{display:inline-block;width:7px;height:7px;background:var(--bad);border-radius:50%;margin-left:3px;vertical-align:top}
+/* market */
+.mkt{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:4px 12px;margin-bottom:8px}
+.mrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:0}
+.mrow .ic{font-size:22px;width:28px;text-align:center}
+.mrow .mi{flex:1;min-width:0}.mrow .mi b{font-size:14.5px;display:block}
+.mrow .mi span{font-size:12px;color:var(--mute)}
+.mrow .px{font-size:11.5px;color:var(--mute);margin-top:2px;font-variant-numeric:tabular-nums}
+.mrow .px b{display:inline;color:var(--ink);font-size:12.5px}
+.mbtns{display:flex;gap:6px;align-items:center}
+.mbtns button{border:1.5px solid var(--fir);background:#fff;color:var(--fir);border-radius:9px;font-weight:700;font-size:13px;padding:7px 9px;min-width:44px}
+.mbtns button.buy{background:var(--fir);color:#fff}
+.mbtns button[disabled]{opacity:.35}
+.mbtns .own{font-weight:700;font-size:14px;min-width:18px;text-align:center;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;margin-left:4px;vertical-align:1px;text-transform:uppercase;letter-spacing:.3px}
+.badge.ok{background:#dcefe2;color:var(--good)}.badge.lim{background:#f8ecd0;color:#8a5d00}.badge.no{background:#f6ddd5;color:var(--bad)}
+.news{font-size:13px;background:#eef1f2;border-radius:10px;padding:8px 11px;margin-bottom:8px;line-height:1.4}
+/* ferry board */
+.board{background:#0f2a32;color:#f4d27a;border-radius:12px;padding:12px;font-variant-numeric:tabular-nums}
+.board h3{color:#fff;font-size:16px;margin-bottom:2px}
+.board .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.board .colh{font-size:11px;color:#9fc0c8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.row.past{opacity:.3}.row.next{color:#fff;font-weight:700}
+.row .st{font-size:11px}
+.st.ok{color:#8fd19e}.st.x{color:#ff8a70}.st.d{color:#f4d27a}.st.p{color:#9fc0c8}
+.rules{font-size:13px;line-height:1.5;color:var(--ink);background:var(--sand);border-radius:10px;padding:10px 12px;margin-top:12px}
+.rules p{margin:0 0 6px}
+.todo{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.todo .ck{font-size:20px;width:26px;flex:none;text-align:center}
+.todo b{display:block;font-size:15px}.todo span{font-size:12.5px;color:var(--mute)}
+.log p{margin:0;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.4}
+.log p em{font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums;margin-right:6px;font-size:12px}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,25,30,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.modal{background:var(--paper);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.modal h2{font-size:22px;margin-bottom:8px}
+.modal .mb{font-size:15px;line-height:1.5;margin-bottom:14px}
+.modal .mb p{margin:0 0 8px}
+.modal .act{margin-bottom:8px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--sand);color:var(--ink);margin:0 4px 4px 0}
+.tag.bad{background:#f6ddd5;color:var(--bad)}.tag.good{background:#dcefe2;color:var(--good)}
+/* crossing */
+.cross{position:fixed;inset:0;z-index:30;background:#12313b;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}
+.cross svg{width:100%;max-width:480px;height:260px}
+.cross .cap{font-family:"Fraunces";font-size:22px;margin-top:6px;text-align:center;padding:0 20px}
+.cross .cap2{font-size:13px;opacity:.75;margin-top:6px}
+.boat{animation:sail 2.6s ease-in-out forwards}
+@keyframes sail{from{transform:translateX(0)}to{transform:translateX(300px)}}
+.boat.rev{animation-name:sailrev}
+@keyframes sailrev{from{transform:translateX(300px)}to{transform:translateX(0)}}
+.bob{animation:bob 1.2s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(3px)}}
+/* end */
+.end{padding:22px 18px 40px}
+.end h1{font-size:30px;margin:6px 0 4px}
+.grade{font-family:"Fraunces";font-size:58px;font-weight:800;color:var(--buoy);line-height:1}
+.kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.kv b{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+// ---------------- data ----------------
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday'];
+const DATES=['Nov 2','Nov 3','Nov 4','Nov 5','Nov 6','Nov 7','Nov 8'];
+const AI_DEPS=[315,390,465,540,615,690,765,840,915,990,1065,1140,1215,1290];
+const ST_DEPS=[350,425,500,575,650,725,800,875,950,1025,1100,1175,1250,1325];
+const KETRON={I:[690,1215],M:[575,950,1175]};
+const FUEL_CANCEL={I:[690],M:[575]}; // Monday fuel run
+const FARE_CAR=26.5, FARE_WALK=6.25, FUEL_RATE=0.05, GAS_PRICE=4.59, DIESEL_PRICE=5.29, DALE_PRICE=12;
+const GOODS={
+  food:{n:'Food case',ic:'🥫',d:'Shelf-stable groceries, 3 days’ worth',base:{M:46,I:86},law:'ok'},
+  med:{n:'Medical supplies',ic:'🩹',d:'First-aid kit, bandages, OTC cold & pain meds',base:{M:28,I:64},law:'ok'},
+  gas:{n:'Gasoline, 5-gal can',ic:'🟥',d:'Legal to own. Banned on the ferry, full or empty',base:{M:30,I:68},law:'no-ferry'},
+  diesel:{n:'Diesel, 5-gal DOT can',ic:'🟨',d:'Ferry allows 2 cans, in a vehicle only',base:{M:29,I:54},law:'lim'},
+  drugs:{n:'Illicit drugs',ic:'📦',d:'A package. Illegal everywhere. Felony territory',base:{M:280,I:540},law:'illegal'},
+};
+const MARKETS={
+  wholesale:{goods:['food','med'],hours:[420,1260],who:'Wholesale counter'},
+  gas:{goods:['gas','diesel'],hours:[300,1380],who:'Gas station'},
+  motel:{goods:['drugs'],hours:[1080,1440],who:'A guy in a parked sedan',sting:0.06},
+  store:{goods:['food','med','diesel'],hours:[480,1200],who:'Island swap board (neighbors)'},
+  dale:{goods:['gas','drugs'],hours:[420,1260],who:'Dale',sting:0.1},
+};
+const NEWS=[
+  {t:'Island: the co-op potluck left everyone’s freezers full. Food is cheap on the swap board.',side:'I',g:'food',m:0.6},
+  {t:'Mainland: the wholesale counter is running a bulk-food sale.',side:'M',g:'food',m:0.7},
+  {t:'Island: a cold is going around and nobody has medicine left.',side:'I',g:'med',m:1.7},
+  {t:'Mainland: diesel shortage at Lakewood stations.',side:'M',g:'diesel',m:1.6},
+  {t:'Island: a contractor redoing a boat ramp is paying top dollar for diesel.',side:'I',g:'diesel',m:1.6},
+  {t:'Island: gas is so scarce people are siphoning lawnmowers.',side:'I',g:'gas',m:1.4},
+  {t:'Mainland: a dry spell on the street. Prices are up.',side:'M',g:'drugs',m:1.35},
+  {t:'Island: a sheriff’s bust last week scared off the competition.',side:'I',g:'drugs',m:1.3},
+  {t:'⚠️ Sheriff’s drug task force is riding the ferry today, with a K-9 unit. Inspections way up.',task:true},
+];
+const CAP_CAR=20, CAP_FOOT=6;
+const CAUSES=['generator failure','propulsion control fault','steering hydraulic leak','no relief captain available (crew shortage)','transfer span stuck at the Steilacoom landing'];
+
+const L={
+  home:{name:'Home',side:'I',ic:'🏡',desc:'Your cedar cabin in the woods'},
+  aiDock:{name:'Anderson Island Ferry Landing',side:'I',ic:'⛴️',desc:'Ferry landing, Anderson Island'},
+  store:{name:'General Store (closed)',side:'I',ic:'🏚️',desc:'Closed since Feb 2026. The swap board out front is the island market'},
+  dale:{name:'Dale’s Place',side:'I',ic:'🛢️',desc:'End of a gravel road. Has gas. Don’t ask.',hours:()=>[420,1260]},
+  food:{name:'Lakeshore Restaurant',side:'I',ic:'🍔',desc:'The one place left to eat. Takeout',hours:()=>[660,1200]},
+  lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
+  stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
+  gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
+  wholesale:{name:'Wholesale & Supply (Lakewood)',side:'M',ic:'🏭',desc:'Buy and sell food and medical supplies in bulk',hours:()=>[420,1260]},
+  motel:{name:'Motel Parking Lot (Lakewood)',side:'M',ic:'🅿️',desc:'After dark only. Deals that shouldn’t happen',hours:()=>[1080,1440]},
+  work:{name:'Work (Lakewood)',side:'M',ic:'💼',desc:'Your 9-to-5. Clock in by 9:00',hours:d=>d<5?[420,1140]:null},
+  market:{name:'Supermarket (Lakewood)',side:'M',ic:'🛒',desc:'Normal prices. Imagine that.',hours:()=>[360,1380]},
+  pharmacy:{name:'Pharmacy (Lakewood)',side:'M',ic:'💊',desc:'Your refill is here',hours:d=>d===6?[600,1080]:[540,1260]},
+  warehouse:{name:'Warehouse Club (Tacoma)',side:'M',ic:'📦',desc:'Bulk food. Needs a car.',hours:d=>d>=5?[570,1080]:[600,1230]},
+  clinic:{name:'Medical Clinic (Tacoma)',side:'M',ic:'🩺',desc:'Your doctor. Weekdays only',hours:d=>d<5?[480,1020]:null},
+  urgent:{name:'Urgent Care (DuPont)',side:'M',ic:'🚑',desc:'Walk-in care, 8 AM–8 PM',hours:()=>[480,1200]},
+};
+const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2}};
+const MP={wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
+function dist(a,b){
+  if(a===b) return 0;
+  if(L[a].side==='I'){return (DI[a]&&DI[a][b])||(DI[b]&&DI[b][a])}
+  const p=MP[a],q=MP[b];return Math.round(Math.hypot(p[0]-q[0],p[1]-q[1])*2.6+4);
+}
+const FLAVOR_MORNING=[
+  'A heron stands motionless on the beach below the bluff.',
+  'Rain ticks on the skylight. Classic November.',
+  'Two deer are eating your neighbor’s roses again.',
+  'The island is very quiet. You can hear the boat horn from across the water.',
+  'Mt. Rainier is out this morning, pink with sunrise.',
+  'Your phone shows one bar. It is always one bar.',
+];
+const GOSSIP=[
+  'Bulletin board: “AI FOOD CO-OP — member meeting Thursday. Help us reopen the store & the pumps in 2027!”',
+  'Bulletin board: “REMINDER: gas cans, FULL OR EMPTY, are not allowed on the ferry. Don’t make the deckhands confiscate yours.”',
+  'Someone’s note: “Going to the mainland Tues — can pick up groceries for 2 households. Call me.”',
+  'A flyer for an island grocery delivery service. Hand-drawn ferry logo.',
+  'Bulletin board: “Lost: red gas can. No questions asked.” Ha. Sure.',
+  'Marge says the Friday afternoon line was backed up past the store last week.',
+  'Someone’s selling firewood at the end of their driveway again. Honor box.',
+  'The guy from the Riviera swears he saw an orca off Oro Bay.',
+  'Rumor is the county wants to raise fares again. Groans all around.',
+  'Everyone agrees: if you need a doctor, plan it like a moon landing.',
+];
+
+// ---------------- state ----------------
+let S, tab='act', uiNarr=[];
+const APP_VERSION='1.3.1', SAVE_SCHEMA=3;
+function baseState(){
+  return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
+    cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
+    cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
+    worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
+    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],alertsSeen:{},over:false,
+    stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
+    week:null};
+}
+function newGame(){
+  S=baseState();S.week=genWeek();
+  uiNarr=[];
+  say('Monday, 5:30 AM. Your alarm goes off in the dark. Work in Lakewood starts at 9:00. The pantry is getting thin.');
+  say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
+  say('⛽ Your car has 4.5 gallons left, and there is no gas station on the island anymore.');
+  startDay();
+  modal('There’s no gas on the island',`<p>The General Store was the island’s only gas station and only grocery store. It closed on <b>February 2, 2026</b>. A new co-op hopes to reopen it in 2027.</p>
+  <p>And you can’t just bring gas over. <b>Gas cans, full or empty, are banned on the Pierce County ferry.</b> Gasoline can only come aboard in your vehicle’s own tank.</p>
+  <p>So you can drive the car to the mainland to fill it (and pay the vehicle fare), buy smuggled gas from a neighbor at triple the price, or try smuggling some yourself. The deckhands do look.</p>
+  <p style="font-size:13px;color:var(--mute)">The Ferry tab has the actual rules and their exemptions.</p>`,[{l:'Got it. Check the gas gauge.',fn:()=>{}}]);
+}
+function genWeek(){
+  const b=[];const r=Math.random;
+  if(r()<0.9){const day=1+Math.floor(r()*4);const start=day*1440+Math.floor((7+r()*11)*60);
+    const durs=[300,480,900,1500,2200];b.push({start,end:start+durs[Math.floor(r()*durs.length)],cause:CAUSES[Math.floor(r()*CAUSES.length)]});}
+  for(let d=0;d<7;d++){ if(r()<0.13){const start=d*1440+Math.floor((d===0?10:6)*60+r()*10*60);
+      if(!b.some(x=>start<x.end+120&&start>x.start-240)) b.push({start,end:start+90+Math.floor(r()*150),cause:CAUSES[Math.floor(r()*CAUSES.length)]});}}
+  const fog=[];for(let d=0;d<7;d++) fog.push(r()<0.45?10+Math.floor(r()*20):0);
+  const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]={M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
+  let storm=null;
+  if(r()<0.65){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)};
+    const ws=st+20;if(!b.some(x=>ws<x.end&&ws+200>x.start)) b.push({start:ws,end:ws+120+Math.floor(r()*120),cause:'high winds (gale warning)'});}
+  return {b,fog,storm,px,news};
+}
+const day=()=>S.cur;
+const tod=()=>S.t-S.cur*1440;
+function fmt(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mi=m%60;const ap=h<12?'AM':'PM';h=h%12||12;return h+':'+String(mi).padStart(2,'0')+' '+ap}
+function fmtAbs(a){const d=Math.floor(a/1440);return (d!==day()?DAYS[d]?.slice(0,3)+' ':'')+fmt(a)}
+function say(s){uiNarr.push(s);S.log.push({t:S.t,s})}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function adj(k,v){S[k]=clamp(Math.round(S[k]+v),0,100)}
+function money(v){S.money=Math.round((S.money+v)*100)/100}
+const $=x=>'$'+(Math.round(x*100)/100).toFixed(x%1?2:0);
+function carHere(){return S.cars.find(c=>c.loc===S.loc)}
+function isOpen(id,t=S.t){const h=L[id].hours;if(!h)return true;const r=h(Math.floor(t/1440));if(!r)return false;const m=t%1440;return m>=r[0]&&m<r[1]}
+function hoursTxt(id){const h=L[id].hours;if(!h)return '';const r=h(day());return r?`Open ${fmt(r[0])}–${fmt(r[1])}`:'Closed today'}
+
+// ---------------- ferry engine ----------------
+function sailing(side,d,dep,mode,knownOnly){
+  const abs=d*1440+dep;
+  if(d===0&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
+  for(const b of S.week.b){
+    if(knownOnly&&b.start>S.t) continue;
+    if(abs>=b.start&&abs<b.end){
+      if(b.end-b.start>=1200&&abs>=b.start+960) return {abs,dep,d,passenger:true,delay:0,reason:'Passenger-only backup boat'};
+      return {abs,dep,d,cancel:true,reason:b.cause,b};
+    }
+  }
+  const delay=dep<660?S.week.fog[d]||0:0;
+  return {abs,dep,d,delay,ketron:KETRON[side].includes(dep)};
+}
+function findNext(side,mode,knownOnly){
+  const deps=side==='I'?AI_DEPS:ST_DEPS;
+  for(let d=day();d<day()+4;d++) for(const dep of deps){
+    const s=sailing(side,d,dep,mode,knownOnly);
+    if(S.t>s.abs-20) continue;
+    if(s.cancel) continue;
+    if(s.passenger&&mode==='drive') continue;
+    return s;
+  }
+  return null;
+}
+function activeOutage(){return S.week.b.find(b=>b.start<=S.t&&S.t<b.end)}
+function fullProb(side,d,dep){
+  let p=0.05;
+  if(d<5){ if(side==='I'&&(dep===390||dep===465)) p=0.35; if(side==='M'&&(dep===1025||dep===1100)) p=0.35;}
+  if(d===4&&side==='M'&&dep>=875&&dep<=1175) p=0.55;
+  if(d===5&&side==='I'&&dep<=690) p=0.3;
+  if(d===6&&side==='M'&&dep>=875) p=0.45;
+  // backlog after an outage
+  if(S.week.b.some(b=>S.t>=b.end&&S.t<b.end+180)) p=Math.max(p,0.7);
+  return p;
+}
+function cargoN(){return Object.values(S.cargo).reduce((a,b)=>a+b,0)}
+function canWalkCarry(){return S.carried<=4&&S.carried+cargoN()<=CAP_FOOT}
+function capNow(){return carHere()?CAP_CAR:CAP_FOOT}
+function contraband(mode){const c=S.cargo;return c.gas>0||c.drugs>0||c.diesel>(mode==='drive'?2:0)}
+function taskForce(){const n=S.week.news[day()];return n>=0&&NEWS[n].task}
+function price(g,side){
+  const d=day(),base=GOODS[g].base[side]*S.week.px[d][g][side];let m=1;
+  const n=S.week.news[d];if(n>=0){const e=NEWS[n];if(!e.task&&e.side===side&&e.g===g)m*=e.m}
+  if(side==='I'&&activeOutage()&&g!=='drugs') m*=1.5;
+  if(side==='I'&&S.week.storm&&S.week.storm.day===d&&(g==='gas'||g==='med')) m*=1.4;
+  if(g==='drugs'&&taskForce()) m*=1.25;
+  const buy=Math.round(base*m);return {buy,sell:Math.round(buy*0.82)};
+}
+
+function waitFerry(mode){
+  const side=L[S.loc].side;
+  if(mode==='walk'&&!canWalkCarry()){modal('Too much to carry',`<p>On foot you can carry 4 days of groceries and ${CAP_FOOT} items in total. You’ve got ${S.carried} days of groceries and ${cargoN()} trade items.</p><p>Drive on, or lighten the load.</p>`,[{l:'OK',fn:()=>{}}]);return}
+  const known=findNext(side,mode,true), actual=findNext(side,mode,false);
+  if(!known){say('No sailings in sight. Something is very wrong with the ferry system.');return render()}
+  if(known.d>day()){
+    if(side==='M'){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8);}
+    else say(`No more sailings you can make tonight. Next: ${DAYS[known.d]} ${fmt(known.dep)}. Might as well go home.`);
+    return render();
+  }
+  if(!actual||actual.abs!==known.abs){
+    // surprise breakdown during the wait
+    const b=S.week.b.filter(b=>b.start>S.t&&b.start<=known.abs).sort((x,y)=>x.start-y.start)[0];
+    const at=b?b.start:known.abs-25;
+    S.stats.waited+=at-S.t;S.t=at;adj('stress',12);
+    buzz([90,50,90,50,90]);
+    say(`🚨 RIDER ALERT (${fmt(S.t)}): Sailings suspended due to ${b?b.cause:'a mechanical issue'}. No estimate for restoration.`);
+    say('The people in line groan in unison. Someone starts calling their boss.');
+    return modal('🚨 Rider Alert',`<p>Service is suspended: <b>${b?b.cause:'a mechanical issue'}</b>.</p><p>The county hasn’t said when it’ll be back. Check the Ferry board, look for the sailboat water taxi, or change your plans.</p>`,[{l:'Ugh. OK.',fn:()=>{}}]);
+  }
+  const s=known;
+  const wait=s.abs-S.t;S.stats.waited+=wait;
+  adj('stress',Math.min(10,wait/12));
+  S.t=s.abs+(s.delay||0);
+  if(s.delay) say(`Fog on the water. The boat is ${s.delay} minutes late.`);
+  if(mode==='drive'&&!S.priority&&Math.random()<fullProb(side,s.d,s.dep)){
+    buzz(120);S.stats.bumps++;adj('stress',12);
+    say(`The deckhand waves the car ahead of you on and then raises the hand. Boat’s full. You’re first in line for the next one.`);
+    const nxt=(()=>{const save=S.t;S.t=s.abs-19;const n=findNext(side,'drive',true);S.t=save;return n})();
+    return modal('Boat’s full 😩',`<p>The ${fmt(s.dep)} sailing filled up right in front of you.</p><p>Next drive-on: <b>${nxt?fmtAbs(nxt.abs):'unknown'}</b> (you’ll be first in line).</p>`,[
+      {l:'Wait for the next boat',s:'Keep your car with you',fn:()=>{S.priority=true;S.t=s.abs-21>S.t?S.t:S.t;S.t=Math.max(S.t,s.abs+1);waitFerryFrom(side)}},
+      ...(canWalkCarry()?[{l:'Park it and walk on this boat',s:`Car stays at this landing. ${side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island'}`,fn:()=>board(side,s,'walk')}]:[])
+    ]);
+  }
+  board(side,s,mode);
+}
+function waitFerryFrom(side){ // after a bump, find next from current time ignoring the 20-min rule for first-in-line
+  S.t-=20; const n=findNext(side,'drive',false); S.t+=20;
+  if(!n||n.d>day()){say('No more drive-on sailings tonight.');S.priority=false;return render()}
+  S.stats.waited+=n.abs-S.t; adj('stress',6); S.t=n.abs+(n.delay||0); S.priority=false; board(side,n,'drive');
+}
+function arrest(where,missed){
+  buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
+  const lost=[];if(S.cargo.drugs)lost.push(S.cargo.drugs+' drug package'+(S.cargo.drugs>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
+  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;
+  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $750 bail five hours later. Your boss heard.`);
+  if(S.drugCharges>=2) return gameOver('convicted');
+  modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':'The buyer was an undercover deputy.'}</p><p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$750 bail</b> five hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
+  afterAction();
+}
+function board(side,s,mode){
+  if(contraband(mode)){
+    const c=S.cargo;
+    const p=Math.min(0.85,(mode==='drive'?0.22:0.32)+0.04*(c.gas+c.drugs)+(taskForce()?0.3:0));
+    if(Math.random()<p){
+      if(c.drugs>0) return arrest('at the ferry',true);
+      if(c.gas>0){
+        buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);
+        say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
+        if(S.citations>=2) return gameOver('banned');
+        return modal('Busted at the ferry',`<p>Gasoline is allowed aboard only in a vehicle’s own tank. Spare cans, <b>full or empty</b>, are prohibited.</p><p>Your ${g>1?g+' cans are':'can is'} confiscated, you get a citation, and the boat leaves without you. The citation will cost you about $150.</p><p><b>Repeat violations can get you banned from riding the ferry.</b> Next time, that’s the game.</p>`,[{l:'Lesson learned. Probably.',fn:()=>{}}]);
+      }
+      const keep=mode==='drive'?2:0,extra=c.diesel-keep;c.diesel=keep;adj('stress',6);
+      say(`🟨 The deckhand counts your diesel cans. ${mode==='drive'?'Two per vehicle is the limit':'Diesel cans have to ride in a vehicle'}, so ${extra} can${extra>1?'s':''} stay${extra>1?'':'s'} on the dock. Gone.`);
+    } else {
+      if(c.gas){S.stats.smuggled+=c.gas*5;adj('stress',10);say('Nobody looks in your trunk. You sweat through the whole crossing, smelling gas fumes and picturing a car-deck fire.');}
+      if(c.drugs){S.stats.drugRuns++;adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
+      if(c.diesel>(mode==='drive'?2:0)) say('Nobody counts your diesel cans this time.');
+    }
+  }
+  if(S.cargo.diesel>0&&S.cargo.diesel<=2&&mode==='drive') say('A deckhand checks the DOT labels on your diesel cans, sees they’re upright and strapped down, and waves you through. That one’s legal.');
+  if(side==='M'){const f=mode==='drive'?FARE_CAR:FARE_WALK;money(-f);S.stats.fares+=f;}
+  const car=carHere();
+  const dur=20+(s.ketron?10:0);
+  const to=side==='I'?'stDock':'aiDock';
+  crossing(side,`${s.passenger?'Passenger-only backup boat':'Crossing'} to ${side==='I'?'Steilacoom':'Anderson Island'}`,`${fmt(S.t)} departure${s.ketron?' · stops at Ketron Island':''} · ${mode==='drive'?'with your car':'on foot'}`,()=>{
+    S.t+=dur;S.stats.crossings++;
+    if(mode==='drive'&&car) car.loc=to;
+    S.loc=to;
+    say(`${s.ketron?'After a detour to Ketron Island, you':'You'} arrive at ${L[to].name} at ${fmt(S.t)}.${mode==='walk'&&car?` (${car.name} is parked back at the other landing.)`:''}`);
+    afterAction();
+  });
+}
+function waterTaxi(){
+  if(!canWalkCarry()) return modal('Too much to carry',`<p>The sailboat has room for you and maybe ${CAP_FOOT} bags or cans. Not your whole haul.</p>`,[{l:'OK',fn:()=>{}}]);
+  const side=L[S.loc].side;
+  const w=20+Math.floor(Math.random()*40);S.t+=w;S.stats.waited+=w;
+  if(Math.random()<0.35){adj('stress',8);say(`You wait ${w} minutes by the landing. The neighbor’s sailboat is on the other side, loaded with somebody’s dog crate. Not this time.`);return afterAction()}
+  money(-20);
+  crossing(side,'Neighbor’s sailboat water taxi','A $20 “donation” for diesel · life jacket on · 40 min',()=>{
+    S.t+=40;S.stats.crossings++;const to=side==='I'?'stDock':'aiDock';S.loc=to;adj('stress',-4);
+    say(`A neighbor with a sailboat has been running people across during the outage. You hop off at ${L[to].name}, damp but grateful.`);
+    afterAction();
+  },true);
+}
+
+// ---------------- travel ----------------
+function travelOpts(dest){
+  const base=dist(S.loc,dest), side=L[S.loc].side, car=carHere(), o=[];
+  const inj=S.injury&&!S.injury.treated?1.5:1;
+  const fueled=car&&car.fuel>=base*FUEL_RATE;
+  if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
+  else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
+  if(side==='I'){
+    if(!fueled){o.push({m:'walk',l:`🚶 ${Math.round(base*4*inj)} min`,min:Math.round(base*4*inj),dis:!canWalkCarry()});
+      o.push({m:'hitch',l:'👍 Hitch a ride',min:base+15,dis:!canWalkCarry()});}
+  } else if(!fueled){
+    const c=Math.round(8+base*0.8);
+    o.push({m:'ride',l:`📱 Rideshare ${base+8}m · $${c}`,min:base+8,cost:c});
+    o.push({m:'walk',l:`🚶 ${Math.round(base*5*inj)} min`,min:Math.round(base*5*inj),dis:!canWalkCarry()});
+    if(tod()<1260) o.push({m:'bus',l:`🚌 Bus ${Math.round(base*2.5+10)}m · $2.75`,min:Math.round(base*2.5+10),cost:2.75,dis:!canWalkCarry()});
+  }
+  return o;
+}
+function go(dest,o){
+  const car=carHere();
+  let min=o.min;
+  if(o.m==='hitch'){S.t+=15;if(Math.random()<0.45){adj('stress',4);say('You stand by the road with your thumb out. Two cars pass. Both wave. Neither stops.');return afterAction()}
+    say('A neighbor in a pickup with a dog in the back stops. “Hop in.” Island rules.');min=dist(S.loc,dest);adj('stress',-3);}
+  if(o.cost) money(-o.cost);
+  if(o.m==='car'&&L[S.loc].side==='I'&&Math.random()<0.12){min+=4;say('A doe and two fawns stroll across the road and stare at you. You wait.');}
+  if((o.m==='car'||o.m==='ride')&&L[S.loc].side==='M'){const m=tod();if(((m>=420&&m<=540)||(m>=960&&m<=1110))&&Math.random()<0.3){min+=15;say('I-5 near JBLM is a parking lot. Of course it is.');adj('stress',4)}}
+  S.t+=min;
+  if(car&&o.m==='car'){car.loc=dest;car.fuel=Math.max(0,Math.round((car.fuel-min*FUEL_RATE)*10)/10);if(car.fuel<1.5&&car.fuel>0)say(`⛽ The low-fuel light is on in the ${car.name.split(' (')[0].toLowerCase()}. ${car.fuel} gallons left.`);if(car.fuel===0)say('⛽ The engine coughs and dies as you pull in. Totally empty.');}
+  S.loc=dest;
+  if(car&&car.id==='beat'&&dest==='stDock'&&Math.random()<0.25){S.t+=10;say('The terminal lot is full. You park way up the hill and hike down.');}
+  if(dest==='home'&&S.carried>0){S.pantry+=S.carried;say(`You unload ${S.carried} day${S.carried>1?'s':''} of groceries into the pantry.`);S.carried=0;}
+  if(dest==='home') stash();
+  if(o.m==='walk') say(`You walk to ${L[dest].name}. It takes ${min} minutes.`);
+  afterAction();
+}
+
+// ---------------- day cycle ----------------
+function stash(){
+
+}
+function processTimed(){
+  const dl=S.delivery;
+  if(dl&&S.t>=dl.due){
+    const out=S.week.b.find(b=>dl.due>=b.start&&dl.due<b.end);
+    if(out){dl.due=out.end+90;if(!dl.warned){dl.warned=true;say('📦 Your grocery delivery is stuck on the mainland. The ferry’s down.');}}
+    else {S.pantry+=dl.n;S.delivery=null;say(`📦 Your island grocery delivery made it to the porch: +${dl.n} days of food.`);}
+  }
+}
+function stormNight(d){const st=S.week.storm;if(!st)return false;const n=d*1440+1380;return n>=st.start&&n<st.end}
+function startDay(){
+  const d=day();
+  if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. A generator needs gas…`);
+  if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
+  if(d===0) say('⛽ Monday fuel run: with a fuel tanker aboard, federal hazmat rules let only crew and the tanker driver ride. The 9:35 AM from Steilacoom and the 11:30 AM from the island are canceled.');
+  if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(d===4?1:0.3)){
+    S.injuryRolled=true;
+    if(Math.random()<0.7){S.injury={day:d,treated:false};adj('health',-15);
+      say('🤕 Hauling firewood in the dark, you slip on wet cedar needles. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.');}
+  }
+  if(S.week.news[d]>=0) say('📰 '+NEWS[S.week.news[d]].t);
+  if(d>0) say(FLAVOR_MORNING[Math.floor(Math.random()*FLAVOR_MORNING.length)]);
+}
+function endDay(where){
+  processTimed();
+  const d=day(), notes=[];
+  if(where==='home') stash();
+  // power outage
+  if(stormNight(d)){
+    S.stats.outageNights++;
+    if(where==='home'&&S.homeGas>=3){S.homeGas-=3;notes.push('⚡ The wind knocks out the island’s power. Your generator burns 3 gallons of gas keeping the fridge and the heat on.')}
+    else {if(S.pantry>0){S.pantry--;}adj('health',-6);adj('stress',8);notes.push(where==='home'?'⚡ The power goes out and you have no gas for the generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.')}
+  }
+  // eat
+  if(S.ateOut===d){notes.push('🍔 Dinner was takeout from the Lakeshore. The pantry gets a night off.')}
+  else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
+  else if(S.pantry>0){S.pantry--;}
+  else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
+  if(where!=='home'&&S.carried>0&&!S.cooler){const lost=Math.ceil(S.carried/2);S.carried-=lost;notes.push(`🥛 ${lost} day${lost>1?'s':''} of groceries spoiled overnight. No cooler.`)}
+  if(d<5&&!S.worked[d]){adj('job',-15);notes.push('💼 You missed work today. Your boss’s text just says “??”.')}
+  if(d===2&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
+  if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}
+  if(S.injury&&!S.injury.treated){adj('health',-8);notes.push('🤕 Your untreated ankle throbs all night.')}
+  if(where==='home'){adj('stress',-14);adj('health',3)}
+  else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push('🪑 You sleep sitting up in the Steilacoom terminal waiting room. The vending machine hums all night.')}
+  else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
+  if(S.stress>=100){adj('job',-8);adj('health',-8);S.stress=65;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
+  notes.forEach(n=>S.log.push({t:S.t,s:n}));
+  if(S.health<=0) return gameOver('health');
+  if(S.job<=0) return gameOver('fired');
+  if(d===6) return finish();
+  S.cur=d+1; S.t=(d+1)*1440+330; S.priority=false;
+  if(where!=='home') S.loc='stDock';
+  uiNarr=[];
+  say(`${DAYS[d+1]}, 5:30 AM.`);
+  startDay();
+  modal(`Good night, ${DAYS[d]}`,`${notes.length?notes.map(n=>'<p>'+n+'</p>').join(''):'<p>A quiet night. The ferry horn sounds once, far off.</p>'}<p>${S.pantry} day${S.pantry===1?'':'s'} of food left in the pantry.</p>`,[{l:`Wake up: ${DAYS[d+1]}`,fn:()=>{}}]);
+  render();
+}
+function afterAction(){
+  processTimed();
+  const late=day()*1440+23*60+30;
+  if(S.t>=late&&S.loc!=='home'){
+    if(L[S.loc].side==='I'){S.loc='home';const c=S.cars.find(c=>c.id==='isl');say('It’s late. You make it home somehow.');if(S.carried){S.pantry+=S.carried;S.carried=0}return endDay('home')}
+    return strandedModal();
+  }
+  render();
+}
+function strandedModal(){
+  modal('Stranded on the mainland','<p>It’s late and you’re not getting home tonight. Where do you sleep?</p>',[
+    {l:'🪑 Steilacoom terminal waiting room',s:'Free. It’s open all night. It is not comfortable.',fn:()=>{S.loc='stDock';endDay('terminal')}},
+    {l:'🏨 Motel in Lakewood',s:'$115. Real bed.',fn:()=>endDay('motel')},
+  ],true);
+}
+
+// ---------------- location actions ----------------
+function actions(){
+  const a=[],d=day(),m=tod(),loc=S.loc,side=L[loc].side;
+  const open=isOpen(loc);
+  if(L[loc].hours&&!open&&loc!=='work') a.push({ic:'🔒',l:'Closed right now',s:hoursTxt(loc),dis:true});
+  if(loc==='home'){
+    a.push({ic:'🛏️',l:m>=1080?'Go to bed':'Turn in early',s:`Ends the day. Eat 1 day of food (pantry: ${S.pantry}).`,cls:m>=1260?'primary':'',fn:()=>endDay('home')});
+    const isl=S.cars.find(c=>c.id==='isl'&&c.loc==='home');
+    if(isl){const src=isl.diesel?'homeDiesel':'homeGas';const g=Math.min(S[src],Math.round((isl.tank-isl.fuel)*10)/10);
+      if(S[src]>0) a.push({ic:'⛽',l:`Fuel the ${isl.diesel?'truck':'car'} from the shed`,s:`${S[src]} gal stashed. ${isl.diesel?'':'Keep 3 gal for the generator if a storm’s coming.'}`,dis:g<=0,fn:()=>{S[src]=Math.round((S[src]-g)*10)/10;isl.fuel=Math.round((isl.fuel+g)*10)/10;S.t+=10;say(`You pour ${g} gallons into the tank in the dark, spilling only a little.`);afterAction()}});}
+    if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:S.money<96,fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
+    else if(S.delivery) a.push({ic:'📦',l:'Grocery delivery on its way',s:`Due ${fmtAbs(S.delivery.due)}`,dis:true});
+    if(m<1260) a.push({ic:'☕',l:'Rest for an hour',s:'Coffee, rain, a book. Stress −8.',fn:()=>{S.t+=60;adj('stress',-8);say('You sit with coffee and watch the rain drip off the firs.');afterAction()}});
+  }
+  if(loc==='aiDock'||loc==='stDock') dockActions(a,side);
+  if(loc==='store'){
+    a.push({ic:'🪧',l:'Read the sign on the door',s:'“CLOSED. Thank you for 48 years.”',fn:()=>{S.t+=5;say('The hand-lettered sign is still taped to the glass. The gas pumps out front are bagged. The co-op flyer below it says “2027!” with three exclamation points.');afterAction()}});
+    a.push({ic:'💬',l:'Check the bulletin board',s:'20 min. Stress −6. Ferry rumors, ride shares, gas talk.',fn:gossip});
+  }
+  if(loc==='food'&&open){
+    a.push({ic:'🍔',l:'Takeout dinner — $27',s:S.ateOut===d?'Already got dinner tonight.':'Counts as tonight’s food, so the pantry is spared.',dis:S.ateOut===d||S.money<27,fn:()=>{S.ateOut=d;money(-27);S.t+=25;adj('stress',-4);say('A burger and fries in a paper sack. Not cheap, but it’s the only hot meal on the island you didn’t cook.');afterAction()}});
+  }
+  if(loc==='dale'){
+    if(!open) a.push({ic:'🌙',l:'Dale’s porch light is off',s:'Come back between 7 AM and 9 PM.',dis:true});
+    else {
+      const stock=S.daleStock[d]??(S.daleStock[d]=Math.random()<0.25?0:3+Math.floor(Math.random()*8));
+      const car=carHere();
+      if(stock<=0) a.push({ic:'🚫',l:'“Fresh out.”',s:'Dale says he hasn’t made a run this week. Try tomorrow.',dis:true});
+      else {
+        if(car&&!car.diesel){const g=Math.min(3,stock,Math.floor((car.tank-car.fuel)*10)/10);
+          a.push({ic:'⛽',l:`Buy ${g} gal into your tank — $${Math.round(g*DALE_PRICE)}`,s:`$${DALE_PRICE}/gal. Mainland price is $${GAS_PRICE}. He has ${stock} gal today.`,dis:g<=0||S.money<g*DALE_PRICE,fn:()=>{daleBuy(g,'tank')}});}
+      }
+    }
+  }
+  if(loc==='gas'&&open){
+    const car=carHere();
+    if(car){const need=Math.round((car.tank-car.fuel)*10)/10,pr=car.diesel?DIESEL_PRICE:GAS_PRICE;
+      a.push({ic:'⛽',l:`Fill up the ${car.diesel?'diesel truck':'tank'} — $${Math.round(need*pr)}`,s:`${need} gal at $${pr}/gal. Tank: ${car.fuel}/${car.tank}.`,cls:'primary',dis:need<0.5||S.money<need*pr,fn:()=>{money(-need*pr);car.fuel=car.tank;S.t+=10;say(`Full tank. ${need} gallons of ${car.diesel?'diesel':'gas'} for $${Math.round(need*pr)}. Islanders treat this as a sacred ritual now.`);afterAction()}});
+    }
+  }
+  if(loc==='lake'){
+    a.push({ic:'🦅',l:'Watch for eagles',s:'45 min. Stress −15 (once a day).',dis:S.eagleDay===d,fn:()=>{S.eagleDay=d;S.t+=45;adj('stress',-15);say('A bald eagle drops off a snag and skims the lake. For a minute nothing else matters. This is why you live here.');afterAction()}});
+  }
+  if(loc==='work') workActions(a,d,m);
+  cargoActions(a);
+  if(loc==='market'&&open){
+    const car=!!carHere();
+    [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
+  }
+  if(loc==='warehouse'&&open){
+    const car=!!carHere();
+    a.push({ic:'📦',l:'Bulk haul: 8 days of food — $112',s:car?'Best value. You’ll need the trunk.':'You need a car for this.',dis:!car||S.money<112||S.carried+8>14,fn:()=>{money(-112);S.carried+=8;S.stats.food+=8;S.t+=50;say('A cart piled high: 48 eggs, a pallet of oatmeal, frozen everything. $112. Islanders shop like this for a reason.');afterAction()}});
+    if(!S.cooler) a.push({ic:'🧊',l:'Buy a big cooler — $35',s:'Groceries won’t spoil if you get stranded.',dis:S.money<35,fn:()=>{money(-35);S.cooler=true;S.t+=10;say('You buy the cooler every islander keeps in their trunk. Now you’re a local.');afterAction()}});
+  }
+  if(loc==='pharmacy'&&open){
+    a.push({ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription — $15 copay',s:S.rx?'':d>=3?'Ready at the counter.':'Not ready until Thursday.',dis:S.rx||d<3||S.money<15,fn:()=>{money(-15);S.rx=true;S.t+=20;adj('stress',-4);say('Refill in hand. One less thing.');afterAction()}});
+  }
+  if(loc==='clinic'){
+    if(!open) a.push({ic:'🔒',l:'Clinic closed',s:hoursTxt('clinic'),dis:true});
+    else if(S.appt) a.push({ic:'✅',l:'Checkup done',s:'',dis:true});
+    else if(d===2&&m>=840&&m<=885) a.push({ic:'🩺',l:'Check in for your 2:30 appointment',s:'1 hr · $40 copay',cls:'primary',fn:()=>{money(-40);S.appt=true;S.t+=60;adj('health',10);adj('stress',-5);say('The doctor says your blood pressure is “interesting” and asks about your commute. You laugh a little too hard.');afterAction()}});
+    else if(d===2&&m>885) a.push({ic:'❌',l:'You missed your 2:30 slot',s:'They can fit you in… in three weeks.',dis:true});
+    else a.push({ic:'📅',l:'Your appointment: Wednesday 2:30 PM',s:'Check in between 2:00 and 2:45.',dis:true});
+  }
+  if(loc==='urgent'&&open){
+    const inj=S.injury&&!S.injury.treated;
+    a.push({ic:'🚑',l:inj?'Get your ankle looked at — $75':'Nothing urgent today',s:inj?'About 90 min including the wait.':'',dis:!inj||S.money<75,fn:()=>{money(-75);S.injury.treated=true;S.t+=90;adj('health',12);say('Bad sprain, not broken. You leave with a brace and instructions to “stay off it,” which is funny if you live on an island.');afterAction()}});
+  }
+  return a;
+}
+function dockActions(a,side){
+  const car=carHere(), out=activeOutage(), m=tod();
+  const kD=car?findNext(side,'drive',true):null, kW=findNext(side,'walk',true);
+  const t=x=>x?(x.d>day()?`${DAYS[x.d].slice(0,3)} ${fmt(x.dep)}`:fmt(x.dep)):'none';
+  if(out) a.push({ic:'🚨',l:'Ferry service suspended',s:`${out.cause}. Check the Ferry tab.`,dis:true});
+  if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+$(FARE_CAR):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
+  a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+$(FARE_WALK):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
+  if(out&&m>=420&&m<=1140) a.push({ic:'⛵',l:'Look for the sailboat water taxi',s:'A neighbor runs people across during outages. $20, maybe.',fn:waterTaxi});
+  if(side==='M'){
+    if(!S.cars.some(c=>c.id==='beat')&&m>=360&&m<=1200) a.push({ic:'🚙',l:'Buy a mainland beater car — $700',s:'Lives in the terminal lot so you can walk on and still drive on this side.',dis:S.money<700,fn:()=>{money(-700);S.cars.push({id:'beat',name:'Mainland beater (2004 Corolla)',loc:'stDock',fuel:5,tank:12,diesel:false});S.t+=40;say('A guy from a classifieds ad meets you in the lot. 241,000 miles, one hubcap, runs great. Now you have a mainland car.');afterAction()}});
+    const isl=S.cars.find(c=>c.id==='isl');
+    if(isl&&isl.loc==='stDock'&&!isl.diesel&&m>=360&&m<=1200) a.push({ic:'🛻',l:'Trade the Subaru for an old diesel pickup — $1,400',s:'Diesel is the one fuel you can legally bring over in cans (two 5-gal DOT cans).',dis:S.money<1400,fn:()=>{money(-1400);Object.assign(isl,{name:'Island truck (old diesel pickup)',diesel:true,tank:20,fuel:Math.max(isl.fuel,4)});S.t+=60;say('You swap the Subaru for a 1999 diesel pickup that rattles like a can of bolts. But diesel can legally ride the ferry in DOT cans. You’ve beaten the system, kind of.');afterAction()}});
+    if(m>=1260||(kW&&kW.d>day())){
+      a.push({ic:'🪑',l:'Sleep in the terminal',s:'It’s open all night. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
+      a.push({ic:'🏨',l:'Get a motel in Lakewood — $115',s:'Ends the day.',cls:'danger',fn:()=>endDay('motel')});
+    }
+  }
+}
+function workActions(a,d,m){
+  if(d>=5){a.push({ic:'🌲',l:'It’s the weekend',s:'Nobody’s here.',dis:true});return}
+  if(S.worked[d]){a.push({ic:'✅',l:'Shift done for today',s:'Go home. Or shop. Probably shop.',dis:true});return}
+  if(m<420){a.push({ic:'🔒',l:'Office not open yet',s:'Opens 7:00 AM',dis:true});return}
+  if(m>=780){a.push({ic:'🙅',l:'Too late to work today',s:'Your boss already marked you absent.',dis:true});return}
+  const lateBy=Math.max(0,m-540);
+  const lateTxt=lateBy===0?'On time.':lateBy<=30?`${lateBy} min late (job −4)`:`${lateBy} min late (job −10, docked pay)`;
+  const pay=lateBy>30?Math.round(170*(1-lateBy/480)):170;
+  const start=Math.max(m,540);
+  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:lateBy<=30?-4:-10));adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
+  a.push({ic:'💼',l:'Work a full shift (until 5:00)',s:`${lateTxt} Pay ${$(pay)}.`,cls:'primary',fn:()=>doShift(1020,pay,0,lateBy?'You slink in late and work through lunch to make up for it.':'You clock in on time. Your coworkers from the mainland have no idea what that took.')});
+  if(start<825) a.push({ic:'🩺',l:'Work until 1:45, then leave',s:`Half day. ${d===2?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(825,Math.round(pay*0.55),d===2?-2:-8,'You leave at 1:45 with a mumbled explanation.')});
+}
+function cargoActions(a){
+  const c=S.cargo,car=carHere(),home=S.loc==='home';
+  if(car&&!car.diesel&&c.gas>0&&car.fuel<=car.tank-1) a.push({ic:'⛽',l:'Pour a gas can into the tank',s:`+5 gal. Tank ${car.fuel}/${car.tank}. ${c.gas} can${c.gas>1?'s':''} in your cargo.`,fn:()=>{c.gas--;car.fuel=Math.min(car.tank,Math.round((car.fuel+5)*10)/10);S.t+=8;say('Glug, glug. You pour 5 gallons in and try not to spill on your shoes.');afterAction()}});
+  if(car&&car.diesel&&c.diesel>0&&car.fuel<=car.tank-1) a.push({ic:'⛽',l:'Pour a diesel can into the truck',s:`+5 gal. Tank ${car.fuel}/${car.tank}.`,fn:()=>{c.diesel--;car.fuel=Math.min(car.tank,Math.round((car.fuel+5)*10)/10);S.t+=8;say('Diesel in. The truck sounds grateful, or maybe that’s just the rattle.');afterAction()}});
+  if(c.med>0&&S.injury&&!S.injury.treated) a.push({ic:'🩹',l:'Use medical supplies on your ankle',s:'Wrap it, ice it, pain meds. Stops it from getting worse.',fn:()=>{c.med--;S.injury.treated=true;adj('health',5);S.t+=20;say('You wrap the ankle tight and take something for the pain. Not a doctor, but it’ll hold.');afterAction()}});
+  if(!home) return;
+  if(c.food>0) a.push({ic:'🥫',l:`Put a food case in the pantry (${c.food} in cargo)`,s:'+3 days of food at home.',fn:()=>{c.food--;S.pantry+=3;S.t+=5;say('Three days of food, stacked in the pantry.');afterAction()}});
+  if(c.med>0&&(!S.injury||S.injury.treated)) a.push({ic:'🩹',l:`Use medical supplies (${c.med} in cargo)`,s:'Health +6.',dis:S.health>=100,fn:()=>{c.med--;adj('health',6);S.t+=10;say('Vitamins, cold medicine and a real bandage on that cut you’ve been ignoring.');afterAction()}});
+  if(c.gas>0) a.push({ic:'🛢️',l:`Store a gas can in the shed (${c.gas} in cargo)`,s:'+5 gal for the generator or the car.',fn:()=>{c.gas--;S.homeGas+=5;S.t+=5;say('5 gallons of gas into the shed, far from the woodstove.');afterAction()}});
+  if(c.diesel>0) a.push({ic:'🟨',l:`Store a diesel can in the shed (${c.diesel} in cargo)`,s:'+5 gal of diesel.',fn:()=>{c.diesel--;S.homeDiesel+=5;S.t+=5;say('5 gallons of diesel into the shed.');afterAction()}});
+}
+function trade(g,dir){
+  const side=L[S.loc].side,pr=price(g,side),mk=MARKETS[S.loc];
+  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell}
+  S.t+=g==='drugs'?15:5;
+  if(g==='drugs'){
+    adj('stress',dir==='sell'?8:6);
+    if(Math.random()<(mk.sting||0)+(taskForce()?0.1:0)) return arrest(S.loc==='dale'?'outside Dale’s place':'in a Lakewood motel parking lot',false);
+  }
+  const verb=dir==='buy'?'Bought':'Sold';
+  say(`${GOODS[g].ic} ${verb} 1 ${GOODS[g].n.toLowerCase()} for ${$(dir==='buy'?pr.buy:pr.sell)}.`);
+  afterAction();
+}
+window.TRADE=(g,dir)=>{uiNarr=[];trade(g,dir)};
+function marketView(){
+  const mk=MARKETS[S.loc];if(!mk)return '';
+  const side=L[S.loc].side,m=tod(),open=m>=mk.hours[0]&&m<mk.hours[1];
+  let h=`<div class="sect">Trade: ${mk.who}</div>`;
+  const n=S.week.news[day()];if(n>=0) h+=`<div class="news">📰 ${NEWS[n].t}</div>`;
+  if(side==='I'&&activeOutage()) h+=`<div class="news">🚨 Ferry’s down: island prices for food, medicine and fuel are up 50%.</div>`;
+  if(!open) return h+`<div class="news">🔒 Not trading right now. Hours: ${fmt(mk.hours[0])}–${fmt(mk.hours[1])}.</div>`;
+  const cap=capNow(),load=cargoN()+S.carried;
+  h+=`<div class="mkt">`;
+  for(const g of mk.goods){const G=GOODS[g],pr=price(g,side),other=price(g,side==='I'?'M':'I');
+    const badge=G.law==='ok'?'<span class="badge ok">Legal</span>':G.law==='lim'?'<span class="badge lim">Ferry limit 2</span>':G.law==='no-ferry'?'<span class="badge no">Not on ferry</span>':'<span class="badge no">Illegal</span>';
+    h+=`<div class="mrow"><span class="ic">${G.ic}</span><div class="mi"><b>${G.n}${badge}</b><span>${G.d}</span><div class="px">Buy <b>${$(pr.buy)}</b> · Sell <b>${$(pr.sell)}</b> · ${side==='I'?'mainland':'island'} ~${$(other.buy)}</div></div>
+    <div class="mbtns"><button onclick="TRADE('${g}','sell')" ${S.cargo[g]<=0?'disabled':''}>Sell</button><span class="own">${S.cargo[g]}</span><button class="buy" onclick="TRADE('${g}','buy')" ${S.money<pr.buy||load>=cap?'disabled':''}>Buy</button></div></div>`}
+  h+=`</div><div style="font-size:12px;color:var(--mute);margin:-2px 2px 6px">Cargo: ${load}/${cap} ${carHere()?'(car)':'(on foot)'}. Groceries in hand count too.</div>`;
+  return h;
+}
+function daleBuy(g,how){
+  money(-(g*DALE_PRICE+(how==='can'?10:0)));S.daleStock[day()]-=g;S.stats.daleGal+=g;S.t+=15;
+  const lines=['“Cash only. And you didn’t get it from me.”','Dale pours it from a jerry can that smells like a lawnmower. He won’t say how it got here.','“Price went up. Risk premium.” He taps his nose.','Dale’s dog watches you the whole time like you’re a narc.'];
+  say('🛢️ '+lines[Math.floor(Math.random()*lines.length)]);
+  if(how==='tank'){const c=carHere();c.fuel=Math.round((c.fuel+g)*10)/10;say(`+${g} gallons in the tank at $${DALE_PRICE}/gal.`)}
+
+  if(Math.random()<0.12){adj('stress',5);say('A sheriff’s deputy’s SUV rolls slowly past Dale’s driveway. Everyone suddenly gets very interested in the sky.')}
+  afterAction();
+}
+function gossip(){
+  S.t+=20;adj('stress',-6);
+  const soon=S.week.b.find(b=>b.start>S.t&&b.start<S.t+2160);
+  if(soon&&Math.random()<0.8) say(`At the counter: “Deckhand told my cousin the boat’s been making a funny noise. Wouldn’t count on it ${Math.floor(soon.start/1440)===day()?'later today':'tomorrow'}.” Noted.`);
+  else say('At the counter: '+GOSSIP[Math.floor(Math.random()*GOSSIP.length)]);
+  afterAction();
+}
+
+// ---------------- save / app shell ----------------
+const SAVE_KEY='islandtime.save', LEGACY_KEYS=['islandtime.save.v2','islandtime.save.v1'], BEST_KEY='islandtime.best';
+let saveNotice='';
+function store(){try{return window.localStorage}catch(e){return null}}
+function packSave(){return {schema:SAVE_SCHEMA,app:APP_VERSION,S,uiNarr,tab,at:Date.now()}}
+// The save is mirrored under the older key names so an older copy of the game (old install, cached phone app) still finds it.
+function saveGame(){const ls=store();if(!ls||!S)return;const keys=[SAVE_KEY,...LEGACY_KEYS];
+  try{if(S.over)keys.forEach(k=>ls.removeItem(k));else{const v=JSON.stringify(packSave());keys.forEach(k=>{try{ls.setItem(k,v)}catch(e){}})}}catch(e){}}
+// Fill in anything an older (or newer) save is missing, without touching what it has.
+function fillDefaults(obj,def){
+  for(const k in def){
+    if(obj[k]===undefined||obj[k]===null&&def[k]!==null&&typeof def[k]==='object'&&!Array.isArray(def[k])) obj[k]=JSON.parse(JSON.stringify(def[k]));
+    else if(def[k]&&typeof def[k]==='object'&&!Array.isArray(def[k])&&obj[k]&&typeof obj[k]==='object') fillDefaults(obj[k],def[k]);
+  }
+  return obj;
+}
+const num=(v,d)=>typeof v==='number'&&isFinite(v)?v:d;
+function migrate(d){
+  if(!d||typeof d!=='object'||!d.S||typeof d.S!=='object') throw new Error('not an Island Time save');
+  const from=d.schema||(d.S.cargo?2:1), x=d.S, notes=[];
+  // v1 (game 1.1): loose gas/diesel cans instead of trade cargo
+  if(from<2){
+    x.cargo=x.cargo||{food:0,med:0,gas:0,diesel:0,drugs:0};
+    if(x.canGal>0){x.cargo.gas+=Math.max(1,Math.round(x.canGal/5));notes.push('your gas can moved into trade cargo')}
+    if(x.dieselCans>0){x.cargo.diesel+=Math.max(1,Math.round(x.dieselCans/5));notes.push('your diesel cans moved into trade cargo')}
+    delete x.canGal;delete x.dieselCans;
+  }
+  fillDefaults(x,baseState());
+  // core fields must be sane numbers
+  x.t=num(x.t,330);x.cur=num(x.cur,Math.floor(x.t/1440));x.cur=Math.max(0,Math.min(6,x.cur));
+  for(const k of ['money','pantry','carried','health','stress','job']) x[k]=num(x[k],baseState()[k]);
+  if(!L[x.loc]){notes.push('a place from another version doesn’t exist here, so you’re back home');x.loc='home';}
+  // cars
+  if(!Array.isArray(x.cars)||!x.cars.length) x.cars=baseState().cars;
+  x.cars.forEach(c=>{c.tank=num(c.tank,c.diesel?20:c.id==='beat'?12:14);c.fuel=num(c.fuel,Math.min(8,c.tank));c.diesel=!!c.diesel;if(!L[c.loc])c.loc=L[x.loc].side==='I'?'home':'stDock';c.name=c.name||'Car'});
+  // cargo: unknown goods from a newer version are kept but ignored
+  for(const g in GOODS) x.cargo[g]=Math.max(0,num(x.cargo[g],0));
+  // week: regenerate whatever is missing
+  const w=x.week&&typeof x.week==='object'?x.week:{}, fresh=genWeek();
+  if(!Array.isArray(w.b)) w.b=fresh.b;
+  if(!Array.isArray(w.fog)) w.fog=fresh.fog;
+  if(w.storm===undefined) w.storm=null;
+  if(!Array.isArray(w.px)||w.px.length<7) w.px=fresh.px;
+  w.px.forEach((o,i)=>{for(const g in GOODS) if(!o[g]) o[g]=fresh.px[i][g]});
+  if(!Array.isArray(w.news)) w.news=fresh.news.map((n,i)=>i<x.cur?-1:n);
+  w.news=w.news.map(n=>typeof n==='number'&&n<NEWS.length?n:-1);
+  x.week=w;
+  if(from>SAVE_SCHEMA) notes.push(`this save is from a newer version (${d.app||'unknown'}). Anything this version doesn’t know about is kept but ignored`);
+  else if(from<SAVE_SCHEMA) notes.push(`upgraded from an older version${d.app?' ('+d.app+')':''}`);
+  return {schema:Math.max(from,SAVE_SCHEMA),app:d.app,S:x,uiNarr:Array.isArray(d.uiNarr)?d.uiNarr:[],tab:['act','ferry','todo','log'].includes(d.tab)?d.tab:'act',at:d.at,notes};
+}
+function rawSave(){const ls=store();if(!ls)return null;
+  let best=null;
+  for(const k of [SAVE_KEY,...LEGACY_KEYS]){const v=ls.getItem(k);if(!v)continue;let at=0;try{at=JSON.parse(v).at||0}catch(e){}
+    if(!best||at>best.at)best={k,v,at}}
+  return best}
+function loadSave(){
+  const r=rawSave();if(!r)return null;
+  try{const d=migrate(JSON.parse(r.v));return d.S.over?null:d}
+  catch(e){try{const ls=store();ls.setItem('islandtime.save.broken',r.v);[SAVE_KEY,...LEGACY_KEYS].forEach(k=>ls.removeItem(k))}catch(_){}
+    saveNotice='Your saved game couldn’t be read, so it was set aside. Start a new week.';return null}
+}
+function adopt(d){
+  S=d.S;uiNarr=d.uiNarr;tab=d.tab;
+  render();
+  if(d.notes&&d.notes.length) modal('Save loaded',`<p>Welcome back. Note: ${d.notes.join('; ')}.</p>`,[{l:'Continue',fn:()=>{}}]);
+  if(S.t>=day()*1440+1410&&L[S.loc].side==='M') strandedModal();
+}
+function resumeGame(){const d=loadSave();if(!d)return titleScreen();
+  try{adopt(d)}catch(e){saveNotice='That save couldn’t be loaded in this version.';titleScreen()}}
+// ---- transfer codes: move a game between the web page, the phone app and Windows
+function b64enc(str){return btoa(unescape(encodeURIComponent(str)))}
+function b64dec(b){return decodeURIComponent(escape(atob(b)))}
+function exportCode(){const d=rawSave();if(!d&&!S)return '';const obj=d?JSON.parse(d.v):packSave();return 'ISLANDTIME:'+b64enc(JSON.stringify(obj))}
+window.openTransfer=()=>{
+  const code=exportCode();
+  modal('Transfer a saved game',`<p>Copy this code to move your week to another device or version (the web page, the phone app, or Windows).</p>
+  ${code?`<textarea id="exp" readonly style="width:100%;height:70px;font-size:11px;border-radius:8px;border:1.5px solid var(--line);padding:6px">${code}</textarea>
+  <button class="act" style="margin-top:6px" onclick="copyCode()"><span class="tx"><b id="cpl">📋 Copy code</b></span></button>`:'<p><i>No game in progress to export.</i></p>'}
+  <p style="margin-top:12px">Or paste a code here to load it. It replaces your current save.</p>
+  <textarea id="imp" oninput="window.IMPV=this.value" placeholder="ISLANDTIME:…" style="width:100%;height:70px;font-size:12px;border-radius:8px;border:1.5px solid var(--line);padding:6px"></textarea>
+  <div id="imperr" style="color:var(--bad);font-size:13px"></div>`,
+  [{l:'Load pasted code',fn:importCode},{l:'Close',fn:()=>{if(!S||S.over)titleScreen()}}]);
+};
+window.copyCode=async()=>{const t=document.getElementById('exp');t.select();try{await navigator.clipboard.writeText(t.value);document.getElementById('cpl').textContent='✅ Copied'}catch(e){document.getElementById('cpl').textContent='Selected: press Ctrl+C / Copy'}};
+function importCode(){
+  const raw=(window.IMPV||document.getElementById('imp')?.value||'').trim();window.IMPV='';
+  try{
+    const body=raw.replace(/^ISLANDTIME:/,'').replace(/\s+/g,'');
+    const d=migrate(JSON.parse(b64dec(body)));
+    if(d.S.over) throw new Error('that week is already over');
+    setTimeout(()=>adopt(d),0);
+  }catch(e){setTimeout(()=>{openTransfer();const el=document.getElementById('imperr');if(el)el.textContent=/already over/.test(e.message)?'That week is already finished.':'That code didn’t work. Make sure you copied all of it, starting with ISLANDTIME:';const i=document.getElementById('imp');if(i)i.value=raw},0)}
+}
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;const b=document.getElementById('installBtn');if(b)b.style.display='block'});
+window.addEventListener('appinstalled',()=>{deferredInstall=null;const b=document.getElementById('installBtn');if(b)b.style.display='none'});
+const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+window.doInstall=async()=>{if(!deferredInstall)return;deferredInstall.prompt();try{await deferredInstall.userChoice}catch(e){}deferredInstall=null;const b=document.getElementById('installBtn');if(b)b.style.display='none'};
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
+
+// ---------------- UI ----------------
+const app=document.getElementById('app');
+function meter(v,good){const c=good?(v>60?'#8fd19e':v>30?'#f4d27a':'#ff8a70'):(v<40?'#8fd19e':v<70?'#f4d27a':'#ff8a70');return `<div class="meter"><i style="width:${v}%;background:${c}"></i></div>`}
+function sceneSVG(){
+  const m=tod(),side=L[S.loc].side,loc=S.loc;
+  const night=m<420||m>1050, dusk=(m>=960&&m<=1080)||(m>=390&&m<=480);
+  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:['#a9c3cc','#dfe6e1'];
+  const foggy=S.week.fog[day()]&&m<660&&m>=360;
+  const water=night?'#132d38':'#2c5f6e';
+  const out=activeOutage();
+  let fg='';
+  if(side==='I'){
+    for(let i=0;i<14;i++){const x=i*36+(i%2)*10-10,h=60+((i*37)%40);fg+=`<polygon points="${x},170 ${x+18},${170-h} ${x+36},170" fill="${night?'#13261f':'#2f5d4a'}"/>`}
+    if(loc==='home') fg+=`<rect x="190" y="112" width="70" height="40" fill="#7a5a3c"/><polygon points="184,114 225,88 266,114" fill="#4a3426"/><rect x="216" y="128" width="16" height="24" fill="#3a2a1e"/><rect x="198" y="122" width="12" height="10" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
+    if(loc==='store') fg+=`<rect x="150" y="104" width="130" height="50" fill="#e8dcc0"/><rect x="146" y="98" width="138" height="10" fill="#8a3b22"/><text x="215" y="122" text-anchor="middle" font-size="11" font-family="DM Sans" font-weight="700" fill="#2f3a3a">GENERAL STORE</text><rect x="200" y="130" width="30" height="24" fill="#5a4a3a"/><rect x="196" y="126" width="38" height="10" fill="#b8402a" transform="rotate(-8 215 131)"/><text x="215" y="134" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="DM Sans" transform="rotate(-8 215 131)">CLOSED</text><rect x="300" y="128" width="14" height="26" fill="#ddd"/><rect x="298" y="124" width="18" height="12" fill="#8a8a8a" opacity=".8"/>`;
+    if(loc==='dale') fg+=`<rect x="170" y="116" width="80" height="38" fill="#6d5a45"/><polygon points="164,118 210,96 256,118" fill="#4b4b4b"/><rect x="262" y="132" width="16" height="22" rx="3" fill="#b8402a"/><rect x="282" y="134" width="16" height="20" rx="3" fill="#c98a12"/><rect x="200" y="128" width="20" height="26" fill="#2d241b"/>`;
+    if(loc==='food') fg+=`<rect x="160" y="108" width="120" height="46" fill="#d7c7a5"/><rect x="156" y="102" width="128" height="9" fill="#2f5d4a"/><rect x="175" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/><rect x="235" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
+    if(loc==='lake') fg=`<ellipse cx="240" cy="150" rx="200" ry="22" fill="${water}"/>`+fg.replace(/170/g,'135')+`<path d="M300 60 q10 -6 20 0 q10 -6 20 0" stroke="#222" stroke-width="3" fill="none"/>`;
+  } else {
+    const b=[[10,50],[60,70],[120,40],[170,85],[230,55],[290,65],[350,45],[400,75],[440,50]];
+    b.forEach(([x,h],i)=>{fg+=`<rect x="${x}" y="${170-h}" width="44" height="${h}" fill="${night?'#1a2730':'#5d6b70'}"/>`;if(night)for(let w=0;w<3;w++)fg+=`<rect x="${x+8+w*12}" y="${178-h}" width="6" height="6" fill="#f4d27a" opacity=".7"/>`});
+  }
+  if(loc==='gas') fg+=`<rect x="140" y="104" width="200" height="10" fill="#b8402a"/><rect x="160" y="114" width="8" height="40" fill="#ccc"/><rect x="312" y="114" width="8" height="40" fill="#ccc"/><rect x="215" y="130" width="16" height="24" fill="#eee"/><rect x="250" y="130" width="16" height="24" fill="#eee"/><rect x="0" y="154" width="480" height="16" fill="#4a4a48"/>`;
+  const dock=(loc==='aiDock'||loc==='stDock');
+  let ferry='';
+  if(dock){
+    fg=`<rect x="0" y="150" width="200" height="20" fill="#6b6b5f"/><rect x="170" y="140" width="50" height="10" fill="#7d7d70"/>`+(side==='I'?fg.replace(/<polygon[^>]*>/g,(p,i)=>i%3?'':p):'');
+    if(!out) ferry=`<g class="bob"><rect x="230" y="122" width="170" height="22" rx="4" fill="#f4f1ea"/><rect x="230" y="138" width="170" height="8" fill="#2f5d4a"/><rect x="290" y="104" width="50" height="20" fill="#f4f1ea"/><rect x="295" y="108" width="40" height="7" fill="#2a3d45"/><rect x="310" y="92" width="8" height="14" fill="#e3642e"/></g>`;
+    else ferry=`<text x="300" y="130" text-anchor="middle" font-size="13" font-weight="700" font-family="DM Sans" fill="#ffdfd6">NO BOAT</text>`;
+  }
+  const sun=night?`<circle cx="400" cy="34" r="12" fill="#f3efe0"/>`:`<circle cx="${80+((m-420)/630)*320}" cy="${50-Math.sin(((m-420)/630)*Math.PI)*25}" r="16" fill="#fbeaa8" opacity=".9"/>`;
+  const rainier=(!night&&!foggy)?`<polygon points="300,95 360,50 372,58 380,52 440,95" fill="#c9d3dc"/><polygon points="345,62 360,50 372,58 380,52 395,64 380,62 370,66 358,60" fill="#fff"/>`:'';
+  return `<svg viewBox="0 0 480 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs>
+  <rect width="480" height="170" fill="url(#sk)"/>${sun}${rainier}<rect y="95" width="480" height="75" fill="${water}"/>
+  <path d="M0 108 h480 M0 118 h480" stroke="#fff" stroke-opacity=".08"/>${ferry}${fg}${foggy?'<rect width="480" height="170" fill="#e8ecea" opacity=".55"/>':''}</svg>`;
+}
+function hud(){
+  const d=day();
+  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">${DATES[d]} · Day ${d+1} of 7</div></div><div class="hud-time">${fmt(S.t)}</div></div>
+  <div class="stats">
+   <div class="stat"><small>Cash</small><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
+   <div class="stat"><small>Food</small><b>${S.pantry}${S.carried?'<span style="font-size:10px;opacity:.7">+'+S.carried+'</span>':''}d</b>${meter(Math.min(100,S.pantry*20),true)}</div>
+   <div class="stat"><small>Health</small><b>${S.health}</b>${meter(S.health,true)}</div>
+   <div class="stat"><small>Stress</small><b>${S.stress}</b>${meter(S.stress,false)}</div>
+   <div class="stat"><small>Job</small><b>${S.job}</b>${meter(S.job,true)}</div>
+  </div></div>`;
+}
+function render(){
+  if(S.over) return;
+  const loc=S.loc,out=activeOutage(),d=day();
+  let h=hud();
+  if(out) h+=`<div class="alertbar">🚨 Rider Alert: ferry service suspended (${out.cause}).</div>`;
+  else if(S.week.fog[d]&&tod()<660) h+=`<div class="alertbar fog">🌫️ Fog: morning sailings running ${S.week.fog[d]}+ min late.</div>`;
+  h+=`<div class="scene">${sceneSVG()}<div class="place"><h2>${L[loc].ic} ${L[loc].name}</h2><div>${L[loc].desc}${L[loc].hours&&loc!=='work'?' · '+hoursTxt(loc):''}</div></div></div>`;
+  h+=`<div class="content">${tab==='act'?actView():tab==='ferry'?ferryView():tab==='todo'?todoView():logView()}</div>`;
+  const pending=todoItems().filter(x=>x.urgent).length;
+  h+=`<nav class="tabs">${[['act','🧭','Here'],['ferry','⛴️','Ferry'],['todo','📋','To-do'],['log','📜','Log']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}${k==='todo'&&pending?'<span class="dot"></span>':''}${k==='ferry'&&out?'<span class="dot"></span>':''}</button>`).join('')}</nav>`;
+  app.innerHTML=h;
+  saveGame();
+}
+window.setTab=k=>{tab=k;render();window.scrollTo(0,0)};
+let ACTS=[];
+function actView(){
+  ACTS=[];
+  let h='';
+  if(uiNarr.length) h+=`<div class="narr">${uiNarr.slice(-4).map(s=>'<p>'+s+'</p>').join('')}</div>`;
+  const cars=S.cars.map(c=>`<span class="tag ${c.fuel<1.5?'bad':c.loc===S.loc?'good':''}">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${c.loc===S.loc?'here':'at '+L[c.loc].name.replace(' Ferry Landing',' landing').replace(' Ferry Terminal',' terminal')} · ⛽${c.fuel}/${c.tank}</span>`).join('');
+  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
+  const acts=actions();
+  h+=marketView();
+  if(acts.length){h+='<div class="sect">Do something</div>';acts.forEach(a=>{const i=ACTS.push(a.fn)-1;h+=`<button class="act ${a.cls||''}" ${a.dis?'disabled':''} onclick="ACT(${i})"><span class="ic">${a.ic}</span><span class="tx"><b>${a.l}</b>${a.s?'<span>'+a.s+'</span>':''}</span></button>`})}
+  h+=`<div class="sect">Go somewhere${L[S.loc].side==='I'?' on the island':' on the mainland'}</div>`;
+  Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side).forEach(k=>{
+    const opts=travelOpts(k);
+    h+=`<div class="dest"><div class="dn"><b>${L[k].ic} ${L[k].name}</b><span>${L[k].hours?hoursTxt(k):''}</span></div><div class="chips">${opts.map(o=>{const i=ACTS.push(()=>go(k,o))-1;return `<button class="chip" ${o.dis||(o.cost&&o.m==='bus'&&S.money<o.cost)?'disabled':''} onclick="ACT(${i})">${o.l}</button>`}).join('')}</div></div>`;
+  });
+  if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">To reach the mainland, go to the ferry landing.</p>`;
+  if(L[S.loc].side==='M'&&S.loc!=='stDock') h+=`<p class="small-note" style="color:var(--mute)">To get home, head back to the Steilacoom terminal.</p>`;
+  return h;
+}
+window.ACT=i=>{uiNarr=[];ACTS[i]&&ACTS[i]()};
+function ferryView(){
+  const d=day(),out=activeOutage();
+  const col=(side,deps)=>deps.map(dep=>{const s=sailing(side,d,dep,'walk',true);const abs=d*1440+dep;
+    const past=abs<S.t;const st=s.cancel?`<span class="st x">CANCELED</span>`:s.passenger?`<span class="st p">PASS. ONLY</span>`:s.delay?`<span class="st d">+${s.delay} late</span>`:`<span class="st ok">${s.ketron?'via Ketron':'on time'}</span>`;
+    return `<div class="row ${past?'past':''}"><span>${fmt(dep)}</span>${st}</div>`}).join('');
+  let h=`<div class="board"><h3>⛴️ Today’s sailings · ${DAYS[d]}</h3><div style="font-size:12px;color:#9fc0c8">Status as of ${fmt(S.t)}. Things can change without warning.</div>
+   <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',AI_DEPS)}</div><div><div class="colh">Leave Steilacoom</div>${col('M',ST_DEPS)}</div></div></div>`;
+  const alerts=S.week.b.filter(b=>b.start<=S.t).map(b=>`<p>🚨 <b>${fmtAbs(b.start)}</b>: service suspended, ${b.cause}. ${S.t>=b.end?`<span style="color:var(--good)">Restored ${fmtAbs(b.end)}.</span>`:'<b>No restoration estimate.</b>'}</p>`).join('');
+  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}</div>`;
+  h+=`<div class="sect">Fuel & the ferry (current situation)</div><div class="rules">
+  <p>⛽ <b>No gas or diesel is sold on Anderson Island.</b> The General Store, the island’s only gas station, closed Feb 2, 2026. A food co-op hopes to reopen it and the pumps in 2027.</p>
+  <p>🚫 <b>Gasoline:</b> allowed aboard only in a vehicle’s or boat’s own built-in tank. Spare gas cans, <b>full or empty</b>, are prohibited. County policy cites federal hazmat rules for ferries (49 CFR 176.76) and state law (RCW 9.91.025, unlawful transit conduct). Violators must dispose of the fuel and container, can be cited, and repeat offenders can be barred from the ferry.</p>
+  <p>✅ <b>Exemptions the county allows:</b></p>
+  <p>• <b>Diesel:</b> up to two 5-gallon DOT-approved containers in a vehicle, marked as diesel, sealed, upright and secured. A DOT-approved slip tank fastened in a pickup bed is also allowed.<br>• <b>Trailered boats:</b> two Coast Guard-approved outboard fuel tanks, up to 6 gallons each.<br>• <b>Propane:</b> up to two portable tanks (each ≤100 lb water capacity), shut off and secured, plus RV tanks.<br>• <b>Fuel runs:</b> tankers cross on Monday runs. With hazmat aboard, only essential personnel (crew and the tanker driver) may ride, so those sailings are closed to the public.</p>
+  <p>⚖️ <b>Status:</b> Washington State Ferries carries gas cans under a federal hazmat special permit. Pierce County’s ferry has none. In January 2026 the island’s citizens’ advisory board petitioned to allow cans, and the Coast Guard reportedly signaled it might approve 2-gallon cans if the county applied. On Feb 28, 2026, the County Executive refused, citing about $250K in startup costs, $300–500K a year, and passenger capacity dropping from 325 to 16 on sailings carrying cans. As of mid-2026 the ban stands and the advisory board is still working on a permit approach.</p>
+  <p class="small-note" style="color:var(--mute)">In the game, Dale and “smuggled gas” are fiction. Smuggling gas on a passenger ferry is illegal and a real fire hazard.</p></div>`;
+  h+=`<div class="sect">Trading: what’s legal on the boat</div><div class="rules">
+  <p>🥫🩹 <b>Food and medical supplies:</b> legal to buy, sell and carry.</p>
+  <p>🟨 <b>Diesel:</b> two 5-gal DOT cans per vehicle. Extras, or diesel carried on foot, get left on the dock.</p>
+  <p>🟥 <b>Gasoline cans:</b> legal to sell, banned on the ferry. Caught: $150 citation, can seized. Second time: barred from the ferry.</p>
+  <p>📦 <b>Illicit drugs:</b> illegal everywhere. Caught at the ferry or by an undercover buyer: arrest, $750 bail, five hours lost, and a big hit to your job. A second arrest ends the game.</p>
+  <p>Inspection odds go up with every contraband item you carry, and way up when the sheriff’s task force rides the boat. The neighbor’s sailboat isn’t inspected.</p></div>`;
+  h+=`<div class="sect">How the ferry works</div><div class="rules">
+  <p>🕐 <b>Be in line 20 minutes before departure</b>, cars and walk-ons alike, or you don’t board.</p>
+  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(FARE_CAR)} with a car, ${$(FARE_WALK)} on foot. Leaving the island is free.</p>
+  <p>🚗 Commute-hour boats fill up with cars. Friday afternoon and Sunday evening are the worst. Walk-ons always fit.</p>
+  <p>🔧 When the boat breaks down there’s no second boat this time of year. Long outages eventually get a passenger-only backup.</p>
+  <p class="small-note" style="color:var(--mute)">This is a game schedule, inspired by the real Steilacoom–Anderson Island–Ketron route. For real sailings, check Pierce County’s ferry page.</p></div>`;
+  return h;
+}
+function todoItems(){
+  const d=day(),m=tod(),it=[];
+  for(let i=0;i<5;i++) it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=780&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):'9:00–5:00, Lakewood',urgent:i===d&&!S.worked[i]&&m<780});
+  it.push({ok:S.appt,fail:S.apptMissed||(d>2)||(d===2&&m>885&&!S.appt),l:'Doctor’s appointment',s:'Wednesday 2:30 PM, Medical Clinic (Tacoma). Arrive 2:00–2:45.',urgent:d===2&&!S.appt&&m<=885});
+  it.push({ok:S.rx,fail:false,l:'Pick up prescription refill',s:d<3?'Ready Thursday at the Lakewood pharmacy. Run out Saturday night.':'Ready now at the Lakewood pharmacy.',urgent:d>=3&&!S.rx});
+  it.push({ok:S.pantry>=2,fail:false,l:'Keep the pantry stocked',s:`${S.pantry} day${S.pantry===1?'':'s'} at home${S.carried?`, ${S.carried} in hand`:''}. You eat 1 per night.`,urgent:S.pantry<1});
+  const isl=S.cars.find(c=>c.id==='isl');
+  it.push({ok:isl.fuel>=3,fail:false,l:`Keep gas in the ${isl.diesel?'truck':'island car'}`,s:`${isl.fuel}/${isl.tank} gal. No gas on the island: fill up on the mainland, or pay Dale.`,urgent:isl.fuel<1.5});
+  if(S.week.storm&&S.week.storm.day>=d) it.push({ok:S.homeGas>=3,fail:false,l:'Generator gas for the storm',s:`Gale on ${DAYS[S.week.storm.day]}. You need 3 gal in the shed or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
+  if(S.injury) it.push({ok:S.injury.treated,fail:false,l:'Get your ankle treated',s:'Urgent Care in DuPont, 8 AM–8 PM. Nothing on the island.',urgent:!S.injury.treated});
+  return it;
+}
+function todoView(){
+  return `<div class="sect">This week</div>`+todoItems().map(x=>`<div class="todo"><span class="ck">${x.ok?'✅':x.fail?'❌':x.urgent?'⚠️':'⬜'}</span><div><b>${x.l}</b><span>${x.s}</span></div></div>`).join('')+
+  `<div class="sect">Survive until Sunday night</div><div class="rules"><p>Out of cash? Ferry fares, rideshares and motels go on the credit card, and it counts against your score.</p><p>Health 0: medevac off the island. Job 0: fired. Stress is everything.</p><p>Score: cash + health + job − stress, plus bonuses for not getting stranded.</p></div>`;
+}
+function logView(){return `<div class="log">${S.log.slice().reverse().map(e=>`<p><em>${DAYS[Math.floor(e.t/1440)].slice(0,3)} ${fmt(e.t)}</em>${e.s}</p>`).join('')}</div>`}
+
+// ---------------- modal & crossing ----------------
+let MB=[];
+function modal(title,body,btns,noClose){
+  MB=btns;
+  const el=document.createElement('div');el.className='modal-bg';el.id='mbg';
+  el.innerHTML=`<div class="modal"><h2>${title}</h2><div class="mb">${body}</div>${btns.map((b,i)=>`<button class="act ${i===0?'primary':''}" onclick="MBTN(${i})"><span class="tx"><b>${b.l}</b>${b.s?'<span>'+b.s+'</span>':''}</span></button>`).join('')}</div>`;
+  document.body.appendChild(el);
+}
+window.MBTN=i=>{const el=document.getElementById('mbg');el&&el.remove();const f=MB[i]&&MB[i].fn;f&&f();if(S&&!S.over&&!document.querySelector('.title,.end'))render()};
+function crossing(side,cap,cap2,done,sail){
+  const el=document.createElement('div');el.className='cross';
+  const rev=side==='M';
+  const boat=sail?`<g><path d="M0 40 h70 l-10 14 h-50 z" fill="#f4f1ea"/><path d="M34 38 V-30 L70 34 Z" fill="#fff"/><path d="M32 36 V-10 L6 34 Z" fill="#e3e0d6"/></g>`
+    :`<g><rect x="0" y="20" width="120" height="20" rx="4" fill="#f4f1ea"/><rect x="0" y="34" width="120" height="8" fill="#2f5d4a"/><rect x="42" y="4" width="36" height="17" fill="#f4f1ea"/><rect x="46" y="8" width="28" height="6" fill="#2a3d45"/><rect x="56" y="-8" width="7" height="12" fill="#e3642e"/></g>`;
+  el.innerHTML=`<svg viewBox="0 0 480 260"><rect width="480" height="260" fill="#12313b"/><rect y="150" width="480" height="110" fill="#1d4b5a"/>
+   <path d="M0 150 q40 -30 90 -20 l20 20z" fill="#2f5d4a"/><path d="M380 150 q50 -40 100 -25 v25z" fill="#2f5d4a"/>
+   <text x="20" y="180" fill="#9fc0c8" font-size="12" font-family="DM Sans">${rev?'Anderson Is.':'Anderson Is.'}</text><text x="460" y="180" text-anchor="end" fill="#9fc0c8" font-size="12" font-family="DM Sans">${rev?'Steilacoom':'Steilacoom'}</text>
+   <g transform="translate(40,${sail?100:110})"><g class="boat ${rev?'rev':''}"><g class="bob">${boat}</g></g></g>
+   <path d="M0 200 h480 M0 222 h480" stroke="#fff" stroke-opacity=".08"/></svg>
+   <div class="cap">${cap}</div><div class="cap2">${cap2}</div><div class="cap2" style="margin-top:18px">tap to skip</div>`;
+  document.body.appendChild(el);
+  let fin=false;const end=()=>{if(fin)return;fin=true;el.remove();done()};
+  el.onclick=end;setTimeout(end,2900);
+}
+
+// ---------------- endings ----------------
+function scoreOf(){
+  const s=S.stats;
+  const cargoVal=Object.keys(GOODS).reduce((a,g)=>a+S.cargo[g]*price(g,'M').sell,0);
+  const bonus=cargoVal-S.drugCharges*300-S.citations*200+(s.stranded===0?150:0)+(S.appt?100:0)+(S.rx?60:0)+(Object.keys(S.worked).length*40);
+  return Math.round(S.money+S.health*4+S.job*4-S.stress*3+bonus);
+}
+function gradeOf(sc){
+  if(sc>=2000) return ['A','Born & Raised Islander','You read the boat like the tide. The General Store regulars nod at you now.'];
+  if(sc>=1650) return ['B','Ferry-Hardened','You’ve got a cooler in the trunk and the schedule memorized. Mostly.'];
+  if(sc>=1300) return ['C','Still Figuring It Out','You survived. The ferry won a few rounds.'];
+  if(sc>=900) return ['D','Considering Lakewood Apartments','You’ve started browsing mainland rentals “just to look.”'];
+  return ['F','Moving Back to the Mainland','The island is beautiful. You’ll visit. On a Tuesday. Not a Friday.'];
+}
+function finish(){S.over=true;endScreen('You made it to Sunday night','You survived a week of island life.')}
+function gameOver(why){S.over=true;document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
+  const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
+  endScreen(T[0],T[1],true)}
+function endScreen(h1,sub,lost){
+  const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
+  saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
+  app.innerHTML=`<div class="end"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'}</div><h1>${h1}</h1><p>${sub}</p>
+  <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${g[0]}</div><div><b style="font-family:Fraunces;font-size:20px">${g[1]}</b><div style="color:var(--mute);font-size:14px">${g[2]}</div></div></div>
+  <div class="kv"><span>Score</span><b>${sc}${typeof newBest!=='undefined'&&newBest?' 🏆 new best':''}</b></div>${best!=null&&!isNaN(best)?`<div class="kv"><span>Previous best</span><b>${best}</b></div>`:''}
+  <div class="kv"><span>Cash left</span><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
+  <div class="kv"><span>Health / Job / Stress</span><b>${S.health} / ${S.job} / ${S.stress}</b></div>
+  <div class="kv"><span>Workdays completed</span><b>${Object.keys(S.worked).length} of 5</b></div>
+  <div class="kv"><span>Doctor’s appointment</span><b>${S.appt?'Made it':'Missed'}</b></div>
+  <div class="kv"><span>Ferry crossings</span><b>${s.crossings}</b></div>
+  <div class="kv"><span>Hours spent waiting for the boat</span><b>${(s.waited/60).toFixed(1)}</b></div>
+  <div class="kv"><span>Times the boat was full</span><b>${s.bumps}</b></div>
+  <div class="kv"><span>Nights stranded</span><b>${s.stranded}</b></div>
+  <div class="kv"><span>Spent on fares</span><b>${$(s.fares)}</b></div>
+  <div class="kv"><span>Gallons bought from Dale</span><b>${s.daleGal}</b></div>
+  <div class="kv"><span>Gallons you smuggled / citations</span><b>${s.smuggled} / ${S.citations}</b></div>
+  <div class="kv"><span>Nights without power</span><b>${s.outageNights}</b></div>
+  <div class="kv"><span>Trading: bought / sold</span><b>${$(s.bought)} / ${$(s.sold)}</b></div>
+  <div class="kv"><span>Drug runs / arrests</span><b>${s.drugRuns} / ${s.arrests}</b></div>
+  <div class="kv"><span>Ferry outages this week</span><b>${S.week.b.filter(b=>b.start<S.t).length}</b></div>
+  <button class="big" style="width:100%;margin-top:22px" onclick="newGame();tab='act';render()">Play another week</button><button class="act" style="margin-top:10px;justify-content:center" onclick="titleScreen()"><span class="tx" style="text-align:center"><b>Back to title</b></span></button></div>`;
+  window.scrollTo(0,0);
+}
+
+// ---------------- title ----------------
+function titleScreen(){
+  app.innerHTML=`<div class="title"><div class="art"><svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbcc4"/><stop offset="1" stop-color="#e2e6dc"/></linearGradient></defs><rect width="480" height="250" fill="url(#ts)"/><rect y="96" width="480" height="154" fill="#1d4b5a"/>
+   <polygon points="250,95 330,25 345,36 356,28 440,95" fill="#e9eef0"/><polygon points="310,43 330,25 345,36 356,28 375,45 355,42 342,48 328,40" fill="#fff"/>
+   ${Array.from({length:16},(_,i)=>{const x=i*32-10,h=50+((i*29)%45);return `<polygon points="${x},96 ${x+16},${96-h} ${x+32},96" fill="#2f5d4a"/>`}).join('')}
+   <g transform="translate(150,150)"><g class="bob"><rect x="0" y="20" width="170" height="24" rx="4" fill="#f4f1ea"/><rect x="0" y="38" width="170" height="9" fill="#2f5d4a"/><rect x="60" y="2" width="50" height="20" fill="#f4f1ea"/><rect x="65" y="6" width="40" height="7" fill="#2a3d45"/><rect x="80" y="-12" width="9" height="16" fill="#e3642e"/></g></g>
+   <path d="M0 210 h480 M0 230 h480" stroke="#fff" stroke-opacity=".1"/></svg></div>
+  <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
+  <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
+  <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Wednesday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
+  ${(()=>{const d=loadSave();return d?`<button class="big" onclick="resumeGame()">Continue: ${DAYS[d.S.cur]} ${fmt(d.S.t)} ⛴️</button><button class="ghost" onclick="newGame();tab='act';render()">Start a new week</button>`:`<button class="big" onclick="newGame();tab='act';render()">Start Monday ⛴️</button>`})()}
+  <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
+  ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}
+  <button id="installBtn" class="ghost" style="display:${deferredInstall&&!isStandalone()?'block':'none'}" onclick="doInstall()">📲 Install as an app</button>
+  ${!isStandalone()&&isIOS()?'<div class="hint">📲 <b>Play it like an app:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It works offline, too.</div>':''}
+  <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun. The schedule, prices and people are made up. The store closure and the fuel rules are real as of mid-2026.</div></div></div>`;
+}
+titleScreen();
+</script>
+</body>
+</html>

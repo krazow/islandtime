@@ -1,0 +1,23 @@
+{
+  "name": "Island Time: An Anderson Island Ferry Game",
+  "short_name": "Island Time",
+  "description": "Survive a week of island life on Anderson Island, WA: ferry breakdowns, groceries, doctor visits and no gas on the island.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12313b",
+  "theme_color": "#12313b",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "screenshots": [
+    {"src": "screenshots/title.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Title screen"},
+    {"src": "screenshots/ferry.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Ferry board with a rider alert"},
+    {"src": "screenshots/dale.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Buying gas on an island with no gas station"}
+  ]
+}
