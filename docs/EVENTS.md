@@ -83,6 +83,10 @@ Chains that don't fire by the end of that morning are dropped. `window.forceEven
 | `phone_saves` | wake (chained by outages) | Phone alarm users with battery: the alarm works through the outage |
 | `slept_through` | wake | 7% chance with the phone alarm: you sleep through the gentle chime (20–45 min late) |
 | `gen_saves` | wake (chained) | Your generator ran overnight: fridge, heat, water and phone charging all kept going |
+| `school_bus`, `oro_bay` | tripMid | Stuck behind the school bus (weekday mornings and afternoons); the scenic way past Oro Bay |
+| `garage_sale` | tripMid (weekends) | Buy a used generator, canned food or a battery pack |
+| `fire_pancakes` | wake (Saturday) | Fire District #27 pancake breakfast |
+| `museum`, `line_cookie` | arrive | Historical Society photos at the old store; a cookie in the ferry line |
 | `pajama_fred` | arrive, bingo (between) | Pajama Fred, an island fixture in flannel pajama pants and slippers, asks for a cigarette at the ferry landing, the old store, the Riv, or between bingo games. Give him one (you can buy a pack at the Steilacoom gas station), say no, or spot him $2. Become friends and he passes along ferry tips, including real heads-ups about upcoming breakdowns. Up to 3 times a week |
 | `table_taken` | bingo (start) | Only if you reserved a table: strangers are in it. Point out the reservation, squeeze in (maybe meet the Hendersons), or take the seat by the bathrooms |
 | `no_seat` | bingo (start) | No reservation: a folding chair under the speaker |
@@ -111,6 +115,23 @@ Bingo events can delay the night (`S.bingo.delay` minutes, added to the 8:30 PM 
   - Fill a can from your shed at home and carry it to the car yourself.
   - Buy a can at Dale's.
 - Gas cans are still banned on the ferry, full or empty.
+
+## Friendships and favors
+
+Friends have a level (1–3) based on points: 3 points for level 2, 6 for level 3. You earn points through favors (+2), shared bingo nights (+1) and helping events. A favor that expires costs −1. `friendPts(id, n)` adds points and announces level-ups with a tile.
+
+- **Favors** come from the `favor_ask` wake event and are defined in `FAVORS`. Each one is a short errand: buy something somewhere and deliver it, or just go somewhere. It's due in two days, and the actions appear at the right location.
+- **Perks** are defined in `PERKS`:
+  - **Sam:** level 2 gives morning rides on request, level 3 brings groceries (`sam_groceries`).
+  - **Walt:** level 2 is a job reference (+15% interview odds), level 3 is the Friday fish fry (`fish_fry`).
+  - **Fred:** level 2 always passes on breakdown rumors, level 3 tops off your tank (`fred_topoff`).
+  - **The Hendersons:** level 2 means weekend dinners (`henderson_dinner`).
+
+## Jobs, month mode and the co-op
+
+- `JOBS` defines the employers: Lakewood office, the Riv, the Tacoma hospital and the DuPont warehouse. Each has a location, hours, pay and workdays. Losing your job sets `S.emp = null`; you look for work, apply (`jobModal`), interview (`jobActions`) and get hired.
+- **Month mode** (`S.mode = 'month'`): Sunday night calls `weekRollover()`, which resets weekly state, generates a new week and moves to `S.weekNo + 1`. The doctor's follow-up is every other week (`apptActive()`).
+- **Co-op:** `S.coop.you` (your pledges) plus `S.coop.town` (neighbors, nightly). When that reaches `COOP_GOAL` the store reopens, with groceries and gas pumps (`coopActions`).
 
 ## Bingo at the Riv
 

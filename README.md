@@ -19,10 +19,23 @@
 - **Ferry:** be in line 20 minutes early. Fog delays, commute boats fill up, Monday fuel runs cancel sailings, and breakdowns can strand you for a day or more. Then there's the neighbor's sailboat water taxi, the passenger-only backup boat, or a night in the Steilacoom terminal.
 - **Food:** the island's only store closed in February 2026. Shop on the mainland, order delivery, or get takeout.
 - **Gas:** there's none on the island, and gas cans are banned on the ferry. Drive over to fill up, pay Dale $12 a gallon, switch to diesel (two DOT cans are legal), or risk smuggling.
-- **Medical:** make Wednesday's doctor's appointment in Tacoma, pick up your prescription, and treat that sprained ankle.
+- **Medical:** make Thursday's doctor's appointment in Tacoma, pick up your prescription, and treat that sprained ankle.
 - **Weather:** a November gale can knock out the power. Keep generator gas in the shed.
 - **Island life:** power outages that reset your alarm clock and kill the well pump, dead car batteries with no tow truck on the island, trees down on the road, and neighbors who become friends (and give you rides). Wednesday night is **Bingo at the Riv**, hosted by the American Legion, with proceeds benefiting the Anderson Island Historical Society, Pierce County Fire District #27 or the Anderson Island Elementary Booster Club. Adding new events is easy: see [docs/EVENTS.md](docs/EVENTS.md).
 - **Trading:** import food, medical supplies and fuel to the island and sell at island prices, which spike when the ferry is down. Or take a much bigger risk with illicit drugs, where a deputy's K-9 on the car deck or an undercover buyer means arrest.
+
+### New in 1.8
+- **Difficulty:** 🌲 *Islander* (easier), ⛴️ *Normal*, or 🔥 *Ferry Hell* (summer tourists, constant breakdowns, score ×1.25).
+- **One week or a whole month:** the month carries everything over, week to week. Help the islanders raise $2,500 and the old store reopens as the **AI Food Co-op**, with groceries and gas pumps on the island.
+- **Jobs:** getting fired no longer ends the game. Hunt for work on your phone or the bulletin board, interview, and get hired. Options: line cook at the Riv (no ferry!), a Tacoma records clerk (best pay), or an early warehouse shift in DuPont.
+- **Friendships grow:** friends level up (💛 → 💛💛💛) through favors you do for them, and they ask favors back. Perks include Sam's morning rides, Walt's job references, a Legion fish fry, and the Hendersons' pot roast.
+- **Ferry trip planner** (⛴️ tab): pick where you need to be and by when. It tells you which boat to take, when to leave, when to be in line, and whether that boat tends to fill up.
+- **Guided first day:** tips walk you through Monday. Trading and Dale unlock on Tuesday (or turn tips off).
+- **Cleaner screens:** actions are grouped (Work, Ferry, Food, Fuel, Phone, Around here), and "Go somewhere" folds away.
+- **More island life:** the school bus, a garage sale, Fire District #27's pancake breakfast, the Historical Society, Oro Bay, cookies in the ferry line. Eagle and Pajama Fred appearances are toned down.
+- **Daily review** in the night summary: money, crossings, ferry waits and events.
+- **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
+- The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
 Score is based on cash, health, job standing and stress, with bonuses and penalties. Grades run from *Born & Raised Islander* down to *Moving Back to the Mainland*.
 
