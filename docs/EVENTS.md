@@ -33,6 +33,12 @@ defEvent({
 | `tripMid` | During an island trip | `from`, `to`, `mode`, `car`, `add(min)`, `finish(extraMin)` if blocking |
 | `bingo` | Bingo night: once before game 1 (`stage:'start'`), and after games 1–3 (`stage:'between'`) | `stage`, `game` (games played so far), `cont()` to resume bingo if the event blocked |
 
+## Acknowledgement tiles
+
+Every time an event fires, a tile slides in at the top of the screen. It shows the event's icon and name, the day and time, and where it happened or what caused it (e.g. *Caused by: Power outage* for a chained event). Tap ✓ to acknowledge it, or it fades after 6.5 seconds. Up to 3 show at once and the rest wait their turn. Colors: red = trouble, green = good news, blue = island life.
+
+Give a new event a tile by adding it to `TILE_META` (`id: [icon, title, 'bad'|'good'|'info'|'warn']`) or by setting `tile: [icon, title, kind]` in `defEvent`. You can also call `showTile(icon, title, subtitle, kind)` directly for moments outside the framework. The ferry uses it for rider alerts, full boats, gas-can busts and arrests.
+
 ## Chaining events
 
 `chain(id)` guarantees an event fires the next time its hook runs, as long as its `cond` passes. This is how one event sets off others. For example, `power_outage` (night) calls `outageChain()`, which chains:

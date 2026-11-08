@@ -120,6 +120,19 @@ button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select
 .todo b{display:block;font-size:15px}.todo span{font-size:12.5px;color:var(--mute)}
 .log p{margin:0;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.4}
 .log p em{font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums;margin-right:6px;font-size:12px}
+/* event acknowledgement tiles */
+#tiles{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 8px);width:calc(100% - 20px);max-width:460px;z-index:60;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.tile{pointer-events:auto;display:flex;align-items:center;gap:11px;background:#fffdf8;border-radius:14px;padding:10px 10px 10px 12px;box-shadow:0 8px 24px rgba(8,25,30,.28),0 1px 0 rgba(0,0,0,.05);border-left:6px solid #6b7478;animation:tileIn .32s cubic-bezier(.2,.9,.3,1.2)}
+.tile.good{border-left-color:var(--good)}.tile.bad{border-left-color:var(--bad)}.tile.info{border-left-color:var(--sound)}.tile.warn{border-left-color:var(--warn)}
+.tile .ti{font-size:26px;width:32px;text-align:center;flex:none}
+.tile .tt{flex:1;min-width:0}
+.tile .tt small{display:block;font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;font-weight:700;color:var(--mute)}
+.tile .tt b{display:block;font-size:15px;line-height:1.25}
+.tile .tt span{display:block;font-size:12px;color:var(--mute);margin-top:1px}
+.tile .ok{flex:none;width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-size:17px;color:var(--fir);font-weight:700}
+.tile.out{animation:tileOut .25s ease-in forwards}
+@keyframes tileIn{from{transform:translateY(-16px) scale(.96);opacity:0}}
+@keyframes tileOut{to{transform:translateY(-12px);opacity:0;height:0;margin:0;padding-top:0;padding-bottom:0}}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(10,25,30,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .modal{background:var(--paper);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .22s ease-out}
@@ -237,7 +250,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.4.3', SAVE_SCHEMA=4;
+const APP_VERSION='1.4.4', SAVE_SCHEMA=4;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -250,7 +263,7 @@ function baseState(){
     week:null};
 }
 function newGame(){
-  MQ=[];S=baseState();S.week=genWeek();
+  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=baseState();S.week=genWeek();
   uiNarr=[];
   say('Monday, 5:30 AM. Your alarm goes off in the dark. Work in Lakewood starts at 9:00. The pantry is getting thin.');
   say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
@@ -353,6 +366,7 @@ function waitFerry(mode){
     const at=b?b.start:known.abs-25;
     S.stats.waited+=at-S.t;S.t=at;adj('stress',12);
     buzz([90,50,90,50,90]);
+    showTile('🚨','Rider alert: sailings suspended',b?b.cause[0].toUpperCase()+b.cause.slice(1):'Mechanical issue','bad');
     say(`🚨 RIDER ALERT (${fmt(S.t)}): Sailings suspended due to ${b?b.cause:'a mechanical issue'}. No estimate for restoration.`);
     say('The people in line groan in unison. Someone starts calling their boss.');
     return modal('🚨 Rider Alert',`<p>Service is suspended: <b>${b?b.cause:'a mechanical issue'}</b>.</p><p>The county hasn’t said when it’ll be back. Check the Ferry board, look for the sailboat water taxi, or change your plans.</p>`,[{l:'Ugh. OK.',fn:()=>{}}]);
@@ -363,7 +377,7 @@ function waitFerry(mode){
   S.t=s.abs+(s.delay||0);
   if(s.delay) say(`Fog on the water. The boat is ${s.delay} minutes late.`);
   if(mode==='drive'&&!S.priority&&Math.random()<fullProb(side,s.d,s.dep)){
-    buzz(120);S.stats.bumps++;adj('stress',12);
+    showTile('🚗','Boat’s full','You’re first in line for the next one','bad');buzz(120);S.stats.bumps++;adj('stress',12);
     say(`The deckhand waves the car ahead of you on and then raises the hand. Boat’s full. You’re first in line for the next one.`);
     const nxt=(()=>{const save=S.t;S.t=s.abs-19;const n=findNext(side,'drive',true);S.t=save;return n})();
     return modal('Boat’s full 😩',`<p>The ${fmt(s.dep)} sailing filled up right in front of you.</p><p>Next drive-on: <b>${nxt?fmtAbs(nxt.abs):'unknown'}</b> (you’ll be first in line).</p>`,[
@@ -379,6 +393,7 @@ function waitFerryFrom(side){ // after a bump, find next from current time ignor
   S.stats.waited+=n.abs-S.t; adj('stress',6); S.t=n.abs+(n.delay||0); S.priority=false; board(side,n,'drive');
 }
 function arrest(where,missed){
+  showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
   const lost=[];if(S.cargo.drugs)lost.push(S.cargo.drugs+' drug package'+(S.cargo.drugs>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
   S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;
@@ -394,7 +409,7 @@ function board(side,s,mode){
     if(Math.random()<p){
       if(c.drugs>0) return arrest('at the ferry',true);
       if(c.gas>0){
-        buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);
+        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
         if(S.citations>=2) return gameOver('banned');
         return modal('Busted at the ferry',`<p>Gasoline is allowed aboard only in a vehicle’s own tank. Spare cans, <b>full or empty</b>, are prohibited.</p><p>Your ${g>1?g+' cans are':'can is'} confiscated, you get a citation, and the boat leaves without you. The citation will cost you about $150.</p><p><b>Repeat violations can get you banned from riding the ferry.</b> Next time, that’s the game.</p>`,[{l:'Lesson learned. Probably.',fn:()=>{}}]);
@@ -451,9 +466,39 @@ function waterTaxi(){
 // chain(id)   guarantees an event fires the next time its hook runs (if its cond passes):
 //             this is how one event sets off others (a power outage -> the alarm doesn't go off).
 // =====================================================================
+// ---- acknowledgement tiles: a small card every time an event fires ----
+const TILE_META={
+  power_outage:['⚡','Power outage','bad'],starry:['✨','Starry night','good'],alarm_fail:['⏰','Your alarm didn’t go off','bad'],
+  no_water:['🚿','No water','bad'],garage_stuck:['🚪','Garage door is dead','bad'],neighbor_ride:['🚪','A new neighbor knocks','good'],
+  friend_coffee:['☕','Coffee from Sam','good'],bingo_reminder:['🎱','Bingo tonight at the Riv','info'],
+  table_taken:['🪧','Someone took your table','bad'],no_seat:['🪑','No seat at bingo','bad'],bar_argument:['🗯️','Argument at the bar','bad'],
+  order_late:['⏳','Your order is late','bad'],pajama_fred:['🩴','Pajama Fred','info'],dead_battery:['🔋','Dead car battery','bad'],
+  garage_release:['🚪','Manual garage door','bad'],tree_down:['🌲','Tree down on the road','bad'],flat_tire:['🛞','Flat tire','bad'],
+  stranded_neighbor:['🚩','Someone needs a jump','info'],deer:['🦌','Deer on the road','info'],eagle:['🦅','Eagle sighting','good'],
+};
+let tileQ=[];const TILE_MAX=3;
+function tileBox(){let el=document.getElementById('tiles');if(!el){el=document.createElement('div');el.id='tiles';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.appendChild(el)}return el}
+function showTile(ic,title,sub,kind){
+  if(!S||S.over) return;
+  const box=tileBox();
+  if(box.children.length>=TILE_MAX){tileQ.push([ic,title,sub,kind]);return}
+  const t=document.createElement('div');t.className='tile '+(kind||'info');
+  t.innerHTML=`<span class="ti">${ic}</span><span class="tt"><small>${kind==='good'?'Good news':kind==='bad'?'Event':kind==='warn'?'Heads up':'Island life'} · ${DAYS[day()].slice(0,3)} ${fmt(S.t)}</small><b>${title}</b>${sub?`<span>${sub}</span>`:''}</span><button class="ok" aria-label="Got it">✓</button>`;
+  let gone=false;const close=()=>{if(gone)return;gone=true;t.classList.add('out');setTimeout(()=>{t.remove();if(tileQ.length){const q=tileQ.shift();showTile(...q)}},260)};
+  t.querySelector('.ok').onclick=close;t.onclick=e=>{if(e.target===t)close()};
+  setTimeout(close,6500);box.appendChild(t);
+}
+function eventTile(e,ctx){
+  const m=TILE_META[e.id]||[e.tile&&e.tile[0]||'📍',e.tile&&e.tile[1]||e.id.replace(/_/g,' '),e.tile&&e.tile[2]||'info'];
+  const cause=S.ev.cause&&S.ev.cause[e.id];
+  const sub=cause?`Caused by: ${(TILE_META[cause]||[0,cause])[1]}`:(ctx.hook==='bingo'?'At Bingo, the Riv':ctx.hook==='tripStart'||ctx.hook==='tripMid'?`On the way to ${L[ctx.to]?L[ctx.to].name:'…'}`:ctx.hook==='arrive'?`At ${L[ctx.at].name}`:ctx.hook==='night'?'Overnight':ctx.hook==='wake'?'This morning':'');
+  showTile(m[0],m[1],sub,m[2]);
+}
+window.showTile=showTile;
+let EV_RUNNING=null;
 const EV=[];
 function defEvent(e){EV.push(Object.assign({chance:0,priority:0,cooldown:0,max:99},e))}
-function chain(id){if(!S.ev.force.includes(id))S.ev.force.push(id)}
+function chain(id,cause){if(!S.ev.force.includes(id))S.ev.force.push(id);S.ev.cause=S.ev.cause||{};S.ev.cause[id]=cause||EV_RUNNING||null}
 window.forceEvent=id=>chain(id);
 function fireHook(hook,ctx={}){
   ctx.hook=hook;let res=null;
@@ -468,7 +513,8 @@ function fireHook(hook,ctx={}){
       if(!(Math.random()<p)) continue;
     } else S.ev.force=S.ev.force.filter(x=>x!==e.id);
     S.ev.last[e.id]=day();S.ev.count[e.id]=(S.ev.count[e.id]||0)+1;S.ev.history.push({id:e.id,t:S.t});
-    const r=e.run(ctx)||{};
+    EV_RUNNING=e.id;let r;try{r=e.run(ctx)||{}}finally{EV_RUNNING=null}
+    eventTile(e,ctx);if(S.ev.cause)delete S.ev.cause[e.id];
     if(r.block||r.stop){res=r;break}
     res=res||r;
   }
@@ -502,6 +548,7 @@ function outageChain(where){
 defEvent({id:'starry',hook:'night',chance:0.5,cond:()=>powerOut(),run(ctx){adj('stress',-3);ctx.notes.push('✨ With every light on the island dark, the stars are unreal.')}});
 
 // ---- wake (at home) ----
+TILE_META.storm=['🌬️','Gale','bad'];
 const atHomeWake=ctx=>S.loc==='home';
 defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
@@ -761,7 +808,7 @@ function endDay(where){
   const nctx={where,notes};fireHook('night',nctx);
   // storm power outage
   if(stormNight(d)){
-    S.stats.outageNights++;S.power={start:d*1440+1380,end:(d+1)*1440+330+240,cause:'the gale'};if(Math.random()<0.8)outageChain(where);
+    S.stats.outageNights++;S.power={start:d*1440+1380,end:(d+1)*1440+330+240,cause:'the gale'};if(Math.random()<0.8){EV_RUNNING='storm';outageChain(where);EV_RUNNING=null}
     if(where==='home'&&S.homeGas>=3){S.homeGas-=3;notes.push('⚡ The wind knocks out the island’s power. Your generator burns 3 gallons of gas keeping the fridge and the heat on.')}
     else {if(S.pantry>0){S.pantry--;}adj('health',-6);adj('stress',8);notes.push(where==='home'?'⚡ The power goes out and you have no gas for the generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.')}
   }
@@ -1269,8 +1316,8 @@ function gradeOf(sc){
   if(sc>=900) return ['D','Considering Lakewood Apartments','You’ve started browsing mainland rentals “just to look.”'];
   return ['F','Moving Back to the Mainland','The island is beautiful. You’ll visit. On a Tuesday. Not a Friday.'];
 }
-function finish(){S.over=true;endScreen('You made it to Sunday night','You survived a week of island life.')}
-function gameOver(why){S.over=true;MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
+function finish(){clearTiles();S.over=true;endScreen('You made it to Sunday night','You survived a week of island life.')}
+function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
 function endScreen(h1,sub,lost){
@@ -1302,7 +1349,8 @@ function endScreen(h1,sub,lost){
 }
 
 // ---------------- title ----------------
-function titleScreen(){
+function clearTiles(){tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove())}
+function titleScreen(){clearTiles();
   app.innerHTML=`<div class="title"><div class="art"><svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbcc4"/><stop offset="1" stop-color="#e2e6dc"/></linearGradient></defs><rect width="480" height="250" fill="url(#ts)"/><rect y="96" width="480" height="154" fill="#1d4b5a"/>
    <polygon points="250,95 330,25 345,36 356,28 440,95" fill="#e9eef0"/><polygon points="310,43 330,25 345,36 356,28 375,45 355,42 342,48 328,40" fill="#fff"/>
    ${Array.from({length:16},(_,i)=>{const x=i*32-10,h=50+((i*29)%45);return `<polygon points="${x},96 ${x+16},${96-h} ${x+32},96" fill="#2f5d4a"/>`}).join('')}
