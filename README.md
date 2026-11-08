@@ -37,6 +37,11 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### 1.8.1 fixes
+- **Month mode is survivable:** waiting for boats is less stressful, days off actually restore you, burnout costs less, and after week 1 the ankle injury is an occasional mishap instead of a near-certainty every week.
+- **Stuck at the terminal:** tapping "Drive on" after the last boat now shows a clear "No more boats tonight" pop-up instead of silently adding stress each time.
+- Event tiles show the day and time; the planner notes when your car is on the other side; the Monday tip isn't shown twice.
+
 Score is based on cash, health, job standing and stress, with bonuses and penalties. Grades run from *Born & Raised Islander* down to *Moving Back to the Mainland*.
 
 ![Trading](screenshots/trading.png)
