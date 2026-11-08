@@ -91,6 +91,17 @@ Bingo events can delay the night (`S.bingo.delay` minutes, added to the 8:30 PM 
 - **Phone battery:** drains 4% an hour and charges 0.8% per minute in a car. It charges to 100% overnight at home if the power stays on (or the generator runs), and at a motel. The terminal outlet gives +35% overnight or +30% in 30 minutes. A dead phone means no rideshares and no calling the Riv.
 - **Generator:** buy it at Home Depot in Lakewood ($649). You need your car to haul it, and it installs when that car reaches home. It runs on gas stashed in the shed: 2 gallons for a random outage night, 3 for a storm night, or 1 gallon to run it for an hour during a daytime outage. Saves from before 1.5.0 keep the generator they implicitly had.
 
+## Running out of gas
+
+- **Empty tank:** the car can't drive or be driven onto the ferry. With under 0.5 gallons it can board, but there's a 40% chance it stalls on the ramp at the other side and the deckhands push it off (+20 min, tank emptied).
+- **Mainland:** call a mobile fuel delivery ($85 for 3 gallons, about 45 min, needs phone battery), or walk to the Steilacoom gas station, buy a can and pour it in.
+- **Island (no gas station):**
+  - Text **Sam**, who brings 5 gallons from your shed (or their own for $30).
+  - Ask **Pajama Fred**, who shows up with a can "from a friend" ($65).
+  - Fill a can from your shed at home and carry it to the car yourself.
+  - Buy a can at Dale's.
+- Gas cans are still banned on the ferry, full or empty.
+
 ## Bingo at the Riv
 
 Wednesday 6:00–8:00 PM at the Riv (Riviera restaurant), hosted by the American Legion. Each week's beneficiary is drawn from `BINGO_FOR`:

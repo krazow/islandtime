@@ -250,7 +250,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.5.0', SAVE_SCHEMA=5;
+const APP_VERSION='1.5.1', SAVE_SCHEMA=5;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -352,6 +352,7 @@ function price(g,side){
 }
 
 function waitFerry(mode){
+  if(mode==='drive'){const c=carHere();if(!c||c.fuel<0.1){say('⛽ The tank is empty. The deckhands won’t load a car that can’t drive.');return render()}}
   const side=L[S.loc].side;
   if(mode==='walk'&&!canWalkCarry()){modal('Too much to carry',`<p>On foot you can carry 4 days of groceries and ${CAP_FOOT} items in total. You’ve got ${S.carried} days of groceries and ${cargoN()} trade items.</p><p>Drive on, or lighten the load.</p>`,[{l:'OK',fn:()=>{}}]);return}
   const known=findNext(side,mode,true), actual=findNext(side,mode,false);
@@ -431,6 +432,9 @@ function board(side,s,mode){
   crossing(side,`${s.passenger?'Passenger-only backup boat':'Crossing'} to ${side==='I'?'Steilacoom':'Anderson Island'}`,`${fmt(S.t)} departure${s.ketron?' · stops at Ketron Island':''} · ${mode==='drive'?'with your car':'on foot'}`,()=>{
     S.t+=dur;S.stats.crossings++;
     if(mode==='drive'&&car) car.loc=to;
+    if(mode==='drive'&&car&&car.fuel<0.5&&Math.random()<0.4){car.fuel=0;S.t+=20;adj('stress',8);buzz(150);
+      say('🚗 The engine sputters and dies halfway up the ramp. Three deckhands push your car off while the whole line of cars watches. +20 minutes, and the tank is bone dry.');
+      showTile('🚗','Stalled on the ferry ramp','The deckhands pushed you off','bad')}
     S.loc=to;fireHook('arrive',{at:to,from:'ferry'});
     say(`${s.ketron?'After a detour to Ketron Island, you':'You'} arrive at ${L[to].name} at ${fmt(S.t)}.${mode==='walk'&&car?` (${car.name} is parked back at the other landing.)`:''}`);
     afterAction();
@@ -962,6 +966,7 @@ function actions(){
   }
   if(loc==='work') workActions(a,d,m);
   cargoActions(a);
+  fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:S.alarm.type==='plug'?'Your plug-in clock is at home. Switch to your phone if you might not make it back tonight.':`Phone ${S.phone}%.`,fn:alarmModal});
   if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
@@ -1000,7 +1005,8 @@ function dockActions(a,side){
   const kD=car?findNext(side,'drive',true):null, kW=findNext(side,'walk',true);
   const t=x=>x?(x.d>day()?`${DAYS[x.d].slice(0,3)} ${fmt(x.dep)}`:fmt(x.dep)):'none';
   if(out) a.push({ic:'🚨',l:'Ferry service suspended',s:`${out.cause}. Check the Ferry tab.`,dis:true});
-  if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+$(FARE_CAR):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
+  if(car&&car.fuel<0.1) a.push({ic:'⛽',l:'Can’t drive on: the tank is empty',s:'The deckhands won’t load a car that can’t drive itself off. Get it some gas first (see below).',dis:true});
+  else if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`${car.fuel<0.5?'⚠️ Running on fumes. ':''}Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+$(FARE_CAR):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
   a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+$(FARE_WALK):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
   if(out&&m>=420&&m<=1140) a.push({ic:'⛵',l:'Look for the sailboat water taxi',s:'A neighbor runs people across during outages. $20, maybe.',fn:waterTaxi});
   if(side==='M'){
@@ -1027,6 +1033,24 @@ function workActions(a,d,m){
   a.push({ic:'💼',l:'Work a full shift (until 5:00)',s:`${lateTxt} Pay ${$(pay)}.`,cls:'primary',fn:()=>doShift(1020,pay,0,lateBy?'You slink in late and work through lunch to make up for it.':'You clock in on time. Your coworkers from the mainland have no idea what that took.')});
   if(start<825) a.push({ic:'🩺',l:'Work until 1:45, then leave',s:`Half day. ${d===2?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(825,Math.round(pay*0.55),d===2?-2:-8,'You leave at 1:45 with a mumbled explanation.')});
 }
+function fuelHelp(a){
+  const car=carHere();if(!car||car.fuel>=1.5||S.loc==='gas')return;
+  const side=L[S.loc].side,addFuel=(g,msg,tile)=>{car.fuel=Math.min(car.tank,Math.round((car.fuel+g)*10)/10);say(msg);showTile('⛽',tile,`+${g} gal · tank ${car.fuel}/${car.tank}`,'good');afterAction()};
+  if(side==='M'){
+    a.push({ic:'🚚',l:'Call a mobile fuel delivery: $85',s:S.phone>0?`3 gallons of ${car.diesel?'diesel':'gas'} brought to your car. About 45 minutes. Mainland only.`:'Your phone is dead.',dis:S.phone<=0||S.money<85,fn:()=>{
+      money(-85);S.t+=45;phoneTick();adj('stress',3);addFuel(3,'🚚 A pickup with a fuel tank in the bed finds you. “Ran dry, huh? Happens a lot down here.” 3 gallons, $85.','Mobile fuel delivery')}});
+    return;
+  }
+  if(S.loc==='home') return;
+  if(S.friends.sam) a.push({ic:'📞',l:'Text Sam to bring gas',s:S.phone<=0?'Your phone is dead.':S.homeGas>=5?`Sam grabs a can from your shed (${S.homeGas} gal stashed). About 30 minutes.`:'Your shed is empty, so Sam brings some of their own. $30. About 30 minutes.',dis:S.phone<=0||(S.homeGas<5&&S.money<30)||car.diesel&&S.homeDiesel<5,fn:()=>{
+    S.t+=30;phoneTick();adj('stress',-2);
+    if(car.diesel){S.homeDiesel-=5;return addFuel(5,'📞 Sam shows up with a diesel can from your shed. “You owe me a coffee.”','Sam brought diesel')}
+    if(S.homeGas>=5){S.homeGas=Math.round((S.homeGas-5)*10)/10;addFuel(5,'📞 Sam pulls up with a can from your shed and a thermos. “You owe me a coffee.”','Sam brought gas from your shed')}
+    else{money(-30);addFuel(5,'📞 Sam pulls up with a can from their own garage. You pay them back $30.','Sam brought gas')}}});
+  if(S.friends.fred&&!car.diesel) a.push({ic:'🩴',l:'Ask Pajama Fred for help',s:S.phone>0?'He knows a guy. $65 for 5 gallons. About 50 minutes.':'Your phone is dead.',dis:S.phone<=0||S.money<65,fn:()=>{
+    money(-65);S.t+=50;phoneTick();addFuel(5,'🩴 Fred shuffles up in his slippers carrying a red can. “From a friend. Don’t ask.” (It smells like Dale’s.)','Pajama Fred brought gas')}});
+  if(!S.friends.sam&&!S.friends.fred) a.push({ic:'⛽',l:'No one to call yet',s:'Walk to Dale’s for a can, or home to fill one from your shed. Island friends can help with this.',dis:true});
+}
 function cargoActions(a){
   const c=S.cargo,car=carHere(),home=S.loc==='home';
   if(car&&!car.diesel&&c.gas>0&&car.fuel<=car.tank-1) a.push({ic:'⛽',l:'Pour a gas can into the tank',s:`+5 gal. Tank ${car.fuel}/${car.tank}. ${c.gas} can${c.gas>1?'s':''} in your cargo.`,fn:()=>{c.gas--;car.fuel=Math.min(car.tank,Math.round((car.fuel+5)*10)/10);S.t+=8;say('Glug, glug. You pour 5 gallons in and try not to spill on your shoes.');afterAction()}});
@@ -1035,6 +1059,7 @@ function cargoActions(a){
   if(!home) return;
   if(c.food>0) a.push({ic:'🥫',l:`Put a food case in the pantry (${c.food} in cargo)`,s:'+3 days of food at home.',fn:()=>{c.food--;S.pantry+=3;S.t+=5;say('Three days of food, stacked in the pantry.');afterAction()}});
   if(c.med>0&&(!S.injury||S.injury.treated)) a.push({ic:'🩹',l:`Use medical supplies (${c.med} in cargo)`,s:'Health +6.',dis:S.health>=100,fn:()=>{c.med--;adj('health',6);S.t+=10;say('Vitamins, cold medicine and a real bandage on that cut you’ve been ignoring.');afterAction()}});
+  if(S.homeGas>=5&&cargoN()+S.carried<CAP_FOOT) a.push({ic:'🛢️',l:'Fill a gas can from the shed to take with you',s:`5 of your ${S.homeGas} gal. Carry it to a car that ran dry. (Still banned on the ferry!)`,fn:()=>{S.homeGas=Math.round((S.homeGas-5)*10)/10;c.gas++;S.t+=5;say('🛢️ You fill a can from the shed. It sloshes the whole way.');afterAction()}});
   if(c.gas>0) a.push({ic:'🛢️',l:`Stash a gas can in the shed (${c.gas} in cargo)`,s:`+5 gal of fuel at home (${S.homeGas} gal now). ${genReady()?'Powers the generator in an outage.':'For a generator, if you buy one.'}`,fn:()=>{c.gas--;S.homeGas+=5;S.t+=5;say('5 gallons of gas into the shed, far from the woodstove.');afterAction()}});
   if(S.homeGas>=5&&cargoN()+S.carried<capNow()) a.push({ic:'🛢️',l:`Take a gas can out of the shed (${S.homeGas} gal stashed)`,s:'5 gal to carry. For a car that ran dry somewhere, or to sell.',fn:()=>{S.homeGas=Math.round((S.homeGas-5)*10)/10;c.gas++;S.t+=5;say('🛢️ You fill a can from the shed stash.');afterAction()}});
   if(c.diesel>0) a.push({ic:'🟨',l:`Store a diesel can in the shed (${c.diesel} in cargo)`,s:'+5 gal of diesel.',fn:()=>{c.diesel--;S.homeDiesel+=5;S.t+=5;say('5 gallons of diesel into the shed.');afterAction()}});
