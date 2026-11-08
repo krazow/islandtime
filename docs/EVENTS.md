@@ -39,6 +39,10 @@ Every time an event fires, a tile slides in at the top of the screen. It shows t
 
 Give a new event a tile by adding it to `TILE_META` (`id: [icon, title, 'bad'|'good'|'info'|'warn']`) or by setting `tile: [icon, title, kind]` in `defEvent`. You can also call `showTile(icon, title, subtitle, kind)` directly for moments outside the framework. The ferry uses it for rider alerts, full boats, gas-can busts and arrests.
 
+## Frequency dials
+
+`HOOK_SCALE` in `index.html` sets, for each hook, the chance that a hook call lets *any* event through. It's one roll per call, applied before per-event chances, and chained events are dropped when the roll fails. It's currently `{wake: 0.8}`, so 20% of mornings at home are event-free. Hooks not listed default to 1. Events marked `noScale: true` are exempt (the Wednesday bingo reminder is an announcement, not a random event).
+
 ## Chaining events
 
 `chain(id)` guarantees an event fires the next time its hook runs, as long as its `cond` passes. This is how one event sets off others. For example, `power_outage` (night) calls `outageChain()`, which chains:

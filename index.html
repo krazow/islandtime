@@ -256,7 +256,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.6.0', SAVE_SCHEMA=5;
+const APP_VERSION='1.6.1', SAVE_SCHEMA=5;
 // ---------------- player name ----------------
 // Text anywhere in the game can contain the token {{name}}. It's swapped for the current name only when shown,
 // so changing your name updates every line already in the log, the narration, pop-ups and tiles.
@@ -581,16 +581,22 @@ function eventTile(e,ctx){
 }
 window.showTile=showTile;
 let EV_RUNNING=null;
+// Global frequency dial per hook: the chance that a hook call lets ANY event through (one roll per call).
+// wake:0.8 means 20% of mornings are event-free; chained events are dropped too. Per-event chances are unchanged.
+// Events with noScale:true (announcements like the bingo reminder) are exempt.
+const HOOK_SCALE={wake:0.8};
 const EV=[];
 function defEvent(e){EV.push(Object.assign({chance:0,priority:0,cooldown:0,max:99},e))}
 function chain(id,cause){if(!S.ev.force.includes(id))S.ev.force.push(id);S.ev.cause=S.ev.cause||{};S.ev.cause[id]=cause||EV_RUNNING||null}
 window.forceEvent=id=>chain(id);
 function fireHook(hook,ctx={}){
   ctx.hook=hook;let res=null;
+  const scale=HOOK_SCALE[hook]??1,open=scale>=1||Math.random()<scale; // one roll per hook call
   const list=EV.filter(e=>e.hook===hook||(Array.isArray(e.hook)&&e.hook.includes(hook))).sort((a,b)=>b.priority-a.priority);
   for(const e of list){
     const forced=S.ev.force.includes(e.id);
     if(e.cond&&!e.cond(ctx)) continue;
+    if(!open&&!e.noScale){if(forced)S.ev.force=S.ev.force.filter(x=>x!==e.id);continue}
     if(!forced){
       if((S.ev.count[e.id]||0)>=e.max) continue;
       if(S.ev.last[e.id]!=null&&day()-S.ev.last[e.id]<e.cooldown) continue;
@@ -659,7 +665,7 @@ defEvent({id:'neighbor_ride',hook:'wake',priority:4,cond:ctx=>atHomeWake(ctx)&&!
     {l:'“Thanks, I’m all set”',s:'You still made a new friend.',fn:()=>{meet('sam','Sam, your new neighbor','introduced themselves during an outage');adj('stress',-3)}}]);
 }});
 defEvent({id:'friend_coffee',hook:'wake',priority:3,cond:ctx=>atHomeWake(ctx)&&!!S.friends.sam,run(){adj('stress',-8);say('☕ Sam knocks with a thermos of coffee brewed on a camp stove. “Figured you didn’t have any either.”')}});
-defEvent({id:'bingo_reminder',hook:'wake',priority:1,cond:()=>day()===2,chance:1,run(){say(`🎱 Tonight: <b>Bingo at the Riv</b>, 6:00 PM, hosted by the American Legion. Proceeds benefit the <b>${BINGO_FOR[S.week.bingo]}</b>.`)}});
+defEvent({id:'bingo_reminder',hook:'wake',priority:1,noScale:true,cond:()=>day()===2,chance:1,run(){say(`🎱 Tonight: <b>Bingo at the Riv</b>, 6:00 PM, hosted by the American Legion. Proceeds benefit the <b>${BINGO_FOR[S.week.bingo]}</b>.`)}});
 
 
 // ---- bingo night (hook 'bingo': ctx.stage 'start'|'between', ctx.game = games played, ctx.cont() resumes) ----
