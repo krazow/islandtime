@@ -93,9 +93,11 @@ Bingo events can delay the night (`S.bingo.delay` minutes, added to the 8:30 PM 
 
 ## Alarm, phone and generator
 
-- **Alarm:** set at home (or anywhere after 7 PM): a wake time from 4:45 to 8:00 AM, plus the clock type. Waking earlier means less stress recovery, sleeping in means more.
-  - 🔌 **Plug-in clock:** reliable, but a power outage resets it (`alarm_fail`), and it can't wake you away from home. At the terminal or a motel you wake between 6:10 and 7:30.
-  - 📱 **Phone alarm:** works anywhere and through outages, as long as the battery lasts (`phone_died`). It has a small chance of being slept through.
+- **Alarms:** there are two independent alarms, each with its own on/off switch and time (4:45–8:00 AM). Set them at home, or anywhere after 7 PM. You wake at the **earliest alarm that actually goes off**. Waking earlier means less stress recovery, sleeping in means more.
+  - 🔌 **Plug-in clock:** reliable, but a power outage resets it, and it can't wake you away from home.
+  - 📱 **Phone alarm:** works anywhere and through outages if the battery lasts the night. There's a 7% chance you sleep through it.
+  - **Backups:** with both on, an outage gives `phone_saves` (the phone wakes you), and sleeping through the phone gives `backup_alarm` (the clock catches you). You oversleep only when every alarm you set fails: `alarm_fail`, `phone_died` or `slept_through`. With no alarm set you get `no_alarm`.
+  - **Decided at bedtime:** the outcome is worked out in `endDay` and passed to the wake hook with `chain()`, so it gets tiles and pop-ups. Old single-alarm saves are converted automatically.
 - **Phone battery:** drains 4% an hour and charges 0.8% per minute in a car. It charges to 100% overnight at home if the power stays on (or the generator runs), and at a motel. The terminal outlet gives +35% overnight or +30% in 30 minutes. A dead phone means no rideshares and no calling the Riv.
 - **Generator:** buy it at Home Depot in Lakewood ($649). You need your car to haul it, and it installs when that car reaches home. It runs on gas stashed in the shed: 2 gallons for a random outage night, 3 for a storm night, or 1 gallon to run it for an hour during a daytime outage. Saves from before 1.5.0 keep the generator they implicitly had.
 

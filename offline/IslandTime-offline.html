@@ -254,7 +254,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.6.2', SAVE_SCHEMA=5;
+const APP_VERSION='1.7.0', SAVE_SCHEMA=5;
 // ---------------- player name ----------------
 // Text anywhere in the game can contain the token {{name}}. It's swapped for the current name only when shown,
 // so changing your name updates every line already in the log, the narration, pop-ups and tiles.
@@ -319,7 +319,7 @@ function baseState(){
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},friends:{},power:null,battery:'ok',
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
-    alarm:{time:330,type:'plug'},phone:80,phoneT:330,gen:null,
+    alarm:{plug:{on:true,time:330},phone:{on:false,time:330}},phone:80,phoneT:330,gen:null,
     week:null};
 }
 function newGame(){
@@ -533,24 +533,29 @@ function waterTaxi(){
 // ---- phone battery, alarm and generator ----
 const ALARM_TIMES=[285,300,330,360,390,420,450,480];
 function phoneTick(){const el=S.t-S.phoneT;if(el>0){S.phone=Math.max(0,Math.round(S.phone-el/60*4));S.phoneT=S.t}}
-function alarmTxt(){return `${fmt(S.alarm.time)} on ${S.alarm.type==='plug'?'the plug-in clock':'your phone'}`}
+function alarmTxt(){const A=S.alarm;const a=[];if(A.plug.on)a.push(`${fmt(A.plug.time)} on the clock`);if(A.phone.on)a.push(`${fmt(A.phone.time)} on your phone`);return a.join(' + ')||'no alarm set'}
+function alarmBase(){const A=S.alarm,t=[];if(A.plug.on)t.push(A.plug.time);if(A.phone.on)t.push(A.phone.time);return t.length?Math.min(...t):null}
 function genReady(){return S.gen==='home'}
 // overnight generator: returns true if it ran (needs a generator at home and gas in the shed)
 function runGenerator(where,gal){if(where!=='home'||!genReady()||S.homeGas<gal)return false;S.homeGas=Math.round((S.homeGas-gal)*10)/10;S.ev.flags.genRan=day();return true}
-window.almPick=(k,v)=>{window.ALM[k]=v;document.querySelectorAll('[data-alm-'+k+']').forEach(b=>b.classList.toggle('on',String(b.dataset['alm'+k[0].toUpperCase()+k.slice(1)])===String(v)))};
+window.almPick=(k,v)=>{window.ALM[k]=v;document.querySelectorAll('.almc[data-k="'+k+'"]').forEach(b=>b.classList.toggle('on',b.dataset.v===String(v)))};
 function alarmModal(){
-  window.ALM={time:S.alarm.time,type:S.alarm.type};
-  const chip=(k,v,label,on)=>`<button class="chip almc ${on?'on':''}" data-alm-${k}="${v}" onclick="almPick('${k}',${typeof v==='number'?v:`'${v}'`})">${label}</button>`;
-  modal('⏰ Set your alarm',`<p style="margin-bottom:6px"><b>Wake up at</b></p><div class="chips" style="margin-top:0">${ALARM_TIMES.map(t=>chip('time',t,fmt(t),t===S.alarm.time)).join('')}</div>
-  <p style="margin:14px 0 6px"><b>Alarm</b></p><div class="chips" style="margin-top:0">${chip('type','plug','🔌 Plug-in clock',S.alarm.type==='plug')}${chip('type','phone','📱 Phone alarm',S.alarm.type==='phone')}</div>
-  <p style="font-size:13px;color:var(--mute);margin-top:12px">🔌 <b>Plug-in clock:</b> loud and reliable, but a power outage resets it, and it can’t wake you if you sleep away from home.<br>📱 <b>Phone:</b> works anywhere and through outages, but only if the battery lasts the night (${S.phone}% now). Phones charge overnight at home when the power stays on.</p>
-  <p style="font-size:13px;color:var(--mute)">Waking earlier gives you more time but less rest. Sleeping in lowers stress.</p>`,
-  [{l:'Save alarm',fn:()=>{S.alarm={time:window.ALM.time,type:window.ALM.type};say(`⏰ Alarm set for ${alarmTxt()}.`);render()}},{l:'Cancel',fn:()=>{}}]);
+  const A=S.alarm;window.ALM={plugOn:A.plug.on,plugTime:A.plug.time,phoneOn:A.phone.on,phoneTime:A.phone.time};
+  const chip=(k,v,label)=>`<button class="chip almc ${String(window.ALM[k])===String(v)?'on':''}" data-k="${k}" data-v="${v}" onclick="almPick('${k}',${v})">${label}</button>`;
+  const section=(key,icon,name,note)=>`<div style="border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fff">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b>${icon} ${name}</b><span class="chips" style="margin:0">${chip(key+'On',true,'On')}${chip(key+'On',false,'Off')}</span></div>
+    <div class="chips">${ALARM_TIMES.map(t=>chip(key+'Time',t,fmt(t))).join('')}</div>
+    <div style="font-size:12px;color:var(--mute);margin-top:8px">${note}</div></div>`;
+  modal('⏰ Set your alarms',
+    section('plug','🔌','Plug-in clock','Loud and reliable. A power outage resets it, and it can’t wake you if you sleep away from home.')+
+    section('phone','📱','Phone alarm',`Works anywhere and through outages, if the battery lasts the night (${S.phone}% now). Small chance you sleep through the gentle chime.`)+
+    `<p style="font-size:13px;color:var(--mute)">Set both and each one backs up the other: you wake at the earliest alarm that actually goes off. Waking earlier gives you more time but less rest.</p>`,
+  [{l:'Save alarms',fn:()=>{const M=window.ALM;S.alarm={plug:{on:!!M.plugOn,time:M.plugTime},phone:{on:!!M.phoneOn,time:M.phoneTime}};say(`⏰ Alarms: ${alarmTxt()}.`);render()}},{l:'Cancel',fn:()=>{}}]);
 }
 
 // ---- acknowledgement tiles: a small card every time an event fires ----
 const TILE_META={
-  power_outage:['⚡','Power outage','bad'],starry:['✨','Starry night','good'],alarm_fail:['⏰','Your alarm didn’t go off','bad'],phone_died:['📵','Your phone died overnight','bad'],phone_saves:['📱','Phone alarm to the rescue','good'],
+  power_outage:['⚡','Power outage','bad'],starry:['✨','Starry night','good'],alarm_fail:['⏰','Your alarm didn’t go off','bad'],backup_alarm:['⏰','Backup alarm saved you','good'],no_alarm:['😴','No alarm set','bad'],phone_died:['📵','Your phone died overnight','bad'],phone_saves:['📱','Phone alarm to the rescue','good'],
   slept_through:['😴','Slept through your phone alarm','bad'],gen_saves:['🔌','Generator kept things running','good'],
   no_water:['🚿','No water','bad'],garage_stuck:['🚪','Garage door is dead','bad'],neighbor_ride:['🚪','A new neighbor knocks','good'],
   friend_coffee:['☕','Coffee from Sam','good'],bingo_reminder:['🎱','Bingo tonight at the Riv','info'],
@@ -645,8 +650,6 @@ defEvent({id:'power_outage',hook:'night',priority:5,max:2,cooldown:2,
   }});
 function outageChain(where){
   if(where!=='home') return;
-  if(S.alarm.type==='plug'){if(Math.random()<0.75) chain('alarm_fail');}
-  else if(S.phone<=8&&S.ev.flags.genRan!==day()) chain('phone_died'); else chain('phone_saves');
   if(S.ev.flags.genRan!==day()&&Math.random()<0.6) chain('no_water');
   if(S.cars.some(c=>c.id==='isl'&&c.loc==='home')&&Math.random()<0.35) chain('garage_stuck');
   if(!S.friends.sam&&Math.random()<0.45) chain('neighbor_ride');
@@ -657,19 +660,24 @@ defEvent({id:'starry',hook:'night',chance:0.5,cond:()=>powerOut(),run(ctx){adj('
 // ---- wake (at home) ----
 TILE_META.storm=['🌬️','Gale','bad'];
 const atHomeWake=ctx=>S.loc==='home';
-defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:ctx=>atHomeWake(ctx)&&S.alarm.type==='plug',run(){
+defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
   say(`⏰ Your alarm clock never went off. The power blinked out overnight and reset it. It’s already <b>${fmt(S.t)}</b>.`);
   S.phoneT=S.t;
-  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${S.phone>8?' (Your phone’s alarm would have worked.)':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
+  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
 }});
 defEvent({id:'phone_died',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=60+Math.floor(Math.random()*50);S.t+=late;S.phoneT=S.t;adj('stress',10);buzz([100,60,100]);
-  say(`📵 No power meant no charging, and your phone died around 4 AM. No alarm. It’s <b>${fmt(S.t)}</b>.`);
-  modal('📵 Your phone died',`<p>The power was out all night, so your phone never charged. It died before the alarm could go off.</p><p>It’s <b>${fmt(S.t)}</b>.</p>`,[{l:'Go go go',fn:()=>{}}])}});
-defEvent({id:'phone_saves',hook:'wake',priority:10,cond:atHomeWake,run(){adj('stress',-3);say(`📱 The power’s out, but your phone alarm goes off right on time at ${fmt(S.t)}. Good call.`)}});
+  const why=S.power?'No power meant no charging, and':'You forgot to plug it in, and';
+  say(`📵 ${why} your phone died around 4 AM. No alarm. It’s <b>${fmt(S.t)}</b>.`);
+  modal('📵 Your phone died',`<p>${S.power?'The power was out all night, so your phone never charged.':'Your phone didn’t have enough battery to last the night.'} It died before the alarm could go off.${S.alarm.plug.on?' Your plug-in clock is blinking 12:00 from the outage too.':''}</p><p>It’s <b>${fmt(S.t)}</b>.</p>`,[{l:'Go go go',fn:()=>{}}])}});
+defEvent({id:'phone_saves',hook:'wake',priority:10,cond:atHomeWake,run(){adj('stress',-3);say(S.alarm.plug.on?`📱 Your plug-in clock is blinking 12:00, but your phone alarm goes off right on time at ${fmt(S.t)}. Backups for the win.`:`📱 The power’s out, but your phone alarm goes off right on time at ${fmt(S.t)}. Good call.`)}});
+defEvent({id:'backup_alarm',hook:'wake',priority:10,cond:atHomeWake,run(){adj('stress',-1);say(`⏰ You slept right through your phone’s chime, but the plug-in clock’s buzzer gets you up at ${fmt(S.t)}. That’s what backups are for.`)}});
+defEvent({id:'no_alarm',hook:'wake',priority:10,cond:atHomeWake,run(){
+  const late=50+Math.floor(Math.random()*50);S.t+=late;S.phoneT=S.t;adj('stress',8);
+  say(`😴 You never set an alarm. You wake up on your own at <b>${fmt(S.t)}</b>.`)}});
 defEvent({id:'gen_saves',hook:'wake',priority:9,cond:atHomeWake,run(){adj('stress',-4);say('🔌 The generator chugged all night: cold fridge, warm house, running water and a charged phone. The best money you ever spent.')}});
-defEvent({id:'slept_through',hook:'wake',priority:8,cond:ctx=>atHomeWake(ctx)&&S.alarm.type==='phone'&&S.phone>0&&!S.ev.force.includes('phone_died')&&S.ev.last.phone_died!==day(),chance:0.07,run(){
+defEvent({id:'slept_through',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=20+Math.floor(Math.random()*25);S.t+=late;S.phoneT=S.t;adj('stress',6);say(`😴 You slept right through your phone’s gentle chime. It’s ${fmt(S.t)}.`)}});
 defEvent({id:'no_water',hook:'wake',priority:6,cond:atHomeWake,run(){adj('stress',5);say('🚿 No power means no well pump, which means no shower. Hat day.')}});
 defEvent({id:'garage_stuck',hook:'wake',priority:6,cond:atHomeWake,run(){S.ev.flags.garage=day();say('🚪 The garage door opener is dead. You’ll have to wrestle the manual release before you can drive.')}});
@@ -945,7 +953,7 @@ function endDay(where){
   if(d===2&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
   if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}
   if(S.injury&&!S.injury.treated){adj('health',-8);notes.push('🤕 Your untreated ankle throbs all night.')}
-  const rest=Math.max(6,Math.min(24,Math.round(14+(S.alarm.time-330)/30*3)));
+  const rest=Math.max(6,Math.min(24,Math.round(14+((alarmBase()??420)-330)/30*3)));
   if(where==='home'){adj('stress',-rest);adj('health',3)}
   else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push('🪑 You sleep sitting up in the Steilacoom terminal waiting room. The vending machine hums all night.')}
   else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
@@ -955,11 +963,26 @@ function endDay(where){
   if(S.job<=0) return gameOver('fired');
   if(d===6) return finish();
   // when you wake up
-  let wake=S.alarm.time,awayNote='';
-  if(where!=='home'){
-    if(S.alarm.type==='plug'){wake=370+Math.floor(Math.random()*80);awayNote=`⏰ Your alarm clock is plugged in at home. ${where==='terminal'?'The janitor’s floor buffer':'A housekeeping cart'} wakes you at ${fmt(wake)}.`;}
-    else if(S.phone<=0){wake=380+Math.floor(Math.random()*60);awayNote=`📵 Your phone died overnight. You wake at ${fmt(wake)}.`;}
+  // two independent alarms: you wake at the earliest one that actually goes off
+  const A=S.alarm,home=where==='home';
+  const plugOK=A.plug.on&&home&&!nightOut;           // an outage resets the clock; it's useless away from home
+  const phoneOK=A.phone.on&&S.phone>0;
+  const slept=phoneOK&&(S.ev.force.includes('slept_through')||Math.random()<0.07);
+  S.ev.force=S.ev.force.filter(x=>x!=='slept_through');
+  const working=[];if(plugOK)working.push(A.plug.time);if(phoneOK&&!slept)working.push(A.phone.time);
+  let wake,awayNote='',wakeEv=null;
+  if(working.length){
+    wake=Math.min(...working);
+    if(home&&nightOut&&phoneOK&&!slept) wakeEv='phone_saves';
+    else if(slept&&plugOK) wakeEv='backup_alarm';
+  } else if(home){
+    wake=alarmBase()??330;
+    wakeEv=!A.plug.on&&!A.phone.on?'no_alarm':A.phone.on&&S.phone<=0?'phone_died':slept?'slept_through':'alarm_fail';
+  } else {
+    wake=370+Math.floor(Math.random()*80);
+    awayNote=A.phone.on&&S.phone<=0?`📵 Your phone died overnight. You wake at ${fmt(wake)}.`:slept?`😴 You slept through your phone alarm. You wake at ${fmt(wake)}.`:`⏰ Your only alarm is the plug-in clock at home. ${where==='terminal'?'The janitor’s floor buffer':'A housekeeping cart'} wakes you at ${fmt(wake)}.`;
   }
+  if(wakeEv) chain(wakeEv,nightOut&&wakeEv!=='slept_through'&&wakeEv!=='no_alarm'?'power_outage':null);
   S.cur=d+1; S.t=(d+1)*1440+wake; S.phoneT=S.t; S.priority=false;
   if(where!=='home') S.loc='stDock';
   uiNarr=[];
@@ -1048,7 +1071,7 @@ function actions(){
   if(loc==='work') workActions(a,d,m);
   cargoActions(a);
   fuelHelp(a);
-  if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:S.alarm.type==='plug'?'Your plug-in clock is at home. Switch to your phone if you might not make it back tonight.':`Phone ${S.phone}%.`,fn:alarmModal});
+  if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
   if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for {{name}}, bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
     const car=!!carHere();
@@ -1233,6 +1256,8 @@ function migrate(d){
   // cars
   if(!Array.isArray(x.cars)||!x.cars.length) x.cars=baseState().cars;
   if(x.phoneT<x.cur*1440)x.phoneT=x.t;
+  // 1.7.0: one alarm {time,type} became two independent alarms
+  if(x.alarm&&x.alarm.type){const t=num(x.alarm.time,330),ty=x.alarm.type;x.alarm={plug:{on:ty==='plug',time:t},phone:{on:ty==='phone',time:t}}}
   // before 1.5.0 every player had a generator at home; keep it
   if(from<5&&x.gen==null){x.gen='home';notes.push('you keep the generator you already had at home')}
   x.cars.forEach(c=>{c.tank=num(c.tank,c.diesel?20:c.id==='beat'?12:14);c.fuel=num(c.fuel,Math.min(8,c.tank));c.diesel=!!c.diesel;if(!L[c.loc])c.loc=L[x.loc].side==='I'?'home':'stDock';c.name=c.name||'Car'});
