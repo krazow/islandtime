@@ -30,6 +30,7 @@ defEvent({
 | `wake` | Start of a day, if you woke up at home | – |
 | `tripStart` | Before an island trip leaves. Can block it (dead battery) | `from`, `to`, `mode`, `o` (travel option), `car` |
 | `tripMid` | During an island trip | `from`, `to`, `mode`, `car`, `add(min)`, `finish(extraMin)` if blocking |
+| `bingo` | Bingo night: once before game 1 (`stage:'start'`), and after games 1–3 (`stage:'between'`) | `stage`, `game` (games played so far), `cont()` to resume bingo if the event blocked |
 
 ## Chaining events
 
@@ -62,6 +63,12 @@ Chains that don't fire by the end of that morning are dropped. `window.forceEven
 | `dead_battery` | tripStart | Car won't start. Get a jump from Sam or Walt, knock on the neighbor's door, walk, or hitch. The battery stays weak until you replace it in Steilacoom |
 | `garage_release`, `tree_down`, `flat_tire`, `deer`, `eagle` | tripMid | Time lost (or a nice moment) on the road |
 | `stranded_neighbor` | tripMid | Help a Legion member jump his truck (meet Walt), or drive on |
+| `table_taken` | bingo (start) | Only if you reserved a table: strangers are in it. Point out the reservation, squeeze in (maybe meet the Hendersons), or take the seat by the bathrooms |
+| `no_seat` | bingo (start) | No reservation: a folding chair under the speaker |
+| `bar_argument` | bingo (between) | Two guys arguing at the bar stop the game. Stay out, calm it down (easier with Walt), or pick a side |
+| `order_late` | bingo (between) | Only if you ordered: the meal and/or drink is late. Wait, or flag down the server (maybe comped) |
+
+Bingo events can delay the night (`S.bingo.delay` minutes, added to the 8:30 PM finish). Reserve a table by phone from anywhere on Wednesday before 6 PM. Order dinner and a drink ($24, counts as tonight's food), just a drink ($6), or nothing before game 1.
 
 ## Bingo at the Riv
 

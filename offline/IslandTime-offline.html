@@ -235,7 +235,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.4.0', SAVE_SCHEMA=4;
+const APP_VERSION='1.4.1', SAVE_SCHEMA=4;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -244,7 +244,7 @@ function baseState(){
     gossipDay:-1,eagleDay:-1,storeStock:{},log:[],alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},friends:{},power:null,battery:'ok',
-    bingo:{nights:0,won:0,donated:0,cards:0},
+    bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},
     week:null};
 }
 function newGame(){
@@ -514,6 +514,46 @@ defEvent({id:'neighbor_ride',hook:'wake',priority:4,cond:ctx=>atHomeWake(ctx)&&!
 defEvent({id:'friend_coffee',hook:'wake',priority:3,cond:ctx=>atHomeWake(ctx)&&!!S.friends.sam,run(){adj('stress',-8);say('☕ Sam knocks with a thermos of coffee brewed on a camp stove. “Figured you didn’t have any either.”')}});
 defEvent({id:'bingo_reminder',hook:'wake',priority:1,cond:()=>day()===2,chance:1,run(){say(`🎱 Tonight: <b>Bingo at the Riv</b>, 6:00 PM, hosted by the American Legion. Proceeds benefit the <b>${BINGO_FOR[S.week.bingo]}</b>.`)}});
 
+
+// ---- bingo night (hook 'bingo': ctx.stage 'start'|'between', ctx.game = games played, ctx.cont() resumes) ----
+const bingoDelay=n=>{S.bingo.delay+=n};
+defEvent({id:'table_taken',hook:'bingo',priority:9,max:1,chance:0.45,cond:ctx=>ctx.stage==='start'&&S.bingo.reserved===day(),
+  run(ctx){
+    modal('🪧 Someone’s at your table',`<p>A family you don’t know has spread out daubers, a casserole dish and three coats across your table. The RESERVED tent is under somebody’s purse.</p>`,[
+      {l:'Politely point out the reservation',s:'Could go either way.',fn:()=>{
+        if(Math.random()<0.6){adj('stress',-2);say('🪧 “Oh gosh, we’re so sorry!” They pack up in a hurry and leave you a brownie as an apology.');}
+        else{bingoDelay(10);adj('stress',6);say(`🪧 Awkward standoff. ${S.friends.walt?'Walt':'A Legion volunteer'} sorts it out by finding two more chairs. Game 1 starts 10 minutes late.`);}
+        ctx.cont()}},
+      {l:'Squeeze in with them',s:'Island hospitality.',fn:()=>{adj('stress',2);if(Math.random()<0.6)meet('hendersons','the Hendersons','shared your bingo table');say('🪧 You squeeze in. By game two they’re passing you their casserole.');ctx.cont()}},
+      {l:'Take the last table, by the bathrooms',s:'No conflict. Bad seat.',fn:()=>{adj('stress',6);say('🪧 You set up next to the bathroom door. It swings open every 40 seconds.');ctx.cont()}}]);
+    return {block:true};
+  }});
+defEvent({id:'no_seat',hook:'bingo',priority:8,max:1,chance:0.5,cond:ctx=>ctx.stage==='start'&&S.bingo.reserved!==day(),
+  run(){adj('stress',4);say('🪑 No reservation, no table. You end up on a folding chair at the end of a long table, right under the speaker. B-4! B-4! B-4!')}});
+defEvent({id:'bar_argument',hook:'bingo',priority:6,max:1,chance:0.3,cond:ctx=>ctx.stage==='between',
+  run(ctx){
+    const topic=pick(['whether the county will ever add a second ferry','who let their dog dig up the Historical Society’s flower bed','the right way to stack firewood','a parking spot at the ferry landing']);
+    modal('🗯️ Trouble at the bar',`<p>Raised voices from the bar. Two guys are going at it about <b>${topic}</b>. The caller stops calling numbers.</p>`,[
+      {l:'Stay out of it',s:'Wait it out.',fn:()=>{bingoDelay(10);adj('stress',3);say('🗯️ Ten minutes of shouting, then a Legion volunteer walks them both outside. Back to bingo.');ctx.cont()}},
+      {l:'Help calm it down',s:S.friends.walt?'Walt’s got your back.':'Risky.',fn:()=>{
+        if(S.friends.walt||Math.random()<0.5){adj('stress',-2);bingoDelay(5);say(`🗯️ ${S.friends.walt?'You and Walt':'You'} talk them down. The bartender slides you a free drink. The room gives you a small round of applause.`);}
+        else{adj('stress',8);bingoDelay(12);say('🗯️ Both of them turn on you. Now it’s a three-way argument. A volunteer escorts everyone outside, including you, for a minute.');}
+        ctx.cont()}},
+      {l:'Pick a side',s:'You do have opinions.',fn:()=>{adj('stress',5);bingoDelay(8);if(Math.random()<0.5)meet('rusty','Rusty from the bar','agreed with him loudly about '+topic.split(' ').slice(0,4).join(' ')+'…');say('🗯️ You weigh in. Half the bar agrees with you, half doesn’t. The caller rings a cowbell until everyone sits down.');ctx.cont()}}]);
+    return {block:true};
+  }});
+defEvent({id:'order_late',hook:'bingo',priority:5,max:1,chance:0.45,cond:ctx=>ctx.stage==='between'&&!!S.bingo.order,
+  run(ctx){
+    const what=S.bingo.order==='both'?pick(['your burger','your burger and your beer','your beer (the burger came, though)']):'your drink';
+    modal('⏳ Still waiting…',`<p>Game ${ctx.game} is over and ${what} still hasn’t shown up. The kitchen and the bar are slammed: bingo night is the Riv’s busiest night of the week.</p>`,[
+      {l:'Wait patiently',s:'It’ll come.',fn:()=>{adj('stress',3);say(`⏳ ${what[0].toUpperCase()+what.slice(1)} finally arrives during the next game. Worth the wait, mostly.`);ctx.cont()}},
+      {l:'Flag down the server',s:'Politely.',fn:()=>{
+        if(Math.random()<0.5){const c=S.bingo.orderCost||0;money(c);S.bingo.comped+=c;adj('stress',-2);say(`⏳ The server apologizes and comps it. ${$(c)} back. Island service.`);}
+        else{adj('stress',5);say('⏳ “It’s coming, hon.” It is not coming. It comes two games later.');}
+        ctx.cont()}}]);
+    return {block:true};
+  }});
+
 // ---- trip start (can block) ----
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
   cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&ctx.car.id==='isl'&&!ctx.o.started,
@@ -578,10 +618,16 @@ function playBingo(cards,price){
   const mine=[...Array(cards+free)].map(bingoCard);const others=[...Array(34)].map(bingoCard);
   const crowd=Math.round(34*12/3+price);
   let gi=0,won=0;
+  S.bingo.order=null;S.bingo.delay=0;S.bingo.comped=0;S.bingo.playing=day();
+  // the 'bingo' hook: stage 'start' (before game 1) and 'between' (after games 1-3)
+  const between=(stage,cont)=>{const r=fireHook('bingo',{stage,game:gi,cont});if(!(r&&r.block))cont()};
+  const order=(what,cost)=>{money(-cost);S.bingo.order=what;S.bingo.orderCost=cost;if(what==='both')S.ateOut=day();
+    if(what)say(what==='both'?'🍔 You order a burger and a beer from the Riv’s kitchen.':'🍺 You order a drink.');
+    between('start',next)};
   const next=()=>{
     if(gi>=BINGO_GAMES.length){
-      S.t=day()*1440+1080+150;adj('stress',-14);if(S.friends.sam)adj('stress',-4);
-      S.bingo.won+=won;S.ev.history.push({id:'bingo',t:S.t});
+      S.t=day()*1440+1080+150+S.bingo.delay;adj('stress',-14);if(S.friends.sam)adj('stress',-4);
+      S.bingo.won+=won;S.bingo.playing=-1;S.ev.history.push({id:'bingo',t:S.t});
       const raised=crowd+Math.round(Math.random()*120);
       say(`🎱 Bingo night ${won?`paid off: you won <b>${$(won)}</b>`:'was a bust, but a fun one'}. The Legion raised about ${$(raised)} for the ${BINGO_FOR[S.week.bingo]}.`);
       return modal('🎱 That’s a wrap',`<p>${won?`You walk out <b>${$(won)}</b> richer.`:'No wins tonight.'} The American Legion announces tonight raised about <b>${$(raised)}</b> for the <b>${BINGO_FOR[S.week.bingo]}</b>.</p><p>${S.friends.walt?'Walt':'Someone'} is already stacking chairs. ${S.friends.sam?'Sam drives you home.':'You know half the room by name now.'}</p>`,[{l:'Head home',fn:()=>{afterAction()}}]);
@@ -592,9 +638,13 @@ function playBingo(cards,price){
     else msg=pick(['A woman two tables over yells BINGO. So close.','“BINGO!” from the back. The room groans.','A kid at the Booster Club table wins it. Everyone claps.','You needed one more. Of course you did.']);
     const show=res.winners[0]||mine.slice().sort((a,b)=>[...b.flat()].filter(x=>res.called.has(x)).length-[...a.flat()].filter(x=>res.called.has(x)).length)[0];
     modal(`🎱 Game ${gi} of ${BINGO_GAMES.length}: ${g.n} · ${$(g.pot)} pot`,`<p style="text-align:center;margin:0">Last ball: <b style="font-size:20px">${ballName(res.ball)}</b> · ${res.called.size} called</p>${cardHTML(show,res.called)}<p style="text-align:center">${msg}</p><p style="font-size:12px;color:var(--mute);text-align:center">You have ${mine.length} card${mine.length>1?'s':''}${free?' (one courtesy of Walt)':''}. About ${others.length} other cards in play.</p>`,
-      [{l:gi<BINGO_GAMES.length?'Next game':'Finish the night',fn:next}]);
+      [{l:gi<BINGO_GAMES.length?'Next game':'Finish the night',fn:()=>gi<BINGO_GAMES.length?between('between',next):next()}]);
   };
-  next();
+  const reserved=S.bingo.reserved===day();
+  modal('🎱 Bingo at the Riv',`<p>The room is packed: Legion volunteers selling cards, the Booster Club running the 50/50, and a line at the bar.${reserved?' Your reserved table has a little paper RESERVED tent on it.':''}</p><p>Order anything before the first game? Dinner counts as tonight’s food.</p>`,[
+    {l:'Dinner and a drink: $24',s:S.ateOut===day()?'You already ate, but sure.':'Counts as tonight’s food.',fn:()=>order('both',24)},
+    {l:'Just a drink: $6',fn:()=>order('drink',6)},
+    {l:'Nothing, thanks',fn:()=>order(null,0)}]);
 }
 
 function travelOpts(dest){
@@ -742,9 +792,11 @@ function actions(){
   }
   if(loc==='food'&&d===2){
     const m2=tod();
-    if(S.bingo.nights>0&&S.ev.history.some(h=>h.id==='bingo'&&Math.floor(h.t/1440)===d)) a.push({ic:'🎱',l:'Bingo’s over for tonight',s:'See you next Wednesday.',dis:true});
+    if(S.bingo.playing===d) a.push({ic:'🎱',l:'Bingo in progress…',s:'Eyes on your cards.',dis:true});
+    else if(S.bingo.nights>0&&S.ev.history.some(h=>h.id==='bingo'&&Math.floor(h.t/1440)===d)) a.push({ic:'🎱',l:'Bingo’s over for tonight',s:'See you next Wednesday.',dis:true});
     else if(m2<1080) a.push({ic:'🎱',l:'Bingo tonight at 6:00 PM',s:`Hosted by the American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,dis:true});
     else if(m2<1200){
+      if(S.bingo.reserved===d) a.push({ic:'🪧',l:'You have a reserved table',s:'Called ahead. Nice.',dis:true});
       a.push({ic:'🎱',l:'Play Bingo: 3 cards for $20',s:`American Legion Bingo. Proceeds go to the ${BINGO_FOR[S.week.bingo]}. Four games, about 2½ hours.`,cls:'primary',dis:S.money<20,fn:()=>playBingo(3,20)});
       a.push({ic:'🎱',l:'Play Bingo: 1 card for $10',s:'Keeping it casual.',dis:S.money<10,fn:()=>playBingo(1,10)});
     } else a.push({ic:'🎱',l:'Bingo already started',s:'Doors close at 8:00 PM.',dis:true});
@@ -776,6 +828,7 @@ function actions(){
   }
   if(loc==='work') workActions(a,d,m);
   cargoActions(a);
+  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:'For tonight. Takes 5 minutes, works from anywhere.',fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
     const car=!!carHere();
     [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
@@ -1195,6 +1248,7 @@ function endScreen(h1,sub,lost){
   <div class="kv"><span>Gallons you smuggled / citations</span><b>${s.smuggled} / ${S.citations}</b></div>
   <div class="kv"><span>Nights without power</span><b>${s.outageNights}</b></div>
   <div class="kv"><span>Island friends made</span><b>${Object.keys(S.friends).length?Object.values(S.friends).map(f=>f.name.split(',')[0].split(' from')[0]).join(', '):'none'}</b></div>
+  ${S.bingo.comped?`<div class="kv"><span>Comped by the Riv</span><b>${$(S.bingo.comped)}</b></div>`:''}
   <div class="kv"><span>Bingo nights / winnings</span><b>${S.bingo.nights} / ${$(S.bingo.won)}</b></div>${S.bingo.nights?`<div class="kv"><span>Your bingo money that went to the ${BINGO_FOR[S.week.bingo]}</span><b>${$(S.bingo.donated)}</b></div>`:''}
   <div class="kv"><span>Trading: bought / sold</span><b>${$(s.bought)} / ${$(s.sold)}</b></div>
   <div class="kv"><span>Drug runs / arrests</span><b>${s.drugRuns} / ${s.arrests}</b></div>
