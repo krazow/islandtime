@@ -237,7 +237,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.4.1', SAVE_SCHEMA=4;
+const APP_VERSION='1.4.2', SAVE_SCHEMA=4;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -246,7 +246,7 @@ function baseState(){
     gossipDay:-1,eagleDay:-1,storeStock:{},log:[],alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},friends:{},power:null,battery:'ok',
-    bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},
+    bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
     week:null};
 }
 function newGame(){
@@ -415,7 +415,7 @@ function board(side,s,mode){
   crossing(side,`${s.passenger?'Passenger-only backup boat':'Crossing'} to ${side==='I'?'Steilacoom':'Anderson Island'}`,`${fmt(S.t)} departure${s.ketron?' · stops at Ketron Island':''} · ${mode==='drive'?'with your car':'on foot'}`,()=>{
     S.t+=dur;S.stats.crossings++;
     if(mode==='drive'&&car) car.loc=to;
-    S.loc=to;
+    S.loc=to;fireHook('arrive',{at:to,from:'ferry'});
     say(`${s.ketron?'After a detour to Ketron Island, you':'You'} arrive at ${L[to].name} at ${fmt(S.t)}.${mode==='walk'&&car?` (${car.name} is parked back at the other landing.)`:''}`);
     afterAction();
   });
@@ -438,7 +438,9 @@ function waterTaxi(){
 // ISLAND EVENTS FRAMEWORK (non-ferry life on the island)
 // ---------------------------------------------------------------------
 // defEvent({id, hook, chance, cond(ctx), run(ctx), priority, cooldown, max})
-//   hook      'night'     while going to bed (ctx.where, ctx.notes[] for the night summary)
+//   hook      (a hook name, or an array of them)
+//             'arrive'    just arrived somewhere (ctx.at, ctx.from; 'ferry' when stepping off the boat)
+//             'night'     while going to bed (ctx.where, ctx.notes[] for the night summary)
 //             'wake'      start of a day, if you woke up at home
 //             'tripStart' before an island trip leaves (can block it with choices)
 //             'tripMid'   during an island trip (ctx.add(min), or block and later ctx.finish(extra))
@@ -455,7 +457,7 @@ function chain(id){if(!S.ev.force.includes(id))S.ev.force.push(id)}
 window.forceEvent=id=>chain(id);
 function fireHook(hook,ctx={}){
   ctx.hook=hook;let res=null;
-  const list=EV.filter(e=>e.hook===hook).sort((a,b)=>b.priority-a.priority);
+  const list=EV.filter(e=>e.hook===hook||(Array.isArray(e.hook)&&e.hook.includes(hook))).sort((a,b)=>b.priority-a.priority);
   for(const e of list){
     const forced=S.ev.force.includes(e.id);
     if(e.cond&&!e.cond(ctx)) continue;
@@ -554,6 +556,37 @@ defEvent({id:'order_late',hook:'bingo',priority:5,max:1,chance:0.45,cond:ctx=>ct
         else{adj('stress',5);say('⏳ “It’s coming, hon.” It is not coming. It comes two games later.');}
         ctx.cont()}}]);
     return {block:true};
+  }});
+
+
+// ---- Pajama Mike (hooks 'arrive' + 'bingo') ----
+// A friendly island fixture in flannel pajama pants and slippers, whatever the weather. Knows everything about the boat.
+const MIKE_SPOTS={aiDock:'In the ferry line',store:'By the bulletin board outside the old store',food:'Out front of the Riv'};
+function mikeTip(){
+  const soon=S.week.b.find(b=>b.start>S.t&&b.start<S.t+1440);
+  if(soon&&Math.random()<0.8) return say(`🩴 Mike leans in: “Buddy of mine on the deck crew says there’s a ${soon.cause.split(' (')[0]} problem brewing. If I were you, I’d catch an early boat ${Math.floor(soon.start/1440)===day()?'today':'tomorrow'}.”`);
+  say('🩴 Mike: “'+pick(['The 5:50 out of Steilacoom is never full. Nobody wants to be up that early.','Friday after three? Forget about driving on. Walk on or don’t go.','When the boat’s down, the fella with the sailboat runs people across. Tip him in diesel.','Sunday night everybody comes home at once. Plan around it.','Fog burns off by eleven. Usually. Mostly.'])+'”');
+}
+defEvent({id:'pajama_mike',hook:['arrive','bingo'],priority:2,max:3,cooldown:1,
+  cond:ctx=>{const m=tod();if(m<360||m>=1320)return false;return ctx.hook==='bingo'?ctx.stage==='between':!!MIKE_SPOTS[ctx.at]},
+  chance:ctx=>ctx.hook==='bingo'?0.15:(S.friends.mike?0.14:0.1),
+  run(ctx){
+    const done=()=>{if(ctx.cont)ctx.cont()};
+    const where=ctx.hook==='bingo'?'Between games, out on the Riv’s porch':MIKE_SPOTS[ctx.at];
+    const friend=!!S.friends.mike;
+    const btns=[];
+    if(S.cigs>0) btns.push({l:'Give him a cigarette',s:`You have ${S.cigs} left.`,fn:()=>{S.cigs--;adj('stress',-2);
+      if(!meet('mike','Pajama Mike','you gave him a cigarette'))say('🩴 “You’re a good egg.” Mike tucks it behind his ear for later.');
+      mikeTip();done()}});
+    btns.push({l:S.cigs>0?'“Not today, Mike”':friend?'“Sorry, Mike, I’m out”':'“Sorry, I don’t smoke”',s:S.cigs>0?'Keep the pack for yourself.':friend?'He’s used to it.':'Fair enough.',fn:()=>{
+      if(friend||Math.random()<0.25){say('🩴 “No worries, no worries.” He lingers to chat anyway.');mikeTip()}
+      else say('🩴 “No worries! Have a good one.” He shuffles off in his slippers.');
+      done()}});
+    btns.push({l:'Give him a couple bucks instead',s:'$2',dis:S.money<2,fn:()=>{money(-2);adj('stress',-2);
+      if(Math.random()<0.5&&meet('mike','Pajama Mike','you spotted him a couple bucks'));else say('🩴 “Hey, thanks. Appreciate you.”');
+      mikeTip();done()}});
+    modal('🩴 Pajama Mike',`<p>${where}, a guy in flannel pajama pants, slippers and a rain jacket gives you a little wave. ${friend?'It’s your pal Mike.':'Everybody on the island seems to know him.'}</p><p>“Hey${friend?', friend':''}! You wouldn’t happen to have a cigarette, would you?”</p>`,btns);
+    return ctx.hook==='bingo'?{block:true}:{stop:true};
   }});
 
 // ---- trip start (can block) ----
@@ -687,6 +720,7 @@ function go(dest,o){
   if(dest==='home'&&S.carried>0){S.pantry+=S.carried;say(`You unload ${S.carried} day${S.carried>1?'s':''} of groceries into the pantry.`);S.carried=0;}
   if(dest==='home') stash();
   if(o.m==='walk') say(`You walk to ${L[dest].name}. It takes ${min} minutes.`);
+  fireHook('arrive',{at:dest,from});
   afterAction();
 }
 
@@ -818,6 +852,7 @@ function actions(){
       }
     }
   }
+  if(loc==='gas'&&open&&S.cigs<=0) a.push({ic:'🚬',l:'Buy a pack of cigarettes: $11',s:'You don’t smoke. But somebody on the island might ask.',dis:S.money<11,fn:()=>{money(-11);S.cigs=20;S.t+=5;say('🚬 A pack of cigarettes, for island diplomacy.');afterAction()}});
   if(loc==='gas'&&open){
     const car=carHere();
     if(car){const need=Math.round((car.tank-car.fuel)*10)/10,pr=car.diesel?DIESEL_PRICE:GAS_PRICE;
@@ -1118,7 +1153,7 @@ function actView(){
   let h='';
   if(uiNarr.length) h+=`<div class="narr">${uiNarr.slice(-4).map(s=>'<p>'+s+'</p>').join('')}</div>`;
   const cars=S.cars.map(c=>`<span class="tag ${c.fuel<1.5?'bad':c.loc===S.loc?'good':''}">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${c.loc===S.loc?'here':'at '+L[c.loc].name.replace(' Ferry Landing',' landing').replace(' Ferry Terminal',' terminal')} · ⛽${c.fuel}/${c.tank}</span>`).join('');
-  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
+  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
   const acts=actions();
   h+=marketView();
   if(acts.length){h+='<div class="sect">Do something</div>';acts.forEach(a=>{const i=ACTS.push(a.fn)-1;h+=`<button class="act ${a.cls||''}" ${a.dis?'disabled':''} onclick="ACT(${i})"><span class="ic">${a.ic}</span><span class="tx"><b>${a.l}</b>${a.s?'<span>'+a.s+'</span>':''}</span></button>`})}
