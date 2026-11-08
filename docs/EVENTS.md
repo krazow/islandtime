@@ -51,7 +51,7 @@ Chains that don't fire by the end of that morning are dropped. `window.forceEven
 
 - **Sam** (new neighbor): rides to the ferry, jump-starts, outage coffee, and company at bingo
 - **Walt** (American Legion): jump-starts and a free bingo card
-- **Pajama Mike**: ferry tips, including heads-ups about upcoming breakdowns
+- **Pajama Fred**: ferry tips, including heads-ups about upcoming breakdowns
 
 ## Current events
 
@@ -65,7 +65,7 @@ Chains that don't fire by the end of that morning are dropped. `window.forceEven
 | `dead_battery` | tripStart | Car won't start. Get a jump from Sam or Walt, knock on the neighbor's door, walk, or hitch. The battery stays weak until you replace it in Steilacoom |
 | `garage_release`, `tree_down`, `flat_tire`, `deer`, `eagle` | tripMid | Time lost (or a nice moment) on the road |
 | `stranded_neighbor` | tripMid | Help a Legion member jump his truck (meet Walt), or drive on |
-| `pajama_mike` | arrive, bingo (between) | Pajama Mike, an island fixture in flannel pajama pants and slippers, asks for a cigarette at the ferry landing, the old store, the Riv, or between bingo games. Give him one (you can buy a pack at the Steilacoom gas station), say no, or spot him $2. Become friends and he passes along ferry tips, including real heads-ups about upcoming breakdowns. Up to 3 times a week |
+| `pajama_fred` | arrive, bingo (between) | Pajama Fred, an island fixture in flannel pajama pants and slippers, asks for a cigarette at the ferry landing, the old store, the Riv, or between bingo games. Give him one (you can buy a pack at the Steilacoom gas station), say no, or spot him $2. Become friends and he passes along ferry tips, including real heads-ups about upcoming breakdowns. Up to 3 times a week |
 | `table_taken` | bingo (start) | Only if you reserved a table: strangers are in it. Point out the reservation, squeeze in (maybe meet the Hendersons), or take the seat by the bathrooms |
 | `no_seat` | bingo (start) | No reservation: a folding chair under the speaker |
 | `bar_argument` | bingo (between) | Two guys arguing at the bar stop the game. Stay out, calm it down (easier with Walt), or pick a side |

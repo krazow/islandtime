@@ -235,7 +235,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.4.2', SAVE_SCHEMA=4;
+const APP_VERSION='1.4.3', SAVE_SCHEMA=4;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -557,33 +557,33 @@ defEvent({id:'order_late',hook:'bingo',priority:5,max:1,chance:0.45,cond:ctx=>ct
   }});
 
 
-// ---- Pajama Mike (hooks 'arrive' + 'bingo') ----
+// ---- Pajama Fred (hooks 'arrive' + 'bingo') ----
 // A friendly island fixture in flannel pajama pants and slippers, whatever the weather. Knows everything about the boat.
-const MIKE_SPOTS={aiDock:'In the ferry line',store:'By the bulletin board outside the old store',food:'Out front of the Riv'};
-function mikeTip(){
+const FRED_SPOTS={aiDock:'In the ferry line',store:'By the bulletin board outside the old store',food:'Out front of the Riv'};
+function fredTip(){
   const soon=S.week.b.find(b=>b.start>S.t&&b.start<S.t+1440);
-  if(soon&&Math.random()<0.8) return say(`🩴 Mike leans in: “Buddy of mine on the deck crew says there’s a ${soon.cause.split(' (')[0]} problem brewing. If I were you, I’d catch an early boat ${Math.floor(soon.start/1440)===day()?'today':'tomorrow'}.”`);
-  say('🩴 Mike: “'+pick(['The 5:50 out of Steilacoom is never full. Nobody wants to be up that early.','Friday after three? Forget about driving on. Walk on or don’t go.','When the boat’s down, the fella with the sailboat runs people across. Tip him in diesel.','Sunday night everybody comes home at once. Plan around it.','Fog burns off by eleven. Usually. Mostly.'])+'”');
+  if(soon&&Math.random()<0.8) return say(`🩴 Fred leans in: “Buddy of mine on the deck crew says there’s a ${soon.cause.split(' (')[0]} problem brewing. If I were you, I’d catch an early boat ${Math.floor(soon.start/1440)===day()?'today':'tomorrow'}.”`);
+  say('🩴 Fred: “'+pick(['The 5:50 out of Steilacoom is never full. Nobody wants to be up that early.','Friday after three? Forget about driving on. Walk on or don’t go.','When the boat’s down, the fella with the sailboat runs people across. Tip him in diesel.','Sunday night everybody comes home at once. Plan around it.','Fog burns off by eleven. Usually. Mostly.'])+'”');
 }
-defEvent({id:'pajama_mike',hook:['arrive','bingo'],priority:2,max:3,cooldown:1,
-  cond:ctx=>{const m=tod();if(m<360||m>=1320)return false;return ctx.hook==='bingo'?ctx.stage==='between':!!MIKE_SPOTS[ctx.at]},
-  chance:ctx=>ctx.hook==='bingo'?0.15:(S.friends.mike?0.14:0.1),
+defEvent({id:'pajama_fred',hook:['arrive','bingo'],priority:2,max:3,cooldown:1,
+  cond:ctx=>{const m=tod();if(m<360||m>=1320)return false;return ctx.hook==='bingo'?ctx.stage==='between':!!FRED_SPOTS[ctx.at]},
+  chance:ctx=>ctx.hook==='bingo'?0.15:(S.friends.fred?0.14:0.1),
   run(ctx){
     const done=()=>{if(ctx.cont)ctx.cont()};
-    const where=ctx.hook==='bingo'?'Between games, out on the Riv’s porch':MIKE_SPOTS[ctx.at];
-    const friend=!!S.friends.mike;
+    const where=ctx.hook==='bingo'?'Between games, out on the Riv’s porch':FRED_SPOTS[ctx.at];
+    const friend=!!S.friends.fred;
     const btns=[];
     if(S.cigs>0) btns.push({l:'Give him a cigarette',s:`You have ${S.cigs} left.`,fn:()=>{S.cigs--;adj('stress',-2);
-      if(!meet('mike','Pajama Mike','you gave him a cigarette'))say('🩴 “You’re a good egg.” Mike tucks it behind his ear for later.');
-      mikeTip();done()}});
-    btns.push({l:S.cigs>0?'“Not today, Mike”':friend?'“Sorry, Mike, I’m out”':'“Sorry, I don’t smoke”',s:S.cigs>0?'Keep the pack for yourself.':friend?'He’s used to it.':'Fair enough.',fn:()=>{
-      if(friend||Math.random()<0.25){say('🩴 “No worries, no worries.” He lingers to chat anyway.');mikeTip()}
+      if(!meet('fred','Pajama Fred','you gave him a cigarette'))say('🩴 “You’re a good egg.” Fred tucks it behind his ear for later.');
+      fredTip();done()}});
+    btns.push({l:S.cigs>0?'“Not today, Fred”':friend?'“Sorry, Fred, I’m out”':'“Sorry, I don’t smoke”',s:S.cigs>0?'Keep the pack for yourself.':friend?'He’s used to it.':'Fair enough.',fn:()=>{
+      if(friend||Math.random()<0.25){say('🩴 “No worries, no worries.” He lingers to chat anyway.');fredTip()}
       else say('🩴 “No worries! Have a good one.” He shuffles off in his slippers.');
       done()}});
     btns.push({l:'Give him a couple bucks instead',s:'$2',dis:S.money<2,fn:()=>{money(-2);adj('stress',-2);
-      if(Math.random()<0.5&&meet('mike','Pajama Mike','you spotted him a couple bucks'));else say('🩴 “Hey, thanks. Appreciate you.”');
-      mikeTip();done()}});
-    modal('🩴 Pajama Mike',`<p>${where}, a guy in flannel pajama pants, slippers and a rain jacket gives you a little wave. ${friend?'It’s your pal Mike.':'Everybody on the island seems to know him.'}</p><p>“Hey${friend?', friend':''}! You wouldn’t happen to have a cigarette, would you?”</p>`,btns);
+      if(Math.random()<0.5&&meet('fred','Pajama Fred','you spotted him a couple bucks'));else say('🩴 “Hey, thanks. Appreciate you.”');
+      fredTip();done()}});
+    modal('🩴 Pajama Fred',`<p>${where}, a guy in flannel pajama pants, slippers and a rain jacket gives you a little wave. ${friend?'It’s your pal Fred.':'Everybody on the island seems to know him.'}</p><p>“Hey${friend?', friend':''}! You wouldn’t happen to have a cigarette, would you?”</p>`,btns);
     return ctx.hook==='bingo'?{block:true}:{stop:true};
   }});
 
@@ -1005,6 +1005,13 @@ function migrate(d){
     delete x.canGal;delete x.dieselCans;
   }
   fillDefaults(x,baseState());
+  // 1.4.2 -> 1.4.3: Pajama Mike was renamed Pajama Fred
+  if(x.friends&&x.friends.mike){x.friends.fred=Object.assign(x.friends.mike,{name:'Pajama Fred'});delete x.friends.mike}
+  if(x.ev){for(const k of ['count','last'])if(x.ev[k]&&x.ev[k].pajama_mike!=null){x.ev[k].pajama_fred=x.ev[k].pajama_mike;delete x.ev[k].pajama_mike}
+    if(Array.isArray(x.ev.history))x.ev.history.forEach(h=>{if(h.id==='pajama_mike')h.id='pajama_fred'});
+    if(Array.isArray(x.ev.force))x.ev.force=x.ev.force.map(i=>i==='pajama_mike'?'pajama_fred':i)}
+  if(Array.isArray(x.log))x.log.forEach(e=>{if(typeof e.s==='string')e.s=e.s.replace(/Pajama Mike/g,'Pajama Fred').replace(/\bMike\b/g,'Fred')});
+  if(Array.isArray(d.uiNarr))d.uiNarr=d.uiNarr.map(t=>typeof t==='string'?t.replace(/Pajama Mike/g,'Pajama Fred').replace(/\bMike\b/g,'Fred'):t);
   // core fields must be sane numbers
   x.t=num(x.t,330);x.cur=num(x.cur,Math.floor(x.t/1440));x.cur=Math.max(0,Math.min(6,x.cur));
   for(const k of ['money','pantry','carried','health','stress','job']) x[k]=num(x[k],baseState()[k]);
