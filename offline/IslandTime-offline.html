@@ -254,7 +254,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.6.1', SAVE_SCHEMA=5;
+const APP_VERSION='1.6.2', SAVE_SCHEMA=5;
 // ---------------- player name ----------------
 // Text anywhere in the game can contain the token {{name}}. It's swapped for the current name only when shown,
 // so changing your name updates every line already in the log, the narration, pop-ups and tiles.
@@ -296,6 +296,7 @@ window.openSettings=()=>{
   const inGame=S&&!S.over&&!document.querySelector('.title,.end');
   modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
     {l:'👤 Change name',s:'Updates your name everywhere in the game.',fn:()=>nameModal({back:openSettings})},
+    {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
     {l:'Close',fn:()=>{}}]);
 };
@@ -588,7 +589,7 @@ function defEvent(e){EV.push(Object.assign({chance:0,priority:0,cooldown:0,max:9
 function chain(id,cause){if(!S.ev.force.includes(id))S.ev.force.push(id);S.ev.cause=S.ev.cause||{};S.ev.cause[id]=cause||EV_RUNNING||null}
 window.forceEvent=id=>chain(id);
 function fireHook(hook,ctx={}){
-  ctx.hook=hook;let res=null;
+  ctx.hook=hook;let res=null;const popItems=[];
   const scale=HOOK_SCALE[hook]??1,open=scale>=1||Math.random()<scale; // one roll per hook call
   const list=EV.filter(e=>e.hook===hook||(Array.isArray(e.hook)&&e.hook.includes(hook))).sort((a,b)=>b.priority-a.priority);
   for(const e of list){
@@ -602,12 +603,27 @@ function fireHook(hook,ctx={}){
       if(!(Math.random()<p)) continue;
     } else S.ev.force=S.ev.force.filter(x=>x!==e.id);
     S.ev.last[e.id]=day();S.ev.count[e.id]=(S.ev.count[e.id]||0)+1;S.ev.history.push({id:e.id,t:S.t});
+    const nBefore=uiNarr.length,mBefore=MQ.length+(document.getElementById('mbg')?1:0);
     EV_RUNNING=e.id;let r;try{r=e.run(ctx)||{}}finally{EV_RUNNING=null}
+    // events that didn't open their own window get an OK pop-up (collected, shown once per hook call)
+    if(MQ.length+(document.getElementById('mbg')?1:0)===mBefore) popItems.push({id:e.id,lines:uiNarr.slice(nBefore)});
     eventTile(e,ctx);if(S.ev.cause)delete S.ev.cause[e.id];
     if(r.block||r.stop){res=r;break}
     res=res||r;
   }
+  eventPopup(hook,popItems);
   return res;
+}
+// ---- OK pop-up for random events (on by default; toggle in Settings) ----
+const POPUP_KEY='islandtime.popups';
+function popupsOn(){try{return localStorage.getItem(POPUP_KEY)!=='off'}catch(e){return true}}
+function eventPopup(hook,items){
+  if(!items.length||hook==='night'||!popupsOn()||!S||S.over) return; // night events are listed in the "Good night" summary
+  const meta=id=>TILE_META[id]||['📍',id.replace(/_/g,' ')];
+  const body=items.map(it=>{const m=meta(it.id);const txt=it.lines.length?it.lines.map(l=>`<p style="margin:4px 0 0">${l}</p>`).join(''):'';
+    return items.length>1?`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)"><span style="font-size:24px">${m[0]}</span><div><b>${m[1]}</b>${txt}</div></div>`:txt}).join('');
+  const one=items.length===1?meta(items[0].id):null;
+  modal(one?`${one[0]} ${one[1]}`:`🌲 ${items.length} things just happened`,body||'<p>Island life.</p>',[{l:'OK',fn:()=>{}}]);
 }
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 function powerOut(){return S.power&&S.t<S.power.end}
