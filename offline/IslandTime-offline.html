@@ -131,6 +131,7 @@ button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select
 .tile.out{animation:tileOut .25s ease-in forwards}
 @keyframes tileIn{from{transform:translateY(-16px) scale(.96);opacity:0}}
 @keyframes tileOut{to{transform:translateY(-12px);opacity:0;height:0;margin:0;padding-top:0;padding-bottom:0}}
+.chip.almc.on{background:var(--fir);color:#fff}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(10,25,30,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .modal{background:var(--paper);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .22s ease-out}
@@ -209,6 +210,7 @@ const L={
   lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
   stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
   gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
+  depot:{name:'Home Depot (Lakewood)',side:'M',ic:'🧰',desc:'Generators, gas cans, everything for island life',hours:()=>[360,1320]},
   wholesale:{name:'Wholesale & Supply (Lakewood)',side:'M',ic:'🏭',desc:'Buy and sell food and medical supplies in bulk',hours:()=>[420,1260]},
   motel:{name:'Motel Parking Lot (Lakewood)',side:'M',ic:'🅿️',desc:'After dark only. Deals that shouldn’t happen',hours:()=>[1080,1440]},
   work:{name:'Work (Lakewood)',side:'M',ic:'💼',desc:'Your 9-to-5. Clock in by 9:00',hours:d=>d<5?[420,1140]:null},
@@ -219,7 +221,7 @@ const L={
   urgent:{name:'Urgent Care (DuPont)',side:'M',ic:'🚑',desc:'Walk-in care, 8 AM–8 PM',hours:()=>[480,1200]},
 };
 const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2}};
-const MP={wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
+const MP={depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
 function dist(a,b){
   if(a===b) return 0;
   if(L[a].side==='I'){return (DI[a]&&DI[a][b])||(DI[b]&&DI[b][a])}
@@ -248,7 +250,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.4.4', SAVE_SCHEMA=4;
+const APP_VERSION='1.5.0', SAVE_SCHEMA=5;
 function baseState(){
   return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
@@ -258,6 +260,7 @@ function baseState(){
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},friends:{},power:null,battery:'ok',
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
+    alarm:{time:330,type:'plug'},phone:80,phoneT:330,gen:null,
     week:null};
 }
 function newGame(){
@@ -464,9 +467,28 @@ function waterTaxi(){
 // chain(id)   guarantees an event fires the next time its hook runs (if its cond passes):
 //             this is how one event sets off others (a power outage -> the alarm doesn't go off).
 // =====================================================================
+// ---- phone battery, alarm and generator ----
+const ALARM_TIMES=[285,300,330,360,390,420,450,480];
+function phoneTick(){const el=S.t-S.phoneT;if(el>0){S.phone=Math.max(0,Math.round(S.phone-el/60*4));S.phoneT=S.t}}
+function alarmTxt(){return `${fmt(S.alarm.time)} on ${S.alarm.type==='plug'?'the plug-in clock':'your phone'}`}
+function genReady(){return S.gen==='home'}
+// overnight generator: returns true if it ran (needs a generator at home and gas in the shed)
+function runGenerator(where,gal){if(where!=='home'||!genReady()||S.homeGas<gal)return false;S.homeGas=Math.round((S.homeGas-gal)*10)/10;S.ev.flags.genRan=day();return true}
+window.almPick=(k,v)=>{window.ALM[k]=v;document.querySelectorAll('[data-alm-'+k+']').forEach(b=>b.classList.toggle('on',String(b.dataset['alm'+k[0].toUpperCase()+k.slice(1)])===String(v)))};
+function alarmModal(){
+  window.ALM={time:S.alarm.time,type:S.alarm.type};
+  const chip=(k,v,label,on)=>`<button class="chip almc ${on?'on':''}" data-alm-${k}="${v}" onclick="almPick('${k}',${typeof v==='number'?v:`'${v}'`})">${label}</button>`;
+  modal('⏰ Set your alarm',`<p style="margin-bottom:6px"><b>Wake up at</b></p><div class="chips" style="margin-top:0">${ALARM_TIMES.map(t=>chip('time',t,fmt(t),t===S.alarm.time)).join('')}</div>
+  <p style="margin:14px 0 6px"><b>Alarm</b></p><div class="chips" style="margin-top:0">${chip('type','plug','🔌 Plug-in clock',S.alarm.type==='plug')}${chip('type','phone','📱 Phone alarm',S.alarm.type==='phone')}</div>
+  <p style="font-size:13px;color:var(--mute);margin-top:12px">🔌 <b>Plug-in clock:</b> loud and reliable, but a power outage resets it, and it can’t wake you if you sleep away from home.<br>📱 <b>Phone:</b> works anywhere and through outages, but only if the battery lasts the night (${S.phone}% now). Phones charge overnight at home when the power stays on.</p>
+  <p style="font-size:13px;color:var(--mute)">Waking earlier gives you more time but less rest. Sleeping in lowers stress.</p>`,
+  [{l:'Save alarm',fn:()=>{S.alarm={time:window.ALM.time,type:window.ALM.type};say(`⏰ Alarm set for ${alarmTxt()}.`);render()}},{l:'Cancel',fn:()=>{}}]);
+}
+
 // ---- acknowledgement tiles: a small card every time an event fires ----
 const TILE_META={
-  power_outage:['⚡','Power outage','bad'],starry:['✨','Starry night','good'],alarm_fail:['⏰','Your alarm didn’t go off','bad'],
+  power_outage:['⚡','Power outage','bad'],starry:['✨','Starry night','good'],alarm_fail:['⏰','Your alarm didn’t go off','bad'],phone_died:['📵','Your phone died overnight','bad'],phone_saves:['📱','Phone alarm to the rescue','good'],
+  slept_through:['😴','Slept through your phone alarm','bad'],gen_saves:['🔌','Generator kept things running','good'],
   no_water:['🚿','No water','bad'],garage_stuck:['🚪','Garage door is dead','bad'],neighbor_ride:['🚪','A new neighbor knocks','good'],
   friend_coffee:['☕','Coffee from Sam','good'],bingo_reminder:['🎱','Bingo tonight at the Riv','info'],
   table_taken:['🪧','Someone took your table','bad'],no_seat:['🪑','No seat at bingo','bad'],bar_argument:['🗯️','Argument at the bar','bad'],
@@ -531,14 +553,16 @@ defEvent({id:'power_outage',hook:'night',priority:5,max:2,cooldown:2,
     const cause=pick(['a fir came down across a line','a transformer blew with a bang you heard from bed','wind gusts tangled a line by the lake','nobody knows why. It just went out']);
     S.power={start,end,cause};S.stats.outageNights++;
     let txt=`⚡ Around ${fmt(start)} the power goes out: ${cause}.`;
-    if(ctx.where==='home'&&S.homeGas>=2){S.homeGas-=2;txt+=' Your generator burns 2 gallons and saves the fridge.'}
+    if(runGenerator(ctx.where,2)){txt+=' You start the generator by flashlight. It burns 2 gallons from the shed and saves the fridge.';chain('gen_saves')}
+    else if(ctx.where==='home'&&!genReady()&&S.homeGas>=2&&S.pantry>0&&Math.random()<0.5){S.pantry--;txt+=' You have gas in the shed but no generator to put it in. A day of food in the fridge goes warm.'}
     else if(S.pantry>0&&Math.random()<0.5){S.pantry--;txt+=' By morning, a day of food in the fridge has gone warm.'}
     ctx.notes.push(txt);outageChain(ctx.where);
   }});
 function outageChain(where){
   if(where!=='home') return;
-  if(Math.random()<0.75) chain('alarm_fail');
-  if(Math.random()<0.6) chain('no_water');
+  if(S.alarm.type==='plug'){if(Math.random()<0.75) chain('alarm_fail');}
+  else if(S.phone<=8&&S.ev.flags.genRan!==day()) chain('phone_died'); else chain('phone_saves');
+  if(S.ev.flags.genRan!==day()&&Math.random()<0.6) chain('no_water');
   if(S.cars.some(c=>c.id==='isl'&&c.loc==='home')&&Math.random()<0.35) chain('garage_stuck');
   if(!S.friends.sam&&Math.random()<0.45) chain('neighbor_ride');
   else if(S.friends.sam&&Math.random()<0.4) chain('friend_coffee');
@@ -548,11 +572,20 @@ defEvent({id:'starry',hook:'night',chance:0.5,cond:()=>powerOut(),run(ctx){adj('
 // ---- wake (at home) ----
 TILE_META.storm=['🌬️','Gale','bad'];
 const atHomeWake=ctx=>S.loc==='home';
-defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
+defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:ctx=>atHomeWake(ctx)&&S.alarm.type==='plug',run(){
   const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
   say(`⏰ Your alarm clock never went off. The power blinked out overnight and reset it. It’s already <b>${fmt(S.t)}</b>.`);
-  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
+  S.phoneT=S.t;
+  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${S.phone>8?' (Your phone’s alarm would have worked.)':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
 }});
+defEvent({id:'phone_died',hook:'wake',priority:10,cond:atHomeWake,run(){
+  const late=60+Math.floor(Math.random()*50);S.t+=late;S.phoneT=S.t;adj('stress',10);buzz([100,60,100]);
+  say(`📵 No power meant no charging, and your phone died around 4 AM. No alarm. It’s <b>${fmt(S.t)}</b>.`);
+  modal('📵 Your phone died',`<p>The power was out all night, so your phone never charged. It died before the alarm could go off.</p><p>It’s <b>${fmt(S.t)}</b>.</p>`,[{l:'Go go go',fn:()=>{}}])}});
+defEvent({id:'phone_saves',hook:'wake',priority:10,cond:atHomeWake,run(){adj('stress',-3);say(`📱 The power’s out, but your phone alarm goes off right on time at ${fmt(S.t)}. Good call.`)}});
+defEvent({id:'gen_saves',hook:'wake',priority:9,cond:atHomeWake,run(){adj('stress',-4);say('🔌 The generator chugged all night: cold fridge, warm house, running water and a charged phone. The best money you ever spent.')}});
+defEvent({id:'slept_through',hook:'wake',priority:8,cond:ctx=>atHomeWake(ctx)&&S.alarm.type==='phone'&&S.phone>0&&!S.ev.force.includes('phone_died')&&S.ev.last.phone_died!==day(),chance:0.07,run(){
+  const late=20+Math.floor(Math.random()*25);S.t+=late;S.phoneT=S.t;adj('stress',6);say(`😴 You slept right through your phone’s gentle chime. It’s ${fmt(S.t)}.`)}});
 defEvent({id:'no_water',hook:'wake',priority:6,cond:atHomeWake,run(){adj('stress',5);say('🚿 No power means no well pump, which means no shower. Hat day.')}});
 defEvent({id:'garage_stuck',hook:'wake',priority:6,cond:atHomeWake,run(){S.ev.flags.garage=day();say('🚪 The garage door opener is dead. You’ll have to wrestle the manual release before you can drive.')}});
 defEvent({id:'neighbor_ride',hook:'wake',priority:4,cond:ctx=>atHomeWake(ctx)&&!S.friends.sam,run(){
@@ -739,7 +772,7 @@ function travelOpts(dest){
       o.push({m:'hitch',l:'👍 Hitch a ride',min:base+15,dis:!canWalkCarry()});}
   } else if(!fueled){
     const c=Math.round(8+base*0.8);
-    o.push({m:'ride',l:`📱 Rideshare ${base+8}m · $${c}`,min:base+8,cost:c});
+    o.push({m:'ride',l:S.phone>0?`📱 Rideshare ${base+8}m · $${c}`:'📵 Rideshare (phone dead)',min:base+8,cost:c,dis:S.phone<=0});
     o.push({m:'walk',l:`🚶 ${Math.round(base*5*inj)} min`,min:Math.round(base*5*inj),dis:!canWalkCarry()});
     if(tod()<1260) o.push({m:'bus',l:`🚌 Bus ${Math.round(base*2.5+10)}m · $2.75`,min:Math.round(base*2.5+10),cost:2.75,dis:!canWalkCarry()});
   }
@@ -759,11 +792,13 @@ function go(dest,o){
     if(r&&r.block){render();return}
     min+=extra;}
   S.t+=min;
+  if(o.m==='car'||o.m==='friend'||o.m==='ride'){phoneTick();S.phone=Math.min(100,S.phone+Math.round(min*0.8))}
   if(car&&o.m==='car'){car.loc=dest;car.fuel=Math.max(0,Math.round((car.fuel-min*FUEL_RATE)*10)/10);if(car.fuel<1.5&&car.fuel>0)say(`⛽ The low-fuel light is on in the ${car.name.split(' (')[0].toLowerCase()}. ${car.fuel} gallons left.`);if(car.fuel===0)say('⛽ The engine coughs and dies as you pull in. Totally empty.');}
   S.loc=dest;
   if(car&&car.id==='beat'&&dest==='stDock'&&Math.random()<0.25){S.t+=10;say('The terminal lot is full. You park way up the hill and hike down.');}
   if(dest==='home'&&S.carried>0){S.pantry+=S.carried;say(`You unload ${S.carried} day${S.carried>1?'s':''} of groceries into the pantry.`);S.carried=0;}
   if(dest==='home') stash();
+  if(dest==='home'&&S.gen&&S.gen!=='home'&&car&&o.m==='car'&&car.id===S.gen){S.gen='home';say('🔌 You wrestle the generator into the shed and run a cord to the house. If the power goes out, you’re ready, as long as there’s gas stashed.');showTile('🔌','Generator installed','Keep gas in the shed for outages','good')}
   if(o.m==='walk') say(`You walk to ${L[dest].name}. It takes ${min} minutes.`);
   fireHook('arrive',{at:dest,from});
   afterAction();
@@ -785,7 +820,7 @@ function processTimed(){
 function stormNight(d){const st=S.week.storm;if(!st)return false;const n=d*1440+1380;return n>=st.start&&n<st.end}
 function startDay(){
   const d=day();
-  if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. A generator needs gas…`);
+  if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. ${genReady()?(S.homeGas>=3?'Your generator is fueled and ready.':'Your generator needs at least 3 gallons in the shed…'):'No generator? Tonight might be cold.'}`);
   if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
   if(d===0) say('⛽ Monday fuel run: with a fuel tanker aboard, federal hazmat rules let only crew and the tanker driver ride. The 9:35 AM from Steilacoom and the 11:30 AM from the island are canceled.');
   if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(d===4?1:0.3)){
@@ -806,10 +841,15 @@ function endDay(where){
   const nctx={where,notes};fireHook('night',nctx);
   // storm power outage
   if(stormNight(d)){
-    S.stats.outageNights++;S.power={start:d*1440+1380,end:(d+1)*1440+330+240,cause:'the gale'};if(Math.random()<0.8){EV_RUNNING='storm';outageChain(where);EV_RUNNING=null}
-    if(where==='home'&&S.homeGas>=3){S.homeGas-=3;notes.push('⚡ The wind knocks out the island’s power. Your generator burns 3 gallons of gas keeping the fridge and the heat on.')}
-    else {if(S.pantry>0){S.pantry--;}adj('health',-6);adj('stress',8);notes.push(where==='home'?'⚡ The power goes out and you have no gas for the generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.')}
+    S.stats.outageNights++;S.power={start:d*1440+1380,end:(d+1)*1440+330+240,cause:'the gale'};
+    if(runGenerator(where,3)){notes.push('⚡ The wind knocks out the island’s power. Your generator burns 3 gallons from the shed keeping the fridge, the heat and the well pump going.');chain('gen_saves','storm')}
+    else {if(S.pantry>0){S.pantry--;}adj('health',-6);adj('stress',8);notes.push(where!=='home'?'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.':!genReady()?'⚡ The power goes out and you don’t own a generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The power goes out and there isn’t enough gas in the shed for the generator. The house gets cold and a day of food spoils in the fridge.')}
   }
+  if(stormNight(d)&&Math.random()<0.8){EV_RUNNING='storm';outageChain(where);EV_RUNNING=null}
+  // phone overnight
+  phoneTick();const nightOut=!!S.power&&S.power.start<=(d+1)*1440+330;
+  if(where==='home') S.phone=(!nightOut||S.ev.flags.genRan===d)?100:Math.max(0,S.phone-6);
+  else if(where==='motel') S.phone=100; else S.phone=Math.min(100,S.phone+35);
   // eat
   if(S.ateOut===d){notes.push('🍔 Dinner was from the Riv. The pantry gets a night off.')}
   else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
@@ -820,7 +860,8 @@ function endDay(where){
   if(d===2&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
   if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}
   if(S.injury&&!S.injury.treated){adj('health',-8);notes.push('🤕 Your untreated ankle throbs all night.')}
-  if(where==='home'){adj('stress',-14);adj('health',3)}
+  const rest=Math.max(6,Math.min(24,Math.round(14+(S.alarm.time-330)/30*3)));
+  if(where==='home'){adj('stress',-rest);adj('health',3)}
   else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push('🪑 You sleep sitting up in the Steilacoom terminal waiting room. The vending machine hums all night.')}
   else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
   if(S.stress>=100){adj('job',-8);adj('health',-8);S.stress=65;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
@@ -828,16 +869,23 @@ function endDay(where){
   if(S.health<=0) return gameOver('health');
   if(S.job<=0) return gameOver('fired');
   if(d===6) return finish();
-  S.cur=d+1; S.t=(d+1)*1440+330; S.priority=false;
+  // when you wake up
+  let wake=S.alarm.time,awayNote='';
+  if(where!=='home'){
+    if(S.alarm.type==='plug'){wake=370+Math.floor(Math.random()*80);awayNote=`⏰ Your alarm clock is plugged in at home. ${where==='terminal'?'The janitor’s floor buffer':'A housekeeping cart'} wakes you at ${fmt(wake)}.`;}
+    else if(S.phone<=0){wake=380+Math.floor(Math.random()*60);awayNote=`📵 Your phone died overnight. You wake at ${fmt(wake)}.`;}
+  }
+  S.cur=d+1; S.t=(d+1)*1440+wake; S.phoneT=S.t; S.priority=false;
   if(where!=='home') S.loc='stDock';
   uiNarr=[];
-  say(`${DAYS[d+1]}, 5:30 AM.`);
+  say(`${DAYS[d+1]}, ${fmt(S.t)}.`);
+  if(awayNote){say(awayNote);showTile(awayNote.slice(0,2),'No alarm went off',where==='terminal'?'At the Steilacoom terminal':'At the motel','bad')}
   modal(`Good night, ${DAYS[d]}`,`${notes.length?notes.map(n=>'<p>'+n+'</p>').join(''):'<p>A quiet night. The ferry horn sounds once, far off.</p>'}<p>${S.pantry} day${S.pantry===1?'':'s'} of food left in the pantry.</p>`,[{l:`Wake up: ${DAYS[d+1]}`,fn:()=>{}}]);
   startDay();
   render();
 }
 function afterAction(){
-  processTimed();
+  processTimed();phoneTick();
   const late=day()*1440+23*60+30;
   if(S.t>=late&&S.loc!=='home'){
     if(L[S.loc].side==='I'){S.loc='home';const c=S.cars.find(c=>c.id==='isl');say('It’s late. You make it home somehow.');if(S.carried){S.pantry+=S.carried;S.carried=0}return endDay('home')}
@@ -858,7 +906,11 @@ function actions(){
   const open=isOpen(loc);
   if(L[loc].hours&&!open&&loc!=='work') a.push({ic:'🔒',l:'Closed right now',s:hoursTxt(loc),dis:true});
   if(loc==='home'){
-    a.push({ic:'🛏️',l:m>=1080?'Go to bed':'Turn in early',s:`Ends the day. Eat 1 day of food (pantry: ${S.pantry}).`,cls:m>=1260?'primary':'',fn:()=>endDay('home')});
+    a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:'Tap to change the time or switch between the clock and your phone.',fn:alarmModal});
+    if(S.phone<90&&(!powerOut()||genReady()&&S.homeGas>0)) a.push({ic:'🔋',l:`Charge your phone (${S.phone}%)`,s:'45 minutes on the charger: +60%.',fn:()=>{S.t+=45;phoneTick();S.phone=Math.min(100,S.phone+60);say('🔋 Phone charged up.');afterAction()}});
+    if(powerOut()&&genReady()&&S.homeGas>=1) a.push({ic:'🔌',l:'Run the generator for a while',s:`1 gallon from the shed (${S.homeGas} gal). Lights, water, heat. Stress −6.`,fn:()=>{S.homeGas=Math.round((S.homeGas-1)*10)/10;S.t+=60;phoneTick();S.phone=Math.min(100,S.phone+50);adj('stress',-6);say('🔌 The generator rumbles to life. Hot coffee, a shower and a charged phone.');afterAction()}});
+    if(S.gen&&S.gen!=='home') a.push({ic:'🔌',l:'Your generator is still in the car',s:`Drive it home to install it. It’s in the ${S.cars.find(c=>c.id===S.gen)?.name||'car'}.`,dis:true});
+    a.push({ic:'🛏️',l:m>=1080?'Go to bed':'Turn in early',s:`Ends the day. Eat 1 day of food (pantry: ${S.pantry}). Alarm: ${alarmTxt()}.`,cls:m>=1260?'primary':'',fn:()=>endDay('home')});
     const isl=S.cars.find(c=>c.id==='isl'&&c.loc==='home');
     if(isl){const src=isl.diesel?'homeDiesel':'homeGas';const g=Math.min(S[src],Math.round((isl.tank-isl.fuel)*10)/10);
       if(S[src]>0) a.push({ic:'⛽',l:`Fuel the ${isl.diesel?'truck':'car'} from the shed`,s:`${S[src]} gal stashed. ${isl.diesel?'':'Keep 3 gal for the generator if a storm’s coming.'}`,dis:g<=0,fn:()=>{S[src]=Math.round((S[src]-g)*10)/10;isl.fuel=Math.round((isl.fuel+g)*10)/10;S.t+=10;say(`You pour ${g} gallons into the tank in the dark, spilling only a little.`);afterAction()}});}
@@ -910,7 +962,8 @@ function actions(){
   }
   if(loc==='work') workActions(a,d,m);
   cargoActions(a);
-  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:'For tonight. Takes 5 minutes, works from anywhere.',fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for bingo tonight? You got it, hon.” Reserved.');afterAction()}});
+  if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:S.alarm.type==='plug'?'Your plug-in clock is at home. Switch to your phone if you might not make it back tonight.':`Phone ${S.phone}%.`,fn:alarmModal});
+  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
     const car=!!carHere();
     [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
@@ -919,6 +972,12 @@ function actions(){
     const car=!!carHere();
     a.push({ic:'📦',l:'Bulk haul: 8 days of food — $112',s:car?'Best value. You’ll need the trunk.':'You need a car for this.',dis:!car||S.money<112||S.carried+8>14,fn:()=>{money(-112);S.carried+=8;S.stats.food+=8;S.t+=50;say('A cart piled high: 48 eggs, a pallet of oatmeal, frozen everything. $112. Islanders shop like this for a reason.');afterAction()}});
     if(!S.cooler) a.push({ic:'🧊',l:'Buy a big cooler — $35',s:'Groceries won’t spoil if you get stranded.',dis:S.money<35,fn:()=>{money(-35);S.cooler=true;S.t+=10;say('You buy the cooler every islander keeps in their trunk. Now you’re a local.');afterAction()}});
+  }
+  if(loc==='depot'&&open){
+    const car=carHere();
+    if(!S.gen) a.push({ic:'🔌',l:'Buy a portable generator: $649',s:car?'3,500 W, runs on gasoline from the shed. Comes empty, so it’s fine on the ferry. Drive it home to install it.':'It weighs 100 lb. You need your car here to haul it.',cls:'primary',dis:!car||S.money<649,fn:()=>{money(-649);S.gen=car.id;S.t+=40;say(`🔌 A 3,500-watt generator, loaded into the ${car.name.split(' (')[0].toLowerCase()}. Drive it home, then keep gas stashed in the shed.`);afterAction()}});
+    else a.push({ic:'✅',l:S.gen==='home'?'Generator installed at home':'Generator bought: in your car',s:'',dis:true});
+    a.push({ic:'🔋',l:'Phone charger and cable: $19',s:'Charge at the terminal outlet or in the car.',dis:S.money<19||S.ev.flags.charger,fn:()=>{money(-19);S.ev.flags.charger=1;phoneTick();S.phone=Math.min(100,S.phone+25);S.t+=10;say('🔋 A spare charger. You plug in at the self-checkout while you wait.');afterAction()}});
   }
   if(loc==='pharmacy'&&open){
     a.push({ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription — $15 copay',s:S.rx?'':d>=3?'Ready at the counter.':'Not ready until Thursday.',dis:S.rx||d<3||S.money<15,fn:()=>{money(-15);S.rx=true;S.t+=20;adj('stress',-4);say('Refill in hand. One less thing.');afterAction()}});
@@ -945,6 +1004,7 @@ function dockActions(a,side){
   a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+$(FARE_WALK):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
   if(out&&m>=420&&m<=1140) a.push({ic:'⛵',l:'Look for the sailboat water taxi',s:'A neighbor runs people across during outages. $20, maybe.',fn:waterTaxi});
   if(side==='M'){
+    if(S.phone<90) a.push({ic:'🔋',l:`Charge your phone at the outlet (${S.phone}%)`,s:'The one by the vending machines. 30 minutes: +30%.',fn:()=>{S.t+=30;phoneTick();S.phone=Math.min(100,S.phone+30);say('🔋 You sit on the floor by the vending machines while your phone charges.');afterAction()}});
     if(!S.cars.some(c=>c.id==='beat')&&m>=360&&m<=1200) a.push({ic:'🚙',l:'Buy a mainland beater car — $700',s:'Lives in the terminal lot so you can walk on and still drive on this side.',dis:S.money<700,fn:()=>{money(-700);S.cars.push({id:'beat',name:'Mainland beater (2004 Corolla)',loc:'stDock',fuel:5,tank:12,diesel:false});S.t+=40;say('A guy from a classifieds ad meets you in the lot. 241,000 miles, one hubcap, runs great. Now you have a mainland car.');afterAction()}});
     const isl=S.cars.find(c=>c.id==='isl');
     if(isl&&isl.loc==='stDock'&&!isl.diesel&&m>=360&&m<=1200) a.push({ic:'🛻',l:'Trade the Subaru for an old diesel pickup — $1,400',s:'Diesel is the one fuel you can legally bring over in cans (two 5-gal DOT cans).',dis:S.money<1400,fn:()=>{money(-1400);Object.assign(isl,{name:'Island truck (old diesel pickup)',diesel:true,tank:20,fuel:Math.max(isl.fuel,4)});S.t+=60;say('You swap the Subaru for a 1999 diesel pickup that rattles like a can of bolts. But diesel can legally ride the ferry in DOT cans. You’ve beaten the system, kind of.');afterAction()}});
@@ -975,7 +1035,8 @@ function cargoActions(a){
   if(!home) return;
   if(c.food>0) a.push({ic:'🥫',l:`Put a food case in the pantry (${c.food} in cargo)`,s:'+3 days of food at home.',fn:()=>{c.food--;S.pantry+=3;S.t+=5;say('Three days of food, stacked in the pantry.');afterAction()}});
   if(c.med>0&&(!S.injury||S.injury.treated)) a.push({ic:'🩹',l:`Use medical supplies (${c.med} in cargo)`,s:'Health +6.',dis:S.health>=100,fn:()=>{c.med--;adj('health',6);S.t+=10;say('Vitamins, cold medicine and a real bandage on that cut you’ve been ignoring.');afterAction()}});
-  if(c.gas>0) a.push({ic:'🛢️',l:`Store a gas can in the shed (${c.gas} in cargo)`,s:'+5 gal for the generator or the car.',fn:()=>{c.gas--;S.homeGas+=5;S.t+=5;say('5 gallons of gas into the shed, far from the woodstove.');afterAction()}});
+  if(c.gas>0) a.push({ic:'🛢️',l:`Stash a gas can in the shed (${c.gas} in cargo)`,s:`+5 gal of fuel at home (${S.homeGas} gal now). ${genReady()?'Powers the generator in an outage.':'For a generator, if you buy one.'}`,fn:()=>{c.gas--;S.homeGas+=5;S.t+=5;say('5 gallons of gas into the shed, far from the woodstove.');afterAction()}});
+  if(S.homeGas>=5&&cargoN()+S.carried<capNow()) a.push({ic:'🛢️',l:`Take a gas can out of the shed (${S.homeGas} gal stashed)`,s:'5 gal to carry. For a car that ran dry somewhere, or to sell.',fn:()=>{S.homeGas=Math.round((S.homeGas-5)*10)/10;c.gas++;S.t+=5;say('🛢️ You fill a can from the shed stash.');afterAction()}});
   if(c.diesel>0) a.push({ic:'🟨',l:`Store a diesel can in the shed (${c.diesel} in cargo)`,s:'+5 gal of diesel.',fn:()=>{c.diesel--;S.homeDiesel+=5;S.t+=5;say('5 gallons of diesel into the shed.');afterAction()}});
 }
 function trade(g,dir){
@@ -1065,6 +1126,9 @@ function migrate(d){
   if(!L[x.loc]){notes.push('a place from another version doesn’t exist here, so you’re back home');x.loc='home';}
   // cars
   if(!Array.isArray(x.cars)||!x.cars.length) x.cars=baseState().cars;
+  if(x.phoneT<x.cur*1440)x.phoneT=x.t;
+  // before 1.5.0 every player had a generator at home; keep it
+  if(from<5&&x.gen==null){x.gen='home';notes.push('you keep the generator you already had at home')}
   x.cars.forEach(c=>{c.tank=num(c.tank,c.diesel?20:c.id==='beat'?12:14);c.fuel=num(c.fuel,Math.min(8,c.tank));c.diesel=!!c.diesel;if(!L[c.loc])c.loc=L[x.loc].side==='I'?'home':'stDock';c.name=c.name||'Car'});
   // cargo: unknown goods from a newer version are kept but ignored
   for(const g in GOODS) x.cargo[g]=Math.max(0,num(x.cargo[g],0));
@@ -1205,7 +1269,7 @@ function actView(){
   let h='';
   if(uiNarr.length) h+=`<div class="narr">${uiNarr.slice(-4).map(s=>'<p>'+s+'</p>').join('')}</div>`;
   const cars=S.cars.map(c=>`<span class="tag ${c.fuel<1.5?'bad':c.loc===S.loc?'good':''}">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${c.loc===S.loc?'here':'at '+L[c.loc].name.replace(' Ferry Landing',' landing').replace(' Ferry Terminal',' terminal')} · ⛽${c.fuel}/${c.tank}</span>`).join('');
-  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
+  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}<span class="tag ${S.phone<20?'bad':''}">${S.phone>0?'📱':'📵'} ${S.phone}%</span>${S.gen?`<span class="tag ${S.gen==='home'?'good':''}">🔌 ${S.gen==='home'?'generator':'generator in car'}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
   const acts=actions();
   h+=marketView();
   if(acts.length){h+='<div class="sect">Do something</div>';acts.forEach(a=>{const i=ACTS.push(a.fn)-1;h+=`<button class="act ${a.cls||''}" ${a.dis?'disabled':''} onclick="ACT(${i})"><span class="ic">${a.ic}</span><span class="tx"><b>${a.l}</b>${a.s?'<span>'+a.s+'</span>':''}</span></button>`})}
@@ -1257,7 +1321,7 @@ function todoItems(){
   it.push({ok:S.pantry>=2,fail:false,l:'Keep the pantry stocked',s:`${S.pantry} day${S.pantry===1?'':'s'} at home${S.carried?`, ${S.carried} in hand`:''}. You eat 1 per night.`,urgent:S.pantry<1});
   const isl=S.cars.find(c=>c.id==='isl');
   it.push({ok:isl.fuel>=3,fail:false,l:`Keep gas in the ${isl.diesel?'truck':'island car'}`,s:`${isl.fuel}/${isl.tank} gal. No gas on the island: fill up on the mainland, or pay Dale.`,urgent:isl.fuel<1.5});
-  if(S.week.storm&&S.week.storm.day>=d) it.push({ok:S.homeGas>=3,fail:false,l:'Generator gas for the storm',s:`Gale on ${DAYS[S.week.storm.day]}. You need 3 gal in the shed or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
+  if(S.week.storm&&S.week.storm.day>=d) it.push({ok:genReady()&&S.homeGas>=3,fail:false,l:'Be ready for the storm',s:`Gale on ${DAYS[S.week.storm.day]}. You need a generator at home (Home Depot, Lakewood) and 3 gal stashed in the shed (${S.homeGas} now), or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
   if(d<=2) it.push({ok:S.bingo.nights>0,fail:d===2&&tod()>=1200&&!S.bingo.nights,l:'Optional: Bingo at the Riv',s:`Wednesday 6:00 PM, American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,urgent:false});
   if(S.battery==='weak') it.push({ok:false,fail:false,l:'Replace the car battery',s:'Gas station in Steilacoom. Until then, mornings are a gamble.',urgent:false});
   if(S.injury) it.push({ok:S.injury.treated,fail:false,l:'Get your ankle treated',s:'Urgent Care in DuPont, 8 AM–8 PM. Nothing on the island.',urgent:!S.injury.treated});

@@ -71,6 +71,10 @@ Chains that don't fire by the end of that morning are dropped. `window.forceEven
 | `dead_battery` | tripStart | Car won't start. Get a jump from Sam or Walt, knock on the neighbor's door, walk, or hitch. The battery stays weak until you replace it in Steilacoom |
 | `garage_release`, `tree_down`, `flat_tire`, `deer`, `eagle` | tripMid | Time lost (or a nice moment) on the road |
 | `stranded_neighbor` | tripMid | Help a Legion member jump his truck (meet Walt), or drive on |
+| `phone_died` | wake (chained by outages) | Phone alarm users whose battery was at 8% or less when the power went out: no alarm, oversleep |
+| `phone_saves` | wake (chained by outages) | Phone alarm users with battery: the alarm works through the outage |
+| `slept_through` | wake | 7% chance with the phone alarm: you sleep through the gentle chime (20–45 min late) |
+| `gen_saves` | wake (chained) | Your generator ran overnight: fridge, heat, water and phone charging all kept going |
 | `pajama_fred` | arrive, bingo (between) | Pajama Fred, an island fixture in flannel pajama pants and slippers, asks for a cigarette at the ferry landing, the old store, the Riv, or between bingo games. Give him one (you can buy a pack at the Steilacoom gas station), say no, or spot him $2. Become friends and he passes along ferry tips, including real heads-ups about upcoming breakdowns. Up to 3 times a week |
 | `table_taken` | bingo (start) | Only if you reserved a table: strangers are in it. Point out the reservation, squeeze in (maybe meet the Hendersons), or take the seat by the bathrooms |
 | `no_seat` | bingo (start) | No reservation: a folding chair under the speaker |
@@ -78,6 +82,14 @@ Chains that don't fire by the end of that morning are dropped. `window.forceEven
 | `order_late` | bingo (between) | Only if you ordered: the meal and/or drink is late. Wait, or flag down the server (maybe comped) |
 
 Bingo events can delay the night (`S.bingo.delay` minutes, added to the 8:30 PM finish). Reserve a table by phone from anywhere on Wednesday before 6 PM. Order dinner and a drink ($24, counts as tonight's food), just a drink ($6), or nothing before game 1.
+
+## Alarm, phone and generator
+
+- **Alarm:** set at home (or anywhere after 7 PM): a wake time from 4:45 to 8:00 AM, plus the clock type. Waking earlier means less stress recovery, sleeping in means more.
+  - 🔌 **Plug-in clock:** reliable, but a power outage resets it (`alarm_fail`), and it can't wake you away from home. At the terminal or a motel you wake between 6:10 and 7:30.
+  - 📱 **Phone alarm:** works anywhere and through outages, as long as the battery lasts (`phone_died`). It has a small chance of being slept through.
+- **Phone battery:** drains 4% an hour and charges 0.8% per minute in a car. It charges to 100% overnight at home if the power stays on (or the generator runs), and at a motel. The terminal outlet gives +35% overnight or +30% in 30 minutes. A dead phone means no rideshares and no calling the Riv.
+- **Generator:** buy it at Home Depot in Lakewood ($649). You need your car to haul it, and it installs when that car reaches home. It runs on gas stashed in the shed: 2 gallons for a random outage night, 3 for a storm night, or 1 gallon to run it for an hour during a daytime outage. Saves from before 1.5.0 keep the generator they implicitly had.
 
 ## Bingo at the Riv
 
