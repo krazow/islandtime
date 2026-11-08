@@ -111,6 +111,10 @@ Wednesday 6:00–8:00 PM at the Riv (Riviera restaurant), hosted by the American
 
 It's four games with real 75-ball cards and calls (`bingoGame`). Pots are tuned so the house keeps a little, as charity bingo should. Times and pot sizes are game inventions.
 
+## Player name
+
+Any text can contain the token `{{name}}`. It's replaced with the player's current name (HTML-escaped) when it's displayed, by `render()`, `modal()`, `showTile()`, the title screen and the end screen. Stored text keeps the token, so changing your name in ⚙️ Settings updates every line already in the log. The name is saved with the week (`S.name`) and remembered between games (`localStorage['islandtime.name']`). The first new game asks for it.
+
 ## Saves
 
 New state lives in `S.ev`, `S.friends`, `S.power`, `S.battery`, `S.bingo` and `S.week.bingo`. `migrate()` fills these in for older saves (save schema 4).

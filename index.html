@@ -134,6 +134,10 @@ button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select
 @keyframes tileIn{from{transform:translateY(-16px) scale(.96);opacity:0}}
 @keyframes tileOut{to{transform:translateY(-12px);opacity:0;height:0;margin:0;padding-top:0;padding-bottom:0}}
 .chip.almc.on{background:var(--fir);color:#fff}
+.gear{background:rgba(255,255,255,.12);border:0;border-radius:10px;width:38px;height:38px;font-size:19px;color:#fff;flex:none}
+.title{position:relative}.tgear{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:12px;background:rgba(18,49,59,.55);border:0;border-radius:12px;width:44px;height:44px;font-size:21px;z-index:2}
+.nm-in{width:100%;font:inherit;font-size:18px;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff}
+.nm-in:focus{outline:2px solid var(--fir);border-color:var(--fir)}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(10,25,30,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .modal{background:var(--paper);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .22s ease-out}
@@ -252,9 +256,63 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.5.1', SAVE_SCHEMA=5;
+const APP_VERSION='1.6.0', SAVE_SCHEMA=5;
+// ---------------- player name ----------------
+// Text anywhere in the game can contain the token {{name}}. It's swapped for the current name only when shown,
+// so changing your name updates every line already in the log, the narration, pop-ups and tiles.
+const NAME_KEY='islandtime.name';
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function profileName(){try{return localStorage.getItem(NAME_KEY)||''}catch(e){return ''}}
+function currentName(){return (typeof S!=='undefined'&&S&&S.name)||profileName()||'Islander'}
+function withName(t){return typeof t==='string'?t.replace(/\{\{name\}\}/g,esc(currentName())):t}
+function cleanName(raw){const n=String(raw||'').replace(/\s+/g,' ').trim();
+  if(!n) return {err:'Please enter a name.'};
+  if(n.length>20) return {err:'Keep it to 20 characters or fewer.'};
+  if(!/^[\p{L}\p{N}][\p{L}\p{N} '’.\-]*$/u.test(n)) return {err:'Letters, numbers, spaces, apostrophes, periods and hyphens only.'};
+  return {name:n}}
+function setPlayerName(n){
+  const old=currentName();
+  try{localStorage.setItem(NAME_KEY,n)}catch(e){}
+  if(S&&!S.over){S.name=n;if(old!==n)say('✏️ From now on, everyone on the island calls you {{name}}.');saveGame()}
+  else{ // on the title screen: update the saved week too, so Continue uses the new name
+    const ls=store();if(ls)try{for(const k of [SAVE_KEY,...LEGACY_KEYS]){const v=ls.getItem(k);if(!v)continue;const d=JSON.parse(v);if(d&&d.S){d.S.name=n;ls.setItem(k,JSON.stringify(d))}}}catch(e){}
+    if(S&&S.over) S.name=n}
+}
+let NMV='';
+window.nameInput=v=>{NMV=v};
+function nameModal(opts={}){
+  NMV=opts.value!=null?opts.value:currentName();
+  modal(opts.first?'👋 Welcome to the island':'👤 Change your name',`${opts.first?'<p>What should your neighbors call you?</p>':'<p>Everyone on the island, and every line in your log, will use the new name.</p>'}
+    <input class="nm-in" id="nmIn" maxlength="20" autocomplete="off" value="${esc(NMV)}" oninput="nameInput(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();MBTN(0)}">
+    ${opts.err?`<div style="color:var(--bad);font-size:13px;margin-top:6px">${esc(opts.err)}</div>`:'<div style="color:var(--mute);font-size:12px;margin-top:6px">Up to 20 characters. You can change it any time in ⚙️ Settings.</div>'}`,
+  [{l:opts.first?'That’s me':'Save name',fn:()=>{const r=cleanName(NMV);if(r.err)return setTimeout(()=>nameModal(Object.assign({},opts,{value:NMV,err:r.err})),0);
+      setPlayerName(r.name);if(opts.then)opts.then();else if(document.querySelector('.title'))titleScreen();else if(S&&!S.over)render()}},
+   ...(opts.first?[]:[{l:'Cancel',fn:()=>{if(opts.back)opts.back()}}])]);
+  setTimeout(()=>{const i=document.getElementById('nmIn');if(i){i.focus();i.select()}},60);
+}
+window.startNewWeek=()=>{const go=()=>{newGame();tab='act';render()};if(!profileName())nameModal({first:true,then:go});else go()};
+
+// ---------------- settings ----------------
+let exitNotice='';
+window.openSettings=()=>{
+  const inGame=S&&!S.over&&!document.querySelector('.title,.end');
+  modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
+    {l:'👤 Change name',s:'Updates your name everywhere in the game.',fn:()=>nameModal({back:openSettings})},
+    {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
+    {l:'Close',fn:()=>{}}]);
+};
+function tryClose(){try{window.close()}catch(e){}
+  setTimeout(()=>{if(!document.hidden){exitNotice=inGameExited?'✅ Your week is saved. Your browser won’t let a page close itself, so just close this tab or window. Continue picks up right where you left off.':'Your browser won’t let a page close itself. You can close this tab or window.';titleScreen()}},250)}
+let inGameExited=false;
+function confirmExit(inGame){
+  if(!inGame){inGameExited=!!loadSave();return tryClose()}
+  modal('🚪 Exit Island Time?',`<p>Your week is saved automatically. Next time, tap <b>Continue</b> on the title screen to pick up right here${S?` (${DAYS[day()]} ${fmt(S.t)})`:''}.</p>`,[
+    {l:'Save and exit',fn:()=>{saveGame();MQ=[];clearTiles();inGameExited=true;titleScreen();tryClose()}},
+    {l:'Keep playing',fn:()=>{}}]);
+}
+
 function baseState(){
-  return {t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
+  return {name:profileName()||'Islander',t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
     cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
@@ -509,6 +567,7 @@ function showTile(ic,title,sub,kind){
   const box=tileBox();
   if(box.children.length>=TILE_MAX){tileQ.push([ic,title,sub,kind]);return}
   const t=document.createElement('div');t.className='tile '+(kind||'info');
+  title=withName(title);sub=withName(sub);
   t.innerHTML=`<span class="ti">${ic}</span><span class="tt"><small>${kind==='good'?'Good news':kind==='bad'?'Event':kind==='warn'?'Heads up':'Island life'} · ${DAYS[day()].slice(0,3)} ${fmt(S.t)}</small><b>${title}</b>${sub?`<span>${sub}</span>`:''}</span><button class="ok" aria-label="Got it">✓</button>`;
   let gone=false;const close=()=>{if(gone)return;gone=true;t.classList.add('out');setTimeout(()=>{t.remove();if(tileQ.length){const q=tileQ.shift();showTile(...q)}},260)};
   t.querySelector('.ok').onclick=close;t.onclick=e=>{if(e.target===t)close()};
@@ -595,7 +654,7 @@ defEvent({id:'slept_through',hook:'wake',priority:8,cond:ctx=>atHomeWake(ctx)&&S
 defEvent({id:'no_water',hook:'wake',priority:6,cond:atHomeWake,run(){adj('stress',5);say('🚿 No power means no well pump, which means no shower. Hat day.')}});
 defEvent({id:'garage_stuck',hook:'wake',priority:6,cond:atHomeWake,run(){S.ev.flags.garage=day();say('🚪 The garage door opener is dead. You’ll have to wrestle the manual release before you can drive.')}});
 defEvent({id:'neighbor_ride',hook:'wake',priority:4,cond:ctx=>atHomeWake(ctx)&&!S.friends.sam,run(){
-  modal('🚪 A knock at the door',`<p>It’s the new neighbor from the place with the blue roof. You’ve waved but never actually talked.</p><p>“Hi! I’m Sam. Power’s out at your place too? I’m headed down to the ferry if you need a ride.”</p>`,[
+  modal('🚪 A knock at the door',`<p>It’s the new neighbor from the place with the blue roof. You’ve waved but never actually talked.</p><p>“Hi! I’m Sam.”</p><p>“{{name}},” you say, shaking hands.</p><p>“Power’s out at your place too? I’m headed down to the ferry if you need a ride.”</p>`,[
     {l:'Take the ride to the ferry landing',s:'Your car stays home. Sam will text when they’re leaving.',fn:()=>{meet('sam','Sam, your new neighbor','gave you a ride during an outage');S.ev.flags.samRide=day();adj('stress',-6);say('Sam will drive you to the ferry landing whenever you’re ready. Look for the 🤝 option.')}},
     {l:'“Thanks, I’m all set”',s:'You still made a new friend.',fn:()=>{meet('sam','Sam, your new neighbor','introduced themselves during an outage');adj('stress',-3)}}]);
 }});
@@ -669,7 +728,7 @@ defEvent({id:'pajama_fred',hook:['arrive','bingo'],priority:2,max:3,cooldown:1,
     btns.push({l:'Give him a couple bucks instead',s:'$2',dis:S.money<2,fn:()=>{money(-2);adj('stress',-2);
       if(Math.random()<0.5&&meet('fred','Pajama Fred','you spotted him a couple bucks'));else say('🩴 “Hey, thanks. Appreciate you.”');
       fredTip();done()}});
-    modal('🩴 Pajama Fred',`<p>${where}, a guy in flannel pajama pants, slippers and a rain jacket gives you a little wave. ${friend?'It’s your pal Fred.':'Everybody on the island seems to know him.'}</p><p>“Hey${friend?', friend':''}! You wouldn’t happen to have a cigarette, would you?”</p>`,btns);
+    modal('🩴 Pajama Fred',`<p>${where}, a guy in flannel pajama pants, slippers and a rain jacket gives you a little wave. ${friend?'It’s your pal Fred.':'Everybody on the island seems to know him.'}</p><p>“Hey${friend?', {{name}}':''}! You wouldn’t happen to have a cigarette, would you?”</p>`,btns);
     return ctx.hook==='bingo'?{block:true}:{stop:true};
   }});
 
@@ -682,7 +741,7 @@ function deadBattery(ctx,triedNeighbor){
   const dest=ctx.to,base=dist(ctx.from,dest);S.stats.deadBattery=(S.stats.deadBattery||0)+1;
   const resume=(extra,msg)=>{S.t+=extra;S.battery='weak';if(msg)say(msg);go(dest,Object.assign({},ctx.o,{started:true}))};
   const btns=[];
-  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 Sam pulls up in a bathrobe with jumper cables. The Subaru coughs to life.')});
+  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 “Morning, {{name}}.” Sam pulls up in a bathrobe with jumper cables. The Subaru coughs to life.')});
   else if(!triedNeighbor) btns.push({l:'Knock on the new neighbor’s door',s:'You’ve never actually met them.',fn:()=>{
     if(Math.random()<0.65){meet('sam','Sam, your new neighbor','jump-started your car');resume(20,'🔋 The new neighbor, Sam, digs out jumper cables. “Welcome to island cars.”')}
     else{S.t+=12;say('Nobody answers next door. Their car’s gone.');deadBattery(ctx,true);render()}}});
@@ -705,7 +764,7 @@ defEvent({id:'flat_tire',hook:'tripMid',priority:4,max:1,cond:islandCar,chance:0
 defEvent({id:'stranded_neighbor',hook:'tripMid',priority:3,max:1,cond:ctx=>islandCar(ctx)&&!S.friends.walt,chance:0.07,
   run(ctx){
     modal('🚩 Someone’s waving you down',`<p>An older man in an American Legion cap stands next to a pickup with the hood up.</p><p>“Battery’s dead. Got cables?”</p>`,[
-      {l:'Pull over and help',s:'+15 minutes. Island karma.',fn:()=>{meet('walt','Walt from the American Legion','you jump-started his truck');adj('stress',-2);say('Walt shakes your hand. “You come to bingo Wednesday. First card’s on me.”');ctx.finish(15)}},
+      {l:'Pull over and help',s:'+15 minutes. Island karma.',fn:()=>{meet('walt','Walt from the American Legion','you jump-started his truck');adj('stress',-2);say('Walt shakes your hand. “You come to bingo Wednesday, {{name}}. First card’s on me.”');ctx.finish(15)}},
       {l:'Wave and keep going',s:'You have a boat to catch.',fn:()=>{adj('stress',4);say('You wave. You feel bad about it all day.');ctx.finish(0)}}]);
     return {block:true};
   }});
@@ -862,7 +921,7 @@ function endDay(where){
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
   if(where!=='home'&&S.carried>0&&!S.cooler){const lost=Math.ceil(S.carried/2);S.carried-=lost;notes.push(`🥛 ${lost} day${lost>1?'s':''} of groceries spoiled overnight. No cooler.`)}
-  if(d<5&&!S.worked[d]){adj('job',-15);notes.push('💼 You missed work today. Your boss’s text just says “??”.')}
+  if(d<5&&!S.worked[d]){adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}
   if(d===2&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
   if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}
   if(S.injury&&!S.injury.treated){adj('health',-8);notes.push('🤕 Your untreated ankle throbs all night.')}
@@ -970,7 +1029,7 @@ function actions(){
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:S.alarm.type==='plug'?'Your plug-in clock is at home. Switch to your phone if you might not make it back tonight.':`Phone ${S.phone}%.`,fn:alarmModal});
-  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for bingo tonight? You got it, hon.” Reserved.');afterAction()}});
+  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for {{name}}, bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
     const car=!!carHere();
     [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
@@ -992,7 +1051,7 @@ function actions(){
   if(loc==='clinic'){
     if(!open) a.push({ic:'🔒',l:'Clinic closed',s:hoursTxt('clinic'),dis:true});
     else if(S.appt) a.push({ic:'✅',l:'Checkup done',s:'',dis:true});
-    else if(d===2&&m>=840&&m<=885) a.push({ic:'🩺',l:'Check in for your 2:30 appointment',s:'1 hr · $40 copay',cls:'primary',fn:()=>{money(-40);S.appt=true;S.t+=60;adj('health',10);adj('stress',-5);say('The doctor says your blood pressure is “interesting” and asks about your commute. You laugh a little too hard.');afterAction()}});
+    else if(d===2&&m>=840&&m<=885) a.push({ic:'🩺',l:'Check in for your 2:30 appointment',s:'1 hr · $40 copay',cls:'primary',fn:()=>{money(-40);S.appt=true;S.t+=60;adj('health',10);adj('stress',-5);say('“{{name}}?” the nurse calls. The doctor says your blood pressure is “interesting” and asks about your commute. You laugh a little too hard.');afterAction()}});
     else if(d===2&&m>885) a.push({ic:'❌',l:'You missed your 2:30 slot',s:'They can fit you in… in three weeks.',dis:true});
     else a.push({ic:'📅',l:'Your appointment: Wednesday 2:30 PM',s:'Check in between 2:00 and 2:45.',dis:true});
   }
@@ -1266,7 +1325,7 @@ function sceneSVG(){
 }
 function hud(){
   const d=day();
-  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">${DATES[d]} · Day ${d+1} of 7</div></div><div class="hud-time">${fmt(S.t)}</div></div>
+  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${DATES[d]} · Day ${d+1} of 7</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
   <div class="stats">
    <div class="stat"><small>Cash</small><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
    <div class="stat"><small>Food</small><b>${S.pantry}${S.carried?'<span style="font-size:10px;opacity:.7">+'+S.carried+'</span>':''}d</b>${meter(Math.min(100,S.pantry*20),true)}</div>
@@ -1286,7 +1345,7 @@ function render(){
   h+=`<div class="content">${tab==='act'?actView():tab==='ferry'?ferryView():tab==='todo'?todoView():logView()}</div>`;
   const pending=todoItems().filter(x=>x.urgent).length;
   h+=`<nav class="tabs">${[['act','🧭','Here'],['ferry','⛴️','Ferry'],['todo','📋','To-do'],['log','📜','Log']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}${k==='todo'&&pending?'<span class="dot"></span>':''}${k==='ferry'&&out?'<span class="dot"></span>':''}</button>`).join('')}</nav>`;
-  app.innerHTML=h;
+  app.innerHTML=withName(h);
   saveGame();
 }
 window.setTab=k=>{tab=k;render();window.scrollTo(0,0)};
@@ -1369,7 +1428,7 @@ function modal(title,body,btns,noClose){
   if(document.getElementById('mbg')){MQ.push([title,body,btns,noClose]);return}
   MB=btns;
   const el=document.createElement('div');el.className='modal-bg';el.id='mbg';
-  el.innerHTML=`<div class="modal"><h2>${title}</h2><div class="mb">${body}</div>${btns.map((b,i)=>`<button class="act ${i===0?'primary':''}" onclick="MBTN(${i})"><span class="tx"><b>${b.l}</b>${b.s?'<span>'+b.s+'</span>':''}</span></button>`).join('')}</div>`;
+  el.innerHTML=withName(`<div class="modal"><h2>${title}</h2><div class="mb">${body}</div>${btns.map((b,i)=>`<button class="act ${i===0?'primary':''}" onclick="MBTN(${i})"><span class="tx"><b>${b.l}</b>${b.s?'<span>'+b.s+'</span>':''}</span></button>`).join('')}</div>`);
   document.body.appendChild(el);
 }
 window.MBTN=i=>{const el=document.getElementById('mbg');el&&el.remove();const f=MB[i]&&MB[i].fn;f&&f();
@@ -1405,14 +1464,14 @@ function gradeOf(sc){
   if(sc>=900) return ['D','Considering Lakewood Apartments','You’ve started browsing mainland rentals “just to look.”'];
   return ['F','Moving Back to the Mainland','The island is beautiful. You’ll visit. On a Tuesday. Not a Friday.'];
 }
-function finish(){clearTiles();S.over=true;endScreen('You made it to Sunday night','You survived a week of island life.')}
+function finish(){clearTiles();S.over=true;endScreen('{{name}}, you made it to Sunday night','You survived a week of island life.')}
 function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
 function endScreen(h1,sub,lost){
   const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
   saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
-  app.innerHTML=`<div class="end"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'}</div><h1>${h1}</h1><p>${sub}</p>
+  app.innerHTML=withName(`<div class="end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>
   <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${g[0]}</div><div><b style="font-family:Fraunces;font-size:20px">${g[1]}</b><div style="color:var(--mute);font-size:14px">${g[2]}</div></div></div>
   <div class="kv"><span>Score</span><b>${sc}${typeof newBest!=='undefined'&&newBest?' 🏆 new best':''}</b></div>${best!=null&&!isNaN(best)?`<div class="kv"><span>Previous best</span><b>${best}</b></div>`:''}
   <div class="kv"><span>Cash left</span><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
@@ -1433,14 +1492,14 @@ function endScreen(h1,sub,lost){
   <div class="kv"><span>Trading: bought / sold</span><b>${$(s.bought)} / ${$(s.sold)}</b></div>
   <div class="kv"><span>Drug runs / arrests</span><b>${s.drugRuns} / ${s.arrests}</b></div>
   <div class="kv"><span>Ferry outages this week</span><b>${S.week.b.filter(b=>b.start<S.t).length}</b></div>
-  <button class="big" style="width:100%;margin-top:22px" onclick="newGame();tab='act';render()">Play another week</button><button class="act" style="margin-top:10px;justify-content:center" onclick="titleScreen()"><span class="tx" style="text-align:center"><b>Back to title</b></span></button></div>`;
+  <button class="big" style="width:100%;margin-top:22px" onclick="startNewWeek()">Play another week</button><button class="act" style="margin-top:10px;justify-content:center" onclick="titleScreen()"><span class="tx" style="text-align:center"><b>Back to title</b></span></button></div>`);
   window.scrollTo(0,0);
 }
 
 // ---------------- title ----------------
 function clearTiles(){tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove())}
 function titleScreen(){clearTiles();
-  app.innerHTML=`<div class="title"><div class="art"><svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbcc4"/><stop offset="1" stop-color="#e2e6dc"/></linearGradient></defs><rect width="480" height="250" fill="url(#ts)"/><rect y="96" width="480" height="154" fill="#1d4b5a"/>
+  app.innerHTML=withName(`<div class="title"><button class="tgear" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="art"><svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbcc4"/><stop offset="1" stop-color="#e2e6dc"/></linearGradient></defs><rect width="480" height="250" fill="url(#ts)"/><rect y="96" width="480" height="154" fill="#1d4b5a"/>
    <polygon points="250,95 330,25 345,36 356,28 440,95" fill="#e9eef0"/><polygon points="310,43 330,25 345,36 356,28 375,45 355,42 342,48 328,40" fill="#fff"/>
    ${Array.from({length:16},(_,i)=>{const x=i*32-10,h=50+((i*29)%45);return `<polygon points="${x},96 ${x+16},${96-h} ${x+32},96" fill="#2f5d4a"/>`}).join('')}
    <g transform="translate(150,150)"><g class="bob"><rect x="0" y="20" width="170" height="24" rx="4" fill="#f4f1ea"/><rect x="0" y="38" width="170" height="9" fill="#2f5d4a"/><rect x="60" y="2" width="50" height="20" fill="#f4f1ea"/><rect x="65" y="6" width="40" height="7" fill="#2a3d45"/><rect x="80" y="-12" width="9" height="16" fill="#e3642e"/></g></g>
@@ -1448,12 +1507,13 @@ function titleScreen(){clearTiles();
   <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
   <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
   <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Wednesday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
-  ${(()=>{const d=loadSave();return d?`<button class="big" onclick="resumeGame()">Continue: ${DAYS[d.S.cur]} ${fmt(d.S.t)} ⛴️</button><button class="ghost" onclick="newGame();tab='act';render()">Start a new week</button>`:`<button class="big" onclick="newGame();tab='act';render()">Start Monday ⛴️</button>`})()}
+  ${(()=>{const d=loadSave();return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
-  ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}
+  ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}${exitNotice?`<div class="hint">${exitNotice}</div>`:''}
   <button id="installBtn" class="ghost" style="display:${deferredInstall&&!isStandalone()?'block':'none'}" onclick="doInstall()">📲 Install as an app</button>
   ${!isStandalone()&&isIOS()?'<div class="hint">📲 <b>Play it like an app:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It works offline, too.</div>':''}
-  <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun. The schedule, prices and people are made up. The store closure and the fuel rules are real as of mid-2026.</div></div></div>`;
+  <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun. The schedule, prices and people are made up. The store closure and the fuel rules are real as of mid-2026.</div></div></div>`);
+  exitNotice='';
 }
 titleScreen();
 </script>
