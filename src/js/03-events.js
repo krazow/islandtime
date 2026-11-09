@@ -140,7 +140,7 @@ const BINGO_FOR=['Anderson Island Historical Society','Pierce County Fire Distri
 
 // ---- night ----
 defEvent({id:'power_outage',hook:'night',priority:5,max:2,cooldown:2,
-  chance:ctx=>stormNight(day())?0:0.13,
+  chance:ctx=>stormNight(day())?0:0.13*seasonMul('outage'), // season
   run(ctx){
     const d=day(),start=d*1440+1440+60+Math.floor(Math.random()*180),end=(d+1)*1440+330+120+Math.floor(Math.random()*300);
     const cause=pick(['a fir came down across a line','a transformer blew with a bang you heard from bed','wind gusts tangled a line by the lake','nobody knows why. It just went out']);

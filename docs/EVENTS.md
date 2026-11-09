@@ -195,3 +195,39 @@ New friend `bev` (Bev the knitter): level 2 takes $5 off the wreath, level 3 unl
 | `arc_sam` | wake (60%) | scrape the skiff (1 h) · chip in $25 or sand (1 h) · launch day (1 h; if you helped: stress −10, +2 food) |
 | `arc_walt` | arrive at the Riv, landing, old store, lake or home, 9 AM–8:30 PM (50%) | show Tyler around / suggest eagles · teach him to split wood (+4 nights of firewood) · Legion send-off ($10, dinner; helped twice: phone to 100%) |
 | `arc_hendersons` | wake (60%; finale on weekends only) | address invitations (45 min) · $20 for the cake or bake (−1 food) · anniversary brunch (90 min, stress −12, +1 food; helped twice: Home +4) |
+
+## Seasons
+
+Code: `src/js/16-seasons.js`, plus small hooks marked `// season` in other modules. `S.season` is `'fall'` (default, the original November game), `'winter'` or `'summer'`; read it with `seasonId()` (01-core). Old saves have no season, so `migrate()` fills in `'fall'`. Season data is `SEA()` (month, start date, daylight window `lite`, sunrise/sunset `sun`). Everything in `16-seasons.js` is a function declaration because `titleScreen()` runs before the file loads. **Fall must stay exactly the original game:** every season helper returns the old value for fall and draws no extra random numbers.
+
+**Choosing:** `startNewWeek()` → `diffModal` → `lengthModal` → `seasonModal` → `newGame(diff, mode, season)`. `newGame(diff, mode)` without a season is fall. The pick is saved in `prefs().season`.
+
+**Week generation:** `genWeek(diff, season)` scales fog and storm odds with `seasonMul(k, season)` and then calls `seasonWeek()` to add `S.week.sea` (none in fall):
+
+| season | `S.week.sea` | what it does |
+|---|---|---|
+| winter | `cold[d]` | hard-freeze nights (50%); frozen-pipe risk, drip is due |
+| winter | `ice[d]` | morning ramp ice (minutes) after a freezing night; delays sailings before 10 AM. 30% of icy mornings also push an `ice:true` cancellation into `S.week.b` |
+| winter | `snow` | a snow day (45% a week): bigger ramp delay, icy roads all day |
+| winter | `tide` | `{day,start,end}` king-tide window (70% a week); +15 min on sailings in the window |
+| summer | `fourth` | 5 (Saturday Jul 4) in week 1, else −1 |
+| summer | `smoke` | a wildfire-smoke day (45% a week), or −1 |
+
+**Multipliers vs fall** (`seasonMul`): winter storm ×1.45, outage ×1.7, rain ×1.2, gutters ×0.5, moss ×0.5. Summer fog 0, storm 0, outage ×0.35, rain ×0.15, gutters ×0.4, moss ×0.3.
+
+**Ferry:** `sailing()` adds `seasonDelay()` minutes and a `why` text (the wait message and the trip planner use it). `fullProb()` calls `seasonFull()`: summer is at least 12%, +22% Fri–Sun, +12% on 4 PM-and-later boats, +25% on Fourth of July weekend; winter ×0.8.
+
+**House:** `upkeepNight()` uses `seasonUp()`: summer has no woodstove (no wood, chimney or ash, no chimney fires, firewood never due) and propane −1 a night; winter burns 1–2 wood a night and propane 3/8/3 (stove/no stove/away) instead of 2/6/2. `seasonLite(m)` is the outdoor-work window (fall 7–5, winter 8–4, summer 6–9, closed on smoke days).
+
+**Night:** `seasonNight(where, notes, d)` runs in `endDay()` right after the `night` hook: frozen pipes (`pipeChance()`: 75% on a freezing night with the heat out, 4% with heat, 5% on a mild night with the heat out, 0 if you dripped; logs `frozen_pipes` or `drip_saved` in the event history), the summer garden (`S.sea.garden`: harvest +1 food every 3 watered nights, dies after 3 dry days), the brush pile (`S.sea.brush`) and Fourth of July noise. `seasonMorning(d)` posts the day’s forecasts from `startDay()`; `seasonActions(a, loc)` adds Drip the faucets, Water the garden, Chip/Burn the brush pile, the Legion BBQ and the fireworks. State for these is `S.sea`.
+
+| id | hook | fires when |
+|---|---|---|
+| `icy_road` | tripMid | winter island car trip on a snow day or an icy morning before 11 AM (50%): +8 min, or 18% of the time `car_slide` into the ditch, +45 min |
+| `king_tide` | tripMid | island trip during the king-tide window (80%): +20 min around Oro Bay |
+| `ramp_ice` | arrive | at the island landing on an icy morning before 10 AM (flavor) |
+| `kayak_line` | arrive | summer, at either terminal by road (30%): stress +2 |
+| `fourth_ferry` | arrive | summer, Fourth of July weekend, at either terminal (60%): stress +4 |
+| `smoke_walk` | tripMid | summer smoke day, walking or hitching on the island: health −3 |
+
+Also: the power-outage night event scales with `seasonMul('outage')`, Veterans Day and the holiday bazaar only happen in fall, morning flavor lines come from `seasonFlavor()`, and the scene (`sceneSVG`) adds snow in winter and a bright sky (orange on smoke days) in summer.

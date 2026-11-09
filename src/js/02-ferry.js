@@ -10,6 +10,7 @@ function sailing(side,d,dep,mode,knownOnly){
     }
   }
   const delay=dep<660?S.week.fog[d]||0:0;
+  const sd=seasonDelay(side,d,dep);if(sd)return {abs,dep,d,delay:delay+sd.min,why:sd.why,ketron:KETRON[side].includes(dep)}; // season
   return {abs,dep,d,delay,ketron:KETRON[side].includes(dep)};
 }
 function findNext(side,mode,knownOnly){
@@ -30,6 +31,7 @@ function fullProb(side,d,dep){
   if(d===4&&side==='M'&&dep>=875&&dep<=1175) p=0.55;
   if(d===5&&side==='I'&&dep<=690) p=0.3;
   if(d===6&&side==='M'&&dep>=875) p=0.45;
+  p=seasonFull(p,side,d,dep); // season
   // backlog after an outage
   if(S.week.b.some(b=>S.t>=b.end&&S.t<b.end+180)) p=Math.max(p,0.7);
   return Math.min(0.95,p*DF().full);
@@ -78,7 +80,7 @@ function waitFerry(mode){
   const wait=s.abs-S.t;S.stats.waited+=wait;
   adj('stress',Math.min(7,wait/15));
   S.t=s.abs+(s.delay||0);
-  if(s.delay) say(`Fog on the water. The boat is ${s.delay} minutes late.`);
+  if(s.delay) say(s.why?`${s.why} The boat is ${s.delay} minutes late.`:`Fog on the water. The boat is ${s.delay} minutes late.`); // season
   if(mode==='drive'&&!S.priority&&Math.random()<fullProb(side,s.d,s.dep)){
     showTile('🚗','Boat’s full','You’re first in line for the next one','bad');buzz(120);S.stats.bumps++;adj('stress',12);
     say(`The deckhand waves the car ahead of you on and then raises the hand. Boat’s full. You’re first in line for the next one.`);

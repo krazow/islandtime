@@ -25,22 +25,22 @@ const UP_JOBS={
 const upJob=k=>UP().jobs.find(j=>j.k===k);
 function upSchedule(k,cost,what){money(-cost);S.t+=10;phoneTick();UP().jobs.push({k,due:(day()+1)*1440+660});say(`📱 ${what} Booked for tomorrow late morning, if the ferry cooperates.`);afterAction()}
 function upkeepNight(where,notes,d){
-  const U=UP(),home=where==='home',storm=stormNight(d);
-  const rain=storm||Math.random()<0.22;if(rain)U.rain=dayKey();
+  const U=UP(),home=where==='home',storm=stormNight(d),SN=seasonUp(); // season
+  const rain=storm||Math.random()<0.22*SN.rain;if(rain)U.rain=dayKey();
   const inc=(k,v,max=100)=>{U[k]=Math.min(max,Math.round((U[k]+v)*10)/10)};
-  inc('gutters',5+(rain?8:0)+(storm?10:0));inc('moss',1.5);inc('pot',2+(rain?4:0)+(storm?4:0));inc('limbs',1);inc('well',1,999);inc('septic',2.5);
+  inc('gutters',(5+(rain?8:0)+(storm?10:0))*SN.gut);inc('moss',1.5*SN.moss);inc('pot',2+(rain?4:0)+(storm?4:0));inc('limbs',1);inc('well',1,999);inc('septic',2.5); // season
   if(S.gen)inc('genSvc',1,999);
-  if(home){inc('chimney',1,999);inc('ash',1,99)}
+  if(home&&SN.stove){inc('chimney',1,999);inc('ash',1,99)} // season
   inc('damp',1+(rain?1:0)+(S.power&&S.ev.flags.genRan!==d?1:0),20);
   if(U.traps>0)U.traps--;
   // heat: the woodstove first, the propane furnace as backup
   let burned=false;
-  if(home&&U.wood>0){U.wood=Math.max(0,U.wood-1);burned=true;U.burned=dayKey()}
-  const was=U.propane;U.propane=Math.max(0,Math.round(U.propane-(burned?2:home?6:2)));
+  if(home&&SN.stove&&U.wood>0){U.wood=Math.max(0,U.wood-SN.wood);burned=true;U.burned=dayKey()} // season
+  const was=U.propane;U.propane=Math.max(0,Math.round(U.propane-(burned?SN.prop[0]:home?SN.prop[1]:SN.prop[2]))); // season
   if(was>0&&U.propane===0)notes.push('🔥 The propane tank ran dry: no furnace, no hot water. (Order a propane delivery.)');
-  if(home&&!burned&&U.propane===0){adj('health',-3);adj('stress',6);notes.push('🥶 No dry firewood and no propane. You sleep in a hat and two sweatshirts and still wake up cold.')}
+  if(home&&SN.stove&&!burned&&U.propane===0){adj('health',-3);adj('stress',6);notes.push('🥶 No dry firewood and no propane. You sleep in a hat and two sweatshirts and still wake up cold.')} // season
   else if(U.propane===0)adj('stress',3);
-  if(home&&!burned&&U.propane>0&&!U.woodOut){U.woodOut=true;notes.push('🪵 Out of dry firewood, so the propane furnace runs all night and drinks the tank.')}
+  if(home&&SN.stove&&!burned&&U.propane>0&&!U.woodOut){U.woodOut=true;notes.push('🪵 Out of dry firewood, so the propane furnace runs all night and drinks the tank.')} // season
   if(U.fridge){adj('stress',4);homeAdj(-3);notes.push('🤢 Something in the fridge spoiled during the outage, and it’s making itself known. (Clean out the fridge.)')}
   if(U.mold){adj('health',-1);adj('stress',2);notes.push('🦠 The mold in the bathroom isn’t going away on its own.')}
 }
@@ -49,7 +49,8 @@ function choresPile(notes){const U=UP();let pile=0;const late=[];
   pile=Math.min(8,pile);if(pile>=6)notes.push(`🧺 The chores are piling up (${late.join(', ')}). Every day you skip them, the house slips a little more.`);return pile}
 const U_REST=()=>S.rest&&S.rest.k===dayKey()?S.rest.n:0;
 function upkeepActions(a,d,m){
-  const U=UP(),dk=dayKey(),lite=m>=420&&m<1020,dark='Outdoor work is a daylight job: 7 AM–5 PM in November.',phoneOK=S.phone>0;
+  const U=UP(),dk=dayKey(),lite=seasonLite(m),dark=seasonDark(), // season
+    phoneOK=S.phone>0;
   const doneToday=k=>U.done[k]===dk;
   const add=(o)=>a.push(o);
   // inside: daily chores
@@ -66,7 +67,7 @@ function upkeepActions(a,d,m){
   add({cat:'home',ic:'🧯',l:'Clean the woodstove ash',due:U.ash>=3,s:U.ash<=0?'Clean.':`15 min. ${U.ash} day${U.ash===1?'':'s'} of ash in the firebox.`,dis:U.ash<=0,fn:()=>{S.t+=15;U.ash=0;homeAdj(1);say('🧯 A bucket of ash out to the garden. The fire draws better already.');afterAction()}});
   add({cat:'home',ic:'🏚️',l:'Sweep the chimney',due:U.chimney>=21,s:U.chimney<5?'Swept recently.':`90 min on the roof with a brush. ${U.chimney} days of creosote building up${U.chimney>=21?': chimney fire risk':''}.`,dis:U.chimney<5||!lite,
     fn:()=>{if(U.chimney<21)achUnlock('chimney');S.t+=90;U.chimney=0;homeAdj(2);if(Math.random()<0.04)upInjure('Coming down the wet ladder, your foot slips off the last rung.');else say('🏚️ A bucket of black flakes later, the flue is clean.');afterAction()}});
-  add({cat:'home',ic:'🪵',l:`Split and stack firewood (${U.wood} night${U.wood===1?'':'s'} left)`,due:U.wood<=1,s:doneToday('wood')?'Done for today. Your back says so.':'1 hour. +4 nights of dry wood. Without it, the propane furnace takes over.',dis:doneToday('wood')||U.wood>=14,
+  add({cat:'home',ic:'🪵',l:`Split and stack firewood (${U.wood} night${U.wood===1?'':'s'} left)`,due:U.wood<=1&&seasonStove(),s:doneToday('wood')?'Done for today. Your back says so.':'1 hour. +4 nights of dry wood. Without it, the propane furnace takes over.',dis:doneToday('wood')||U.wood>=14, // season
     fn:()=>{S.t+=60;U.wood=Math.min(14,U.wood+4);U.woodOut=false;U.done.wood=dk;adj('stress',-2);if(Math.random()<0.03)upInjure('You step on a wet round of fir and roll your ankle.');else say('🪵 Thunk. Thunk. A good hour of splitting, and a tidy stack under the eaves.');afterAction()}});
   if(U.trapsOwned) add({cat:'home',ic:'🪤',l:U.traps>0?`Mouse traps set (${U.traps} more nights)`:'Set the mouse traps',due:U.traps<=0,s:'10 min. Peanut butter under the sink and in the pantry. Keeps the mice out of your food for a week.',dis:U.traps>0,fn:()=>{S.t+=10;U.traps=7;say('🪤 Traps baited and set.');afterAction()}});
   const sj=upJob('septic');
@@ -107,7 +108,7 @@ function upPressing(n=3,min=0.5){const U=UP();return Object.keys(UP_TASKS).map(k
 function upFix(ks){const U=UP();ks.forEach(k=>UP_TASKS[k].fix(U));return ks.map(k=>UP_TASKS[k].n)}
 function upChoresDone(){const U=UP(),dk=dayKey();for(const k in CHORES){U[k]=0;U.done[k]=dk}}
 const andList=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
-function upAnyDue(){const U=UP();return upPressing(1,1).length>0||Object.keys(CHORES).some(k=>U[k]>=2)||U.fridge||U.wood<=1||U.septic>=75||U.propane<25}
+function upAnyDue(){const U=UP();return upPressing(1,1).length>0||Object.keys(CHORES).some(k=>U[k]>=2)||U.fridge||(U.wood<=1&&seasonStove())||U.septic>=75||U.propane<25} // season
 const COMM=()=>S.comm||(S.comm={post:-1,help:-1,flakes:0});
 const COMM_NAME='the Anderson Island community group';
 const NEIGHBORS=[['marta','Marta, from up the road','answered your post in the community group'],['ken','Big Ken, who has a tractor','showed up from the community group'],

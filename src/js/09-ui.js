@@ -3,15 +3,16 @@ const app=document.getElementById('app');
 function meter(v,good){const c=good?(v>60?'#8fd19e':v>30?'#f4d27a':'#ff8a70'):(v<40?'#8fd19e':v<70?'#f4d27a':'#ff8a70');return `<div class="meter"><i style="width:${v}%;background:${c}"></i></div>`}
 function sceneSVG(){
   const m=tod(),side=L[S.loc].side,loc=S.loc;
-  const night=m<420||m>1050, dusk=(m>=960&&m<=1080)||(m>=390&&m<=480);
-  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:['#a9c3cc','#dfe6e1'];
+  const sea=seasonId(),SR=SEA().sun,night=m<SR[0]||m>SR[1], dusk=(m>=SR[1]-90&&m<=SR[1]+30)||(m>=SR[0]-30&&m<=SR[0]+60); // season
+  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:sea==='summer'?['#7fb6d8','#dcedf0']:sea==='winter'?['#b7c6cf','#e9edef']:['#a9c3cc','#dfe6e1']; // season
   const foggy=S.week.fog[day()]&&m<660&&m>=360;
-  const water=night?'#132d38':'#2c5f6e';
+  const water=night?'#132d38':sea==='summer'?'#2b6f84':'#2c5f6e'; // season
+  const tree=night?'#13261f':sea==='summer'?'#3b7a50':'#2f5d4a',snow=sea==='winter'; // season
   const out=activeOutage();
   let fg='';
   if(side==='I'){
-    for(let i=0;i<14;i++){const x=i*36+(i%2)*10-10,h=60+((i*37)%40);fg+=`<polygon points="${x},170 ${x+18},${170-h} ${x+36},170" fill="${night?'#13261f':'#2f5d4a'}"/>`}
-    if(loc==='home') fg+=`<rect x="190" y="112" width="70" height="40" fill="#7a5a3c"/><polygon points="184,114 225,88 266,114" fill="#4a3426"/><rect x="216" y="128" width="16" height="24" fill="#3a2a1e"/><rect x="198" y="122" width="12" height="10" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
+    for(let i=0;i<14;i++){const x=i*36+(i%2)*10-10,h=60+((i*37)%40);fg+=`<polygon points="${x},170 ${x+18},${170-h} ${x+36},170" fill="${tree}"/>`+(snow?`<polygon points="${x+11},${170-h*0.62} ${x+18},${170-h} ${x+25},${170-h*0.62}" fill="#f2f6f7" opacity=".9"/>`:'')} // season
+    if(loc==='home') fg+=`<rect x="190" y="112" width="70" height="40" fill="#7a5a3c"/><polygon points="184,114 225,88 266,114" fill="#4a3426"/><rect x="216" y="128" width="16" height="24" fill="#3a2a1e"/><rect x="198" y="122" width="12" height="10" fill="${night?'#f7d77a':'#cfe0e6'}"/>`+(snow?'<polygon points="186,113 225,89 264,113 225,95" fill="#f4f7f8"/>':''); // season
     if(loc==='store') fg+=`<rect x="150" y="104" width="130" height="50" fill="#e8dcc0"/><rect x="146" y="98" width="138" height="10" fill="#8a3b22"/><text x="215" y="122" text-anchor="middle" font-size="11" font-family="DM Sans" font-weight="700" fill="#2f3a3a">GENERAL STORE</text><rect x="200" y="130" width="30" height="24" fill="#5a4a3a"/><rect x="196" y="126" width="38" height="10" fill="#b8402a" transform="rotate(-8 215 131)"/><text x="215" y="134" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="DM Sans" transform="rotate(-8 215 131)">CLOSED</text><rect x="300" y="128" width="14" height="26" fill="#ddd"/><rect x="298" y="124" width="18" height="12" fill="#8a8a8a" opacity=".8"/>`;
     if(loc==='dale') fg+=`<rect x="170" y="116" width="80" height="38" fill="#6d5a45"/><polygon points="164,118 210,96 256,118" fill="#4b4b4b"/><rect x="262" y="132" width="16" height="22" rx="3" fill="#b8402a"/><rect x="282" y="134" width="16" height="20" rx="3" fill="#c98a12"/><rect x="200" y="128" width="20" height="26" fill="#2d241b"/>`;
     if(loc==='food') fg+=`<rect x="160" y="108" width="120" height="46" fill="#d7c7a5"/><rect x="156" y="102" width="128" height="9" fill="#2f5d4a"/><rect x="175" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/><rect x="235" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
@@ -28,15 +29,17 @@ function sceneSVG(){
     if(!out) ferry=`<g class="bob"><rect x="230" y="122" width="170" height="22" rx="4" fill="#f4f1ea"/><rect x="230" y="138" width="170" height="8" fill="#2f5d4a"/><rect x="290" y="104" width="50" height="20" fill="#f4f1ea"/><rect x="295" y="108" width="40" height="7" fill="#2a3d45"/><rect x="310" y="92" width="8" height="14" fill="#e3642e"/></g>`;
     else ferry=`<text x="300" y="130" text-anchor="middle" font-size="13" font-weight="700" font-family="DM Sans" fill="#ffdfd6">NO BOAT</text>`;
   }
-  const sun=night?`<circle cx="400" cy="34" r="12" fill="#f3efe0"/>`:`<circle cx="${80+((m-420)/630)*320}" cy="${50-Math.sin(((m-420)/630)*Math.PI)*25}" r="16" fill="#fbeaa8" opacity=".9"/>`;
+  const sf=(m-SR[0])/(SR[1]-SR[0]),smoke=sea==='summer'&&smokeDay(); // season
+  const sun=night?`<circle cx="400" cy="34" r="12" fill="#f3efe0"/>`:`<circle cx="${80+sf*320}" cy="${50-Math.sin(sf*Math.PI)*25}" r="16" fill="${smoke?'#f08a3c':'#fbeaa8'}" opacity=".9"/>`; // season
   const rainier=(!night&&!foggy)?`<polygon points="300,95 360,50 372,58 380,52 440,95" fill="#c9d3dc"/><polygon points="345,62 360,50 372,58 380,52 395,64 380,62 370,66 358,60" fill="#fff"/>`:'';
   return `<svg viewBox="0 0 480 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs>
   <rect width="480" height="170" fill="url(#sk)"/>${sun}${rainier}<rect y="95" width="480" height="75" fill="${water}"/>
-  <path d="M0 108 h480 M0 118 h480" stroke="#fff" stroke-opacity=".08"/>${ferry}${fg}${foggy?'<rect width="480" height="170" fill="#e8ecea" opacity=".55"/>':''}</svg>`;
+  <path d="M0 108 h480 M0 118 h480" stroke="#fff" stroke-opacity=".08"/>${ferry}${fg}${snow&&side==='I'&&!dock?'<rect class="snowline" y="163" width="480" height="7" fill="#eef3f4"/>':''}${smoke?'<rect width="480" height="170" fill="#c98a52" opacity=".35"/>':''}${foggy?'<rect width="480" height="170" fill="#e8ecea" opacity=".55"/>':''}</svg>`; // season
 }
 function hud(){
   const d=day();
-  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear phbtn" onclick="phoneOpen()" aria-label="Open your phone">📱${(()=>{const n=phoneBadgeTotal();return n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''})()}</button><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
+  // season: the HUD date carries the season icon
+  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${SEA().ic} ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear phbtn" onclick="phoneOpen()" aria-label="Open your phone">📱${(()=>{const n=phoneBadgeTotal();return n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''})()}</button><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
   <div class="stats">
    <div class="stat"><small>Cash</small><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
    <div class="stat"><small>Food</small><b>${S.pantry}${S.carried?'<span style="font-size:10px;opacity:.7">+'+S.carried+'</span>':''}d</b>${meter(Math.min(100,S.pantry*20),true)}</div>
@@ -54,6 +57,7 @@ function render(){
   if(out) h+=`<div class="alertbar">🚨 Rider Alert: ferry service suspended (${out.cause}).</div>`;
   else if(powerOut()&&L[S.loc].side==='I') h+=`<div class="alertbar fog">⚡ Power out on the island since ${fmt(S.power.start)}.</div>`;
   else if(S.week.fog[d]&&tod()<660) h+=`<div class="alertbar fog">🌫️ Fog: morning sailings running ${S.week.fog[d]}+ min late.</div>`;
+  else if(seasonAlert()) h+=`<div class="alertbar fog">${seasonAlert()}</div>`; // season
   h+=`<div class="scene">${sceneSVG()}<div class="place"><h2>${L[loc].ic} ${L[loc].name}</h2><div>${L[loc].desc}${L[loc].hours&&loc!=='work'?' · '+hoursTxt(loc):''}</div></div></div>`;
   h+=`<div class="content">${tab==='act'?actView():tab==='ferry'?ferryView():tab==='todo'?todoView():logView()}</div>`;
   const pending=todoItems().filter(x=>x.urgent).length;
@@ -206,7 +210,7 @@ function planTrip(to,byAbs,off){
   for(const dep of deps){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
     const leave=sl.abs-20-toDock;if(leave<earliest)continue;
     const arrive=sl.abs+(sl.delay||0)+20+(sl.ketron?10:0)+drive;
-    opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,full:fullProb(side,d,dep)})}
+    opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,why:sl.why,full:fullProb(side,d,dep)})} // season: why
   const ok=opts.filter(o=>o.arrive<=byAbs);
   return {best:ok[ok.length-1],safer:ok[ok.length-2],first:opts[0],toDock,drive,dockTo,startLoc};
 }
@@ -223,7 +227,8 @@ function plannerView(){
   const r=planTrip(PLAN.to,(day()+off)*1440+by,off),o=r.best;
   if(!o){const f=r.first;h+=`<div class="res"><span class="bad">❌ No boat gets you there by ${fmt(by)} ${off?'tomorrow':'today'}.</span>${f?`<br>Earliest: the <b>${fmt(f.dep)}</b> boat (leave ${r.startLoc==='home'?'home':'now'} by <b>${fmt(f.leave)}</b>) arrives at ${L[PLAN.to].name} about <b>${fmt(f.arrive)}</b>.`:''}</div></div>`;return h}
   const spare=(day()+off)*1440+by-o.arrive;
-  h+=`<div class="res">Take the <b>${fmt(o.dep)}</b> boat${o.ketron?' (via Ketron)':''}${o.delay?` <span class="warn">(fog: +${o.delay} min)</span>`:''}.<br>
+  // season: delays can be ice or a king tide, not just fog
+  h+=`<div class="res">Take the <b>${fmt(o.dep)}</b> boat${o.ketron?' (via Ketron)':''}${o.delay?` <span class="warn">(${o.why?'delay':'fog'}: +${o.delay} min)</span>`:''}.<br>
     🚗 Leave ${r.startLoc===S.loc&&!off?'here':L[r.startLoc].name} by <b>${fmt(o.leave)}</b>${r.toDock?` (${r.toDock} min to the landing)`:''}<br>
     🕐 Be in line by <b>${fmt(o.inLine)}</b><br>
     ⛴️ Off the boat at ${L[r.dockTo].name.replace(' Ferry Terminal','').replace(' Ferry Landing','')} about <b>${fmt(o.dock)}</b><br>
@@ -242,7 +247,7 @@ function ferryView(){
   let h=plannerView()+`<div class="board"><h3>⛴️ Today’s sailings · ${DAYS[d]}</h3><div style="font-size:12px;color:#9fc0c8">Status as of ${fmt(S.t)}. Things can change without warning.</div>
    <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',AI_DEPS)}</div><div><div class="colh">Leave Steilacoom</div>${col('M',ST_DEPS)}</div></div></div>`;
   const alerts=S.week.b.filter(b=>b.start<=S.t).map(b=>`<p>🚨 <b>${fmtAbs(b.start)}</b>: service suspended, ${b.cause}. ${S.t>=b.end?`<span style="color:var(--good)">Restored ${fmtAbs(b.end)}.</span>`:'<b>No restoration estimate.</b>'}</p>`).join('');
-  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}</div>`;
+  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}${seasonFerryNote()}</div>`; // season
   h+=`<div class="sect">Fuel & the ferry (current situation)</div><div class="rules">
   <p>⛽ <b>No gas or diesel is sold on Anderson Island.</b> The General Store, the island’s only gas station, closed Feb 2, 2026. A food co-op hopes to reopen it and the pumps in 2027.</p>
   <p>🚫 <b>Gasoline:</b> allowed aboard only in a vehicle’s or boat’s own built-in tank. Spare gas cans, <b>full or empty</b>, are prohibited. County policy cites federal hazmat rules for ferries (49 CFR 176.76) and state law (RCW 9.91.025, unlawful transit conduct). Violators must dispose of the fuel and container, can be cited, and repeat offenders can be barred from the ferry.</p>

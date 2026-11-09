@@ -290,6 +290,10 @@ html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#0
 .ph-call-log p{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin:6px 0;font-size:13.5px;line-height:1.4}
 .ph-vm{padding:2px 0 6px 48px}.ph-vm p{font-size:13px;margin:4px 0;color:var(--mute)}.ph-vm .ph-btn{margin:4px 0;padding:7px 10px}
 html.hc .ph-tabs{background:#ddd}
+/* seasons */
+.season-end b{font-weight:700}
+.scene svg .snowline{filter:drop-shadow(0 -1px 0 rgba(255,255,255,.6))}
+html.rm .scene svg .snowline{filter:none}
 </style>
 </head>
 <body>
@@ -299,7 +303,8 @@ html.hc .ph-tabs{background:#ddd}
 // ---------------- data ----------------
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday'];
 const DATES=['Nov 2','Nov 3','Nov 4','Nov 5','Nov 6','Nov 7','Nov 8'];
-function dateTxt(d){try{return new Date(2026,10,2+(S.weekNo||0)*7+d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}catch(e){return DATES[d]}}
+function dateTxt(d){try{const st=SEA().start; // season
+  return new Date(st[0],st[1],st[2]+(S.weekNo||0)*7+d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}catch(e){return DATES[d]}}
 const AI_DEPS=[315,390,465,540,615,690,765,840,915,990,1065,1140,1215,1290];
 const ST_DEPS=[350,425,500,575,650,725,800,875,950,1025,1100,1175,1250,1325];
 const KETRON={I:[690,1215],M:[575,950,1175]};
@@ -398,6 +403,8 @@ const GOSSIP=[
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
 const APP_VERSION='1.12.0', SAVE_SCHEMA=6;
+// Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
+function seasonId(){return (typeof S!=='undefined'&&S&&S.season)||'fall'}
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
 const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
@@ -462,7 +469,7 @@ function lengthModal(then){
     {l:'⛴️ One week',s:'Monday to Sunday, about 20–30 minutes.',fn:()=>then('week')},
     {l:'🗓️ A whole month (4 weeks)',s:'Help the islanders raise $2,500 to reopen the store as a co-op, with groceries and gas pumps.',fn:()=>then('month')}]);
 }
-window.startNewWeek=()=>{const go=k=>lengthModal(mode=>{newGame(k,mode);tab='act';render()});const pickDiff=()=>diffModal(go);if(!profileName())nameModal({first:true,then:pickDiff});else pickDiff()};
+window.startNewWeek=()=>{const go=k=>lengthModal(mode=>seasonModal(sea=>{newGame(k,mode,sea);tab='act';render()}));const pickDiff=()=>diffModal(go);if(!profileName())nameModal({first:true,then:pickDiff});else pickDiff()}; // season
 
 // ---------------- settings ----------------
 let exitNotice='';
@@ -476,7 +483,7 @@ function accessModal(){
 }
 window.openSettings=()=>{
   const inGame=S&&!S.over&&!document.querySelector('.title,.end');
-  modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>${S&&!S.over?` · ${DF().ic} ${DF().n}`:''}.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
+  modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>${S&&!S.over?` · ${DF().ic} ${DF().n} · ${seasonBadge(S)}`:''}.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
     {l:'👤 Change name',s:'Updates your name everywhere in the game.',fn:()=>nameModal({back:openSettings})},
     {l:`🔊 Sound: ${prefs().sound?'On':'Off'}`,s:'Ferry horn, alerts and bingo calls.',fn:()=>{setPref('sound',!prefs().sound);if(prefs().sound)sfx('good');openSettings()}},
     {l:'♿ Accessibility',s:`Text size: ${{n:'Normal',l:'Large',xl:'Extra large'}[prefs().fs]} · High contrast: ${prefs().hc?'On':'Off'} · Reduce motion: ${prefs().rm?'On':'Off'}`,fn:()=>accessModal()},
@@ -519,32 +526,36 @@ function baseState(){
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
     alarm:{plug:{on:true,time:330},phone:{on:false,time:330}},phone:80,phoneT:330,gen:null,
     arcs:{sam:{b:0,k:-9,h:0},walt:{b:0,k:-9,h:0},hendersons:{b:0,k:-9,h:0},day:-9},cal:{vet:-1,bazaar:-1,cleanup:-1,drill:-1,bzWk:-1,bz:false,chim:false},
+    season:'fall',sea:{}, // season
     week:null};
 }
-function newGame(diff,mode){
-  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=baseState();S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
+function newGame(diff,mode,season){
+  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=baseState();S.season=seasonOk(season)?season:'fall'; // season
+  S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
   uiNarr=[];
-  say('Monday, 5:30 AM. Your alarm goes off in the dark. Work in Lakewood starts at 9:00. The pantry is getting thin.');
+  say(`Monday, 5:30 AM. Your alarm goes off ${seasonId()==='summer'?'and it’s already light out':'in the dark'}. Work in Lakewood starts at 9:00. The pantry is getting thin.`); // season
   if(!prefs().tips) say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
   say('⛽ Your car has 4.5 gallons left, and there is no gas station on the island anymore.');
+  seasonIntro(); // season
   startDay();
   modal('There’s no gas on the island',`<p>The General Store was the island’s only gas station and only grocery store. It closed on <b>February 2, 2026</b>. A new co-op hopes to reopen it in 2027.</p>
   <p>And you can’t just bring gas over. <b>Gas cans, full or empty, are banned on the Pierce County ferry.</b> Gasoline can only come aboard in your vehicle’s own tank.</p>
   <p>So you can drive the car to the mainland to fill it (and pay the vehicle fare), buy smuggled gas from a neighbor at triple the price, or try smuggling some yourself. The deckhands do look.</p>
   <p style="font-size:13px;color:var(--mute)">The Ferry tab has the actual rules and their exemptions.</p>`,[{l:'Got it. Check the gas gauge.',fn:()=>{}}]);
 }
-function genWeek(diffKey){
-  const b=[];const r=Math.random;const D=DIFFS[diffKey||(S&&S.diff)||'normal']||DIFFS.normal;
+function genWeek(diffKey,sea){
+  const b=[];const r=Math.random;const D=DIFFS[diffKey||(S&&S.diff)||'normal']||DIFFS.normal;sea=sea||seasonId(); // season
   for(let k=0;k<(D.major2&&r()<D.major2?2:1);k++) if(r()<D.major){const day=1+Math.floor(r()*4);const start=day*1440+Math.floor((7+r()*11)*60);
     const durs=[300,480,900,1500,2200];b.push({start,end:start+durs[Math.floor(r()*durs.length)],cause:CAUSES[Math.floor(r()*CAUSES.length)]});}
   for(let d=0;d<7;d++){ if(r()<D.minor){const start=d*1440+Math.floor((d===0?10:6)*60+r()*10*60);
       if(!b.some(x=>start<x.end+120&&start>x.start-240)) b.push({start,end:start+90+Math.floor(r()*150),cause:CAUSES[Math.floor(r()*CAUSES.length)]});}}
-  const fog=[];for(let d=0;d<7;d++) fog.push(r()<D.fog?10+Math.floor(r()*20):0);
+  const fog=[];for(let d=0;d<7;d++) fog.push(r()<D.fog*seasonMul('fog',sea)?10+Math.floor(r()*20):0);
   const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]={M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
   let storm=null;
-  if(r()<D.storm){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)};
+  if(r()<D.storm*seasonMul('storm',sea)){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)}; // season
     const ws=st+20;if(!b.some(x=>ws<x.end&&ws+200>x.start)) b.push({start:ws,end:ws+120+Math.floor(r()*120),cause:'high winds (gale warning)'});}
-  return {b,fog,storm,px,news,bingo:Math.floor(r()*BINGO_FOR.length)};
+  const wk={b,fog,storm,px,news,bingo:Math.floor(r()*BINGO_FOR.length)};
+  return sea==='fall'?wk:seasonWeek(wk,sea,(S&&S.weekNo)||0); // season
 }
 const day=()=>S.cur;
 const tod=()=>S.t-S.cur*1440;
@@ -571,6 +582,7 @@ function sailing(side,d,dep,mode,knownOnly){
     }
   }
   const delay=dep<660?S.week.fog[d]||0:0;
+  const sd=seasonDelay(side,d,dep);if(sd)return {abs,dep,d,delay:delay+sd.min,why:sd.why,ketron:KETRON[side].includes(dep)}; // season
   return {abs,dep,d,delay,ketron:KETRON[side].includes(dep)};
 }
 function findNext(side,mode,knownOnly){
@@ -591,6 +603,7 @@ function fullProb(side,d,dep){
   if(d===4&&side==='M'&&dep>=875&&dep<=1175) p=0.55;
   if(d===5&&side==='I'&&dep<=690) p=0.3;
   if(d===6&&side==='M'&&dep>=875) p=0.45;
+  p=seasonFull(p,side,d,dep); // season
   // backlog after an outage
   if(S.week.b.some(b=>S.t>=b.end&&S.t<b.end+180)) p=Math.max(p,0.7);
   return Math.min(0.95,p*DF().full);
@@ -639,7 +652,7 @@ function waitFerry(mode){
   const wait=s.abs-S.t;S.stats.waited+=wait;
   adj('stress',Math.min(7,wait/15));
   S.t=s.abs+(s.delay||0);
-  if(s.delay) say(`Fog on the water. The boat is ${s.delay} minutes late.`);
+  if(s.delay) say(s.why?`${s.why} The boat is ${s.delay} minutes late.`:`Fog on the water. The boat is ${s.delay} minutes late.`); // season
   if(mode==='drive'&&!S.priority&&Math.random()<fullProb(side,s.d,s.dep)){
     showTile('🚗','Boat’s full','You’re first in line for the next one','bad');buzz(120);S.stats.bumps++;adj('stress',12);
     say(`The deckhand waves the car ahead of you on and then raises the hand. Boat’s full. You’re first in line for the next one.`);
@@ -857,7 +870,7 @@ const BINGO_FOR=['Anderson Island Historical Society','Pierce County Fire Distri
 
 // ---- night ----
 defEvent({id:'power_outage',hook:'night',priority:5,max:2,cooldown:2,
-  chance:ctx=>stormNight(day())?0:0.13,
+  chance:ctx=>stormNight(day())?0:0.13*seasonMul('outage'), // season
   run(ctx){
     const d=day(),start=d*1440+1440+60+Math.floor(Math.random()*180),end=(d+1)*1440+330+120+Math.floor(Math.random()*300);
     const cause=pick(['a fir came down across a line','a transformer blew with a bang you heard from bed','wind gusts tangled a line by the lake','nobody knows why. It just went out']);
@@ -904,22 +917,22 @@ const UP_JOBS={
 const upJob=k=>UP().jobs.find(j=>j.k===k);
 function upSchedule(k,cost,what){money(-cost);S.t+=10;phoneTick();UP().jobs.push({k,due:(day()+1)*1440+660});say(`📱 ${what} Booked for tomorrow late morning, if the ferry cooperates.`);afterAction()}
 function upkeepNight(where,notes,d){
-  const U=UP(),home=where==='home',storm=stormNight(d);
-  const rain=storm||Math.random()<0.22;if(rain)U.rain=dayKey();
+  const U=UP(),home=where==='home',storm=stormNight(d),SN=seasonUp(); // season
+  const rain=storm||Math.random()<0.22*SN.rain;if(rain)U.rain=dayKey();
   const inc=(k,v,max=100)=>{U[k]=Math.min(max,Math.round((U[k]+v)*10)/10)};
-  inc('gutters',5+(rain?8:0)+(storm?10:0));inc('moss',1.5);inc('pot',2+(rain?4:0)+(storm?4:0));inc('limbs',1);inc('well',1,999);inc('septic',2.5);
+  inc('gutters',(5+(rain?8:0)+(storm?10:0))*SN.gut);inc('moss',1.5*SN.moss);inc('pot',2+(rain?4:0)+(storm?4:0));inc('limbs',1);inc('well',1,999);inc('septic',2.5); // season
   if(S.gen)inc('genSvc',1,999);
-  if(home){inc('chimney',1,999);inc('ash',1,99)}
+  if(home&&SN.stove){inc('chimney',1,999);inc('ash',1,99)} // season
   inc('damp',1+(rain?1:0)+(S.power&&S.ev.flags.genRan!==d?1:0),20);
   if(U.traps>0)U.traps--;
   // heat: the woodstove first, the propane furnace as backup
   let burned=false;
-  if(home&&U.wood>0){U.wood=Math.max(0,U.wood-1);burned=true;U.burned=dayKey()}
-  const was=U.propane;U.propane=Math.max(0,Math.round(U.propane-(burned?2:home?6:2)));
+  if(home&&SN.stove&&U.wood>0){U.wood=Math.max(0,U.wood-SN.wood);burned=true;U.burned=dayKey()} // season
+  const was=U.propane;U.propane=Math.max(0,Math.round(U.propane-(burned?SN.prop[0]:home?SN.prop[1]:SN.prop[2]))); // season
   if(was>0&&U.propane===0)notes.push('🔥 The propane tank ran dry: no furnace, no hot water. (Order a propane delivery.)');
-  if(home&&!burned&&U.propane===0){adj('health',-3);adj('stress',6);notes.push('🥶 No dry firewood and no propane. You sleep in a hat and two sweatshirts and still wake up cold.')}
+  if(home&&SN.stove&&!burned&&U.propane===0){adj('health',-3);adj('stress',6);notes.push('🥶 No dry firewood and no propane. You sleep in a hat and two sweatshirts and still wake up cold.')} // season
   else if(U.propane===0)adj('stress',3);
-  if(home&&!burned&&U.propane>0&&!U.woodOut){U.woodOut=true;notes.push('🪵 Out of dry firewood, so the propane furnace runs all night and drinks the tank.')}
+  if(home&&SN.stove&&!burned&&U.propane>0&&!U.woodOut){U.woodOut=true;notes.push('🪵 Out of dry firewood, so the propane furnace runs all night and drinks the tank.')} // season
   if(U.fridge){adj('stress',4);homeAdj(-3);notes.push('🤢 Something in the fridge spoiled during the outage, and it’s making itself known. (Clean out the fridge.)')}
   if(U.mold){adj('health',-1);adj('stress',2);notes.push('🦠 The mold in the bathroom isn’t going away on its own.')}
 }
@@ -928,7 +941,8 @@ function choresPile(notes){const U=UP();let pile=0;const late=[];
   pile=Math.min(8,pile);if(pile>=6)notes.push(`🧺 The chores are piling up (${late.join(', ')}). Every day you skip them, the house slips a little more.`);return pile}
 const U_REST=()=>S.rest&&S.rest.k===dayKey()?S.rest.n:0;
 function upkeepActions(a,d,m){
-  const U=UP(),dk=dayKey(),lite=m>=420&&m<1020,dark='Outdoor work is a daylight job: 7 AM–5 PM in November.',phoneOK=S.phone>0;
+  const U=UP(),dk=dayKey(),lite=seasonLite(m),dark=seasonDark(), // season
+    phoneOK=S.phone>0;
   const doneToday=k=>U.done[k]===dk;
   const add=(o)=>a.push(o);
   // inside: daily chores
@@ -945,7 +959,7 @@ function upkeepActions(a,d,m){
   add({cat:'home',ic:'🧯',l:'Clean the woodstove ash',due:U.ash>=3,s:U.ash<=0?'Clean.':`15 min. ${U.ash} day${U.ash===1?'':'s'} of ash in the firebox.`,dis:U.ash<=0,fn:()=>{S.t+=15;U.ash=0;homeAdj(1);say('🧯 A bucket of ash out to the garden. The fire draws better already.');afterAction()}});
   add({cat:'home',ic:'🏚️',l:'Sweep the chimney',due:U.chimney>=21,s:U.chimney<5?'Swept recently.':`90 min on the roof with a brush. ${U.chimney} days of creosote building up${U.chimney>=21?': chimney fire risk':''}.`,dis:U.chimney<5||!lite,
     fn:()=>{if(U.chimney<21)achUnlock('chimney');S.t+=90;U.chimney=0;homeAdj(2);if(Math.random()<0.04)upInjure('Coming down the wet ladder, your foot slips off the last rung.');else say('🏚️ A bucket of black flakes later, the flue is clean.');afterAction()}});
-  add({cat:'home',ic:'🪵',l:`Split and stack firewood (${U.wood} night${U.wood===1?'':'s'} left)`,due:U.wood<=1,s:doneToday('wood')?'Done for today. Your back says so.':'1 hour. +4 nights of dry wood. Without it, the propane furnace takes over.',dis:doneToday('wood')||U.wood>=14,
+  add({cat:'home',ic:'🪵',l:`Split and stack firewood (${U.wood} night${U.wood===1?'':'s'} left)`,due:U.wood<=1&&seasonStove(),s:doneToday('wood')?'Done for today. Your back says so.':'1 hour. +4 nights of dry wood. Without it, the propane furnace takes over.',dis:doneToday('wood')||U.wood>=14, // season
     fn:()=>{S.t+=60;U.wood=Math.min(14,U.wood+4);U.woodOut=false;U.done.wood=dk;adj('stress',-2);if(Math.random()<0.03)upInjure('You step on a wet round of fir and roll your ankle.');else say('🪵 Thunk. Thunk. A good hour of splitting, and a tidy stack under the eaves.');afterAction()}});
   if(U.trapsOwned) add({cat:'home',ic:'🪤',l:U.traps>0?`Mouse traps set (${U.traps} more nights)`:'Set the mouse traps',due:U.traps<=0,s:'10 min. Peanut butter under the sink and in the pantry. Keeps the mice out of your food for a week.',dis:U.traps>0,fn:()=>{S.t+=10;U.traps=7;say('🪤 Traps baited and set.');afterAction()}});
   const sj=upJob('septic');
@@ -986,7 +1000,7 @@ function upPressing(n=3,min=0.5){const U=UP();return Object.keys(UP_TASKS).map(k
 function upFix(ks){const U=UP();ks.forEach(k=>UP_TASKS[k].fix(U));return ks.map(k=>UP_TASKS[k].n)}
 function upChoresDone(){const U=UP(),dk=dayKey();for(const k in CHORES){U[k]=0;U.done[k]=dk}}
 const andList=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
-function upAnyDue(){const U=UP();return upPressing(1,1).length>0||Object.keys(CHORES).some(k=>U[k]>=2)||U.fridge||U.wood<=1||U.septic>=75||U.propane<25}
+function upAnyDue(){const U=UP();return upPressing(1,1).length>0||Object.keys(CHORES).some(k=>U[k]>=2)||U.fridge||(U.wood<=1&&seasonStove())||U.septic>=75||U.propane<25} // season
 const COMM=()=>S.comm||(S.comm={post:-1,help:-1,flakes:0});
 const COMM_NAME='the Anderson Island community group';
 const NEIGHBORS=[['marta','Marta, from up the road','answered your post in the community group'],['ken','Big Ken, who has a tractor','showed up from the community group'],
@@ -1269,7 +1283,7 @@ const LIFE_CAL={
   drill:{d:3,ok:()=>S.mode==='month'?S.weekNo===2:true},           // Thu Nov 19 (week mode: Thu Nov 5)
 };
 function bazaarWeek(){const C=S.cal;if(C.bzWk!==S.weekNo){C.bzWk=S.weekNo;C.bz=Math.random()<0.6}return !!C.bz}
-const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok();
+const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok()&&(seasonId()==='fall'||k==='cleanup'||k==='drill'); // season: Veterans Day and the holiday bazaar are November-only
 defEvent({id:'veterans_day',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('vet'),
   run(){say(`🇺🇸 <b>Veterans Day</b>, ${dateTxt(day())}. The American Legion holds its ceremony at <b>11:00 AM</b> by the flagpole outside the Riv: colors, the names, and a bugler who’s been practicing since October. Coffee after.`)}});
 defEvent({id:'craft_bazaar',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('bazaar'),
@@ -1544,18 +1558,19 @@ function startDay(){
   S.daily={money:S.money,waited:S.stats.waited,cross:S.stats.crossings,fares:S.stats.fares,ev:S.ev.history.length,day:d};
   if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. ${genReady()?(S.homeGas>=3?'Your generator is fueled and ready.':'Your generator needs at least 3 gallons in the shed…'):'No generator? Tonight might be cold.'}`);
   if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
-  if(d===0&&S.diff==='hard') say('🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.');
+  if(d===0&&S.diff==='hard') say(seasonId()==='winter'?'🔥 <b>Ferry Hell:</b> the boat is a wreck, the lines are long and money is tight. Good luck.':'🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.'); // season
   if(d===0&&S.diff==='easy') say('🌲 <b>Islander mode:</b> a quieter week on the water. A good time to learn the ropes.');
   if(d===0) say('⛽ Monday fuel run: with a fuel tanker aboard, federal hazmat rules let only crew and the tanker driver ride. The 9:35 AM from Steilacoom and the 11:30 AM from the island are canceled.');
   if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(S.mode==='month'&&S.weekNo>0?0.12:(d===4?1:0.3))){ // later weeks of a month: an occasional mishap, not a weekly certainty
     S.injuryRolled=true;
     if(Math.random()<0.7){S.injury={day:d,treated:false};adj('health',-15);
-      say('🤕 Hauling firewood in the dark, you slip on wet cedar needles. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.');}
+      say(seasonInjury()||'🤕 Hauling firewood in the dark, you slip on wet cedar needles. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.');} // season
   }
+  seasonMorning(d); // season
   if(S.week.news[d]>=0) say('📰 '+NEWS[S.week.news[d]].t);
   if(S.loc==='home') fireHook('wake',{});
   S.ev.force=[];
-  if(d>0) say(S.loc==='home'&&homeTier()==='high'&&Math.random()<0.5?FLAVOR_COZY[Math.floor(Math.random()*FLAVOR_COZY.length)]:FLAVOR_MORNING[Math.floor(Math.random()*FLAVOR_MORNING.length)]);
+  if(d>0) say(S.loc==='home'&&homeTier()==='high'&&Math.random()<0.5?(F=>F[Math.floor(Math.random()*F.length)])(seasonFlavor(true)):(F=>F[Math.floor(Math.random()*F.length)])(seasonFlavor())); // season
 }
 function dailyCard(d){
   const D=S.daily;if(!D||D.day!==d) return '';
@@ -1572,6 +1587,7 @@ function endDay(where){
   // island events while you sleep (random outages etc.)
   upkeepNight(where,notes,d);
   const nctx={where,notes};fireHook('night',nctx);
+  seasonNight(where,notes,d); // season
   if(S.ev.flags.genFail===d&&!stormNight(d)&&!notes.some(n=>n.includes('generator coughs')))notes.push('🔌 The generator coughs, sputters and dies. It hasn’t been serviced in weeks.');
   // storm power outage
   if(stormNight(d)){
@@ -1730,6 +1746,7 @@ function actions(){
   jobActions(a,loc);
   favorActions(a,loc);
   lifeActions(a,loc);
+  seasonActions(a,loc); // season
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
@@ -1994,7 +2011,8 @@ function migrate(d){
   for(const g in GOODS) x.cargo[g]=Math.max(0,num(x.cargo[g],0));
   // week: regenerate whatever is missing
   if(!DIFFS[x.diff])x.diff='normal';
-  const w=x.week&&typeof x.week==='object'?x.week:{}, fresh=genWeek(x.diff);
+  if(!seasonOk(x.season))x.season='fall'; // season
+  const w=x.week&&typeof x.week==='object'?x.week:{}, fresh=genWeek(x.diff,x.season); // season
   if(!Array.isArray(w.b)) w.b=fresh.b;
   if(!Array.isArray(w.fog)) w.fog=fresh.fog;
   if(w.storm===undefined) w.storm=null;
@@ -2069,15 +2087,16 @@ const app=document.getElementById('app');
 function meter(v,good){const c=good?(v>60?'#8fd19e':v>30?'#f4d27a':'#ff8a70'):(v<40?'#8fd19e':v<70?'#f4d27a':'#ff8a70');return `<div class="meter"><i style="width:${v}%;background:${c}"></i></div>`}
 function sceneSVG(){
   const m=tod(),side=L[S.loc].side,loc=S.loc;
-  const night=m<420||m>1050, dusk=(m>=960&&m<=1080)||(m>=390&&m<=480);
-  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:['#a9c3cc','#dfe6e1'];
+  const sea=seasonId(),SR=SEA().sun,night=m<SR[0]||m>SR[1], dusk=(m>=SR[1]-90&&m<=SR[1]+30)||(m>=SR[0]-30&&m<=SR[0]+60); // season
+  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:sea==='summer'?['#7fb6d8','#dcedf0']:sea==='winter'?['#b7c6cf','#e9edef']:['#a9c3cc','#dfe6e1']; // season
   const foggy=S.week.fog[day()]&&m<660&&m>=360;
-  const water=night?'#132d38':'#2c5f6e';
+  const water=night?'#132d38':sea==='summer'?'#2b6f84':'#2c5f6e'; // season
+  const tree=night?'#13261f':sea==='summer'?'#3b7a50':'#2f5d4a',snow=sea==='winter'; // season
   const out=activeOutage();
   let fg='';
   if(side==='I'){
-    for(let i=0;i<14;i++){const x=i*36+(i%2)*10-10,h=60+((i*37)%40);fg+=`<polygon points="${x},170 ${x+18},${170-h} ${x+36},170" fill="${night?'#13261f':'#2f5d4a'}"/>`}
-    if(loc==='home') fg+=`<rect x="190" y="112" width="70" height="40" fill="#7a5a3c"/><polygon points="184,114 225,88 266,114" fill="#4a3426"/><rect x="216" y="128" width="16" height="24" fill="#3a2a1e"/><rect x="198" y="122" width="12" height="10" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
+    for(let i=0;i<14;i++){const x=i*36+(i%2)*10-10,h=60+((i*37)%40);fg+=`<polygon points="${x},170 ${x+18},${170-h} ${x+36},170" fill="${tree}"/>`+(snow?`<polygon points="${x+11},${170-h*0.62} ${x+18},${170-h} ${x+25},${170-h*0.62}" fill="#f2f6f7" opacity=".9"/>`:'')} // season
+    if(loc==='home') fg+=`<rect x="190" y="112" width="70" height="40" fill="#7a5a3c"/><polygon points="184,114 225,88 266,114" fill="#4a3426"/><rect x="216" y="128" width="16" height="24" fill="#3a2a1e"/><rect x="198" y="122" width="12" height="10" fill="${night?'#f7d77a':'#cfe0e6'}"/>`+(snow?'<polygon points="186,113 225,89 264,113 225,95" fill="#f4f7f8"/>':''); // season
     if(loc==='store') fg+=`<rect x="150" y="104" width="130" height="50" fill="#e8dcc0"/><rect x="146" y="98" width="138" height="10" fill="#8a3b22"/><text x="215" y="122" text-anchor="middle" font-size="11" font-family="DM Sans" font-weight="700" fill="#2f3a3a">GENERAL STORE</text><rect x="200" y="130" width="30" height="24" fill="#5a4a3a"/><rect x="196" y="126" width="38" height="10" fill="#b8402a" transform="rotate(-8 215 131)"/><text x="215" y="134" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="DM Sans" transform="rotate(-8 215 131)">CLOSED</text><rect x="300" y="128" width="14" height="26" fill="#ddd"/><rect x="298" y="124" width="18" height="12" fill="#8a8a8a" opacity=".8"/>`;
     if(loc==='dale') fg+=`<rect x="170" y="116" width="80" height="38" fill="#6d5a45"/><polygon points="164,118 210,96 256,118" fill="#4b4b4b"/><rect x="262" y="132" width="16" height="22" rx="3" fill="#b8402a"/><rect x="282" y="134" width="16" height="20" rx="3" fill="#c98a12"/><rect x="200" y="128" width="20" height="26" fill="#2d241b"/>`;
     if(loc==='food') fg+=`<rect x="160" y="108" width="120" height="46" fill="#d7c7a5"/><rect x="156" y="102" width="128" height="9" fill="#2f5d4a"/><rect x="175" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/><rect x="235" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
@@ -2094,15 +2113,17 @@ function sceneSVG(){
     if(!out) ferry=`<g class="bob"><rect x="230" y="122" width="170" height="22" rx="4" fill="#f4f1ea"/><rect x="230" y="138" width="170" height="8" fill="#2f5d4a"/><rect x="290" y="104" width="50" height="20" fill="#f4f1ea"/><rect x="295" y="108" width="40" height="7" fill="#2a3d45"/><rect x="310" y="92" width="8" height="14" fill="#e3642e"/></g>`;
     else ferry=`<text x="300" y="130" text-anchor="middle" font-size="13" font-weight="700" font-family="DM Sans" fill="#ffdfd6">NO BOAT</text>`;
   }
-  const sun=night?`<circle cx="400" cy="34" r="12" fill="#f3efe0"/>`:`<circle cx="${80+((m-420)/630)*320}" cy="${50-Math.sin(((m-420)/630)*Math.PI)*25}" r="16" fill="#fbeaa8" opacity=".9"/>`;
+  const sf=(m-SR[0])/(SR[1]-SR[0]),smoke=sea==='summer'&&smokeDay(); // season
+  const sun=night?`<circle cx="400" cy="34" r="12" fill="#f3efe0"/>`:`<circle cx="${80+sf*320}" cy="${50-Math.sin(sf*Math.PI)*25}" r="16" fill="${smoke?'#f08a3c':'#fbeaa8'}" opacity=".9"/>`; // season
   const rainier=(!night&&!foggy)?`<polygon points="300,95 360,50 372,58 380,52 440,95" fill="#c9d3dc"/><polygon points="345,62 360,50 372,58 380,52 395,64 380,62 370,66 358,60" fill="#fff"/>`:'';
   return `<svg viewBox="0 0 480 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs>
   <rect width="480" height="170" fill="url(#sk)"/>${sun}${rainier}<rect y="95" width="480" height="75" fill="${water}"/>
-  <path d="M0 108 h480 M0 118 h480" stroke="#fff" stroke-opacity=".08"/>${ferry}${fg}${foggy?'<rect width="480" height="170" fill="#e8ecea" opacity=".55"/>':''}</svg>`;
+  <path d="M0 108 h480 M0 118 h480" stroke="#fff" stroke-opacity=".08"/>${ferry}${fg}${snow&&side==='I'&&!dock?'<rect class="snowline" y="163" width="480" height="7" fill="#eef3f4"/>':''}${smoke?'<rect width="480" height="170" fill="#c98a52" opacity=".35"/>':''}${foggy?'<rect width="480" height="170" fill="#e8ecea" opacity=".55"/>':''}</svg>`; // season
 }
 function hud(){
   const d=day();
-  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear phbtn" onclick="phoneOpen()" aria-label="Open your phone">📱${(()=>{const n=phoneBadgeTotal();return n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''})()}</button><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
+  // season: the HUD date carries the season icon
+  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${SEA().ic} ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear phbtn" onclick="phoneOpen()" aria-label="Open your phone">📱${(()=>{const n=phoneBadgeTotal();return n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''})()}</button><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
   <div class="stats">
    <div class="stat"><small>Cash</small><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
    <div class="stat"><small>Food</small><b>${S.pantry}${S.carried?'<span style="font-size:10px;opacity:.7">+'+S.carried+'</span>':''}d</b>${meter(Math.min(100,S.pantry*20),true)}</div>
@@ -2120,6 +2141,7 @@ function render(){
   if(out) h+=`<div class="alertbar">🚨 Rider Alert: ferry service suspended (${out.cause}).</div>`;
   else if(powerOut()&&L[S.loc].side==='I') h+=`<div class="alertbar fog">⚡ Power out on the island since ${fmt(S.power.start)}.</div>`;
   else if(S.week.fog[d]&&tod()<660) h+=`<div class="alertbar fog">🌫️ Fog: morning sailings running ${S.week.fog[d]}+ min late.</div>`;
+  else if(seasonAlert()) h+=`<div class="alertbar fog">${seasonAlert()}</div>`; // season
   h+=`<div class="scene">${sceneSVG()}<div class="place"><h2>${L[loc].ic} ${L[loc].name}</h2><div>${L[loc].desc}${L[loc].hours&&loc!=='work'?' · '+hoursTxt(loc):''}</div></div></div>`;
   h+=`<div class="content">${tab==='act'?actView():tab==='ferry'?ferryView():tab==='todo'?todoView():logView()}</div>`;
   const pending=todoItems().filter(x=>x.urgent).length;
@@ -2272,7 +2294,7 @@ function planTrip(to,byAbs,off){
   for(const dep of deps){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
     const leave=sl.abs-20-toDock;if(leave<earliest)continue;
     const arrive=sl.abs+(sl.delay||0)+20+(sl.ketron?10:0)+drive;
-    opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,full:fullProb(side,d,dep)})}
+    opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,why:sl.why,full:fullProb(side,d,dep)})} // season: why
   const ok=opts.filter(o=>o.arrive<=byAbs);
   return {best:ok[ok.length-1],safer:ok[ok.length-2],first:opts[0],toDock,drive,dockTo,startLoc};
 }
@@ -2289,7 +2311,8 @@ function plannerView(){
   const r=planTrip(PLAN.to,(day()+off)*1440+by,off),o=r.best;
   if(!o){const f=r.first;h+=`<div class="res"><span class="bad">❌ No boat gets you there by ${fmt(by)} ${off?'tomorrow':'today'}.</span>${f?`<br>Earliest: the <b>${fmt(f.dep)}</b> boat (leave ${r.startLoc==='home'?'home':'now'} by <b>${fmt(f.leave)}</b>) arrives at ${L[PLAN.to].name} about <b>${fmt(f.arrive)}</b>.`:''}</div></div>`;return h}
   const spare=(day()+off)*1440+by-o.arrive;
-  h+=`<div class="res">Take the <b>${fmt(o.dep)}</b> boat${o.ketron?' (via Ketron)':''}${o.delay?` <span class="warn">(fog: +${o.delay} min)</span>`:''}.<br>
+  // season: delays can be ice or a king tide, not just fog
+  h+=`<div class="res">Take the <b>${fmt(o.dep)}</b> boat${o.ketron?' (via Ketron)':''}${o.delay?` <span class="warn">(${o.why?'delay':'fog'}: +${o.delay} min)</span>`:''}.<br>
     🚗 Leave ${r.startLoc===S.loc&&!off?'here':L[r.startLoc].name} by <b>${fmt(o.leave)}</b>${r.toDock?` (${r.toDock} min to the landing)`:''}<br>
     🕐 Be in line by <b>${fmt(o.inLine)}</b><br>
     ⛴️ Off the boat at ${L[r.dockTo].name.replace(' Ferry Terminal','').replace(' Ferry Landing','')} about <b>${fmt(o.dock)}</b><br>
@@ -2308,7 +2331,7 @@ function ferryView(){
   let h=plannerView()+`<div class="board"><h3>⛴️ Today’s sailings · ${DAYS[d]}</h3><div style="font-size:12px;color:#9fc0c8">Status as of ${fmt(S.t)}. Things can change without warning.</div>
    <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',AI_DEPS)}</div><div><div class="colh">Leave Steilacoom</div>${col('M',ST_DEPS)}</div></div></div>`;
   const alerts=S.week.b.filter(b=>b.start<=S.t).map(b=>`<p>🚨 <b>${fmtAbs(b.start)}</b>: service suspended, ${b.cause}. ${S.t>=b.end?`<span style="color:var(--good)">Restored ${fmtAbs(b.end)}.</span>`:'<b>No restoration estimate.</b>'}</p>`).join('');
-  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}</div>`;
+  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}${seasonFerryNote()}</div>`; // season
   h+=`<div class="sect">Fuel & the ferry (current situation)</div><div class="rules">
   <p>⛽ <b>No gas or diesel is sold on Anderson Island.</b> The General Store, the island’s only gas station, closed Feb 2, 2026. A food co-op hopes to reopen it and the pumps in 2027.</p>
   <p>🚫 <b>Gasoline:</b> allowed aboard only in a vehicle’s or boat’s own built-in tank. Spare gas cans, <b>full or empty</b>, are prohibited. County policy cites federal hazmat rules for ferries (49 CFR 176.76) and state law (RCW 9.91.025, unlawful transit conduct). Violators must dispose of the fuel and container, can be cited, and repeat offenders can be barred from the ferry.</p>
@@ -2431,7 +2454,7 @@ function gradeOf(sc){
   if(sc>=900) return ['D','Considering Lakewood Apartments','You’ve started browsing mainland rentals “just to look.”'];
   return ['F','Moving Back to the Mainland','The island is beautiful. You’ll visit. On a Tuesday. Not a Friday.'];
 }
-function finish(){clearTiles();S.over=true;endScreen(S.mode==='month'?'{{name}}, you made it through the month':'{{name}}, you made it to Sunday night',S.mode==='month'?`Four weeks of island life.${S.coop.open?' And the island has a store again.':''}`:'You survived a week of island life.')}
+function finish(){clearTiles();S.over=true;endScreen(S.mode==='month'?'{{name}}, you made it through the month':'{{name}}, you made it to Sunday night',S.mode==='month'?`Four weeks of island life in ${SEA().month}.${S.coop.open?' And the island has a store again.':''}`:`You survived a week of island life in ${SEA().month}.`)} // season
 function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
@@ -2439,9 +2462,11 @@ function endScreen(h1,sub,lost){
   achCheck({end:true,lost});const achNew=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
   const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
   saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
+  // season: the end screen has a Season row; the title Continue button and save slots show the season
   app.innerHTML=withName(`<div class="end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>
   <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${g[0]}</div><div><b style="font-family:Fraunces;font-size:20px">${g[1]}</b><div style="color:var(--mute);font-size:14px">${g[2]}</div></div></div>
   <div class="kv"><span>Difficulty</span><b>${DF().ic} ${DF().n}</b></div>
+  <div class="kv season-end"><span>Season</span><b>${seasonBadge(S)} · ${seasonYear(seasonId())}${S.stats.pipes?` · 🧊 ${S.stats.pipes} burst pipe${S.stats.pipes>1?'s':''}`:''}${S.stats.veg?` · 🥒 ${S.stats.veg} garden harvest${S.stats.veg>1?'s':''}`:''}</b></div>
   <div class="kv"><span>Score</span><b>${sc}${typeof newBest!=='undefined'&&newBest?' 🏆 new best':''}</b></div>${best!=null&&!isNaN(best)?`<div class="kv"><span>Previous best</span><b>${best}</b></div>`:''}
   <div class="kv ach-end"><span>🏆 Achievements this game</span><b style="text-align:right">${achNew.length?achNew.map(a=>a.ic+' '+a.n).join(', '):'none new'}</b></div>
   <div class="kv"><span>Cash left</span><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
@@ -2506,7 +2531,7 @@ window.achModal=achModal;
 // ---------------- save slots UI ----------------
 function slotInfo(n){const r=rawSave(n);if(!r)return null;
   try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=DIFFS[x.diff]||DIFFS.normal;
-    return {name:x.name||currentName(),diff:`${D.ic} ${D.n}`,txt:`${x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}}
+    return {name:x.name||currentName(),diff:`${D.ic} ${D.n} · ${seasonBadge(x)}`,txt:`${x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}} // season
   catch(e){return {broken:true,name:'Unreadable save',diff:'',txt:''}}}
 const slotLine=i=>i?(i.broken?'Unreadable save':`${esc(i.name)} · ${i.diff} · ${i.txt}`):'Empty';
 const SLOTBTN='flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink)';
@@ -2540,7 +2565,7 @@ function titleScreen(){clearTiles();
   <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
   <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
   <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Thursday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
-  ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
+  ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${seasonBadge(d.S)} · ${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
   <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
   ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}${exitNotice?`<div class="hint">${exitNotice}</div>`:''}
@@ -3022,6 +3047,221 @@ definePhoneApp({id:'notes',name:'Notes',ic:'📝',order:64,size:'12 MB',desc:'Yo
       h+=`<div class="ph-sub">Quick add</div>`+NOTE_TPL.filter(t=>!P.some(q=>q.t===t)).slice(0,4).map(t=>phBtn('＋ '+t,()=>prioAdd(t))).join('')}
     if(P.some(q=>q.done))h+=phBtn('Clear checked-off notes',()=>prioClear());
     return h}});
+// ---------------- seasons ----------------
+// S.season: 'fall' (November, the original game), 'winter' (January) or 'summer' (July). seasonId() lives in 01-core.
+// Everything here is a function declaration (hoisted), because titleScreen() runs at load, before this file executes.
+// Fall must stay exactly the original game: every helper returns the old value for fall and makes no Math.random() calls.
+function seasonTable(){return seasonTable.t||(seasonTable.t={
+  fall:{n:'Fall',ic:'🍂',month:'November',start:[2026,10,2],lite:[420,1020],sun:[420,1050],liteTxt:'7 AM–5 PM in November',
+    d:'November: rain, wind, woodsmoke and short days. The game as it’s always been.'},
+  winter:{n:'Winter',ic:'❄️',month:'January',start:[2027,0,4],lite:[480,960],sun:[470,990],liteTxt:'8 AM–4 PM in January',
+    d:'January: ice on the ferry ramp, frozen pipes, king tides, more storms and outages. Daylight 8 to 4.'},
+  summer:{n:'Summer',ic:'☀️',month:'July',start:[2026,5,29],lite:[360,1260],sun:[330,1290],liteTxt:'6 AM–9 PM in July',
+    d:'July: tourists with kayaks pack the boats, the Fourth of July, a garden to water, a burn ban and wildfire smoke. No woodstove.'},
+})}
+function seasonOk(k){return Object.prototype.hasOwnProperty.call(seasonTable(),k)}
+function SEA(k){const T=seasonTable();return T[k||seasonId()]||T.fall}
+function seasonBadge(x){const s=SEA(x&&x.season||'fall');return `${s.ic} ${s.n}`}
+function seasonYear(k){const s=SEA(k);return `${s.month} ${s.start[0]}`}
+// multipliers against fall (fall = 1 for everything)
+function seasonMul(k,sea){
+  const M={winter:{fog:1,storm:1.45,outage:1.7,rain:1.2,gut:0.5,moss:0.5},summer:{fog:0,storm:0,outage:0.35,rain:0.15,gut:0.4,moss:0.3}};
+  const s=M[sea||seasonId()];return s&&s[k]!=null?s[k]:1}
+// ---- daylight: outdoor work window ----
+function seasonLite(m){const w=SEA().lite;if(seasonId()==='summer'&&smokeDay())return false;return m>=w[0]&&m<w[1]}
+function seasonDark(){if(seasonId()==='summer'&&smokeDay())return 'Wildfire smoke: the air is unhealthy today. Outdoor work can wait.';return `Outdoor work is a daylight job: ${SEA().liteTxt}.`}
+// ---- house: heating and wear (used by upkeepNight in 04-house) ----
+function seasonUp(){const s=seasonId();
+  if(s==='summer') return {rain:seasonMul('rain'),gut:seasonMul('gut'),moss:seasonMul('moss'),stove:false,wood:0,prop:[1,1,1]};
+  if(s==='winter') return {rain:seasonMul('rain'),gut:seasonMul('gut'),moss:seasonMul('moss'),stove:true,wood:1+(Math.random()<0.3?1:0),prop:[3,8,3]};
+  return {rain:1,gut:1,moss:1,stove:true,wood:1,prop:[2,6,2]}}
+function seasonStove(){return seasonId()!=='summer'}
+// ---- the week: extra weather per season (called from genWeek; fall adds nothing) ----
+function seasonWeek(w,sea,wk){
+  if(sea==='winter'){const r=Math.random,X={cold:[],ice:[],snow:-1,tide:null};
+    for(let d=0;d<7;d++) X.cold.push(r()<0.5);
+    if(r()<0.45) X.snow=1+Math.floor(r()*5);
+    for(let d=0;d<7;d++){const icy=d===X.snow||(d>0?X.cold[d-1]:r()<0.5);X.ice.push(icy?(d===X.snow?25:10)+Math.floor(r()*20):0);
+      if(icy&&r()<0.3){const st=d*1440+300+Math.floor(r()*90),en=st+60+Math.floor(r()*60);
+        if(!w.b.some(x=>st<x.end+60&&en>x.start-60)) w.b.push({start:st,end:en,cause:'ice on the transfer span (crews are sanding the ramp)',ice:true})}}
+    if(r()<0.7){const d=1+Math.floor(r()*6),pk=d*1440+450+Math.floor(r()*150);X.tide={day:d,start:pk-75,end:pk+75}}
+    w.sea=X;
+  } else if(sea==='summer'){const r=Math.random,X={fourth:wk===0?5:-1,smoke:-1};
+    if(r()<0.45){const days=[1,2,3,4,6].filter(d=>d!==X.fourth);X.smoke=days[Math.floor(r()*days.length)]}
+    w.sea=X;
+  }
+  return w;
+}
+function seaX(){return (S&&S.week&&S.week.sea)||{}}
+function smokeDay(d){return seaX().smoke===(d==null?day():d)}
+function fourthDay(d){return seaX().fourth===(d==null?day():d)}
+function fourthWeekend(d){const f=seaX().fourth;return f!=null&&f>=0&&d>=f-1&&d<=f+1}
+function kingTide(t){const T=seaX().tide;t=t==null?S.t:t;return !!T&&t>=T.start&&t<T.end}
+function coldNight(d){const X=seaX();return seasonId()==='winter'&&(!!(X.cold&&X.cold[d])||stormNight(d))}
+function icyRoads(d,m){const X=seaX();if(seasonId()!=='winter')return false;return X.snow===d||(!!(X.ice&&X.ice[d])&&m<660)}
+// ---- ferry ----
+function seasonDelay(side,d,dep){
+  const s=seasonId();if(s==='fall')return null;
+  const X=seaX();let min=0;const why=[];
+  if(s==='winter'){
+    if(X.ice&&X.ice[d]&&dep<600){min+=X.ice[d];why.push(X.snow===d?'Snow and ice on the ferry ramp. The crew shovels and sands the transfer span before anyone drives on.':'Ice on the ferry ramp. The crew salts and sands the transfer span before anyone drives on.')}
+    if(X.tide&&X.tide.day===d){const a=d*1440+dep;if(a>=X.tide.start&&a<X.tide.end){min+=15;why.push('King tide: the water is so high the transfer span is at its limit, so they load one car at a time.')}}
+  } else if(s==='summer'){
+    if(fourthDay(d)&&dep>=960){min+=15;why.push('Fourth of July crowds: the deckhands are packing cars in like Tetris.')}
+  }
+  return min?{min,why:why.join(' ')}:null;
+}
+function seasonFull(p,side,d,dep){
+  const s=seasonId();
+  if(s==='summer'){p=Math.max(p,0.12);if(d>=4)p+=0.22;if(dep>=960)p+=0.12;if(fourthWeekend(d))p+=0.25}
+  else if(s==='winter') p*=0.8;
+  return p;
+}
+function seasonFerryNote(){const s=seasonId(),d=day();
+  if(s==='summer') return `<p>☀️ <b>Tourist season:</b> kayaks, bikes and day-trippers. Friday to Sunday and every evening boat fill up fast. Walk on if you can.${fourthWeekend(d)?' <b>Fourth of July weekend: expect the worst.</b>':''}</p>`;
+  if(s==='winter'){const X=seaX();let t='';
+    if(X.ice&&X.ice[d]) t+=`<p>🧊 <b>Ice on the ramp this morning:</b> sailings before 10 AM run about ${X.ice[d]} minutes late while the crew sands the transfer span.</p>`;
+    if(X.tide&&X.tide.day===d) t+=`<p>🌊 <b>King tide</b> around ${fmt(X.tide.start+75)}: slow loading at the landing, and the Oro Bay road floods.</p>`;
+    return t}
+  return '';
+}
+function seasonAlert(){const s=seasonId(),d=day(),m=tod(),X=seaX();
+  if(s==='winter'){if(X.ice&&X.ice[d]&&m<600) return `🧊 Ice on the ferry ramp: morning sailings running ${X.ice[d]}+ min late.`;
+    if(X.tide&&X.tide.day===d&&S.t<X.tide.end&&S.t>=X.tide.start-120) return `🌊 King tide around ${fmt(X.tide.start+75)}: the Oro Bay road floods, ferry loading is slow.`}
+  if(s==='summer'&&smokeDay()) return '🔥 Wildfire smoke: air quality unhealthy. Stay inside if you can.';
+  return '';
+}
+// ---- text ----
+function seasonFlavor(cozy){const s=seasonId();
+  if(s==='summer') return cozy?['🏡 Windows open, the house smells like cut grass and coffee. It’s a good morning.','🏡 Everything’s in its place, and the sun is already on the deck.']:[
+    'The sun’s been up for an hour. Somewhere a boat motor buzzes across the water.','A family of quail runs across the driveway in single file.',
+    'Blackberries are coming in along the road. So are the tourists.','Mt. Rainier floats over the Sound, the snow on it pink at sunrise.',
+    'A neighbor is mowing at 6:45 AM. Of course they are.','Your phone shows one bar. It is always one bar, even in summer.'];
+  if(s==='winter') return cozy?['🏡 You wake up in a warm, clean house with frost on the windows. The woodstove ticks. Perfect.','🏡 Everything’s in its place, the kettle’s on, and it’s 28° outside. You’re not going anywhere yet.']:[
+    'Frost on the windshield and on every fir needle. It’s still dark.','The ferry horn sounds muffled through the cold air.',
+    'Your breath hangs in the porch light. January.','Ice skins the puddles in the driveway.',
+    'Mt. Rainier is out, white to the waterline, in the last of the stars.','Your phone shows one bar. It is always one bar.'];
+  return cozy?FLAVOR_COZY:FLAVOR_MORNING}
+function seasonInjury(){const s=seasonId();
+  if(s==='summer') return '🤕 Dragging the hose across the garden, you step in a gopher hole and go down hard. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.';
+  if(s==='winter') return '🤕 Hauling firewood in the dark, you hit a patch of black ice on the porch step. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.';
+  return null}
+function seasonIntro(){const s=seasonId();
+  if(s==='summer') say('☀️ <b>Summer on the island.</b> Long days, tourists with kayaks in every ferry line, a garden to water, and a burn ban in effect. No woodstove needed.');
+  if(s==='winter') say('❄️ <b>Winter on the island.</b> Eight hours of daylight, ice on the ferry ramp, king tides and storms. Keep the woodstove fed and the pipes from freezing.');
+}
+// forecast lines each morning (startDay)
+function seasonMorning(d){const s=seasonId(),X=seaX();if(s==='fall')return;
+  if(s==='winter'){
+    if(X.snow===d){say('❄️ Snow overnight: three inches on the island and ice underneath. Roads are slick all day and the ferry ramp is a skating rink.');showTile('❄️','Snow day','Icy roads and a slow ferry ramp','warn')}
+    else if(X.ice&&X.ice[d]) say(`🧊 Ice on the ferry ramp: sailings before 10 AM will run about ${X.ice[d]} minutes late. The roads are icy until late morning.`);
+    if(X.tide&&X.tide.day===d) say(`🌊 King tide this morning, peaking around ${fmt(X.tide.start+75)}. The Oro Bay road floods and ferry loading slows down.`);
+    if(X.cold&&X.cold[d]) say('🥶 Hard freeze tonight, down to the low 20s. If the heat goes out, drip the faucets or the pipes will freeze.');
+  }
+  if(s==='summer'){
+    if(fourthDay(d)){say('🎆 <b>Happy Fourth of July!</b> The American Legion BBQ is at the Riv from 11 AM to 3 PM, and fireworks go up over the water at 10 PM. The ferry line will be a zoo.');showTile('🎆','Fourth of July','Legion BBQ at the Riv · fireworks at 10 PM','info')}
+    else if(fourthWeekend(d)) say('🎆 Fourth of July weekend: every boat is packed with visitors, coolers and kayaks.');
+    if(smokeDay(d)){say('🔥 <b>Wildfire smoke</b> from east of the mountains: the sun is an orange disk and the air quality is unhealthy. Stay inside. Outdoor work can wait.');showTile('🔥','Wildfire smoke day','Stay inside if you can','warn')}
+    if(d===0&&S.weekNo===0) say('🚫 <b>Burn ban</b> in effect for Pierce County: no yard-debris burning, no campfires. Fire District #27 is watching for smoke.');
+  }
+}
+// ---- night: frozen pipes, the garden, brush, fireworks (called from endDay after the night hook) ----
+function SEAST(){return S.sea||(S.sea={})}
+function heatOutTonight(where,d){const U=UP();if(seasonId()!=='winter')return false;
+  const burned=where==='home'&&U.burned===dayKey();if(burned)return false;
+  const out=(S.power&&S.power.start<=(d+1)*1440+330&&S.power.end>d*1440+1380)||stormNight(d);
+  const gen=S.ev.flags.genRan===d||(stormNight(d)&&genReady()&&S.homeGas>=3&&where==='home');
+  return U.propane<=0||(out&&!gen)}
+function pipeChance(where,d){if(seasonId()!=='winter')return 0;const cold=coldNight(d),off=heatOutTonight(where,d);
+  if(SEAST().drip===dayKey()) return 0;
+  return cold?(off?0.75:0.04):(off?0.05:0)}
+function seasonNight(where,notes,d){const s=seasonId();if(s==='fall')return;const X=SEAST(),U=UP();
+  if(s==='winter'){
+    if(Math.random()<pipeChance(where,d)){S.stats.pipes=(S.stats.pipes||0)+1;money(-280);homeAdj(-15);adj('stress',12);U.damp=(U.damp||0)+3;
+      notes.push(where==='home'?'🧊 2 AM: a pop and a hiss under the house. A frozen pipe split in the crawlspace. You shut the water off at the pump house in your boots and a headlamp. A mainland plumber comes over on the first boat: $280. (Drip the faucets on freezing nights.)':
+        '🧊 Your neighbor calls at 6 AM: water is pouring out from under your house. A pipe froze and burst while you were away. She shut it off at the pump house. The plumber: $280. (Drip the faucets on freezing nights.)');
+      showTile('🧊','A frozen pipe burst','$280 plumber · Home −15','bad');S.ev.history.push({id:'frozen_pipes',t:S.t});if(where==='home')chain('no_water','frozen_pipes')}
+    else if(X.drip===dayKey()&&coldNight(d)&&heatOutTonight(where,d)){notes.push('🚰 The faucets drip all night. The pipes are cold, but they don’t freeze. Good call.');showTile('🚰','Dripping faucets saved the pipes','','good');S.ev.history.push({id:'drip_saved',t:S.t})}
+  }
+  if(s==='summer'){
+    const G=X.garden||(X.garden={w:dayKey()-1,grow:0,dead:false}),since=dayKey()-G.w;
+    if(!G.dead){
+      if(since>=3){G.dead=true;homeAdj(-3);adj('stress',3);notes.push('🥀 Three hot days without water and the garden gives up: the beans are crisp and the squash is done. Next year.');showTile('🥀','The garden died','Three days without water','bad')}
+      else if(since<=1){G.grow++;if(G.grow>=3){G.grow=0;S.pantry++;S.stats.veg=(S.stats.veg||0)+1;notes.push('🥒 The garden comes through: a basket of zucchini, beans and the first tomatoes. +1 day of food.');showTile('🥒','The garden came through','+1 day of food','good')}}
+      else notes.push('🌱 The garden is wilting in the heat. Water it tomorrow or lose it.');
+    }
+    X.brush=Math.min(10,(X.brush||0)+(Math.random()<0.5?1:0));
+    if(fourthDay(d)&&where==='home'){adj('stress',2);notes.push('🎇 Someone on the beach sets off illegal fireworks until 1 AM. Every dog on the island has opinions.')}
+  }
+}
+// ---- actions ----
+function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=day(),m=tod(),X=SEAST(),dk=dayKey();
+  if(loc==='home'&&s==='winter'){const drip=X.drip===dk,cold=coldNight(d)||powerOut();
+    a.push({cat:'home',ic:'🚰',l:drip?'Faucets dripping tonight ✓':'Drip the faucets tonight',due:cold&&!drip&&m>=900,dis:drip,
+      s:drip?'A slow drip in the kitchen and the bathroom. Moving water doesn’t freeze.':`5 min. ${cold?'Hard freeze tonight: if the heat goes out, a still pipe can freeze and burst.':'Not that cold tonight, but it can’t hurt.'}`,
+      fn:()=>{X.drip=dk;S.t+=5;UP().septic=Math.min(100,UP().septic+0.5);say('🚰 You crack the kitchen and bathroom faucets to a slow drip. Annoying, cheap and smart.');afterAction()}});
+  }
+  if(loc==='home'&&s==='summer'){
+    const G=X.garden||(X.garden={w:dk-1,grow:0,dead:false}),wet=G.w===dk;
+    if(G.dead) a.push({cat:'yard',ic:'🥀',l:'The garden is done for this year',s:'It dried out. The deer are eating what’s left.',dis:true});
+    else a.push({cat:'yard',ic:'💧',l:wet?'Garden watered today ✓':'Water the garden',due:!wet&&dk-G.w>=1,dis:wet,
+      s:wet?'Soaked. The tomatoes thank you.':`20 min with the hose. ${dk-G.w>=2?'It’s wilting: water it today or lose it.':'Keep it watered and it feeds you.'} Stress −2.`,
+      fn:()=>{G.w=dk;S.t+=20;adj('stress',-2);say('💧 Twenty quiet minutes with the hose while the swallows work the yard. The garden perks right up.');afterAction()}});
+    const br=X.brush||0,lite=seasonLite(m);
+    if(br>=2){
+      a.push({cat:'yard',ic:'🚛',l:'Chip and haul the brush pile',due:br>=5,dis:!lite,s:!lite?seasonDark():`75 min. Fir limbs and blackberry canes, chipped and spread. Burn ban: this is the legal way. Home +3.`,
+        fn:()=>{X.brush=0;S.t+=75;homeAdj(3);adj('stress',-1);say('🚛 An hour and a quarter of dragging and chipping. The brush pile is mulch now.');afterAction()}});
+      a.push({cat:'yard',ic:'🔥',l:'Burn the brush pile (burn ban!)',due:false,dis:!lite,s:!lite?seasonDark():'20 min instead of 75. It’s illegal during the burn ban, and the Fire District does drive by.',
+        fn:()=>{X.brush=0;S.t+=20;homeAdj(3);
+          if(Math.random()<0.55){money(-250);adj('stress',10);S.stats.burnFine=(S.stats.burnFine||0)+1;say('🚒 Ten minutes after the smoke goes up, a Fire District #27 truck rolls down the driveway. They hose it out and write you a $250 burn-ban citation. “It’s July, {{name}}.”');showTile('🚒','Burn-ban fine','$250','bad')}
+          else{adj('stress',3);say('🔥 The pile goes up fast and hot. You stand there with the hose, sweating, watching for sparks and for the Fire District. Nobody comes. This time.')}
+          afterAction()}});
+    }
+  }
+  if(s==='summer'&&fourthDay(d)){const fw=X.fw===dk,bbq=X.bbq===dk;
+    if(loc==='food'){
+      if(bbq) a.push({ic:'🍔',l:'Legion Fourth of July BBQ ✓',s:'You were there. You smell like charcoal.',cat:'here',dis:true});
+      else if(m<660) a.push({ic:'🍔',l:'Legion Fourth of July BBQ: 11:00 AM',s:'Come back between 11 AM and 3 PM.',cat:'here',dis:true});
+      else if(m<900) a.push({ic:'🍔',l:'Legion Fourth of July BBQ: $12',s:'An hour of burgers, flags and a pie contest. Stress −8.',cat:'here',cls:'primary',dis:S.money<12,fn:()=>{
+        X.bbq=dk;money(-12);S.t+=60;phoneTick();adj('stress',-8);
+        if(S.friends.walt){friendPts('walt',2);say('🍔 Walt runs the grill in an apron that says KISS THE COOK, VETERAN. He slips you the burger with the extra cheese.')}
+        else{meet('walt','Walt from the American Legion','he grilled your burger at the Fourth of July BBQ');say('🍔 Burgers, potato salad, three kinds of pie and a kid with a sparkler. The man at the grill in a Legion cap introduces himself as Walt.')}
+        afterAction()}});
+      else a.push({ic:'🍔',l:'The Legion BBQ is over',s:'Somebody’s still scraping the grill.',cat:'here',dis:true});
+    }
+    if(['home','lake','aiDock','food'].includes(loc)){
+      if(fw) a.push({ic:'🎆',l:'Fireworks ✓',s:'Ooh. Aah.',cat:'here',dis:true});
+      else if(m>=1290&&m<1380) a.push({ic:'🎆',l:'Watch the fireworks over the water',s:'45 min. Every boat on the Sound honks after the finale. Stress −12.',cat:'here',cls:'primary',fn:()=>{
+        X.fw=dk;S.t+=45;phoneTick();adj('stress',-12);S.stats.fireworks=(S.stats.fireworks||0)+1;
+        say(loc==='home'?'🎆 From the bluff you can see three shows at once: Steilacoom, DuPont and somebody’s very illegal barge. The boats on the water all honk at the finale.':'🎆 Fireworks burst over the water and echo off the bluffs. When it ends, every boat in the Sound leans on its horn.');
+        afterAction()}});
+      else if(m<1290) a.push({ic:'🎆',l:'Fireworks over the water around 10 PM',s:'From 9:30 PM. Find a spot with a view of the Sound.',cat:'here',dis:true});
+    }
+  }
+}
+// ---- events ----
+Object.assign(TILE_META,{frozen_pipes:['🧊','A frozen pipe burst','bad'],drip_saved:['🚰','Dripping faucets saved the pipes','good'],icy_road:['🧊','Icy road','bad'],car_slide:['🚗','You slid into the ditch','bad'],
+  king_tide:['🌊','King tide over the Oro Bay road','bad'],ramp_ice:['🧊','Ice on the ferry ramp','info'],kayak_line:['🛶','Tourists with kayaks','info'],fourth_ferry:['🎆','Fourth of July ferry line','bad'],smoke_walk:['🔥','Walking in the smoke','bad']});
+defEvent({id:'icy_road',hook:'tripMid',priority:6,max:4,cond:ctx=>islandCar(ctx)&&icyRoads(day(),tod()),chance:0.5,
+  run(ctx){if(Math.random()<0.18){ctx.add(45);adj('stress',10);S.ev.history.push({id:'car_slide',t:S.t});
+      say('🚗 The back end steps out on the hill by the lake and you slide, slowly, into the ditch. A neighbor on a tractor tows you out with a chain and a grin. +45 minutes.');}
+    else{ctx.add(8);adj('stress',2);say('🧊 Black ice on the hill. You crawl along at 15 mph with both hands on the wheel. +8 minutes.')}}});
+defEvent({id:'king_tide',hook:'tripMid',priority:5,max:2,cond:ctx=>L[ctx.from].side==='I'&&kingTide(),chance:0.8,
+  run(ctx){ctx.add(20);adj('stress',4);say('🌊 King tide: salt water is running across the Oro Bay road, with driftwood logs in it. You go the long way around. +20 minutes.')}});
+defEvent({id:'ramp_ice',hook:'arrive',priority:1,max:3,cond:ctx=>ctx.at==='aiDock'&&ctx.from!=='ferry'&&seasonId()==='winter'&&!!(seaX().ice&&seaX().ice[day()])&&tod()<600,chance:0.5,
+  run(){say('🧊 A deckhand in an orange float coat is throwing sand on the transfer span by the shovelful. Nobody drives on until it’s gritty.')}});
+defEvent({id:'kayak_line',hook:'arrive',priority:1,max:3,cooldown:1,cond:ctx=>(ctx.at==='aiDock'||ctx.at==='stDock')&&ctx.from!=='ferry'&&seasonId()==='summer',chance:0.3,
+  run(){adj('stress',2);say(pick(['🛶 Three minivans with kayaks strapped to the roof are ahead of you in line, and one of them is asking a deckhand where the beach is.','🛶 A family of six on rented bikes, a cooler the size of a coffin, and two paddleboards. Tourist season.','🛶 The line is full of out-of-county plates and kayaks. A guy asks you if the island has a Starbucks.']))}});
+defEvent({id:'fourth_ferry',hook:'arrive',priority:2,max:2,cond:ctx=>(ctx.at==='aiDock'||ctx.at==='stDock')&&ctx.from!=='ferry'&&seasonId()==='summer'&&fourthWeekend(day()),chance:0.6,
+  run(){adj('stress',4);say('🎆 The Fourth of July ferry line backs up past the gas station: coolers, flags, kayaks and one guy with a full-size inflatable flamingo.')}});
+defEvent({id:'smoke_walk',hook:'tripMid',priority:2,max:3,cond:ctx=>(ctx.mode==='walk'||ctx.mode==='hitch')&&L[ctx.from].side==='I'&&seasonId()==='summer'&&smokeDay(),chance:1,
+  run(){adj('health',-3);say('🔥 Walking in the smoke makes your eyes burn and your throat scratchy. Health −3.')}});
+// ---- choosing a season (new-game flow: difficulty → length → season) ----
+function seasonModal(then){
+  const cur=prefs().season;
+  modal('🗓️ What time of year?','<p>Each season plays differently. Fall is the original game.</p>',['fall','winter','summer'].map(k=>{const s=SEA(k);
+    return {l:`${s.ic} ${s.n} (${s.month})${k===cur?' (last time)':''}`,s:s.d,fn:()=>{setPref('season',k);then(k)}}}));
+}
 </script>
 </body>
 </html>
