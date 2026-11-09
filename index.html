@@ -46,7 +46,10 @@ button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select
 .hud-day{font-family:"Fraunces";font-size:20px;font-weight:800}
 .hud-time{white-space:nowrap;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .hud-sub{font-size:12px;opacity:.75;margin-top:1px}
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:8px}
+.stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:8px}
+.stat b{overflow-wrap:anywhere}
+html.fs-xl .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:360px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .stat{background:rgba(255,255,255,.08);border-radius:9px;padding:5px 4px 6px;text-align:center}
 .stat b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
 .stat small{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.5px}
@@ -314,7 +317,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.10.0', SAVE_SCHEMA=6;
+const APP_VERSION='1.10.1', SAVE_SCHEMA=6;
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
 const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
@@ -829,6 +832,7 @@ function upkeepNight(where,notes,d){
 function choresPile(notes){const U=UP();let pile=0;const late=[];
   for(const k in CHORES){U[k]=(U[k]||0)+1;if(U[k]>1){pile+=U[k]-1;late.push(CHORES[k][1].replace(/^(Do|Make|Sweep up) (the |a load of )?/,'').toLowerCase())}}
   pile=Math.min(8,pile);if(pile>=6)notes.push(`🧺 The chores are piling up (${late.join(', ')}). Every day you skip them, the house slips a little more.`);return pile}
+const U_REST=()=>S.rest&&S.rest.k===dayKey()?S.rest.n:0;
 function upkeepActions(a,d,m){
   const U=UP(),dk=dayKey(),lite=m>=420&&m<1020,dark='Outdoor work is a daylight job: 7 AM–5 PM in November.',phoneOK=S.phone>0;
   const doneToday=k=>U.done[k]===dk;
@@ -874,7 +878,7 @@ function upkeepActions(a,d,m){
 defEvent({id:'leaky_roof',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home',
   chance:()=>{const U=UP();let c=U.moss>=80?0.18:U.moss>=60?0.07:0;if(homeTier()==='low')c+=0.05;return rainTonight()?c*2:c},
   run(ctx){homeAdj(-5);adj('stress',4);UP().damp+=1;ctx.notes.push('💧 Drip. Drip. The moss on the roof finally won: there’s a pot on the bedroom floor catching rain. (Treat the roof moss.)')}});
-defEvent({id:'mice',hook:'night',priority:3,max:2,cooldown:3,cond:ctx=>ctx.where==='home'&&S.pantry>0&&UP().traps<=0,
+defEvent({id:'mice',hook:'night',priority:3,max:2,cooldown:3,cond:ctx=>ctx.where==='home'&&S.pantry>1&&UP().traps<=0,
   chance:()=>0.07+(homeTier()==='low'?0.1:0),
   run(ctx){S.pantry--;homeAdj(-3);adj('stress',3);ctx.notes.push('🐭 Fall means mice. Something got into the pantry overnight: a day of food goes in the trash. (Mouse traps at Home Depot.)')}});
 defEvent({id:'mouse_caught',hook:'night',priority:1,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&UP().traps>0,chance:0.15,
@@ -1365,7 +1369,7 @@ function actions(){
     if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:S.money<96,fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
     else if(S.delivery) a.push({ic:'📦',l:'Grocery delivery on its way',s:`Due ${fmtAbs(S.delivery.due)}`,dis:true});
     upkeepActions(a,d,m);
-    if(m<1260) a.push({ic:'☕',l:'Rest for an hour',s:'Coffee, rain, a book. Stress −8.',fn:()=>{S.t+=60;adj('stress',-8);say('You sit with coffee and watch the rain drip off the firs.');afterAction()}});
+    if(m<1260){const rn=U_REST(),gain=[8,5,3][rn]??1;a.push({ic:'☕',l:'Rest for an hour',s:`Coffee, rain, a book. Stress −${gain}.${rn>=2?' Diminishing returns: you’re getting restless.':''}`,fn:()=>{S.t+=60;adj('stress',-gain);S.rest={k:dayKey(),n:rn+1};say(rn>=3?'You stare at the ceiling. Resting more isn’t really helping now.':'You sit with coffee and watch the rain drip off the firs.');afterAction()}})}
   }
   if(loc==='aiDock'||loc==='stDock') dockActions(a,side);
   if(loc==='store') coopActions(a);

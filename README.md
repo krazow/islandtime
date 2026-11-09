@@ -37,6 +37,11 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### 1.10.1 fixes
+- **Resting has diminishing returns:** the first hour of rest in a day takes −8 stress, then −5, −3, and −1 after that, so you can't sit at home and grind stress to zero.
+- **Mice leave your last day of food alone**, so they can't send you to bed hungry.
+- **Small phones with extra-large text:** the stat bar wraps into two rows instead of pushing the Home tile off-screen.
+
 ### New in 1.10: your house
 - **🏠 Home meter** (0–100, next to Job): it slips every day, more on workdays, in busy weeks, and after storms and outages. Below 35 you sleep worse, the house breaks down more, and friends visit less. At 75+ you rest better, wake to cozy mornings, and earn up to +180 points at the end.
 - **Inside the house** (fold-out at home): daily chores (dishes, laundry, sweeping up cedar needles, making the bed) that pile up when skipped; a deep clean on your day off; fridge cleanout after an outage; wiping condensation to stop **black mold**; woodstove ash, chimney sweeping (or a **chimney fire** and a visit from Fire District #27) and splitting firewood; mouse traps from Home Depot; and septic pump-outs.
