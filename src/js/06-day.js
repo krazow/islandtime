@@ -73,7 +73,7 @@ function endDay(where){
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
   if(where!=='home'&&S.carried>0&&!S.cooler){const lost=Math.ceil(S.carried/2);S.carried-=lost;notes.push(`🥛 ${lost} day${lost>1?'s':''} of groceries spoiled overnight. No cooler.`)}
-  if(S.emp&&curJob().days.includes(d)&&!S.worked[d]){adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}
+  if(S.emp&&curJob().days.includes(d)&&!S.worked[d]){if(typeof weatherExcuse==='function'&&weatherExcuse(d)){adj('job',-6);notes.push('💼 You missed work today. Your boss texts: “Roads are a mess. Stay safe. But we really need you tomorrow.”')}else{adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}} // season
   if(S.interview&&S.interview.day===d){notes.push(`📝 You missed your interview for ${JOBS[S.interview.job].n}.`);S.interview=null}
   if(apptActive()&&d===APPT_DAY&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
   if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}

@@ -422,8 +422,12 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.12.0', SAVE_SCHEMA=6;
+const APP_VERSION='1.13.0', SAVE_SCHEMA=6;
 // Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
+// Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
+// like ferry fares and motels already do. Card debt counts against the score.
+const CARD_LIMIT=1500;
+function canEssential(c){return S.money>=c||S.money-c>=-CARD_LIMIT}
 function seasonId(){return (typeof S!=='undefined'&&S&&S.season)||'fall'}
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
@@ -1630,7 +1634,7 @@ function endDay(where){
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
   if(where!=='home'&&S.carried>0&&!S.cooler){const lost=Math.ceil(S.carried/2);S.carried-=lost;notes.push(`🥛 ${lost} day${lost>1?'s':''} of groceries spoiled overnight. No cooler.`)}
-  if(S.emp&&curJob().days.includes(d)&&!S.worked[d]){adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}
+  if(S.emp&&curJob().days.includes(d)&&!S.worked[d]){if(typeof weatherExcuse==='function'&&weatherExcuse(d)){adj('job',-6);notes.push('💼 You missed work today. Your boss texts: “Roads are a mess. Stay safe. But we really need you tomorrow.”')}else{adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}} // season
   if(S.interview&&S.interview.day===d){notes.push(`📝 You missed your interview for ${JOBS[S.interview.job].n}.`);S.interview=null}
   if(apptActive()&&d===APPT_DAY&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
   if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}
@@ -1715,7 +1719,7 @@ function actions(){
     const isl=S.cars.find(c=>c.id==='isl'&&c.loc==='home');
     if(isl){const src=isl.diesel?'homeDiesel':'homeGas';const g=Math.min(S[src],Math.round((isl.tank-isl.fuel)*10)/10);
       if(S[src]>0) a.push({ic:'⛽',l:`Fuel the ${isl.diesel?'truck':'car'} from the shed`,s:`${S[src]} gal stashed. ${isl.diesel?'':'Keep 3 gal for the generator if a storm’s coming.'}`,dis:g<=0,fn:()=>{S[src]=Math.round((S[src]-g)*10)/10;isl.fuel=Math.round((isl.fuel+g)*10)/10;S.t+=10;say(`You pour ${g} gallons into the tank in the dark, spilling only a little.`);afterAction()}});}
-    if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:S.money<96,fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
+    if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:!canEssential(96),fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
     else if(S.delivery) a.push({ic:'📦',l:'Grocery delivery on its way',s:`Due ${fmtAbs(S.delivery.due)}`,dis:true});
     upkeepActions(a,d,m);helpActions(a,d,m);
     if(m<1260){const rn=U_REST(),gain=[8,5,3][rn]??1;a.push({ic:'☕',l:'Rest for an hour',s:`Coffee, rain, a book. Stress −${gain}.${rn>=2?' Diminishing returns: you’re getting restless.':''}`,fn:()=>{S.t+=60;adj('stress',-gain);S.rest={k:dayKey(),n:rn+1};say(rn>=3?'You stare at the ceiling. Resting more isn’t really helping now.':'You sit with coffee and watch the rain drip off the firs.');afterAction()}})}
@@ -1776,7 +1780,7 @@ function actions(){
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
   if(loc==='market'&&open){
     const car=!!carHere();
-    [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
+    [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:!canEssential(c)||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
   }
   if(loc==='warehouse'&&open){
     const car=!!carHere();
@@ -1791,7 +1795,7 @@ function actions(){
     a.push({ic:'🔋',l:'Phone charger and cable: $19',s:'Charge at the terminal outlet or in the car.',dis:S.money<19||S.ev.flags.charger,fn:()=>{money(-19);S.ev.flags.charger=1;phoneTick();S.phone=Math.min(100,S.phone+25);S.t+=10;say('🔋 A spare charger. You plug in at the self-checkout while you wait.');afterAction()}});
   }
   if(loc==='pharmacy'&&open){
-    a.push({ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription — $15 copay',s:S.rx?'':d>=3?'Ready at the counter.':'Not ready until Thursday.',dis:S.rx||d<3||S.money<15,fn:()=>{money(-15);S.rx=true;S.t+=20;adj('stress',-4);say('Refill in hand. One less thing.');afterAction()}});
+    a.push({ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription — $15 copay',s:S.rx?'':d>=3?'Ready at the counter.':'Not ready until Thursday.',dis:S.rx||d<3||!canEssential(15),fn:()=>{money(-15);S.rx=true;S.t+=20;adj('stress',-4);say('Refill in hand. One less thing.');afterAction()}});
   }
   if(loc==='clinic'){
     if(!open) a.push({ic:'🔒',l:'Clinic closed',s:hoursTxt('clinic'),dis:true});
@@ -1838,7 +1842,7 @@ function workActions(a,d,m){
   const lateTxt=lateBy===0?'On time.':lateBy<=30?`${lateBy} min late (job −4)`:`${lateBy} min late (job −10, docked pay)`;
   const pay=lateBy>30?Math.round(J.pay*(1-lateBy/480)):J.pay;
   const start=Math.max(m,J.start),mid=J.start+Math.round((J.end-J.start)*0.6);
-  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:lateBy<=30?-4:-10));adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
+  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:(typeof weatherExcuse==='function'&&weatherExcuse(d))?(lateBy<=30?0:-3):lateBy<=30?-4:-10)); /* season: ice-day lateness is forgiven */adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
   a.push({ic:'💼',l:`Work a full shift (until ${fmt(J.end)})`,s:`${J.n}. ${lateTxt} Pay ${$(pay)}.`,cls:'primary',fn:()=>doShift(J.end,pay,0,lateBy?'You slink in late and work through lunch to make up for it.':'You clock in on time. Your coworkers from the mainland have no idea what that took.')});
   if(start<mid&&J.loc!=='food') a.push({ic:'🩺',l:`Work until ${fmt(mid)}, then leave`,s:`Half day. ${d===APPT_DAY&&apptActive()?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(mid,Math.round(pay*0.55),d===APPT_DAY&&apptActive()?-2:-8,`You leave at ${fmt(mid)} with a mumbled explanation.`)});
 }
@@ -1892,7 +1896,7 @@ function coopActions(a){
       modal('🏪 Anderson Island Food Co-op',`<p>The fund is at <b>${$(total)}</b> of <b>${$(COOP_GOAL)}</b>. Every dollar gets the store and its pumps closer to reopening.</p>`,opts.map(v=>({l:`Pledge ${$(v)}`,fn:()=>{money(-v);S.coop.you+=v;adj('stress',-2);say(`🏪 You pledge ${$(v)} to the co-op. Someone adds a star next to your name on the board.`);coopCheck();afterAction()}})).concat([{l:'Not now',fn:()=>{}}]))}});
   } else {
     const car=carHere();
-    a.push({ic:'🥫',l:'Buy groceries: 3 days for $60',s:'Co-op prices: not mainland cheap, but no ferry.',cat:'trade',dis:S.money<60||(!car&&S.carried+3>4),fn:()=>{money(-60);S.carried+=3;S.stats.food+=3;S.t+=15;say('🥫 Three days of groceries from the co-op. A volunteer bags them and asks about your week.');afterAction()}});
+    a.push({ic:'🥫',l:'Buy groceries: 3 days for $60',s:'Co-op prices: not mainland cheap, but no ferry.',cat:'trade',dis:!canEssential(60)||(!car&&S.carried+3>4),fn:()=>{money(-60);S.carried+=3;S.stats.food+=3;S.t+=15;say('🥫 Three days of groceries from the co-op. A volunteer bags them and asks about your week.');afterAction()}});
     if(car&&!car.diesel){const need=Math.round((car.tank-car.fuel)*10)/10;a.push({ic:'⛽',l:`Fill up at the co-op pumps: $${Math.round(need*5.29)}`,s:`$5.29/gal. Gas on the island again!`,cat:'fuel',dis:need<0.5||S.money<need*5.29,fn:()=>{money(-need*5.29);car.fuel=car.tank;S.t+=10;say('⛽ You fill up on the island. On the island! People are taking photos of the pumps.');afterAction()}})}
   }
 }
@@ -2430,7 +2434,7 @@ function todoView(){
   prioView()+
   ((S.quests||[]).some(q=>!q.done)?`<div class="sect">Favors</div>`+S.quests.filter(q=>!q.done).map(q=>{const F=FAVORS[q.who];return `<div class="todo"><span class="ck">🙏</span><div><b>${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:''}: ${F.t.split(' (')[0]}</b><span>${q.step==='buy'?`Buy it at ${L[F.at].name}`:q.step==='deliver'?`Deliver at ${L[F.back].name}`:`At ${L[F.at].name}`} · due ${DAYS[q.due]}</span></div></div>`}).join(''):'')+
   (fr.length?`<div class="sect">Island friends</div>`+Object.entries(S.friends).map(([id,f])=>`<div class="todo"><span class="ck">${'💛'.repeat(f.lvl||1)}</span><div><b>${f.name} · ${LVL_NAME[f.lvl||1]}</b><span>Met ${DAYS[f.day]}: ${f.how}.${(PERKS[id]||{})[(f.lvl||1)+1]?` Next: ${(PERKS[id]||{})[(f.lvl||1)+1]}`:''}</span></div></div>`).join(''):'')+
-  `<div class="sect">Survive until Sunday night</div><div class="rules"><p>Out of cash? Ferry fares, rideshares and motels go on the credit card, and it counts against your score.</p><p>Health 0: medevac off the island. Job 0: fired. Stress is everything.</p><p>Score: cash + health + job − stress, plus bonuses for not getting stranded.</p></div>`;
+  `<div class="sect">Survive until Sunday night</div><div class="rules"><p>Out of cash? Ferry fares, rideshares, motels, groceries and your prescription go on the credit card (groceries and prescriptions up to $1,500), and it counts against your score.</p><p>Health 0: medevac off the island. Job 0: fired. Stress is everything.</p><p>Score: cash + health + job − stress, plus bonuses for not getting stranded.</p></div>`;
 }
 function logView(){return `<div class="log">${S.log.slice().reverse().map(e=>`<p><em>${DAYS[Math.floor(e.t/1440)].slice(0,3)} ${fmt(e.t)}</em>${e.s}</p>`).join('')}</div>`}
 
@@ -3272,6 +3276,8 @@ function fourthDay(d){return seaX().fourth===(d==null?day():d)}
 function fourthWeekend(d){const f=seaX().fourth;return f!=null&&f>=0&&d>=f-1&&d<=f+1}
 function kingTide(t){const T=seaX().tide;t=t==null?S.t:t;return !!T&&t>=T.start&&t<T.end}
 function coldNight(d){const X=seaX();return seasonId()==='winter'&&(!!(X.cold&&X.cold[d])||stormNight(d))}
+// Bosses go easy on island commuters when snow or ice shuts down the ramp (winter only).
+function weatherExcuse(d){const X=seaX();return seasonId()==='winter'&&(X.snow===d||!!(X.ice&&X.ice[d]))}
 function icyRoads(d,m){const X=seaX();if(seasonId()!=='winter')return false;return X.snow===d||(!!(X.ice&&X.ice[d])&&m<660)}
 // ---- ferry ----
 function seasonDelay(side,d,dep){
@@ -3347,15 +3353,16 @@ function heatOutTonight(where,d){const U=UP();if(seasonId()!=='winter')return fa
   const gen=S.ev.flags.genRan===d||(stormNight(d)&&genReady()&&S.homeGas>=3&&where==='home');
   return U.propane<=0||(out&&!gen)}
 function pipeChance(where,d){if(seasonId()!=='winter')return 0;const cold=coldNight(d),off=heatOutTonight(where,d);
-  if(SEAST().drip===dayKey()) return 0;
-  return cold?(off?0.75:0.04):(off?0.05:0)}
+  if(dripOn()) return 0;
+  return cold?(off?0.5:0):(off?0.05:0)}   // a heated house doesn't freeze; dripping covers 3 nights
+function dripOn(){const X=SEAST();return X.drip===dayKey()||(X.dripUntil!=null&&X.dripUntil>=dayKey())}
 function seasonNight(where,notes,d){const s=seasonId();if(s==='fall')return;const X=SEAST(),U=UP();
   if(s==='winter'){
     if(Math.random()<pipeChance(where,d)){S.stats.pipes=(S.stats.pipes||0)+1;money(-280);homeAdj(-15);adj('stress',12);U.damp=(U.damp||0)+3;
       notes.push(where==='home'?'🧊 2 AM: a pop and a hiss under the house. A frozen pipe split in the crawlspace. You shut the water off at the pump house in your boots and a headlamp. A mainland plumber comes over on the first boat: $280. (Drip the faucets on freezing nights.)':
         '🧊 Your neighbor calls at 6 AM: water is pouring out from under your house. A pipe froze and burst while you were away. She shut it off at the pump house. The plumber: $280. (Drip the faucets on freezing nights.)');
       showTile('🧊','A frozen pipe burst','$280 plumber · Home −15','bad');S.ev.history.push({id:'frozen_pipes',t:S.t});if(where==='home')chain('no_water','frozen_pipes')}
-    else if(X.drip===dayKey()&&coldNight(d)&&heatOutTonight(where,d)){notes.push('🚰 The faucets drip all night. The pipes are cold, but they don’t freeze. Good call.');showTile('🚰','Dripping faucets saved the pipes','','good');S.ev.history.push({id:'drip_saved',t:S.t})}
+    else if(dripOn()&&coldNight(d)&&heatOutTonight(where,d)){notes.push('🚰 The faucets drip all night. The pipes are cold, but they don’t freeze. Good call.');showTile('🚰','Dripping faucets saved the pipes','','good');S.ev.history.push({id:'drip_saved',t:S.t})}
   }
   if(s==='summer'){
     const G=X.garden||(X.garden={w:dayKey()-1,grow:0,dead:false}),since=dayKey()-G.w;
@@ -3370,10 +3377,10 @@ function seasonNight(where,notes,d){const s=seasonId();if(s==='fall')return;cons
 }
 // ---- actions ----
 function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=day(),m=tod(),X=SEAST(),dk=dayKey();
-  if(loc==='home'&&s==='winter'){const drip=X.drip===dk,cold=coldNight(d)||powerOut();
-    a.push({cat:'home',ic:'🚰',l:drip?'Faucets dripping tonight ✓':'Drip the faucets tonight',due:cold&&!drip&&m>=900,dis:drip,
+  if(loc==='home'&&s==='winter'){const drip=dripOn(),cold=coldNight(d)||powerOut();
+    a.push({cat:'home',ic:'🚰',l:drip?`Faucets dripping ✓ (through ${DAYS[((X.dripUntil??dk)%7+7)%7]} night)`:'Drip the faucets (3 nights)',due:cold&&!drip&&m>=900,dis:drip,
       s:drip?'A slow drip in the kitchen and the bathroom. Moving water doesn’t freeze.':`5 min. ${cold?'Hard freeze tonight: if the heat goes out, a still pipe can freeze and burst.':'Not that cold tonight, but it can’t hurt.'}`,
-      fn:()=>{X.drip=dk;S.t+=5;UP().septic=Math.min(100,UP().septic+0.5);say('🚰 You crack the kitchen and bathroom faucets to a slow drip. Annoying, cheap and smart.');afterAction()}});
+      fn:()=>{X.drip=dk;X.dripUntil=dk+2;S.t+=5;UP().septic=Math.min(100,UP().septic+0.5);say('🚰 You crack the kitchen and bathroom faucets to a slow drip. Annoying, cheap and smart.');afterAction()}});
   }
   if(loc==='home'&&s==='summer'){
     const G=X.garden||(X.garden={w:dk-1,grow:0,dead:false}),wet=G.w===dk;

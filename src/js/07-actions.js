@@ -12,7 +12,7 @@ function actions(){
     const isl=S.cars.find(c=>c.id==='isl'&&c.loc==='home');
     if(isl){const src=isl.diesel?'homeDiesel':'homeGas';const g=Math.min(S[src],Math.round((isl.tank-isl.fuel)*10)/10);
       if(S[src]>0) a.push({ic:'⛽',l:`Fuel the ${isl.diesel?'truck':'car'} from the shed`,s:`${S[src]} gal stashed. ${isl.diesel?'':'Keep 3 gal for the generator if a storm’s coming.'}`,dis:g<=0,fn:()=>{S[src]=Math.round((S[src]-g)*10)/10;isl.fuel=Math.round((isl.fuel+g)*10)/10;S.t+=10;say(`You pour ${g} gallons into the tank in the dark, spilling only a little.`);afterAction()}});}
-    if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:S.money<96,fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
+    if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:!canEssential(96),fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
     else if(S.delivery) a.push({ic:'📦',l:'Grocery delivery on its way',s:`Due ${fmtAbs(S.delivery.due)}`,dis:true});
     upkeepActions(a,d,m);helpActions(a,d,m);
     if(m<1260){const rn=U_REST(),gain=[8,5,3][rn]??1;a.push({ic:'☕',l:'Rest for an hour',s:`Coffee, rain, a book. Stress −${gain}.${rn>=2?' Diminishing returns: you’re getting restless.':''}`,fn:()=>{S.t+=60;adj('stress',-gain);S.rest={k:dayKey(),n:rn+1};say(rn>=3?'You stare at the ceiling. Resting more isn’t really helping now.':'You sit with coffee and watch the rain drip off the firs.');afterAction()}})}
@@ -73,7 +73,7 @@ function actions(){
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
   if(loc==='market'&&open){
     const car=!!carHere();
-    [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
+    [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:!canEssential(c)||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
   }
   if(loc==='warehouse'&&open){
     const car=!!carHere();
@@ -88,7 +88,7 @@ function actions(){
     a.push({ic:'🔋',l:'Phone charger and cable: $19',s:'Charge at the terminal outlet or in the car.',dis:S.money<19||S.ev.flags.charger,fn:()=>{money(-19);S.ev.flags.charger=1;phoneTick();S.phone=Math.min(100,S.phone+25);S.t+=10;say('🔋 A spare charger. You plug in at the self-checkout while you wait.');afterAction()}});
   }
   if(loc==='pharmacy'&&open){
-    a.push({ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription — $15 copay',s:S.rx?'':d>=3?'Ready at the counter.':'Not ready until Thursday.',dis:S.rx||d<3||S.money<15,fn:()=>{money(-15);S.rx=true;S.t+=20;adj('stress',-4);say('Refill in hand. One less thing.');afterAction()}});
+    a.push({ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription — $15 copay',s:S.rx?'':d>=3?'Ready at the counter.':'Not ready until Thursday.',dis:S.rx||d<3||!canEssential(15),fn:()=>{money(-15);S.rx=true;S.t+=20;adj('stress',-4);say('Refill in hand. One less thing.');afterAction()}});
   }
   if(loc==='clinic'){
     if(!open) a.push({ic:'🔒',l:'Clinic closed',s:hoursTxt('clinic'),dis:true});
@@ -135,7 +135,7 @@ function workActions(a,d,m){
   const lateTxt=lateBy===0?'On time.':lateBy<=30?`${lateBy} min late (job −4)`:`${lateBy} min late (job −10, docked pay)`;
   const pay=lateBy>30?Math.round(J.pay*(1-lateBy/480)):J.pay;
   const start=Math.max(m,J.start),mid=J.start+Math.round((J.end-J.start)*0.6);
-  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:lateBy<=30?-4:-10));adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
+  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:(typeof weatherExcuse==='function'&&weatherExcuse(d))?(lateBy<=30?0:-3):lateBy<=30?-4:-10)); /* season: ice-day lateness is forgiven */adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
   a.push({ic:'💼',l:`Work a full shift (until ${fmt(J.end)})`,s:`${J.n}. ${lateTxt} Pay ${$(pay)}.`,cls:'primary',fn:()=>doShift(J.end,pay,0,lateBy?'You slink in late and work through lunch to make up for it.':'You clock in on time. Your coworkers from the mainland have no idea what that took.')});
   if(start<mid&&J.loc!=='food') a.push({ic:'🩺',l:`Work until ${fmt(mid)}, then leave`,s:`Half day. ${d===APPT_DAY&&apptActive()?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(mid,Math.round(pay*0.55),d===APPT_DAY&&apptActive()?-2:-8,`You leave at ${fmt(mid)} with a mumbled explanation.`)});
 }
@@ -189,7 +189,7 @@ function coopActions(a){
       modal('🏪 Anderson Island Food Co-op',`<p>The fund is at <b>${$(total)}</b> of <b>${$(COOP_GOAL)}</b>. Every dollar gets the store and its pumps closer to reopening.</p>`,opts.map(v=>({l:`Pledge ${$(v)}`,fn:()=>{money(-v);S.coop.you+=v;adj('stress',-2);say(`🏪 You pledge ${$(v)} to the co-op. Someone adds a star next to your name on the board.`);coopCheck();afterAction()}})).concat([{l:'Not now',fn:()=>{}}]))}});
   } else {
     const car=carHere();
-    a.push({ic:'🥫',l:'Buy groceries: 3 days for $60',s:'Co-op prices: not mainland cheap, but no ferry.',cat:'trade',dis:S.money<60||(!car&&S.carried+3>4),fn:()=>{money(-60);S.carried+=3;S.stats.food+=3;S.t+=15;say('🥫 Three days of groceries from the co-op. A volunteer bags them and asks about your week.');afterAction()}});
+    a.push({ic:'🥫',l:'Buy groceries: 3 days for $60',s:'Co-op prices: not mainland cheap, but no ferry.',cat:'trade',dis:!canEssential(60)||(!car&&S.carried+3>4),fn:()=>{money(-60);S.carried+=3;S.stats.food+=3;S.t+=15;say('🥫 Three days of groceries from the co-op. A volunteer bags them and asks about your week.');afterAction()}});
     if(car&&!car.diesel){const need=Math.round((car.tank-car.fuel)*10)/10;a.push({ic:'⛽',l:`Fill up at the co-op pumps: $${Math.round(need*5.29)}`,s:`$5.29/gal. Gas on the island again!`,cat:'fuel',dis:need<0.5||S.money<need*5.29,fn:()=>{money(-need*5.29);car.fuel=car.tank;S.t+=10;say('⛽ You fill up on the island. On the island! People are taking photos of the pumps.');afterAction()}})}
   }
 }

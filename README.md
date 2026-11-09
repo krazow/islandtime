@@ -39,6 +39,60 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.13: seasons, a fairer Hard mode, household life, polish
+**Seasons**
+
+- 🗓️ **Pick a time of year.** After difficulty and length, a new game asks for a season: 🍂 **Fall** (November, the original game), ❄️ **Winter** (January) or ☀️ **Summer** (July). Your pick is remembered for next time. The date, the HUD, the title screen’s Continue button, save slots, Settings and the end screen all show the season.
+- 📅 **Real calendars.** Fall starts Monday Nov 2, 2026. Winter starts Monday Jan 4, 2027. Summer starts Monday Jun 29, 2026, so the Fourth of July lands on Saturday of week 1. A month is four weeks of that season.
+- ☀️ **Summer: tourist season.** Kayaks, bikes and day-trippers fill the boats, worst Friday to Sunday and on every evening sailing. Days are long: outdoor work runs 6 AM–9 PM. No woodstove, so firewood and the chimney rest and propane is just for hot water. No fog, no gales.
+- 🥒 **Summer garden.** Water it at home (20 minutes). Keep it watered and it hands you a day of food every few nights. Skip three days and it dies.
+- 🚫 **Burn ban.** A brush pile builds up in summer. Chip and haul it (75 minutes), or burn it in 20 and risk a $250 Fire District citation.
+- 🎆 **The Fourth of July.** The Legion BBQ at the Riv (11 AM–3 PM, $12, you’ll meet Walt), fireworks over the water from 9:30 PM, packed and late ferries all weekend, and illegal beach fireworks until 1 AM.
+- 🔥 **Wildfire smoke.** Some summer weeks bring a smoke day. Outdoor work is off, and walking around outside costs you health.
+- ❄️ **Winter: ice and snow.** After freezing nights the ferry ramp ices up and morning boats run late. Sometimes the crew stops sailings to sand the transfer span. Snow days and icy mornings make island roads slow, and sometimes you slide into the ditch.
+- 🧊 **Frozen pipes.** On a hard-freeze night with no heat (no fire in the stove and the propane is out, or a power outage without a generator), a pipe can burst: $280 plumber, Home −15, no water in the morning. **Drip the faucets** at home (5 minutes) to stop it.
+- 🌊 **King tides.** One winter morning a week, an extreme high tide floods the Oro Bay road (+20 minutes) and slows ferry loading.
+- 🌑 **Short days, long nights.** Winter outdoor work is 8 AM–4 PM. More storms and power outages, the woodstove and propane furnace burn faster, and gutters and moss grow more slowly.
+- 🎨 **The scene changes.** Snow on the trees, the roof and the ground in winter. Bright sky and green firs in summer, sun up past 9 PM, and an orange sky on smoke days.
+- 💬 **Seasonal mornings.** New morning lines for winter and summer, plus forecasts for ice, king tides, hard freezes, smoke and the Fourth.
+- Winter bosses go easy: on days with ice on the ferry ramp or snow, being late costs much less and a missed day costs −6 job instead of −15.
+- Dripping the faucets covers three nights, and a heated house won’t freeze.
+
+**More ways to earn (and a fairer Hard mode)**
+
+- ⏱️ **Overtime.** After a full shift at your mainland job, stay 2 more hours at time and a half ($64 at the Lakewood office, $69 at the warehouse, $81 at the hospital). You can do it once a day. It costs stress, and you will probably miss the boat you planned to take. The Riv line-cook job has no overtime.
+- 🍳 **A second job at the Riv.** On Friday and Saturday evenings (4–10 PM) the Riv is always a cook short. You get $48 plus tips, and the staff meal counts as dinner. Your first shift each week adds 1 to your reputation, and you may meet Rusty or Walt. This doesn’t affect your main job, and it isn’t offered if the Riv is already your main job.
+- 🪵 **Sell firewood.** Once a day you can put a bundle in the honor box at the end of the driveway. It pays $19 in November, more in winter and less in summer. You can only sell while you have more than 4 nights of wood, so you always keep enough to stay warm.
+- 🐔 **Backyard hens.** A coop with 3 hens costs $120 at Home Depot and comes over on the ferry the next day with two weeks of feed. A close friend like Sam will give you hens for the cost of the lumber. Collect the eggs at home, sell a dozen to the neighbors for $6 (once a day), or turn a dozen into a day of food. Buy feed at Home Depot ($18 for 20 days) or at the co-op once it opens. Without feed, the hens stop laying.
+- 🤲 **Reputation unlocks**, announced once when you reach them and listed in the 📋 To-do tab and the 📣 Island Group app:
+  - **3: First call on Gus.** He comes the next morning and always shows up.
+  - **5: The co-op board.** Once a week, pin a card at the old store. A few hours later someone buys your firewood or eggs at a better price, or you get a free find: firewood, a box of groceries, a cooler, mouse traps.
+  - **8: Island regular.** Takeout at the Riv costs $20 instead of $27, and you get a free coffee in the ferry line every day.
+
+**Household life**
+
+- 🧾 **Bills.** Electric (Island Power & Light Co-op), internet (OneBar Wireless), phone and home insurance (Fir & Tide Mutual), each due on its own day. In a one-week game they’re all due that week; in a month they’re spread out. Pay at home (🏠 Inside the house → 🧾 Pay bills): online in 5 minutes, or mail a check that takes 2 days to get there. Late means a late fee and a little stress. After a week you get a stern letter (the co-op’s is pink). After two weeks it goes to collections and lands on your card with a fee on top; for electric, that fee is the reconnect. Anything still unpaid when the game ends gets settled then. Electric runs higher in winter and lower in summer.
+- 📬 **Mail.** Letters arrive Monday to Saturday in your P.O. box at the island post office, next to the old store: bill statements, a seed catalog, a jury summons you get out of by living on an island, the co-op newsletter, and now and then a check for $12.40.
+- 📦 **Packages.** Order online at home: mouse traps, a power bank, a well-pump pressure switch, dog food. Nobody delivers to the island, so orders wait 2 days in the parcel lockers at the Steilacoom ferry terminal. Pick them up on your way through. After a week the lockers send them back (refund, minus $5).
+- 🗑️ **Trash and dump runs.** A bag a night piles up by the shed. The island transfer station is open Wed, Sat and Sun, 9 AM–3 PM (also Fridays in summer, from 10 AM in winter). The dump run is in 🌲 Outside & property: load the car, 50 minutes, about a gallon of gas, $8–24. At 8+ bags the house slips a little each night, and raccoons may spread it across the yard.
+- 🐶 **A dog (optional).** A neighbor’s litter may turn up at the end of the road, or the county shelter van parks in the Steilacoom terminal lot on Saturdays ($85). A dog needs food (a bag lasts 30 days: Lakewood supermarket, Warehouse Club or online) and a walk every day. Walking at Lake Josephine counts and you might meet someone. A fed, walked dog lowers your stress at night. A hungry or unwalked one costs Home and stress, and so does leaving it alone overnight. If you never adopt, none of this costs you anything.
+- 🍳 **Cooking at home.** Cook a real dinner (4–10 PM, 45 min): health +2, stress −4, no extra food, and cheaper than the Riv. On a day off, batch-cook (2 hours): +1 day of food and 5 nights of good leftovers.
+- 🌬️ **Storm prep.** When a gale is in the forecast, the house fold-outs add: fill water jugs and the bathtub (the morning with no well pump stops being a stress hit), charge the power bank (your phone and its alarm last through the outage), and top off and test the generator (it starts on the storm night even if it’s overdue for service). The To-do storm item shows a prep line.
+- When you’re broke, groceries and your prescription can go on the credit card (up to $1,500), like ferry fares and motels. It still counts against your score.
+
+**Polish**
+
+- 📸 **Share your week.** The end screen (win or game over) has a **Share my week / Share my month** button. It draws a 1080×1350 picture of your game: your name, season, difficulty, grade and title, score, cash, health, job, stress, home, nights stranded, ferry crossings, the achievements you earned this game and the friends you made, plus the link to play. You get a preview first. Then **📤 Share** sends it to your messages or socials on phones that support it, or **⬇️ Save the picture** downloads `island-time-<your-name>.png`. It's all drawn on your device. Nothing is uploaded.
+- ♿ **Screen readers.** New narration lines, event tiles and pop-up titles are read out as they appear. Pop-ups are announced as dialogs with their titles.
+- ⌨️ **Keyboard play.** When a pop-up opens, focus moves to its first button. Tab stays inside the pop-up, and closing it puts you back where you were. Focus also stays in place when the screen refreshes, so checking off a priority or moving it up or down doesn't send you back to the top. Priority items can be checked off with Enter or Space. Press Enter or Escape to skip the ferry crossing animation.
+- 🔎 **Visible focus.** Every button shows a clear orange focus ring when you use the keyboard. High contrast mode makes it a black-and-yellow ring.
+- 🏷️ **Every button has a name.** Icon-only buttons (✓, ✕, ▲▼✏️🗑️, 📌, ⚙️, 📱 with its badge count) all have spoken labels. The tab bar marks the current tab.
+- 🌧️ **Ambient sound** (⚙️ Settings → **Ambient sound: Off / Low / Medium**, off by default). Rain that gets heavier on rainy and stormy nights, gulls at the ferry landings, the ferry's engine rumbling during a crossing, and a quiet wind in the firs at home. It's all synthesized, with no audio files. It needs 🔊 Sound on, only starts after you tap or press a key, and pauses when you switch away from the game.
+
+**Sharing**
+- 📲 New page: [Install on your phone](https://krazow.github.io/islandtime/install.html), with a QR code and step-by-step instructions.
+- YouTube kits for the 1.11 and 1.12 trailers are in `docs/youtube/`.
+
 ### New in 1.12: your phone 📱
 Tap 📱 in the top bar to pull out your phone. Its battery is the same one the game already tracks, so a dead phone means no texts or calls.
 

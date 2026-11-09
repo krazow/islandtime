@@ -49,6 +49,8 @@ function fourthDay(d){return seaX().fourth===(d==null?day():d)}
 function fourthWeekend(d){const f=seaX().fourth;return f!=null&&f>=0&&d>=f-1&&d<=f+1}
 function kingTide(t){const T=seaX().tide;t=t==null?S.t:t;return !!T&&t>=T.start&&t<T.end}
 function coldNight(d){const X=seaX();return seasonId()==='winter'&&(!!(X.cold&&X.cold[d])||stormNight(d))}
+// Bosses go easy on island commuters when snow or ice shuts down the ramp (winter only).
+function weatherExcuse(d){const X=seaX();return seasonId()==='winter'&&(X.snow===d||!!(X.ice&&X.ice[d]))}
 function icyRoads(d,m){const X=seaX();if(seasonId()!=='winter')return false;return X.snow===d||(!!(X.ice&&X.ice[d])&&m<660)}
 // ---- ferry ----
 function seasonDelay(side,d,dep){
@@ -124,15 +126,16 @@ function heatOutTonight(where,d){const U=UP();if(seasonId()!=='winter')return fa
   const gen=S.ev.flags.genRan===d||(stormNight(d)&&genReady()&&S.homeGas>=3&&where==='home');
   return U.propane<=0||(out&&!gen)}
 function pipeChance(where,d){if(seasonId()!=='winter')return 0;const cold=coldNight(d),off=heatOutTonight(where,d);
-  if(SEAST().drip===dayKey()) return 0;
-  return cold?(off?0.75:0.04):(off?0.05:0)}
+  if(dripOn()) return 0;
+  return cold?(off?0.5:0):(off?0.05:0)}   // a heated house doesn't freeze; dripping covers 3 nights
+function dripOn(){const X=SEAST();return X.drip===dayKey()||(X.dripUntil!=null&&X.dripUntil>=dayKey())}
 function seasonNight(where,notes,d){const s=seasonId();if(s==='fall')return;const X=SEAST(),U=UP();
   if(s==='winter'){
     if(Math.random()<pipeChance(where,d)){S.stats.pipes=(S.stats.pipes||0)+1;money(-280);homeAdj(-15);adj('stress',12);U.damp=(U.damp||0)+3;
       notes.push(where==='home'?'🧊 2 AM: a pop and a hiss under the house. A frozen pipe split in the crawlspace. You shut the water off at the pump house in your boots and a headlamp. A mainland plumber comes over on the first boat: $280. (Drip the faucets on freezing nights.)':
         '🧊 Your neighbor calls at 6 AM: water is pouring out from under your house. A pipe froze and burst while you were away. She shut it off at the pump house. The plumber: $280. (Drip the faucets on freezing nights.)');
       showTile('🧊','A frozen pipe burst','$280 plumber · Home −15','bad');S.ev.history.push({id:'frozen_pipes',t:S.t});if(where==='home')chain('no_water','frozen_pipes')}
-    else if(X.drip===dayKey()&&coldNight(d)&&heatOutTonight(where,d)){notes.push('🚰 The faucets drip all night. The pipes are cold, but they don’t freeze. Good call.');showTile('🚰','Dripping faucets saved the pipes','','good');S.ev.history.push({id:'drip_saved',t:S.t})}
+    else if(dripOn()&&coldNight(d)&&heatOutTonight(where,d)){notes.push('🚰 The faucets drip all night. The pipes are cold, but they don’t freeze. Good call.');showTile('🚰','Dripping faucets saved the pipes','','good');S.ev.history.push({id:'drip_saved',t:S.t})}
   }
   if(s==='summer'){
     const G=X.garden||(X.garden={w:dayKey()-1,grow:0,dead:false}),since=dayKey()-G.w;
@@ -147,10 +150,10 @@ function seasonNight(where,notes,d){const s=seasonId();if(s==='fall')return;cons
 }
 // ---- actions ----
 function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=day(),m=tod(),X=SEAST(),dk=dayKey();
-  if(loc==='home'&&s==='winter'){const drip=X.drip===dk,cold=coldNight(d)||powerOut();
-    a.push({cat:'home',ic:'🚰',l:drip?'Faucets dripping tonight ✓':'Drip the faucets tonight',due:cold&&!drip&&m>=900,dis:drip,
+  if(loc==='home'&&s==='winter'){const drip=dripOn(),cold=coldNight(d)||powerOut();
+    a.push({cat:'home',ic:'🚰',l:drip?`Faucets dripping ✓ (through ${DAYS[((X.dripUntil??dk)%7+7)%7]} night)`:'Drip the faucets (3 nights)',due:cold&&!drip&&m>=900,dis:drip,
       s:drip?'A slow drip in the kitchen and the bathroom. Moving water doesn’t freeze.':`5 min. ${cold?'Hard freeze tonight: if the heat goes out, a still pipe can freeze and burst.':'Not that cold tonight, but it can’t hurt.'}`,
-      fn:()=>{X.drip=dk;S.t+=5;UP().septic=Math.min(100,UP().septic+0.5);say('🚰 You crack the kitchen and bathroom faucets to a slow drip. Annoying, cheap and smart.');afterAction()}});
+      fn:()=>{X.drip=dk;X.dripUntil=dk+2;S.t+=5;UP().septic=Math.min(100,UP().septic+0.5);say('🚰 You crack the kitchen and bathroom faucets to a slow drip. Annoying, cheap and smart.');afterAction()}});
   }
   if(loc==='home'&&s==='summer'){
     const G=X.garden||(X.garden={w:dk-1,grow:0,dead:false}),wet=G.w===dk;

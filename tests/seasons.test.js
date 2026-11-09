@@ -90,18 +90,18 @@ module.exports = [
     // the drip action
     await page.evaluate(() => { S.loc = 'home'; S.t = 1000; tab = 'act'; render(); });
     const l = await labels(page);
-    assert.ok(l.includes('Drip the faucets tonight'), l.join(' | '));
-    const due = await page.evaluate(() => actions().find(a => a.l === 'Drip the faucets tonight').due);
+    assert.ok(l.includes('Drip the faucets (3 nights)'), l.join(' | '));
+    const due = await page.evaluate(() => actions().find(a => a.l === 'Drip the faucets (3 nights)').due);
     assert.strictEqual(due, true, 'due on a freezing evening');
     const r2 = await page.evaluate(() => {
-      actions().find(a => a.l === 'Drip the faucets tonight').fn();
+      actions().find(a => a.l === 'Drip the faucets (3 nights)').fn();
       const chance = pipeChance('home', 0), notes = [], R = Math.random, m0 = S.money;
       Math.random = () => 0; try { seasonNight('home', notes, 0); } finally { Math.random = R; }
       return { chance, notes, spent: m0 - S.money, drip: S.sea.drip === dayKey() };
     });
     assert.strictEqual(r2.chance, 0); assert.strictEqual(r2.spent, 0); assert.ok(r2.drip);
     assert.ok(r2.notes.some(n => /faucets drip all night/.test(n)), JSON.stringify(r2.notes));
-    assert.ok((await labels(page)).includes('Faucets dripping tonight ✓'));
+    assert.ok((await labels(page)).some(l => /^Faucets dripping ✓/.test(l)));
     noErrors(errors);
   } },
   { name: 'winter: woodstove and propane burn faster, more outages, gutters and moss slower', fn: async ctx => {
