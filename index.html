@@ -1640,6 +1640,9 @@ function fillDefaults(obj,def){
   return obj;
 }
 const num=(v,d)=>typeof v==='number'&&isFinite(v)?v:d;
+// numeric dotted version compare: >0 when a is newer than b ('1.10.0' > '1.9.2')
+const verCmp=(a,b)=>{const p=v=>String(v||'').split('.').map(n=>parseInt(n,10)||0),x=p(a),y=p(b);for(let i=0;i<Math.max(x.length,y.length);i++){const k=(x[i]||0)-(y[i]||0);if(k)return k}return 0};
+let newerWarned='';
 function migrate(d){
   if(!d||typeof d!=='object'||!d.S||typeof d.S!=='object') throw new Error('not an Island Time save');
   const from=d.schema||(d.S.cargo?2:1), x=d.S, notes=[];
@@ -1686,9 +1689,10 @@ function migrate(d){
   if(!Array.isArray(x.ev.force)) x.ev.force=[];
   w.news=w.news.map(n=>typeof n==='number'&&n<NEWS.length?n:-1);
   x.week=w;
-  if(from>SAVE_SCHEMA) notes.push(`this save is from a newer version (${d.app||'unknown'}). Anything this version doesn’t know about is kept but ignored`);
+  const newer=typeof d.app==='string'&&verCmp(d.app,APP_VERSION)>0?d.app:null;
+  if(from>SAVE_SCHEMA&&!newer) notes.push(`this save is from a newer version (${d.app||'unknown'}). Anything this version doesn’t know about is kept but ignored`);
   else if(from<SAVE_SCHEMA) notes.push(`upgraded from an older version${d.app?' ('+d.app+')':''}`);
-  return {schema:Math.max(from,SAVE_SCHEMA),app:d.app,S:x,uiNarr:Array.isArray(d.uiNarr)?d.uiNarr:[],tab:['act','ferry','todo','log'].includes(d.tab)?d.tab:'act',at:d.at,notes};
+  return {schema:Math.max(from,SAVE_SCHEMA),app:d.app,S:x,uiNarr:Array.isArray(d.uiNarr)?d.uiNarr:[],tab:['act','ferry','todo','log'].includes(d.tab)?d.tab:'act',at:d.at,notes,newer};
 }
 function rawSave(){const ls=store();if(!ls)return null;
   let best=null;
@@ -1704,6 +1708,7 @@ function loadSave(){
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;
   render();
+  if(d.newer&&newerWarned!==d.newer){newerWarned=d.newer;modal('⚠️ Save from a newer version',`<p>This save is from Island Time ${esc(d.newer)}, newer than this copy (${APP_VERSION}). Update the game to keep everything: whatever this copy doesn’t know about is ignored, and may be lost once you keep playing here.</p>`,[{l:'Continue anyway',fn:()=>{}}])}
   if(d.notes&&d.notes.length) modal('Save loaded',`<p>Welcome back. Note: ${d.notes.join('; ')}.</p>`,[{l:'Continue',fn:()=>{}}]);
   if(S.t>=day()*1440+1410&&L[S.loc].side==='M') strandedModal();
 }

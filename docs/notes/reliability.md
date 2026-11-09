@@ -1,0 +1,2 @@
+- Loading a save made by a newer version of Island Time (on this device, or from a pasted transfer code) now loads everything it can and shows a one-time warning naming both versions, so you know to update the game before you lose anything.
+- Added an automated test suite (Playwright, Chromium) that checks the title screen, new week and month games, every tab, save and reload, upgrading old saves, the priorities list, house upkeep, the end-of-week screen, the newer-save warning, and a 1,500-step robot playthrough. It runs on every push and pull request.
