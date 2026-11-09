@@ -1,0 +1,36 @@
+# One-click repo cleanup: Actions tab → "Cleanup" → Run workflow.
+# Deletes a mislabeled release and its tag, and/or a leftover branch. Leave a box empty to skip it.
+name: Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release + tag to delete (e.g. v1.81)'
+        required: false
+        default: 'v1.81'
+      branch:
+        description: 'Branch to delete (e.g. wip/modules-split)'
+        required: false
+        default: 'wip/modules-split'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      TAG: ${{ github.event.inputs.release_tag }}
+      BRANCH: ${{ github.event.inputs.branch }}
+    steps:
+      - name: Delete the release and its tag
+        if: ${{ github.event.inputs.release_tag != '' }}
+        run: |
+          gh release delete "$TAG" --repo "$REPO" --yes --cleanup-tag || echo "No release named $TAG"
+          gh api -X DELETE "repos/$REPO/git/refs/tags/$TAG" 2>/dev/null || true
+      - name: Delete the branch
+        if: ${{ github.event.inputs.branch != '' && github.event.inputs.branch != 'main' }}
+        run: gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" || echo "No branch named $BRANCH"
