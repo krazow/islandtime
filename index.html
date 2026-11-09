@@ -183,6 +183,16 @@ html.hc .hud-sub,html.hc .stat small{opacity:1}html.hc .act,html.hc .dest{border
 html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition:none!important}
 .today{background:#eef3f4;border-radius:10px;padding:9px 11px;margin-bottom:10px;font-size:13.5px;line-height:1.55}
 .today b{display:block;font-family:Fraunces;font-size:15px;margin-bottom:2px}
+/* pinned "Next up" card on the Here tab */
+.nextup{display:flex;align-items:flex-start;gap:6px;background:#fff;border:1.5px solid var(--line);border-left:5px solid var(--sound);border-radius:12px;padding:7px 4px 7px 10px;margin-bottom:10px;font-size:14px;line-height:1.4}
+.nextup .nu-b{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;color:inherit;font:inherit}
+.nextup .nu-l{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.nextup.two .nu-l{-webkit-line-clamp:1;display:block;white-space:nowrap;text-overflow:ellipsis}
+.nextup .nu-k{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--sound);font-weight:700;margin-right:4px}
+.nextup .nu-p{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute);font-size:13px}
+.nextup .nu-x{flex:none;border:0;background:none;color:var(--mute);font-size:12px;padding:2px 6px;min-width:32px;min-height:28px;border-radius:8px}
+.nextup .nu-x:focus-visible,.nextup .nu-b:focus-visible{outline:2px solid var(--fir)}
+html.hc .nextup{border-width:2px;border-left-width:5px;border-color:var(--ink);border-left-color:var(--deep)}html.hc .nextup .nu-k{color:var(--deep)}html.hc .nextup .nu-p,html.hc .nextup .nu-x{color:var(--ink)}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(10,25,30,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .modal{background:var(--paper);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .22s ease-out}
@@ -2055,7 +2065,7 @@ function actView(){
   h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}<span class="tag ${S.phone<20?'bad':''}">${S.phone>0?'📱':'📵'} ${S.phone}%</span>${S.gen?`<span class="tag ${S.gen==='home'?'good':''}">🔌 ${S.gen==='home'?'generator':'generator in car'}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
   const acts=actions();
   h+=marketView();
-  h=tipView()+h;
+  {const tv=tipView();h=tv+(tv?'':nextView(acts))+h;} // the guided tip covers the same ground, so one at a time
   const btn=a=>{const i=ACTS.push(a.fn)-1;return `<button class="act ${a.cls||''}" ${a.dis?'disabled':''} onclick="ACT(${i})"><span class="ic">${a.ic}</span><span class="tx"><b>${a.l}</b>${a.s?'<span>'+a.s+'</span>':''}</span></button>`};
   if(acts.length>4){
     const groups={};acts.forEach(a=>{const c=catOf(a);(groups[c]=groups[c]||[]).push(a)});
@@ -2078,6 +2088,56 @@ function actView(){
   return h;
 }
 window.ACT=i=>{uiNarr=[];sfx('tap');ACTS[i]&&ACTS[i]()};
+// ---- "Next up": one suggestion pinned at the top of the Here tab (hide for today with ×) ----
+let NEXT_FN=null;
+function nextBoat(to,byTod){ // island → mainland appointment: which boat to catch
+  if(L[S.loc].side!=='I'||!L[to]||L[to].side!=='M') return null;
+  const r=planTrip(to,day()*1440+byTod,0);
+  if(r.best) return {txt:`⛴️ ${fmt(r.best.dep)} boat, leave ${fmt(r.best.leave)}`,to,by:byTod};
+  if(r.first) return {txt:`⛴️ ${fmt(r.first.dep)} boat gets you there ~${fmt(r.first.arrive)}`,to,by:byTod};
+  return {txt:'check the ⛴️ planner',to,by:byTod};
+}
+function nextUp(acts){
+  const d=day(),m=tod(),J=curJob();
+  const meet=(ic,to,at,what)=>{
+    const here=S.loc===to,b=here?null:nextBoat(to,at);
+    const t=here?`${ic} You’re here. ${what} at <b>${fmt(at)}</b>`:m>at?`${ic} Running late: get to ${L[to].name} (${what.toLowerCase()} ${fmt(at)})`:`${ic} Be at ${L[to].name} by <b>${fmt(at)}</b>`;
+    return {t:t+(b?' · '+b.txt:''),go:b?()=>{if(planTargets().includes(to)){PLAN.to=to;PLAN.by=at;PLAN.off=0}setTab('ferry')}:()=>setTab('todo')};
+  };
+  // (a) today's shift
+  if(J&&J.days.includes(d)&&!S.worked[d]&&m<J.start+240) return meet('💼',J.loc,J.start,'Shift');
+  // (b) interview today
+  const I=S.interview;
+  if(I&&I.day===d&&m<=I.time+20) return meet('📝',I.loc,I.time,'Interview');
+  // (c) doctor's appointment today (arrive 2:00–2:45)
+  if(apptActive()&&d===APPT_DAY&&!S.appt&&!S.apptMissed&&m<=885) return meet('🩺','clinic',870,'Appointment');
+  // (d) the most urgent to-do item
+  const dueHere=S.loc==='home'&&acts.some(a=>a.due&&!a.dis); // at home, the specific chore (f) beats the general upkeep item
+  const u=todoItems().find(x=>x.urgent&&!x.ok&&!x.fail&&!/^Work:|^Interview:/.test(x.l)&&!(dueHere&&x.l==='House & yard upkeep'));
+  if(u) return {t:`⚠️ <b>${u.l}</b> · ${u.s}`,go:()=>setTab('todo')};
+  // (e) late evening at home
+  if(S.loc==='home'&&m>=1260) return {t:`🛏️ Go to bed · alarm: ${alarmTxt()}`,go:()=>nextScroll('.sect,details.upk>summary',ACT_CATS.phone)};
+  // (f) a due house or yard task
+  if(S.loc==='home'){const a=acts.find(a=>a.due&&!a.dis&&(catOf(a)==='home'||catOf(a)==='yard'));
+    if(a){const c=catOf(a);return {t:`${a.ic} Due at home: <b>${a.l}</b>`,go:()=>{UPK_OPEN[c]=true;render();
+      nextScroll('details.upk>summary',ACT_CATS[c])}}}}
+  return null; // (g) falls through to the player's own #1 priority
+}
+function nextScroll(sel,label){const el=[...document.querySelectorAll(sel)].find(x=>x.textContent.startsWith(label));
+  el&&el.scrollIntoView({block:'start',behavior:document.documentElement.classList.contains('rm')?'auto':'smooth'})}
+function nextView(acts){
+  NEXT_FN=null;
+  if(!S||S.over||S.nextHide===dayKey()) return '';
+  const p=(S.prios||[]).find(q=>!q.done);
+  let n=null;try{n=nextUp(acts)}catch(e){n=null}
+  const pin=p?`📌 Your #1: ${esc(p.t)}`:'';
+  if(!n&&p) n={t:pin,go:()=>setTab('todo'),pin:true};
+  if(!n) return '';
+  NEXT_FN=n.go;const two=p&&!n.pin;
+  return `<div class="nextup${two?' two':''}" role="region" aria-label="Next up"><button class="nu-b" onclick="NEXT_GO()"><span class="nu-l"><span class="nu-k">Next up</span>${n.t}</span>${two?`<span class="nu-p" onclick="event.stopPropagation();setTab('todo')">${pin}</span>`:''}</button><button class="nu-x" aria-label="Hide Next up for today" title="Hide for today" onclick="NEXT_HIDE()">✕</button></div>`;
+}
+window.NEXT_GO=()=>{sfx('tap');NEXT_FN&&NEXT_FN()};
+window.NEXT_HIDE=()=>{S.nextHide=dayKey();render()};
 const ACT_CATS={work:'💼 Work & errands',ferry:'⛴️ Ferry & travel',trade:'🛒 Food & shopping',home:'🏠 Inside the house',yard:'🌲 Outside & property',fuel:'⛽ Fuel, car & power',phone:'📱 Phone & alarms',here:'🏡 Around here'};
 function curJob(){return S&&S.emp?JOBS[S.emp]||null:null}
 const dayList=ds=>ds.length===5&&ds[0]===0?'weekdays':ds.map(i=>DAYS[i].slice(0,3)).join(', ');

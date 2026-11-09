@@ -1,0 +1,4 @@
+- New **Next up** card at the top of the 🧭 Here tab: one suggestion for what to do now: today's shift, an interview, the doctor's appointment, your most urgent to-do, bedtime (with your alarm), or a house chore that's due.
+- Commuting from the island? Next up names the boat to catch and when to leave. Tap it to open the ⛴️ trip planner, already filled in.
+- Your own #1 priority from the 📋 To-do tab shows as a second line ("📌 Your #1: …").
+- Tap a house chore suggestion to open the right 🏠/🌲 list. Tap ✕ to hide the card for the rest of the day.
