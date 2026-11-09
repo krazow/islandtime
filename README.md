@@ -37,6 +37,46 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.12: your phone 📱
+Tap 📱 in the top bar to pull out your phone. Its battery is the same one the game already tracks, so a dead phone means no texts or calls.
+
+**A note on Sam's rides:** Sam no longer turns up automatically. Ask him by text or call from home before 10:30 AM.
+
+**Messages**
+
+- 💬 **Text your friends.** Open 📱 → Messages to see everyone you’ve met on the island, their last text, and a dot for anything unread. The red badge on your phone counts unread texts.
+- ✍️ **Tap to text.** Quick replies (“On my way!”, “Running late. Ferry’s a mess.”, “Thanks again!”) and “How’s it going?”, which builds the friendship once a day (shared with calls). Each text uses a little battery.
+- ⏳ **Replies take island time.** Friends answer in a few minutes to half an hour (close friends faster), later if they’re busy, and the next morning if you text after they’ve gone to bed.
+- 🤝 **Ask Sam for a ride.** From home before 10:30 AM, text Sam. If Sam says yes, “🤝 Ride with Sam” shows up when you head to the ferry landing.
+- 🩴 **Ask Pajama Fred about the boat.** Once he’s a good friend, his deck-crew buddy tells him when the next breakdown is coming, today or tomorrow.
+- 🎱 **Bingo tonight?** Text Walt or Rusty on Wednesdays. On the mainland, ask the Hendersons if they need anything. They always do.
+- 📨 **Friends text you first**, about once a day: ferry-line warnings, eagles, leftovers, chickens. Answer the same day and it counts as keeping in touch.
+
+**Phone calls**
+
+- 📞 **A Phone app.** Open your 📱 phone and tap Phone: Contacts (your island friends), Island numbers and Recents.
+- 💬 **Call your friends.** Catching up takes 15 minutes, lowers your stress and counts toward the friendship (once per friend per day, shared with texting). Calls use a little battery.
+- 💤 **They don’t always pick up.** Call late at night or when they’re busy and it rings out. Leave a voicemail: they like hearing from you.
+- 🚗 **Ask Sam for a ride** to the ferry when you call him from home before 10:30 AM.
+- 🩴 **Ask Pajama Fred about the boat.** Once he’s a good friend, he tells you exactly what his deck-crew buddy heard about outages today or tomorrow.
+- 💼 **Out of work? Call Walt.** He has advice, and once you’re good friends he’ll put in a word.
+- 🍲 **Dinner with the Hendersons.** Call them Friday to Sunday and they’ll handle dinner (pot roast, obviously).
+- 📲 **Friends call you, too.** Every few days someone rings. Open your phone within half an hour to answer, or find a missed call (and maybe a voicemail) in Recents.
+- 🧰 **Gus and the Riv moved into your phone.** Book Gus the handyman and reserve your Wednesday bingo table under Phone → Island numbers.
+
+**Apps (5 slots)**
+
+- 🛍️ **App Store.** Your phone has room for **5 apps**. Install, open and remove them from the App Store. On the island’s one bar of signal an install takes about 6 minutes; on the mainland, a minute. Full? Remove an app to make room.
+- ⏰ **Clock.** See both alarms at a glance and set them from your phone.
+- 📣 **Island Group.** The Anderson Island community group now lives on your phone: post asking for help (once a day) and get a badge when the replies come in. The old “Post asking for help” button on the main screen is gone.
+- ⛴️ **Ferry Alerts.** The next 3 sailings from wherever you are, rider alerts, fog delays and the last boat tonight.
+- 🔎 **Job Hunt.** Your current job or interview, and the job listings, one tap away.
+- 🔦 **Flashlight.** Handy in a power outage (and it calms you down a little the first time you switch it on), but it eats about 1% battery every 10 minutes.
+- 📝 **Notes.** Your priorities list in your pocket: add a note or a quick one, tap to check it off.
+- 💡 **New tip** about what your phone can do.
+
+The five installable apps are placeholders for now. Each one is a self-contained plug-in in `src/js/14-phone-apps.js` (see the comment at the top for how to add or replace an app).
+
 ### 1.11.1: under the hood
 - The game's code is now organized into modules in `src/` and built into the single `index.html` with `tools/build.py`. Nothing changes for players; the automated tests check that `index.html` always matches `src/`.
 

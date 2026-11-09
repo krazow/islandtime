@@ -399,7 +399,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.11.1', SAVE_SCHEMA=6;
+const APP_VERSION='1.12.0', SAVE_SCHEMA=6;
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
 const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
@@ -495,8 +495,8 @@ function houseHelp(){
   <p><b>🧺 Chores</b> are daily: dishes, laundry, needles, the bed. Skip them and they pile up. A <b>🧽 deep clean</b> on a day off is the big reset.</p>
   <p><b>🌲 Maintenance</b> creeps up on its own: gutters, roof moss, the chimney, the well, potholes. Open <b>🏠 Inside the house</b> and <b>🌲 Outside &amp; property</b> at home. Highlighted jobs are due. Ignored jobs turn into floods, leaks and fires.</p>
   <p><b>⛴️ Contractors</b> (septic, tree crew, propane) live on the mainland. They ride the ferry, so when the boat is down, so are they.</p>
-  <p><b>🧰 Gus</b> is the island handyman. Call him and he does the 3 jobs that need it most. He takes cash, gas or groceries. He lives here, so the ferry can’t stop him. He runs on island time, so sometimes nothing can make him show up.</p>
-  <p><b>📣 The community group</b> is where islanders ask for help. Post once a day and see who answers in a few hours. Someone might come over, lend you a tool, or just argue in the comments.</p>
+  <p><b>🧰 Gus</b> is the island handyman. Call him from your 📱 phone (Phone → Island numbers) and he does the 3 jobs that need it most. He takes cash, gas or groceries. He lives here, so the ferry can’t stop him. He runs on island time, so sometimes nothing can make him show up.</p>
+  <p><b>📣 The community group</b> is where islanders ask for help. Install the <b>Island Group</b> app on your 📱 phone and post once a day and see who answers in a few hours. Someone might come over, lend you a tool, or just argue in the comments.</p>
   <p><b>🤲 Reputation</b>: help a neighbor from the group and people remember. More reputation and more friends mean better odds when you ask. Help enough, and they might show up on a weekend with ladders and a pie.</p>`,[
     {l:'Back to settings',fn:()=>openSettings()},{l:'Close',fn:()=>{}}]);
 }
