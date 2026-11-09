@@ -220,6 +220,39 @@ html.hc .nextup{border-width:2px;border-left-width:5px;border-color:var(--ink);b
 .grade{font-family:"Fraunces";font-size:58px;font-weight:800;color:var(--buoy);line-height:1}
 .kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
 .kv b{font-variant-numeric:tabular-nums}
+.phbtn{position:relative}
+.ph-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#e3642e;color:#fff;font:700 11px/18px system-ui,sans-serif;font-style:normal;padding:0 4px;text-align:center}
+.ph-bg{position:fixed;inset:0;z-index:40;background:rgba(10,25,30,.55);display:flex;align-items:flex-end;justify-content:center;padding:10px}
+.ph{width:100%;max-width:380px;height:min(88vh,720px);background:#111;border-radius:34px 34px 26px 26px;padding:10px 10px 8px;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.ph-anim{animation:phUp .22s ease-out}html.rm .ph-anim{animation:none}
+@keyframes phUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.ph-status{display:flex;justify-content:space-between;color:#fff;font:600 12px/1 system-ui,sans-serif;padding:6px 14px 8px;font-variant-numeric:tabular-nums}
+.ph-screen{flex:1;min-height:0;background:var(--paper,#f7f3ea);border-radius:24px;overflow:hidden;display:flex;flex-direction:column}
+.ph-body{flex:1;overflow-y:auto;padding:12px 14px 16px;font-size:14px}
+.ph-home{background:linear-gradient(160deg,#1d4b5a,#2f5d4a);color:#fff}
+.ph-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 6px;margin-bottom:14px}
+.ph-app{background:none;border:0;color:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:0}
+.ph-ic{position:relative;width:54px;height:54px;border-radius:15px;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.ph-empty .ph-ic{background:transparent;border:2px dashed rgba(255,255,255,.45);color:rgba(255,255,255,.7);font-size:22px;box-shadow:none}
+.ph-nm{font-size:11px;font-weight:600;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-sect{font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:.8;font-weight:700;margin:4px 2px 10px}
+.ph-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff;font-size:15px}
+.ph-back{background:none;border:0;font-size:28px;line-height:1;width:32px;cursor:pointer;color:inherit}
+.ph-nav{display:flex;justify-content:center;gap:10px;padding:8px 0 2px}
+.ph-nav button{background:#2a2a2a;color:#eee;border:0;border-radius:14px;padding:7px 16px;font-size:13px;cursor:pointer}
+.ph-btn{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0;font:inherit;font-size:14px;font-weight:600;color:inherit;cursor:pointer}
+.ph-btn small{display:block;font-weight:400;color:var(--mute);font-size:12px;margin-top:2px}
+.ph-btn.primary{background:var(--deep,#12313b);color:#fff;border-color:transparent}.ph-btn.primary small{color:rgba(255,255,255,.75)}
+.ph-btn:disabled{opacity:.45;cursor:default}
+.ph-dead{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;background:#000;color:#ddd}.ph-dead span{font-size:13px;color:#999}
+.ph-msg{max-width:78%;padding:8px 11px;border-radius:16px;margin:4px 0;font-size:14px;line-height:1.35}
+.ph-msg.them{background:#e9e4d8;border-bottom-left-radius:4px}
+.ph-msg.me{background:#2f6fd6;color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.ph-msg small{display:block;font-size:10px;opacity:.6;margin-top:3px}
+.ph-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;font:inherit;color:inherit}
+.ph-row b{display:block}.ph-row span{font-size:12px;color:var(--mute)}
+.ph-av{width:38px;height:38px;border-radius:50%;background:#dfe8e4;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#000}
 </style>
 </head>
 <body>
@@ -1455,6 +1488,7 @@ function stash(){
 
 }
 function processTimed(){
+  phoneTimed();
   if(S.power&&S.t>=S.power.end){S.power=null;if(L[S.loc].side==='I')say('💡 The power’s back on. Every appliance in the house beeps at once.')}
   for(const j of UP().jobs.slice()){
     if(S.t<j.due) continue;
@@ -2034,7 +2068,7 @@ function sceneSVG(){
 }
 function hud(){
   const d=day();
-  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
+  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear phbtn" onclick="phoneOpen()" aria-label="Open your phone">📱${(()=>{const n=phoneBadgeTotal();return n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''})()}</button><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
   <div class="stats">
    <div class="stat"><small>Cash</small><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
    <div class="stat"><small>Food</small><b>${S.pantry}${S.carried?'<span style="font-size:10px;opacity:.7">+'+S.carried+'</span>':''}d</b>${meter(Math.min(100,S.pantry*20),true)}</div>
@@ -2057,6 +2091,7 @@ function render(){
   const pending=todoItems().filter(x=>x.urgent).length;
   h+=`<nav class="tabs">${[['act','🧭','Here'],['ferry','⛴️','Ferry'],['todo','📋','To-do'],['log','📜','Log']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}${k==='todo'&&pending?'<span class="dot"></span>':''}${k==='ferry'&&out?'<span class="dot"></span>':''}</button>`).join('')}</nav>`;
   app.innerHTML=withName(h);
+  phoneRender();
   achCheck();
   saveGame();
 }
@@ -2480,6 +2515,61 @@ function titleScreen(){clearTiles();
   exitNotice='';
 }
 titleScreen();
+// ---------------- 📱 phone: core (screen, app system, timers) ----------------
+// Plug-in files (12-phone-messages.js, 13-phone-calls.js, 14-phone-apps.js) register apps with definePhoneApp().
+// State lives in S.ph (created lazily, so older saves just work). Each plug-in keeps its own sub-object.
+const PHONE_SLOTS=5;
+const PHONE_APPS=[];          // {id,name,ic,builtin,desc,size,badge(),view(arg),order}
+const PH_TIMERS=[];           // functions run from processTimed() while the game clock moves
+let PH_OPEN=false, PH_NAV=[{app:null,arg:null}], PH_ACTS=[];
+function PH(){S.ph=S.ph||{};const p=S.ph;p.apps=p.apps||[];p.inst=p.inst||{};return p}
+function definePhoneApp(a){const i=PHONE_APPS.findIndex(x=>x.id===a.id);const app=Object.assign({builtin:false,size:'40 MB',order:50,badge:()=>0,desc:''},a);if(i>=0)PHONE_APPS[i]=app;else PHONE_APPS.push(app);PHONE_APPS.sort((x,y)=>x.order-y.order)}
+function phoneApp(id){return PHONE_APPS.find(a=>a.id===id)}
+function phoneOnTime(fn){PH_TIMERS.push(fn)}
+function phoneSignal(){return L[S.loc].side==='I'?1:4}           // the island's famous one bar
+function phoneCan(){return S.phone>0}
+function phoneUse(pct){phoneTick();S.phone=Math.max(0,Math.round(S.phone-pct))}   // battery cost of using it
+function phoneInstalled(id){const a=phoneApp(id);return !!a&&(a.builtin||PH().apps.includes(id))}
+function phoneFree(){return PHONE_SLOTS-PH().apps.length}
+// install takes time: one bar of signal on the island makes it slow
+function phoneInstall(id){const a=phoneApp(id),P=PH();if(!a||a.builtin||P.apps.includes(id))return false;if(P.apps.length>=PHONE_SLOTS||!phoneCan())return false;
+  const min=phoneSignal()===1?6:1;S.t+=min;phoneUse(1);P.apps.push(id);P.inst[id]=(P.inst[id]||0)+1;
+  say(`📲 Installed <b>${a.name}</b>.${min>1?' One bar of signal on the island: it took '+min+' minutes.':''}`);return true}
+function phoneUninstall(id){const P=PH();const i=P.apps.indexOf(id);if(i<0)return false;P.apps.splice(i,1);say(`🗑️ Removed ${phoneApp(id).name} from your phone.`);return true}
+function phoneBadgeTotal(){if(!S)return 0;return PHONE_APPS.filter(a=>phoneInstalled(a.id)).reduce((n,a)=>{try{return n+(a.badge()||0)}catch(e){return n}},0)}
+// a notification: a tile now, and the badge tells the rest
+function phoneNotify(ic,title,sub){if(!phoneCan())return;showTile(ic,title,sub||'','info');try{sfx('info')}catch(e){}}
+// buttons inside the phone register their handlers here (like ACTS for the main screen)
+function phBtn(label,fn,opt){opt=opt||{};const i=PH_ACTS.push(fn)-1;return `<button class="ph-btn ${opt.cls||''}" ${opt.dis?'disabled':''} onclick="PHA(${i})">${label}${opt.sub?`<small>${opt.sub}</small>`:''}</button>`}
+window.PHA=i=>{const f=PH_ACTS[i];if(!f)return;f();if(S&&!S.over){render()}};
+window.phoneOpen=(app,arg)=>{if(!S||S.over)return;PH_OPEN=true;PH_NAV=[{app:null,arg:null}];if(app)PH_NAV.push({app,arg});phoneRender()};
+window.phoneClose=()=>{PH_OPEN=false;const el=document.getElementById('phoneUI');el&&el.remove();if(S&&!S.over)render()};
+window.phoneGo=(app,arg)=>{PH_NAV.push({app,arg});phoneRender()};
+window.phoneBack=()=>{if(PH_NAV.length>1)PH_NAV.pop();phoneRender()};
+window.phoneHome=()=>{PH_NAV=[{app:null,arg:null}];phoneRender()};
+function phoneScreen(){
+  const top=PH_NAV[PH_NAV.length-1];
+  if(!phoneCan()) return `<div class="ph-dead"><div style="font-size:40px">🪫</div><b>Battery dead</b><span>Charge it at home, in the car, or at the outlet by the vending machines in the Steilacoom terminal.</span></div>`;
+  if(top.app){const a=phoneApp(top.app);if(!a||!phoneInstalled(a.id)){PH_NAV.pop();return phoneScreen()}
+    let body='';try{body=a.view(top.arg)}catch(e){body=`<p>Something went wrong in ${a.name}.</p>`;console.error(e)}
+    return `<div class="ph-bar"><button class="ph-back" onclick="phoneBack()" aria-label="Back">‹</button><b>${a.ic} ${a.name}</b><span></span></div><div class="ph-body">${body}</div>`}
+  const icon=a=>{const n=(()=>{try{return a.badge()||0}catch(e){return 0}})();return `<button class="ph-app" onclick="phoneGo('${a.id}')"><span class="ph-ic">${a.ic}${n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''}</span><span class="ph-nm">${a.name}</span></button>`};
+  const built=PHONE_APPS.filter(a=>a.builtin),mine=PH().apps.map(phoneApp).filter(Boolean);
+  const empty=Array.from({length:PHONE_SLOTS-mine.length},()=>`<button class="ph-app ph-empty" onclick="${phoneApp('store')?"phoneGo('store')":''}" aria-label="Empty app slot"><span class="ph-ic">＋</span><span class="ph-nm">Empty</span></button>`);
+  return `<div class="ph-body ph-home"><div class="ph-grid">${built.map(icon).join('')}</div><div class="ph-sect">Your apps · ${mine.length}/${PHONE_SLOTS}</div><div class="ph-grid">${mine.map(icon).join('')}${empty.join('')}</div></div>`;
+}
+function phoneRender(){
+  if(!PH_OPEN||!S||S.over){const el=document.getElementById('phoneUI');el&&el.remove();return}
+  PH_ACTS=[];
+  let el=document.getElementById('phoneUI'),fresh=!el;
+  if(!el){el=document.createElement('div');el.id='phoneUI';el.className='ph-bg';el.addEventListener('click',e=>{if(e.target===el)phoneClose()});document.body.appendChild(el)}
+  const bars=phoneSignal(),bat=S.phone;
+  el.innerHTML=withName(`<div class="ph${fresh?' ph-anim':''}" role="dialog" aria-label="Your phone"><div class="ph-status"><span>${fmt(S.t)}</span><span>${'▮'.repeat(bars)}<span style="opacity:.3">${'▮'.repeat(4-bars)}</span> ${L[S.loc].side==='I'?'AI':'5G'} · ${bat<=15?'🪫':'🔋'}${bat}%</span></div>
+    <div class="ph-screen">${phoneScreen()}</div>
+    <div class="ph-nav"><button onclick="phoneHome()" aria-label="Home screen">⌂ Home</button><button onclick="phoneClose()" aria-label="Put the phone away">✕ Put away</button></div></div>`);
+}
+// called from processTimed(): plug-ins deliver replies, calls etc. on game time
+function phoneTimed(){for(const f of PH_TIMERS){try{f()}catch(e){console.error(e)}}}
 </script>
 </body>
 </html>

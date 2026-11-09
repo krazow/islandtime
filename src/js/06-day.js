@@ -3,6 +3,7 @@ function stash(){
 
 }
 function processTimed(){
+  phoneTimed();
   if(S.power&&S.t>=S.power.end){S.power=null;if(L[S.loc].side==='I')say('💡 The power’s back on. Every appliance in the house beeps at once.')}
   for(const j of UP().jobs.slice()){
     if(S.t<j.due) continue;
