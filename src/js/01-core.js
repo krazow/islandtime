@@ -84,6 +84,7 @@ window.openSettings=()=>{
   modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>${S&&!S.over?` · ${DF().ic} ${DF().n}`:''}.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
     {l:'👤 Change name',s:'Updates your name everywhere in the game.',fn:()=>nameModal({back:openSettings})},
     {l:`🔊 Sound: ${prefs().sound?'On':'Off'}`,s:'Ferry horn, alerts and bingo calls.',fn:()=>{setPref('sound',!prefs().sound);if(prefs().sound)sfx('good');openSettings()}},
+    ambSettingBtn(),
     {l:'♿ Accessibility',s:`Text size: ${{n:'Normal',l:'Large',xl:'Extra large'}[prefs().fs]} · High contrast: ${prefs().hc?'On':'Off'} · Reduce motion: ${prefs().rm?'On':'Off'}`,fn:()=>accessModal()},
     {l:`💡 Tutorial tips: ${prefs().tips?'On':'Off'}`,s:prefs().tips?'Guided first day; trading and Dale unlock on Tuesday.':'Everything unlocked from the start.',fn:()=>{setPref('tips',!prefs().tips);openSettings()}},
     {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
