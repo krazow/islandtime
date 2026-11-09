@@ -1,0 +1,34 @@
+# Fix a mislabeled release by hand: Actions tab → "Rename release" → Run workflow.
+# Example: old tag v1.81 → new tag v1.8.1. The release's files stay attached.
+name: Rename release
+
+on:
+  workflow_dispatch:
+    inputs:
+      old_tag:
+        description: 'Current (wrong) tag, e.g. v1.81'
+        required: true
+      new_tag:
+        description: 'Correct tag, e.g. v1.8.1'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OLD: ${{ github.event.inputs.old_tag }}
+      NEW: ${{ github.event.inputs.new_tag }}
+    steps:
+      - name: Check the new tag looks like v1.2.3
+        run: |
+          echo "$NEW" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::New tag '$NEW' should look like v1.2.3"; exit 1; }
+      - name: Retag and rename the release
+        run: |
+          SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$OLD --jq .object.sha)
+          gh release edit "$OLD" --repo ${{ github.repository }} --tag "$NEW" --target "$SHA" --title "Island Time ${NEW#v}"
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$OLD || true
+          echo "Renamed $OLD to $NEW"
