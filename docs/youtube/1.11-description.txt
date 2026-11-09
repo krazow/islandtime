@@ -1,0 +1,40 @@
+TITLE
+Island Time 1.11: What's New (island help, Next up, Veterans Day and achievements)
+
+DESCRIPTION
+Island Time 1.11 is out. Island Time is a free browser game about a week, or a whole month, of living on Anderson Island, Washington, where one small county ferry connects you to your job, the store, gas and the doctor.
+
+What's new in 1.11:
+🧭 Next up: a pinned card tells you the one thing that matters now, like which boat gets you to work on time. Tap it to open the ferry trip planner.
+🏠 Your house: daily chores pile up if you skip them. Spoiled fridges, damp windows and woodstove ash all need you.
+🌲 Outside and property: gutters, roof moss, potholes and the well. Contractors ride the ferry, so they're late when it's down.
+🧰 Gus, the island handyman: he fixes the three worst jobs. Pay in cash, gas or groceries. He runs on island time.
+📣 The community group: post for help, help your neighbors first, and more people show up for you. Make new friends by pitching in.
+🇺🇸 Island events all month: Veterans Day at the Legion, a holiday craft bazaar, lake cleanup day, a Fire District #27 drill, and story arcs with your friends.
+🏆 16 achievements that stay with you across every game.
+💾 Three save slots: keep up to three islanders going on the same device.
+
+▶ Play free in your browser: https://krazow.github.io/islandtime/
+📲 Install on your phone (works offline): https://krazow.github.io/islandtime/install.html
+🪟 Windows installer: https://github.com/krazow/islandtime/releases/latest
+📴 Single-file offline version: https://krazow.github.io/islandtime/offline/IslandTime-offline.html
+💻 Source code: https://github.com/krazow/islandtime
+
+Chapters:
+0:00 Island Time 1.11, Next up and your house
+0:11 The yard, Gus and the community group
+0:23 Making friends and island events
+0:31 Achievements, save slots and how to play
+
+#IslandTime #IndieGame #BrowserGame
+
+TAGS
+Island Time, Anderson Island, Washington State Ferries, Pierce County ferry, ferry game, island life, life simulation, indie game, browser game, free game, HTML5 game, Puget Sound, Steilacoom, small town life, game update, what's new, 1.11
+
+NOTES (not for YouTube)
+Video: IslandTime-1.11-whats-new.mp4, 42.2 s. 11 slides: s00 3.2 s, s01-s09 4.6 s, s10 3.6 s, 0.6 s crossfades.
+Each slide starts at (sum of earlier durations) - 0.6 x (slides before it):
+s00 Title 0.0 | s01 Next up 2.6 | s02 Your house 6.6 | s03 Yard 10.6 | s04 Gus 14.6 | s05 Community group 18.6 |
+s06 Neighbors/friends 22.6 | s07 Events 26.6 | s08 Achievements 30.6 | s09 Save slots 34.6 | s10 End card 38.6 | end 42.2
+YouTube chapters must be at least 10 seconds long, start at 0:00 and number at least 3, so the 4-second scenes are grouped
+into 4 chapters. Times are rounded to the moment the new slide is about halfway through its crossfade.
