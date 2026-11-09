@@ -292,6 +292,8 @@ html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#0
 .ph-call-log p{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin:6px 0;font-size:13.5px;line-height:1.4}
 .ph-vm{padding:2px 0 6px 48px}.ph-vm p{font-size:13px;margin:4px 0;color:var(--mute)}.ph-vm .ph-btn{margin:4px 0;padding:7px 10px}
 html.hc .ph-tabs{background:#ddd}
+
+.ph-row .ph-av,.msg-head .ph-av{font-size:22px;color:inherit}
 </style>
 </head>
 <body>
@@ -553,7 +555,7 @@ function genWeek(diffKey){
 const day=()=>S.cur;
 const tod=()=>S.t-S.cur*1440;
 function fmt(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mi=m%60;const ap=h<12?'AM':'PM';h=h%12||12;return h+':'+String(mi).padStart(2,'0')+' '+ap}
-function fmtAbs(a){const d=Math.floor(a/1440);return (d!==day()?DAYS[d]?.slice(0,3)+' ':'')+fmt(a)}
+function fmtAbs(a){const d=Math.floor(a/1440);return (d!==day()?DAYS[((d%7)+7)%7].slice(0,3)+' ':'')+fmt(a)}
 function say(s){uiNarr.push(s);S.log.push({t:S.t,s})}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function adj(k,v){S[k]=clamp(Math.round(S[k]+v),0,100)}
@@ -2846,7 +2848,7 @@ function callScreen(){
 }
 function callIncoming(r){
   const w=callWho(r.id,1);
-  return `<div class="ph-call ph-ringing"><div class="ph-call-av">${CALL_AV[r.id]||'🙂'}</div><b>${esc(w)} is calling…</b><span>Incoming call</span></div>`+
+  return `<div class="ph-call ph-ringing"><div class="ph-call-av">${CALL_AV[r.id]||'🙂'}</div><b>${esc(w)} ${/^the /i.test(w)?'are':'is'} calling…</b><span>Incoming call</span></div>`+
     phBtn('📞 Answer',()=>{const c=CL();c.ring=null;callLog({id:r.id,dir:'in',ans:true});callTime(1);CALL_NOW={id:r.id,t:S.t,st:'on',lines:[`${w}: ${callPick(CALL_IN,r.id,['“Hey, {{name}}! Just calling to say hi.”'])}`],done:{}}},{cls:'primary'})+
     phBtn('📵 Decline',()=>{const c=CL();c.ring=null;callLog({id:r.id,dir:'missed',seen:true})});
 }
@@ -2875,7 +2877,7 @@ function callView(){
   } else {
     c.log.forEach(e=>{if(e.dir==='missed')e.seen=true});
     if(!c.log.length) return h+'<p style="color:var(--mute)">No calls yet.</p>';
-    h+=c.log.map(e=>{const w=esc(callWho(e.id,1)),when=`${DAYS[Math.floor(e.t/1440)]?.slice(0,3)||''} ${fmt(e.t)}`;
+    h+=c.log.map(e=>{const w=esc(callWho(e.id,1)),when=`${DAYS[((Math.floor(e.t/1440)%7)+7)%7].slice(0,3)} ${fmt(e.t)}`;
       const sub=e.dir==='missed'?`Missed call · ${when}`:e.dir==='in'?`Incoming · ${when}`:`Outgoing${e.ans?'':' · no answer'} · ${when}`;
       let row=callRow(CALL_AV[e.id]||'🙂',e.dir==='missed'?`<span style="color:#c0392b">${w}</span>`:w,sub,()=>{if(S.friends[e.id])callStart(e.id)},'<span class="ph-dial">📞</span>');
       if(e.vm) row+=`<div class="ph-vm">${e.heard?`<p>🎙️ ${e.vm}</p>`:phBtn('▶️ Play voicemail',()=>{e.heard=true;phoneUse(1)},{sub:'New voicemail'})}</div>`;
@@ -2898,7 +2900,7 @@ phoneOnTime(()=>{
   callSchedule(c,S.t);
   if(!ids.length||!phoneCan())return;
   const id=pick(ids);c.ring={id,t:S.t,until:S.t+30};
-  phoneNotify('📞',`${callWho(id,1)} is calling`,'Open your 📱 phone to answer');
+  phoneNotify('📞',`${callWho(id,1)} ${/^the /i.test(callWho(id,1))?'are':'is'} calling`,'Open your 📱 phone to answer');
 });
 // ---------------- 📱 phone: apps (App Store, Clock, installable apps) ----------------
 // HOW TO ADD AN APP (plug-in pattern)

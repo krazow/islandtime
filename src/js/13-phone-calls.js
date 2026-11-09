@@ -81,7 +81,7 @@ function callScreen(){
 }
 function callIncoming(r){
   const w=callWho(r.id,1);
-  return `<div class="ph-call ph-ringing"><div class="ph-call-av">${CALL_AV[r.id]||'🙂'}</div><b>${esc(w)} is calling…</b><span>Incoming call</span></div>`+
+  return `<div class="ph-call ph-ringing"><div class="ph-call-av">${CALL_AV[r.id]||'🙂'}</div><b>${esc(w)} ${/^the /i.test(w)?'are':'is'} calling…</b><span>Incoming call</span></div>`+
     phBtn('📞 Answer',()=>{const c=CL();c.ring=null;callLog({id:r.id,dir:'in',ans:true});callTime(1);CALL_NOW={id:r.id,t:S.t,st:'on',lines:[`${w}: ${callPick(CALL_IN,r.id,['“Hey, {{name}}! Just calling to say hi.”'])}`],done:{}}},{cls:'primary'})+
     phBtn('📵 Decline',()=>{const c=CL();c.ring=null;callLog({id:r.id,dir:'missed',seen:true})});
 }
@@ -110,7 +110,7 @@ function callView(){
   } else {
     c.log.forEach(e=>{if(e.dir==='missed')e.seen=true});
     if(!c.log.length) return h+'<p style="color:var(--mute)">No calls yet.</p>';
-    h+=c.log.map(e=>{const w=esc(callWho(e.id,1)),when=`${DAYS[Math.floor(e.t/1440)]?.slice(0,3)||''} ${fmt(e.t)}`;
+    h+=c.log.map(e=>{const w=esc(callWho(e.id,1)),when=`${DAYS[((Math.floor(e.t/1440)%7)+7)%7].slice(0,3)} ${fmt(e.t)}`;
       const sub=e.dir==='missed'?`Missed call · ${when}`:e.dir==='in'?`Incoming · ${when}`:`Outgoing${e.ans?'':' · no answer'} · ${when}`;
       let row=callRow(CALL_AV[e.id]||'🙂',e.dir==='missed'?`<span style="color:#c0392b">${w}</span>`:w,sub,()=>{if(S.friends[e.id])callStart(e.id)},'<span class="ph-dial">📞</span>');
       if(e.vm) row+=`<div class="ph-vm">${e.heard?`<p>🎙️ ${e.vm}</p>`:phBtn('▶️ Play voicemail',()=>{e.heard=true;phoneUse(1)},{sub:'New voicemail'})}</div>`;
@@ -133,5 +133,5 @@ phoneOnTime(()=>{
   callSchedule(c,S.t);
   if(!ids.length||!phoneCan())return;
   const id=pick(ids);c.ring={id,t:S.t,until:S.t+30};
-  phoneNotify('📞',`${callWho(id,1)} is calling`,'Open your 📱 phone to answer');
+  phoneNotify('📞',`${callWho(id,1)} ${/^the /i.test(callWho(id,1))?'are':'is'} calling`,'Open your 📱 phone to answer');
 });

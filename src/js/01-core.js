@@ -154,7 +154,7 @@ function genWeek(diffKey){
 const day=()=>S.cur;
 const tod=()=>S.t-S.cur*1440;
 function fmt(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mi=m%60;const ap=h<12?'AM':'PM';h=h%12||12;return h+':'+String(mi).padStart(2,'0')+' '+ap}
-function fmtAbs(a){const d=Math.floor(a/1440);return (d!==day()?DAYS[d]?.slice(0,3)+' ':'')+fmt(a)}
+function fmtAbs(a){const d=Math.floor(a/1440);return (d!==day()?DAYS[((d%7)+7)%7].slice(0,3)+' ':'')+fmt(a)}
 function say(s){uiNarr.push(s);S.log.push({t:S.t,s})}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function adj(k,v){S[k]=clamp(Math.round(S[k]+v),0,100)}
