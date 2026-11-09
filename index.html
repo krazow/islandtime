@@ -425,6 +425,7 @@ function baseState(){
     ev:{last:{},count:{},history:[],force:[],flags:{}},tips:{seen:[]},friends:{},power:null,battery:'ok',
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
     alarm:{plug:{on:true,time:330},phone:{on:false,time:330}},phone:80,phoneT:330,gen:null,
+    arcs:{sam:{b:0,k:-9,h:0},walt:{b:0,k:-9,h:0},hendersons:{b:0,k:-9,h:0},day:-9},cal:{vet:-1,bazaar:-1,cleanup:-1,drill:-1,bzWk:-1,bz:false,chim:false},
     week:null};
 }
 function newGame(diff,mode){
@@ -1070,6 +1071,128 @@ function favorActions(a,loc){
   });
 }
 
+// ---- island life: community calendar and friend story arcs ----
+Object.assign(TILE_META,{veterans_day:['🇺🇸','Veterans Day at the Legion','info'],craft_bazaar:['🎄','Holiday craft bazaar today','info'],lake_cleanup:['🗑️','Lake cleanup day','info'],fire_drill:['🚒','Fire District drill tonight','info'],
+  bev_bread:['🍞','Zucchini bread from Bev','good'],arc_sam:['⛵','Sam’s boat project','info'],arc_walt:['🧢','Walt’s grandson','info'],arc_hendersons:['💍','The Hendersons’ fiftieth','info']});
+PERKS.bev={2:'Bev knocks $5 off anything on her bazaar table.',3:'Bev leaves zucchini bread on your porch now and then.'};
+// community calendar: d = day of week; ok() = which week (month mode) or a roll (week mode)
+const LIFE_CAL={
+  vet:{d:2,ok:()=>S.mode==='month'&&S.weekNo===1},                 // Wed Nov 11
+  bazaar:{d:5,ok:()=>S.mode==='month'?S.weekNo>=2:bazaarWeek()},   // Sat Nov 21 + 28 (week mode: 60%)
+  cleanup:{d:6,ok:()=>S.mode==='month'?S.weekNo===1:true},         // Sun Nov 15 (week mode: Sun Nov 8)
+  drill:{d:3,ok:()=>S.mode==='month'?S.weekNo===2:true},           // Thu Nov 19 (week mode: Thu Nov 5)
+};
+function bazaarWeek(){const C=S.cal;if(C.bzWk!==S.weekNo){C.bzWk=S.weekNo;C.bz=Math.random()<0.6}return !!C.bz}
+const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok();
+defEvent({id:'veterans_day',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('vet'),
+  run(){say(`🇺🇸 <b>Veterans Day</b>, ${dateTxt(day())}. The American Legion holds its ceremony at <b>11:00 AM</b> by the flagpole outside the Riv: colors, the names, and a bugler who’s been practicing since October. Coffee after.`)}});
+defEvent({id:'craft_bazaar',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('bazaar'),
+  run(){say('🎄 <b>Holiday craft bazaar</b> today, 10 AM to 3 PM at the community clubhouse up by Lake Josephine. Wreaths, jam, knitted everything. Cash preferred, exact change worshipped.')}});
+defEvent({id:'lake_cleanup',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('cleanup'),
+  run(){say('🗑️ <b>Lake cleanup day.</b> Volunteers meet at Lake Josephine between 8 and 11 AM with grabbers and contractor bags, then work around to Lake Florence. Coffee provided. Gloves BYO.')}});
+defEvent({id:'fire_drill',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('drill'),
+  run(){say('🚒 Fire District #27 runs a volunteer drill tonight at <b>6:30 PM</b>, at the station up the road from the old store. They’re short on hands and will happily take yours.')}});
+defEvent({id:'bev_bread',hook:'wake',priority:2,max:1,chance:0.35,cond:ctx=>atHomeWake(ctx)&&flv('bev')>=3,
+  run(){S.pantry+=1;say('🍞 A foil-wrapped loaf on the porch with a note: “Too much zucchini. Again. —Bev.” +1 day of food.')}});
+// one community event's status at its place: upcoming, open (acts), over, or done
+function lifeSlot(a,key,ic,name,from,to,acts){
+  if(!lifeToday(key)) return;
+  const m=tod();
+  if(S.cal[key]===dayKey()) a.push({ic:'✅',l:`${name} ✓`,s:'You were there. People will remember that, or at least your face.',cat:'here',dis:true});
+  else if(m<from) a.push({ic,l:`${name}: ${fmt(from)} today`,s:`Come back between ${fmt(from)} and ${fmt(to)}.`,cat:'here',dis:true});
+  else if(m<=to) acts.forEach(x=>a.push(Object.assign({cat:'here'},x)));
+  else a.push({ic,l:`${name} is over`,s:'Folding chairs are already stacked. Next year.',cat:'here',dis:true});
+}
+function lifeBuddy(ids){return ids.filter(id=>S.friends[id])}
+function lifeActions(a,loc){
+  const k=dayKey(),C=S.cal;
+  if(loc==='food') lifeSlot(a,'vet','🇺🇸','Veterans Day ceremony',660,700,[{ic:'🇺🇸',l:'Attend the Veterans Day ceremony',s:'About an hour at the flagpole with the Legion. Stress −6.',cls:'primary',fn:()=>{
+    C.vet=k;S.t+=60;phoneTick();adj('stress',-6);
+    if(S.friends.walt){friendPts('walt',2);say('🇺🇸 Walt reads the names in his Legion cap, without his glasses, from memory. Afterward he pours you a coffee and doesn’t say much. He doesn’t have to.')}
+    else{meet('walt','Walt from the American Legion','you stood together at the Veterans Day ceremony');say('🇺🇸 Thirty islanders, one flag, one bugler who nails it. The old guy next to you in the Legion cap introduces himself as Walt and hands you a coffee.')}
+    afterAction()}}]);
+  if(loc==='lake'){
+    const off=flv('bev')>=2?5:0,price=25-off;
+    lifeSlot(a,'bazaar','🎄','Holiday craft bazaar',600,900,[
+      {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the clubhouse. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
+        C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);
+        say('🎄 A cedar wreath with a pinecone the size of your fist. The cabin smells like a Christmas tree lot that also has a woodstove.');lifeBev();afterAction()}},
+      {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
+    lifeSlot(a,'cleanup','🗑️','Lake cleanup',480,660,[{ic:'🗑️',l:'Volunteer at the lake cleanup',s:'2 hours with a grabber and a bag. Stress −4.',cls:'primary',fn:()=>{
+      C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);if(typeof S.rep==='number')S.rep+=1;
+      say('🗑️ Two tires, a lawn chair, nine golf balls and a 1987 Rainier can come out of the shallows. The eagles supervise.');
+      const b=lifeBuddy(['hendersons','sam','rusty','bev']);
+      if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way to Lake Florence.`)}
+      else meet('hendersons','the Hendersons','you hauled a shopping cart out of Lake Florence together');
+      afterAction()}}]);
+  }
+  if(loc==='store') lifeSlot(a,'drill','🚒','Fire District drill',1050,1110,[{ic:'🚒',l:'Join the volunteer fire drill',s:'90 min at the Fire District #27 station. Hoses, ladders, cocoa. Stress −3, health +2.',cls:'primary',fn:()=>{
+    C.drill=k;S.t+=90;phoneTick();adj('stress',-3);adj('health',2);
+    if(S.friends.rusty){friendPts('rusty',2);say('🚒 Rusty, stone sober in turnout gear, shows you how to roll a hose. Who knew.')}
+    else{meet('rusty','Rusty from the bar','he showed you how to roll a fire hose at the drill');say('🚒 A guy you’ve only ever seen at the Riv’s bar turns out to be a volunteer firefighter. Rusty. He shows you how to roll a hose.')}
+    if(S.up&&!C.chim){C.chim=true;S.up.chimney=0;say('🏚️ On the way out, the captain says “you’re the cedar cabin back in the woods, right?” and two volunteers follow you home to check your chimney. They sweep it while they’re up there. No charge, just don’t burn wet wood.')}
+    afterAction()}}]);
+}
+function lifeBev(){if(S.friends.bev)friendPts('bev',1);else if(Math.random()<0.6)meet('bev','Bev the knitter','she talked you through her wreaths at the craft bazaar')}
+
+// friend story arcs: 3 beats each, S.arcs[id] = {b: beats done, k: dayKey of the last beat, h: times you helped}
+// beat 1: once you know them (a day later); beat 2: good friend or week 3; beat 3: close friend or week 4. At least 2 days apart, one arc beat a day.
+function arcReady(id){
+  const A=S.arcs[id],f=S.friends[id];if(!A||!f||A.b>=3) return false;
+  if(S.arcs.day===dayKey()||dayKey()-A.k<2) return false;
+  if(A.b===0) return f.day!==day()||S.weekNo>0;
+  if(A.b===1) return flv(id)>=2||S.weekNo>=2;
+  return flv(id)>=3||S.weekNo>=3;
+}
+function arcBeat(id){const A=S.arcs[id];A.b++;A.k=dayKey();S.arcs.day=dayKey();return A}
+const arcNo=(who,line)=>({l:'Not now',s:line,fn:()=>say(`${who}: “${line}”`)});
+defEvent({id:'arc_sam',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>atHomeWake(ctx)&&arcReady('sam'),
+  run(){const A=arcBeat('sam');
+    if(A.b===1) modal('⛵ Sam’s boat project','<p>Sam is at your door with two coffees and a photo of a 14-foot wooden skiff. “Bought her off a guy at Oro Bay for two hundred bucks and a chainsaw. She has character.”</p><p>The character is mostly rot.</p>',[
+      {l:'Help scrape the hull: 1 hour',s:'Stress −3. Sam +1.',fn:()=>{A.h++;S.t+=60;phoneTick();adj('stress',-3);friendPts('sam',1);say('⛵ An hour with a putty knife in Sam’s carport. You find three layers of paint and one of hope.')}},
+      arcNo('Sam','No rush. She’s not going anywhere. Literally.')]);
+    else if(A.b===2) modal('⛵ Sam’s boat, part two','<p>“She needs marine sealant and new oarlocks,” Sam says. “Twenty-five bucks gets her watertight. Or an hour of sanding, if you’re broke too.”</p>',[
+      {l:'Chip in $25',s:'Sam +2.',dis:S.money<25,fn:()=>{A.h++;money(-25);friendPts('sam',2);say('⛵ Sam writes “{{name}}: $25” on the transom in pencil. “Investor.”')}},
+      {l:'Sand for an hour',s:'Stress −2, Sam +1. Your shoulders will hear about it.',fn:()=>{A.h++;S.t+=60;phoneTick();adj('stress',-2);adj('health',-1);friendPts('sam',1);say('⛵ An hour of sanding. You are now 40% sawdust.')}},
+      arcNo('Sam','I’ll find the money. Somewhere. Probably the couch.')]);
+    else modal('⛵ Launch day','<p>Sam texts a photo of the skiff on a trailer at the Oro Bay ramp. “She floats. Probably. Come watch?”</p>',[
+      {l:'Go to the launch: 1 hour',s:A.h?'Stress −10. Sam +2. Bring a towel.':'Stress −6. Sam +1.',fn:()=>{S.t+=60;phoneTick();
+        if(A.h){adj('stress',-10);friendPts('sam',2);S.pantry+=2;say(`⛵ She floats. Sam has painted <b>${A.h>=2?'THE {{name}}':'THE RELUCTANT'}</b> on the bow. The first trip out comes back with a cooler of fish, and two days of dinners go in your freezer.`)}
+        else{adj('stress',-6);friendPts('sam',1);say('⛵ She floats. Sam rows a lap, takes on a little water, and declares victory.')}}},
+      arcNo('Sam','I’ll send video. If she sinks, it’ll be a good one.')]);
+  }});
+defEvent({id:'arc_walt',hook:'arrive',priority:2,max:3,chance:0.5,cond:ctx=>['food','aiDock','store','lake','home'].includes(ctx.at)&&tod()>=540&&tod()<=1230&&arcReady('walt'),
+  run(){const A=arcBeat('walt');
+    if(A.b===1) modal('🧢 Walt’s grandson','<p>Walt flags you down. “My grandson Tyler’s coming over from Tacoma for a few days. Sixteen. Lives on his phone. What do kids even <i>do</i> here?”</p>',[
+      {l:'Offer to show Tyler around: 30 min',s:'Stress −2. Walt +2.',fn:()=>{A.h++;S.t+=30;phoneTick();adj('stress',-2);friendPts('walt',2);say('🧢 You show Tyler the eagles at Lake Josephine. He takes 80 photos and admits, quietly, that it’s “kind of sick.”')}},
+      {l:'Suggest the eagles at Lake Josephine',s:'Free advice. Walt +1.',fn:()=>{A.h++;friendPts('walt',1);say('🧢 “Eagles. Huh. Kid likes birds of prey in video games.” Walt writes it down.')}},
+      arcNo('Walt','Fair enough. I’ll buy him a fishing pole and hope.')]);
+    else if(A.b===2) modal('🧢 Tyler and the woodpile','<p>Walt and Tyler pull up in the Legion pickup. “Kid wants to learn to split wood. I’ve got a bad shoulder and you’ve got a woodpile.”</p>',[
+      {l:'Teach him: 1 hour',s:'Your woodpile grows. Stress −3, Walt +1.',fn:()=>{A.h++;S.t+=60;phoneTick();adj('stress',-3);const U=UP();U.wood=Math.min(14,(U.wood||0)+4);homeAdj(2);friendPts('walt',1);say('🪓 Tyler splits four nights of firewood and asks zero questions about the Wi-Fi.')}},
+      arcNo('Walt','Next time. He’ll be back. He keeps saying he’ll be back.')]);
+    else modal('🧢 Tyler’s send-off','<p>Walt is a little misty. “Tyler wrote his history paper on my unit. Got an A. The Legion’s doing a potluck send-off tonight before he catches the boat. You’re invited.”</p>',[
+      {l:'Go to the send-off: 1 hour, $10 for the kitty',s:'Dinner handled. Stress −8, Walt +2.',dis:S.money<10,fn:()=>{S.t+=60;phoneTick();money(-10);S.ateOut=day();adj('stress',-8);friendPts('walt',2);
+        if(A.h>=2){S.phone=100;S.phoneT=S.t;say('🧢 Tyler hands you his spare battery pack, fully charged. “For when the power goes out. Grandpa says it always does.” Your phone is at 100%.')}
+        else say('🧢 Three kinds of casserole, one speech, and Walt pretending he has something in his eye.')}},
+      arcNo('Walt','I’ll tell him you said so long.')]);
+    return {stop:true};
+  }});
+defEvent({id:'arc_hendersons',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>atHomeWake(ctx)&&arcReady('hendersons')&&(S.arcs.hendersons.b<2||day()>=5),
+  run(){const A=arcBeat('hendersons');
+    if(A.b===1) modal('💍 The Hendersons’ fiftieth','<p>Mrs. Henderson calls over the fence. “Fifty years at the end of the month! We’re having folks to the clubhouse. Could you help me address invitations? My hands aren’t what they were.”</p>',[
+      {l:'Help with invitations: 45 min',s:'Stress −2. Hendersons +1.',fn:()=>{A.h++;S.t+=45;phoneTick();adj('stress',-2);friendPts('hendersons',1);say('💍 Forty-one envelopes. Half the addresses are just “the blue house past the lake.” The mail carrier will know.')}},
+      arcNo('The Hendersons','Oh, don’t you worry. I’ll make Dale do it.')]);
+    else if(A.b===2) modal('💍 About the cake','<p>“We wanted a bakery cake from Lakewood,” Mr. Henderson says, “but have you seen what they charge for the ferry? Chip in and we’ll get a sheet cake. Frosting’s frosting.”</p>',[
+      {l:'Chip in $20',s:'Hendersons +2.',dis:S.money<20,fn:()=>{A.h++;money(-20);friendPts('hendersons',2);say('💍 “Put your name on the card,” Mrs. Henderson insists. “Right under the grandkids.”')}},
+      {l:'Bake them something: 1 hour',s:'Uses 1 day of food. Stress −3, Hendersons +2.',dis:S.pantry<1,fn:()=>{A.h++;S.pantry--;S.t+=60;phoneTick();adj('stress',-3);friendPts('hendersons',2);say('💍 Your banana bread comes out lopsided. Mr. Henderson says lopsided is how you know it’s homemade.')}},
+      arcNo('The Hendersons','We’ll manage. We always have. Fifty years of managing.')]);
+    else modal('💍 Fifty years','<p>The anniversary brunch is this morning at the clubhouse. Half the island is coming, and somebody’s nephew brought a fiddle.</p>',[
+      {l:'Go to the brunch: 90 min',s:'Stress −12. Hendersons +2. Leftovers likely.',fn:()=>{S.t+=90;phoneTick();adj('stress',-12);S.pantry+=1;friendPts('hendersons',2);
+        if(A.h>=2){homeAdj(4);say('💍 They slow-dance to the fiddle. On the way out they press a framed photo of the ferry landing in 1976 into your hands. “For your wall.” And a foil brick of ham.')}
+        else say('💍 Toasts, a fiddle, and a foil brick of ham and cake for the road.')}},
+      {l:'Send a card instead',s:'They’ll understand. Mostly.',fn:()=>{friendPts('hendersons',0);say('💍 You leave a card in their mailbox. Mrs. Henderson waves it at you later, delighted.')}}]);
+  }});
+
 // ---- trip start (can block) ----
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
   cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&ctx.car.id==='isl'&&!ctx.o.started,
@@ -1419,6 +1542,7 @@ function actions(){
   else if(loc==='work'||loc==='office'||loc==='whse') a.push({ic:'🏢',l:'You don’t work here',s:S.emp?`You work at ${L[curJob().loc].name}.`:'Not right now, anyway.',dis:true});
   jobActions(a,loc);
   favorActions(a,loc);
+  lifeActions(a,loc);
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});

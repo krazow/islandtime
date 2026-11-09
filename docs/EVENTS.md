@@ -169,3 +169,27 @@ State lives in `S.up` (see `upInit()`); `upkeepNight()` advances it every night 
 | `friend_dropin` | wake | weekend, you have friends; much likelier when Home is high |
 
 Also: potholes multiply `flat_tire` from home (×2 / ×4), an unserviced generator can fail (`genFails()`), a maintained well makes `no_water` rarer, and outages that spoil food set `S.up.fridge`. Contractor visits are `S.up.jobs` (`UP_JOBS`), delayed by ferry outages like grocery delivery.
+
+## Island life: community calendar and friend arcs
+
+Search `island life: community calendar` in `index.html`. State: `S.cal` (community events: dayKey you attended each one, the week-mode bazaar roll `bzWk`/`bz`, and `chim` for the one-time chimney check) and `S.arcs` (`{sam,walt,hendersons}` each `{b: beats done, k: dayKey of last beat, h: times you helped}`, plus `day` = dayKey of the last beat of any arc). Both are in `baseState()`, so `migrate()` fills them in for old saves. Actions come from `lifeActions(a, loc)`, called in `actions()` next to `favorActions`.
+
+**Community calendar** (`LIFE_CAL`; each has a wake notice with `noScale`, a tile, and an action at its place; before/after the window the action shows as disabled):
+
+| id | hook | when | action |
+|---|---|---|---|
+| `veterans_day` | wake | month mode, week 2 Wed (Nov 11) | the Riv, 11:00–11:40 AM: 60 min, stress −6, Walt +2 (or meet Walt) |
+| `craft_bazaar` | wake | Sat, month weeks 3–4; week mode 60% roll | Lake Josephine (clubhouse), 10 AM–3 PM: wreath $25 (Home +3, stress −4) or browse (stress −2); may meet `bev` |
+| `lake_cleanup` | wake | Sun, month week 2; week mode always | Lake Josephine, 8–11 AM start: 120 min, stress −4, `S.rep+1` if it exists, a friend +2 (or meet the Hendersons) |
+| `fire_drill` | wake | Thu, month week 3; week mode always | the old store (fire station), 5:30–6:30 PM start: 90 min, stress −3, health +2, Rusty +2 (or meet him), `S.up.chimney=0` once |
+| `bev_bread` | wake | Bev is a close friend, 35% | +1 day of food |
+
+New friend `bev` (Bev the knitter): level 2 takes $5 off the wreath, level 3 unlocks `bev_bread`.
+
+**Friend arcs** (`arcReady(id)`): beat 1 once you know the friend (not the same morning you met); beat 2 at good friend or from week 3; beat 3 at close friend or in week 4. Beats are at least 2 days apart, and only one arc beat fires per day. Each beat is a modal; the beat counts when it fires, and "Not now" moves the story on without helping (`h` decides the finale's bonus).
+
+| id | hook | beats |
+|---|---|---|
+| `arc_sam` | wake (60%) | scrape the skiff (1 h) · chip in $25 or sand (1 h) · launch day (1 h; if you helped: stress −10, +2 food) |
+| `arc_walt` | arrive at the Riv, landing, old store, lake or home, 9 AM–8:30 PM (50%) | show Tyler around / suggest eagles · teach him to split wood (+4 nights of firewood) · Legion send-off ($10, dinner; helped twice: phone to 100%) |
+| `arc_hendersons` | wake (60%; finale on weekends only) | address invitations (45 min) · $20 for the cake or bake (−1 food) · anniversary brunch (90 min, stress −12, +1 food; helped twice: Home +4) |
