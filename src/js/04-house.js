@@ -171,8 +171,8 @@ function postReplies(j){
 }
 function helpActions(a,d,m){
   const c=COMM(),dk=dayKey(),phoneOK=S.phone>0,pj=upJob('post'),gj=upJob('gus');
-  a.push({cat:'yard',ic:'🧰',l:gj?'Gus is coming (probably)':'Call Gus, the island handyman',due:false,s:gj?`He said ${fmtAbs(gj.due)}. Ish. He lives here, so the ferry can’t stop him.`:!phoneOK?'Your phone is dead.':`Fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries. Tomorrow or the day after.`,
-    dis:!!gj||!phoneOK,fn:gusModal});
+  a.push({cat:'yard',ic:'🧰',l:gj?'Gus is coming (probably)':'Call Gus from your 📱 phone (Phone → Island numbers)',due:false,s:gj?`He said ${fmtAbs(gj.due)}. Ish. He lives here, so the ferry can’t stop him.`:!phoneOK?'Your phone is dead.':`The island handyman fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries.`,
+    dis:true,fn:gusModal});
   a.push({cat:'phone',ic:'📣',l:pj?'Waiting for replies in the community group':c.post===dk?'Posted in the community group today':'Post asking for help',s:pj?`Replies should trickle in around ${fmt(pj.due)}.`:c.post===dk?'One post a day, or people start muting you.':!phoneOK?'Your phone is dead.':'Ask the Anderson Island community group. 10 min. Answers come in a few hours.',
     dis:!!pj||c.post===dk||!phoneOK,fn:postModal});
   const ok=m>=480&&m<1140;
