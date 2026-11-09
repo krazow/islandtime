@@ -53,3 +53,15 @@ function phoneRender(){
 }
 // called from processTimed(): plug-ins deliver replies, calls etc. on game time
 function phoneTimed(){for(const f of PH_TIMERS){try{f()}catch(e){console.error(e)}}}
+// ---- shared rules for Messages and Calls ----
+// Is a friend reachable right now? 'asleep' (10:30 PM–6:30 AM), 'busy' (sometimes), or 'ok'.
+function phoneFriendAvail(id){const m=tod();if(m>=1350||m<390)return 'asleep';const f=S.friends[id];if(!f)return 'none';
+  const k=`${id}:${dayKey()}:${Math.floor(m/120)}`;let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))>>>0;   // stable per 2-hour block
+  return (h%100)<(f.lvl>=3?8:f.lvl>=2?15:22)?'busy':'ok'}
+// Being in touch builds friendships, but only once per friend per day (texting and calling share this).
+function phoneSocial(id,n){const P=PH();P.social=P.social||{};if(P.social[id]===dayKey())return false;P.social[id]=dayKey();friendPts(id,n||1);return true}
+// Ask Sam for a ride to the ferry landing (from home, morning). Returns 'yes' | 'no' | 'not-now'.
+function phoneAskRide(){const P=PH();if(!S.friends.sam||S.loc!=='home'||tod()>=630)return 'not-now';
+  if(P.rideAsk===dayKey())return S.ev.flags.samRide===day()?'yes':'no';P.rideAsk=dayKey();
+  const lv=flv('sam'),ok=Math.random()<(lv>=3?0.95:lv>=2?0.85:0.5);
+  if(ok){S.ev.flags.samRide=day();return 'yes'}S.ev.flags.samNo=day();return 'no'}

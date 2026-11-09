@@ -384,7 +384,7 @@ function travelOpts(dest){
   if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
   else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
   if(side==='I'){
-    if(S.friends.sam&&S.loc==='home'&&dest==='aiDock'&&(S.ev.flags.samRide===day()||(flv('sam')>=2&&tod()<600&&S.phone>0&&S.ev.flags.samNo!==day()))) o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
+    if(S.friends.sam&&S.loc==='home'&&dest==='aiDock'&&S.ev.flags.samRide===day()) o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
     if(!fueled){o.push({m:'walk',l:`🚶 ${Math.round(base*4*inj)} min`,min:Math.round(base*4*inj),dis:!canWalkCarry()});
       o.push({m:'hitch',l:'👍 Hitch a ride',min:base+15,dis:!canWalkCarry()});}
   } else if(!fueled){

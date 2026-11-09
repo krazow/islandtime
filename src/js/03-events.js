@@ -124,7 +124,7 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 function powerOut(){return S.power&&S.t<S.power.end}
 function meet(id,name,how){if(S.friends[id]){friendPts(id,1);return false}S.friends[id]={name,how,day:day(),lvl:1,pts:0};say(`🤝 New friend: <b>${name}</b> (${how}).`);return true}
 const PERKS={
-  sam:{2:'Sam will drive you to the ferry most mornings: text him from home.',3:'Sam brings you a box of groceries from his mainland runs.'},
+  sam:{2:'Sam will drive you to the ferry most mornings: ask on your 📱 phone before 10:30.',3:'Sam brings you a box of groceries from his mainland runs.'},
   walt:{2:'Walt puts in a good word for you: better odds at job interviews.',3:'You’re on the list for the Legion’s Friday fish fry.'},
   fred:{2:'Fred always passes along what his deck-crew buddy hears.',3:'Fred keeps an eye on your car at the landing and tops it off from “a friend.”'},
   hendersons:{2:'The Hendersons invite you to dinner on weekends.',3:'The Hendersons drop off leftovers when the power’s out.'},
