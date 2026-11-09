@@ -37,6 +37,9 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.9
+- **My priorities** (📋 To-do tab): your own editable, ordered list under "This week". Add anything, tap 📌 on a weekly task to pin it, reorder with ▲▼, edit ✏️, delete 🗑️, and tap an item to check it off. Saved with your game.
+
 ### 1.8.1 fixes
 - **Month mode is survivable:** waiting for boats is less stressful, days off actually restore you, burnout costs less, and after week 1 the ankle injury is an occasional mishap instead of a near-certainty every week.
 - **Stuck at the terminal:** tapping "Drive on" after the last boat now shows a clear "No more boats tonight" pop-up instead of silently adding stress each time.

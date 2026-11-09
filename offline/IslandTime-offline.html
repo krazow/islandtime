@@ -116,6 +116,19 @@ button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select
 .todo{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
 .todo .ck{font-size:20px;width:26px;flex:none;text-align:center}
 .todo b{display:block;font-size:15px}.todo span{font-size:12.5px;color:var(--mute)}
+.todo .pin{margin-left:auto;flex:none;border:1px solid var(--line);background:none;border-radius:8px;padding:4px 7px;font-size:13px;color:var(--mute);cursor:pointer}
+.prio{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.prio .rk{flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink,#2a3d45);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.prio.done .rk{background:var(--line);color:var(--mute)}
+.prio .pt{flex:1;min-width:0;font-size:15px;overflow-wrap:anywhere;cursor:pointer}
+.prio.done .pt{text-decoration:line-through;color:var(--mute)}
+.prio .pb{display:flex;gap:4px;flex:none}
+.prio .pb button,.prio-add button{border:1px solid var(--line);background:none;border-radius:8px;min-width:32px;height:32px;font-size:14px;cursor:pointer;color:inherit}
+.prio .pb button:disabled{opacity:.3;cursor:default}
+.prio-add{display:flex;gap:6px;margin:8px 0 2px}
+.prio-add input{flex:1;min-width:0;font:inherit;font-size:15px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
+.prio-add button{padding:0 12px;font-weight:700}
+.prio-empty{font-size:13px;color:var(--mute);padding:6px 2px}
 .log p{margin:0;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.4}
 .log p em{font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums;margin-right:6px;font-size:12px}
 /* event acknowledgement tiles */
@@ -297,7 +310,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.8.1', SAVE_SCHEMA=6;
+const APP_VERSION='1.9.0', SAVE_SCHEMA=6;
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
 const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
@@ -400,7 +413,7 @@ function baseState(){
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
     cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
-    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],alertsSeen:{},over:false,
+    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},tips:{seen:[]},friends:{},power:null,battery:'ok',
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
@@ -1798,9 +1811,36 @@ function todoItems(){
   if(S.injury) it.push({ok:S.injury.treated,fail:false,l:'Get your ankle treated',s:'Urgent Care in DuPont, 8 AM–8 PM. Nothing on the island.',urgent:!S.injury.treated});
   return it;
 }
+// ---- my priorities: the player's own editable, ordered list (saved with the game) ----
+const PRIO_MAX=15, PRIO_LEN=80;let PRIO_ED='';
+function prioView(){
+  const P=S.prios||[],open=P.filter(q=>!q.done).length;
+  let rank=0;
+  const rows=P.map((q,i)=>{const r=q.done?'✓':++rank;return `<div class="prio ${q.done?'done':''}"><span class="rk">${r}</span><span class="pt" onclick="prioToggle(${i})" title="Tap to mark done">${esc(q.t)}</span><span class="pb">
+    <button aria-label="Move up" ${i===0?'disabled':''} onclick="prioMove(${i},-1)">▲</button><button aria-label="Move down" ${i===P.length-1?'disabled':''} onclick="prioMove(${i},1)">▼</button><button aria-label="Edit" onclick="prioEdit(${i})">✏️</button><button aria-label="Delete" onclick="prioDel(${i})">🗑️</button></span></div>`}).join('');
+  return `<div class="sect">My priorities${P.length?` · ${open} open`:''}</div>`+
+    (rows||'<div class="prio-empty">Your own list, in your order. Add anything, or tap 📌 on an item above. Tap an item to check it off.</div>')+
+    (P.length<PRIO_MAX?`<div class="prio-add"><input id="prioIn" maxlength="${PRIO_LEN}" placeholder="Add a priority…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();prioAdd(this.value,true)}"><button onclick="prioAdd(document.getElementById('prioIn').value,true)">Add</button></div>`:`<div class="prio-empty">That’s ${PRIO_MAX}: the most the list holds.</div>`)+
+    (P.some(q=>q.done)?`<div class="prio-add"><button onclick="prioClear()">Clear checked-off items</button></div>`:'');
+}
+function prioSave(focus){render();if(focus)setTimeout(()=>{const i=document.getElementById('prioIn');i&&i.focus()},0)}
+window.prioAdd=(t,focus)=>{t=String(t||'').replace(/\s+/g,' ').trim().slice(0,PRIO_LEN);if(!t)return;S.prios=S.prios||[];if(S.prios.length>=PRIO_MAX)return;
+  S.prios.push({t,done:false});sfx&&sfx('info');prioSave(focus)};
+window.prioToggle=i=>{const q=S.prios[i];if(!q)return;q.done=!q.done;
+  if(q.done){S.prios.splice(i,1);S.prios.push(q)}else{S.prios.splice(i,1);const k=S.prios.findIndex(x=>x.done);S.prios.splice(k<0?S.prios.length:k,0,q)}prioSave()};
+window.prioMove=(i,dir)=>{const P=S.prios,j=i+dir;if(j<0||j>=P.length)return;[P[i],P[j]]=[P[j],P[i]];prioSave()};
+window.prioDel=i=>{S.prios.splice(i,1);prioSave()};
+window.prioClear=()=>{S.prios=S.prios.filter(q=>!q.done);prioSave()};
+window.prioEdit=i=>{const q=S.prios[i];if(!q)return;PRIO_ED=q.t;
+  modal('✏️ Edit priority',`<input class="nm-in" id="prioEd" maxlength="${PRIO_LEN}" autocomplete="off" value="${esc(q.t)}" oninput="PRIO_ED=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();MBTN(0)}">`,[
+    {l:'Save',fn:()=>{const v=String(PRIO_ED).replace(/\s+/g,' ').trim().slice(0,PRIO_LEN);if(v)q.t=v}},
+    {l:'Cancel',fn:()=>{}}]);
+  setTimeout(()=>{const e=document.getElementById('prioEd');if(e){e.focus();e.select()}},60)};
 function todoView(){
   const fr=Object.values(S.friends);
-  return `<div class="sect">This week</div>`+todoItems().map(x=>`<div class="todo"><span class="ck">${x.ok?'✅':x.fail?'❌':x.urgent?'⚠️':'⬜'}</span><div><b>${x.l}</b><span>${x.s}</span></div></div>`).join('')+
+  const P=S.prios||[];
+  return `<div class="sect">This week</div>`+todoItems().map(x=>`<div class="todo"><span class="ck">${x.ok?'✅':x.fail?'❌':x.urgent?'⚠️':'⬜'}</span><div><b>${x.l}</b><span>${x.s}</span></div>${!x.ok&&!x.fail&&!P.some(q=>q.t===x.l&&!q.done)&&P.length<PRIO_MAX?`<button class="pin" title="Add to my priorities" onclick="prioAdd(${esc(JSON.stringify(x.l))})">📌</button>`:''}</div>`).join('')+
+  prioView()+
   ((S.quests||[]).some(q=>!q.done)?`<div class="sect">Favors</div>`+S.quests.filter(q=>!q.done).map(q=>{const F=FAVORS[q.who];return `<div class="todo"><span class="ck">🙏</span><div><b>${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:''}: ${F.t.split(' (')[0]}</b><span>${q.step==='buy'?`Buy it at ${L[F.at].name}`:q.step==='deliver'?`Deliver at ${L[F.back].name}`:`At ${L[F.at].name}`} · due ${DAYS[q.due]}</span></div></div>`}).join(''):'')+
   (fr.length?`<div class="sect">Island friends</div>`+Object.entries(S.friends).map(([id,f])=>`<div class="todo"><span class="ck">${'💛'.repeat(f.lvl||1)}</span><div><b>${f.name} · ${LVL_NAME[f.lvl||1]}</b><span>Met ${DAYS[f.day]}: ${f.how}.${(PERKS[id]||{})[(f.lvl||1)+1]?` Next: ${(PERKS[id]||{})[(f.lvl||1)+1]}`:''}</span></div></div>`).join(''):'')+
   `<div class="sect">Survive until Sunday night</div><div class="rules"><p>Out of cash? Ferry fares, rideshares and motels go on the credit card, and it counts against your score.</p><p>Health 0: medevac off the island. Job 0: fired. Stress is everything.</p><p>Score: cash + health + job − stress, plus bonuses for not getting stranded.</p></div>`;
