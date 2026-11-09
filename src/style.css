@@ -297,3 +297,7 @@ html.hc .hh-letter{background:#fff;border-color:#000}
 .season-end b{font-weight:700}
 .scene svg .snowline{filter:drop-shadow(0 -1px 0 rgba(255,255,255,.6))}
 html.rm .scene svg .snowline{filter:none}
+/* apps: health */
+.ph-rep{display:flex;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.ph-rep>span{font-size:26px}.ph-rep b{display:block}.ph-rep small{display:block;font-size:12px;color:var(--mute)}
+.ph-grp{font-size:12px;line-height:1.4;padding:7px 2px;border-bottom:1px solid var(--line)}.ph-grp small{display:block;font-weight:700;color:var(--mute);font-size:11px}

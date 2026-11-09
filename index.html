@@ -316,6 +316,10 @@ html.hc .hh-letter{background:#fff;border-color:#000}
 .season-end b{font-weight:700}
 .scene svg .snowline{filter:drop-shadow(0 -1px 0 rgba(255,255,255,.6))}
 html.rm .scene svg .snowline{filter:none}
+/* apps: health */
+.ph-rep{display:flex;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.ph-rep>span{font-size:26px}.ph-rep b{display:block}.ph-rep small{display:block;font-size:12px;color:var(--mute)}
+.ph-grp{font-size:12px;line-height:1.4;padding:7px 2px;border-bottom:1px solid var(--line)}.ph-grp small{display:block;font-weight:700;color:var(--mute);font-size:11px}
 </style>
 </head>
 <body>
@@ -2952,7 +2956,7 @@ phoneOnTime(()=>{
   const id=pick(ids);c.ring={id,t:S.t,until:S.t+30};
   phoneNotify('📞',`${callWho(id,1)} ${/^the /i.test(callWho(id,1))?'are':'is'} calling`,'Open your 📱 phone to answer');
 });
-// ---------------- 📱 phone: apps (App Store, Clock, installable apps) ----------------
+// ---------------- 📱 phone: apps (App Store, Clock, Island Group, retired-app cleanup) ----------------
 // HOW TO ADD AN APP (plug-in pattern)
 //   definePhoneApp({
 //     id:'myapp', name:'My App', ic:'🧩', order:60,   // order sorts icons on the home screen
@@ -2965,7 +2969,8 @@ phoneOnTime(()=>{
 //   - Anything that should happen while game time passes goes in phoneOnTime(fn).
 //   - A phBtn handler that spends game time should do S.t+=n and then afterAction() (like actions on the main screen).
 //   - Opening a game modal (modal(), jobModal() …) from inside the phone is fine: modals show above the phone.
-// Each app below is a small self-contained block; the five installable ones are PLACEHOLDERS for the real apps.
+// The other installable apps live in their own files (19-apps-travel.js, 20-apps-money.js, 21-apps-health.js …).
+// An app that is taken out of the game goes in PHONE_RETIRED below, so old saves get their slots back.
 const phEsc=s=>typeof esc==='function'?esc(s):String(s);
 const phCard=(h,cls)=>`<div class="ph-card ${cls||''}">${h}</div>`;
 const phNote=h=>`<p class="ph-note">${h}</p>`;
@@ -3001,83 +3006,39 @@ definePhoneApp({id:'clock',name:'Clock',ic:'⏰',builtin:true,order:30,desc:'You
       phCard(`🔌 <b>Plug-in clock:</b> ${A.plug.on?fmt(A.plug.time):'off'}<br>📱 <b>Phone alarm:</b> ${A.phone.on?fmt(A.phone.time):'off'}`)+
       phNote(`You’ll wake to: ${alarmTxt()}.`)+phBtn('⏰ Set alarms',()=>alarmModal(),{cls:'primary',sub:'The plug-in clock, your phone, or both as backups.'})}});
 
-// ---- 📣 Island Group (PLACEHOLDER — replace with the real app) ----
-// The Anderson Island community group: posting for help lives here now (it used to be an action on the main screen).
+// ---- 📣 Island Group ----
+// The Anderson Island community group: posting for help lives here (it used to be an action on the main screen).
+// Your reputation sits on top; 15-economy.js appends the perks it unlocks. The last few replies are kept in PH().grpLog.
+const GRP_LOG_MAX=3;
 definePhoneApp({id:'group',name:'Island Group',ic:'📣',order:60,size:'38 MB',desc:'The Anderson Island community group. Ask neighbors for help.',
   badge:()=>PH().grpNew?1:0,
-  view(){const P=PH(),c=COMM(),dk=dayKey(),pj=upJob('post');let h='';
-    if(P.grpNew){h+=phCard('📣 New replies to your post. (See what happened in your log.)','ok');P.grpNew=false}
+  view(){const P=PH(),c=COMM(),dk=dayKey(),pj=upJob('post'),r=S.rep||0;let h='';
+    if(P.grpNew){h+=phCard('📣 New replies to your post.','ok');P.grpNew=false}
+    h+=`<div class="ph-rep"><span>🤲</span><div><b>Island reputation: ${r}</b><small>${r>=8?'Half the island owes you a casserole.':r>=3?'People know your car. In a good way.':'Mostly known as “the one who moved into that house.”'}</small></div></div>`;
     h+=phNote('Lost dogs, ferry complaints, free firewood, and neighbors who show up.');
     h+=phCard(pj?`⏳ <b>Waiting for replies.</b> They should trickle in around ${fmt(pj.due)}.`:c.post===dk?'✅ <b>You posted today.</b> One post a day, or people start muting you.':'Nothing posted today.');
     h+=phBtn('📣 Post asking for help',()=>postModal(),{cls:'primary',dis:!!pj||c.post===dk||!phoneCan(),sub:pj||c.post===dk?'Once a day.':'10 min. Answers come in a few hours.'});
-    h+=phNote(`Island reputation: ${S.rep||0}. The more you help others, the better your odds.`);
+    const lg=P.grpLog||[];
+    if(lg.length)h+=`<div class="ph-sub">Recent replies</div>`+lg.slice().reverse().map(e=>`<div class="ph-grp"><small>${DAYS[e.d]||''}</small>${e.s}</div>`).join('');
+    h+=phNote('The more you help others, the better your odds.');
     return h}});
-// light up the badge when replies arrive (wraps the house module's handler)
-if(typeof postReplies==='function'){const _postReplies=postReplies;postReplies=function(j){const r=_postReplies(j);if(S&&phoneInstalled('group'))PH().grpNew=true;return r}}
+// light up the badge and keep the last few replies when they arrive (wraps the house module's handler)
+if(typeof postReplies==='function'){const _postReplies=postReplies;postReplies=function(j){const n=S.log.length,r=_postReplies(j);
+  if(S&&phoneInstalled('group')){const P=PH();P.grpNew=true;const e=S.log.slice(n).find(x=>/^📣/.test(x.s));
+    if(e){P.grpLog=(P.grpLog||[]).concat({d:day(),s:e.s.replace(/^📣\s*/,'')}).slice(-GRP_LOG_MAX)}}
+  return r}}
 
-// ---- ⛴️ Ferry Alerts (PLACEHOLDER — replace with the real app) ----
-function phoneSailings(side,n){   // the next n sailings you could still make from this side (known outages only)
-  const deps=side==='I'?AI_DEPS:ST_DEPS,out=[];
-  for(let d=day();d<day()+3&&out.length<n;d++)for(const dep of deps){if(out.length>=n)break;
-    const s=sailing(side,d,dep,'walk',true);if(S.t>s.abs-20||s.cancel)continue;out.push(s)}
-  return out}
-function phoneLastBoat(side){const deps=side==='I'?AI_DEPS:ST_DEPS;
-  for(let i=deps.length-1;i>=0;i--){const s=sailing(side,day(),deps[i],'walk',true);if(s.cancel)continue;return s.abs>=S.t-20?s:null}return null}
-definePhoneApp({id:'ferry',name:'Ferry Alerts',ic:'⛴️',order:61,size:'22 MB',desc:'Next sailings, rider alerts and fog delays.',
-  badge:()=>activeOutage()?1:0,
-  view(){const side=L[S.loc].side,from=side==='I'?'Anderson Island':'Steilacoom',d=day();let h='';
-    const known=S.week.b.filter(b=>b.start<=S.t&&b.end>S.t);
-    for(const b of known)h+=phCard(`🚨 <b>Rider alert:</b> ferry service suspended (${phEsc(b.cause)}).`,'warn');
-    if(S.week.fog[d]&&tod()<660)h+=phCard(`🌫️ <b>Fog:</b> morning sailings running ${S.week.fog[d]}+ min late.`,'warn');
-    if(!known.length&&!(S.week.fog[d]&&tod()<660))h+=phCard('✅ No alerts right now.','ok');
-    const nx=phoneSailings(side,3);
-    h+=`<div class="ph-sub">Next sailings from ${from}</div>`;
-    h+=nx.length?nx.map(s=>`<div class="ph-li"><b>${fmtAbs(s.abs)}</b><span>${s.passenger?'🚶 passenger-only backup boat':s.delay?`🌫️ ~${s.delay} min late`:'on time'}</span></div>`).join(''):'<div class="ph-li"><span>No sailings found.</span></div>';
-    const lb=phoneLastBoat(side);
-    h+=phCard(lb?`🌙 <b>Last boat tonight:</b> ${fmt(lb.dep)} from ${from}${lb.passenger?' (passenger-only)':''}.`:`🌙 <b>No more boats from ${from} tonight.</b>`);
-    h+=phNote('Be in line 20 minutes before a boat leaves.');
-    return h}});
-
-// ---- 🔎 Job Hunt (PLACEHOLDER — replace with the real app) ----
-definePhoneApp({id:'jobs',name:'Job Hunt',ic:'🔎',order:62,size:'55 MB',desc:'Job listings on the mainland. Set up interviews.',
-  badge:()=>!S.emp&&!S.interview?1:0,
-  view(){const J=curJob(),I=S.interview;let h='';
-    h+=phCard(J?`💼 You work as <b>${J.n}</b>.`:'💼 You’re out of work.',J?'':'warn');
-    if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${DAYS[I.day]} ${fmt(I.time)} at ${L[I.loc].name}.`);
-    h+=phBtn('🔎 Browse job listings',()=>jobModal(),{cls:'primary',sub:J?'Switching jobs means quitting.':'Find something and set up an interview.'});
-    return h}});
-
-// ---- 🔦 Flashlight (PLACEHOLDER — replace with the real app) ----
-// On: drains about 1% battery per 10 game minutes. In a power outage at home, switching it on once calms you a little.
-const FL=()=>{const P=PH();P.flash=P.flash||{on:false,t:0,acc:0,out:-1};return P.flash};
-function phoneFlash(on){const f=FL();if(on===f.on)return;f.on=on;f.t=S.t;f.acc=0;
-  if(on){if(powerOut()&&S.loc==='home'&&f.out!==S.power.start){f.out=S.power.start;adj('stress',-3);say('🔦 You flick on the phone’s flashlight. The dark house feels a little less spooky.')}
-    else say('🔦 Flashlight on.')}
-  else say('🔦 Flashlight off.')}
-phoneOnTime(()=>{const f=S&&S.ph&&S.ph.flash;if(!f||!f.on)return;
-  if(Math.floor(f.t/1440)!==day()){f.on=false;f.t=S.t;f.acc=0;return}   // you slept: it got switched off
-  const el=S.t-f.t;if(el<=0)return;f.t=S.t;f.acc+=el/10;const n=Math.floor(f.acc);
-  if(n>0){f.acc-=n;phoneUse(n)}
-  if(!phoneCan()){f.on=false;say('🔦 The flashlight drained your phone. It’s dead.')}});
-definePhoneApp({id:'flash',name:'Flashlight',ic:'🔦',order:63,size:'4 MB',desc:'A light for power outages and dark driveways. Uses battery.',
-  badge:()=>FL().on?1:0,
-  view(){const f=FL();
-    return `<div class="ph-flash ${f.on?'on':''}">🔦</div>`+
-      phBtn(f.on?'Turn off':'Turn on',()=>phoneFlash(!f.on),{cls:'primary',sub:'Uses about 1% battery every 10 minutes.'})+
-      (powerOut()&&L[S.loc].side==='I'?phNote('⚡ The island’s power is out.'):'')}});
-
-// ---- 📝 Notes (PLACEHOLDER — replace with the real app) ----
-// Shows the same list as "My priorities" in the 📋 To-do tab (S.prios).
-const NOTE_TPL=['Buy groceries on the mainland','Fill up with gas in Steilacoom','Charge my phone','Pay rent','Call Gus about the house','Catch an earlier boat'];
-definePhoneApp({id:'notes',name:'Notes',ic:'📝',order:64,size:'12 MB',desc:'Your priorities list, in your pocket.',
-  view(){const P=S.prios||[],full=P.length>=PRIO_MAX;let h='';
-    h+=P.length?P.map((q,i)=>`<button class="ph-row ph-todo ${q.done?'done':''}" onclick="prioToggle(${i})"><span class="ph-ck">${q.done?'☑':'☐'}</span><b>${phEsc(q.t)}</b></button>`).join('')
-      :phNote('No notes yet. Same list as “My priorities” in the 📋 To-do tab.');
-    if(full)h+=phNote(`That’s ${PRIO_MAX}: the most the list holds.`);
-    else{h+=`<div class="prio-add ph-add"><input id="phNoteIn" maxlength="${PRIO_LEN}" placeholder="New note…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();prioAdd(this.value)}"><button onclick="prioAdd(document.getElementById('phNoteIn').value)">Add</button></div>`;
-      h+=`<div class="ph-sub">Quick add</div>`+NOTE_TPL.filter(t=>!P.some(q=>q.t===t)).slice(0,4).map(t=>phBtn('＋ '+t,()=>prioAdd(t))).join('')}
-    if(P.some(q=>q.done))h+=phBtn('Clear checked-off notes',()=>prioClear());
-    return h}});
+// ---- 🧹 retired apps ----
+// Apps that were taken out of the game. An old save that still has one installed gets the slot back on load, and a note once.
+const PHONE_RETIRED={ferry:'Ferry Alerts',jobs:'Job Hunt',flash:'Flashlight',notes:'Notes'};
+function phoneRetire(st){const P=st&&st.ph;if(!P||!Array.isArray(P.apps))return [];
+  const gone=P.apps.filter(id=>!phoneApp(id));if(!gone.length)return [];
+  P.apps=P.apps.filter(id=>phoneApp(id));delete P.flash;
+  return gone.map(id=>PHONE_RETIRED[id]||id)}
+{const _adopt=adopt;adopt=function(d){const gone=d&&d.S?phoneRetire(d.S):[];
+  if(gone.length){const t=`Some apps were retired in this update: ${andList(gone)}. Their slots are free again`;
+    d.notes=(d.notes||[]).concat(t.replace(/^S/,'s'));d.S.log=d.S.log||[];d.S.log.push({t:d.S.t,s:`📱 ${t}.`})}
+  return _adopt.apply(this,arguments)}}
 // ---------------- 💵 economy: more ways to earn, and what a good reputation gets you ----------------
 // Overtime at your job, weekend evening shifts at the Riv (as a second job), firewood and eggs for the neighbors,
 // and reputation unlocks (S.rep): 3 = first call on Gus, 5 = the co-op board, 8 = Island regular.
@@ -3989,6 +3950,86 @@ document.addEventListener('visibilitychange',()=>{try{ambUpdate()}catch(e){}});
 function ambSettingBtn(){const v=ambPref(),on=prefs().sound;
   return {l:`🌧️ Ambient sound: ${AMB_TXT[v]}`,s:on?'Rain, gulls at the docks, the ferry engine, a quiet forest at home. Tap to cycle Off → Low → Medium.':'Turn 🔊 Sound on to hear it. Tap to cycle Off → Low → Medium.',
     fn:()=>{setPref('amb',AMB_NEXT[v]);openSettings()}}}
+// ---------------- 📱 apps: health (Telehealth) ----------------
+// 🩺 Telehealth: video visits with a doctor. Needs real signal: the mainland (4 bars) or the Riv's Wi-Fi.
+// On the island's one bar the video freezes on your own face. One visit a day: 20 min, $25 copay, battery.
+//   - 💊 renew the prescription: mail-order (+$15 for the meds), lands in your mailbox at 1 PM the next day.
+//     Saves the pharmacy trip, not the copay. Wednesday to Saturday only (the refill is due Thursday).
+//   - 😮‍💨 stress advice (stress −6) · 🤒 run-down advice (health +3)
+//   - 🤕 the ankle: no visit, no charge, just “go to Urgent Care”. It doesn't replace the Thursday checkup either.
+// State: PH().tele = {visit: dayKey of today's visit, mail: dayKey the refill arrives (-1 = none), msg: {h,t}}
+const TELE_COPAY=25, TELE_RX=15, TELE_MIN=20, TELE_BAT=8, TELE_MAIL=780;   // mail comes at 1 PM
+const TELE=()=>{const P=PH();P.tele=P.tele||{visit:-1,mail:-1};return P.tele};
+const teleWifi=()=>S.loc==='food';                                          // the Riv: the Wi-Fi password is taped to the register
+const teleOK=()=>phoneSignal()>=4||teleWifi();
+const teleMsg=(h,k)=>{TELE().msg={h,k,t:S.t}};
+function teleRxWhy(){const d=day(),T=TELE();
+  if(S.rx)return 'Already have this week’s refill.';
+  if(T.mail>=0)return 'Already in the mail.';
+  if(d<2)return 'Too early: the refill isn’t due until Thursday.';
+  if(d>5)return 'Too late for this week.';
+  return ''}
+function teleCall(){   // try to connect; false on one bar
+  if(teleOK())return true;
+  S.t+=5;phoneUse(2);
+  teleMsg('📶 Connecting… Connecting… the video freezes on your own face. One bar won’t carry a doctor. Try the mainland, or the Riv’s Wi-Fi.','warn');
+  say('📶 You try a video visit on one bar. The picture freezes on your own face, mid-blink. Call dropped.');
+  afterAction();return false}
+function teleVisit(kind){
+  const T=TELE(),dk=dayKey();
+  const cost=TELE_COPAY+(kind==='rx'?TELE_RX:0);
+  if(T.visit===dk||!phoneCan()||S.phone<TELE_BAT+2||(kind==='rx'&&teleRxWhy())||!canEssential(cost))return false;
+  if(!teleCall())return false;
+  T.visit=dk;money(-cost);phoneUse(TELE_BAT);S.t+=TELE_MIN;
+  const where=teleWifi()?'from a corner booth at the Riv':'from your car';
+  if(kind==='rx'){T.mail=dk+1;
+    say(`🩺 A video visit ${where}. The doctor renews your prescription in ninety seconds and spends the rest asking if you’re “getting outside.” It’s going out by mail: in your box tomorrow afternoon. $${cost} with the meds.`);
+    teleMsg(`💊 <b>Prescription renewed.</b> It’s in the mail: your box, tomorrow around ${fmt(TELE_MAIL)}. No pharmacy run.`,'ok')}
+  else if(kind==='stress'){adj('stress',-6);
+    say(`🩺 A video visit ${where}. You describe your commute. The doctor goes quiet, then teaches you a breathing exercise “for the ferry line.” It sort of works. Stress −6.`);
+    teleMsg('😮‍💨 <b>Breathe in for four, out for six.</b> Stress −6.','ok')}
+  else{adj('health',3);
+    say(`🩺 A video visit ${where}. Fluids, sleep, “maybe a vegetable.” You were hoping for something more dramatic. Health +3.`);
+    teleMsg('🤒 <b>Fluids, sleep, a vegetable.</b> Health +3.','ok')}
+  afterAction();return true}
+function teleAnkle(){
+  if(!phoneCan()||!S.injury||S.injury.treated)return false;
+  if(!teleCall())return false;
+  S.t+=5;phoneUse(1);
+  teleMsg('🤕 The nurse takes one look at your ankle on camera. “That’s an Urgent Care thing. DuPont, 8 to 8. Don’t walk on it.” No charge for being told.','warn');
+  say('🤕 Telehealth can’t wrap an ankle through a phone. “Urgent Care in DuPont,” the nurse says. No charge.');
+  afterAction();return true}
+// the refill lands in your mailbox (no phone needed: it's the mail)
+function teleMailCheck(){const P=S&&S.ph,T=P&&P.tele;if(!T||!(T.mail>=0))return;
+  const dk=dayKey();if(dk<T.mail||(dk===T.mail&&tod()<TELE_MAIL))return;
+  T.mail=-1;if(S.rx)return;S.rx=true;
+  say('📬 Your prescription came in the mail. A padded envelope, slightly damp. One less ferry.');
+  phoneNotify('📬','Prescription in the mailbox','Mail-order refill from Telehealth')}
+phoneOnTime(teleMailCheck);
+// a new week (month mode) starts clean
+if(typeof weekRollover==='function'){const _wr=weekRollover;weekRollover=function(){const P=S&&S.ph;if(P&&P.tele)P.tele.mail=-1;return _wr.apply(this,arguments)}}
+// the To-do item knows the refill is in the mail
+if(typeof todoItems==='function'){const _ti=todoItems;todoItems=function(){const it=_ti.apply(this,arguments),T=S&&S.ph&&S.ph.tele;
+  if(T&&T.mail>=0&&!S.rx){const x=it.find(i=>/prescription/.test(i.l||''));if(x){x.s=`In the mail from Telehealth: your box, ${T.mail>dayKey()?'tomorrow':'today'} around ${fmt(TELE_MAIL)}.`;x.urgent=false}}
+  return it}}
+
+definePhoneApp({id:'telehealth',name:'Telehealth',ic:'🩺',order:66,size:'64 MB',desc:'Video visits with a doctor. Needs real signal: the mainland, or the Riv’s Wi-Fi.',
+  badge:()=>{const d=day(),T=TELE();return d>=3&&d<=5&&!S.rx&&T.mail<0&&T.visit!==dayKey()?1:0},
+  view(){const T=TELE(),dk=dayKey(),ok=teleOK(),done=T.visit===dk,inj=S.injury&&!S.injury.treated,bat=S.phone>=TELE_BAT+2;let h='';
+    const M=T.msg&&T.msg.t===S.t?T.msg:null;if(M)h+=phCard(M.h,M.k);
+    h+=phCard(ok?(teleWifi()?'📶 <b>On the Riv’s Wi-Fi.</b> The password is taped to the register. Video works, mostly.':'📶 <b>Four bars.</b> Video works.')
+      :'📶 <b>One bar.</b> Video visits need the mainland, or the Riv’s Wi-Fi.',ok?'ok':'warn');
+    if(T.mail>=0)h+=phCard(`📬 Your refill is in the mail: ${T.mail>dk?'tomorrow':'today'} around ${fmt(TELE_MAIL)}.`);
+    if(done)h+=phNote('One visit a day. The doctor has other people’s commutes to hear about.');
+    const vis=(l,k,sub,dis)=>phBtn(l,()=>teleVisit(k),{cls:k==='rx'?'primary':'',dis:done||dis||!bat,sub:done?'One visit a day.':!bat?'Not enough battery for 20 minutes of video.':sub});
+    const rw=teleRxWhy(),rc=TELE_COPAY+TELE_RX;
+    h+=`<div class="ph-sub">Start a video visit · ${TELE_MIN} min · $${TELE_COPAY} copay</div>`;
+    h+=vis('💊 Renew my prescription','rx',rw||(day()===5?`$${rc} with the meds. By mail: lands Sunday, after tonight.`:`$${rc} with the meds. By mail, in your box tomorrow. No pharmacy run.`),!!rw||!canEssential(rc));
+    h+=vis('😮‍💨 I’m stressed out','stress','Advice. Stress −6.',!canEssential(TELE_COPAY));
+    h+=vis('🤒 I feel run down','health','Advice. Health +3.',!canEssential(TELE_COPAY));
+    if(inj)h+=phBtn('🤕 My ankle',()=>teleAnkle(),{sub:'A quick look on camera. No charge.'});
+    h+=phNote(`Doesn’t replace your in-person checkup${apptActive()?` (${DAYS[APPT_DAY]} 2:30 PM)`:''}: they can’t take your blood pressure through a phone. Can’t treat injuries either.`);
+    return h}});
 </script>
 </body>
 </html>

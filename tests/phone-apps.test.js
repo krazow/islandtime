@@ -1,6 +1,7 @@
 const { open, newGame, reload, noErrors, assert } = require('./helpers');
 
-const APPS = ['group', 'ferry', 'jobs', 'flash', 'notes'];
+const APPS = ['group'];
+const RETIRED = ['ferry', 'jobs', 'flash', 'notes'];
 const phoneText = page => page.evaluate(() => (document.getElementById('phoneUI') || {}).textContent || '');
 // click a button inside the phone by its label
 const tap = (page, label) => page.locator('#phoneUI button', { hasText: label }).first().click();
@@ -15,7 +16,9 @@ module.exports = [
     assert.match(home, /App Store/); assert.match(home, /Clock/); assert.match(home, /0\/5/);
     await page.evaluate(() => phoneGo('store'));
     const t = await phoneText(page);
-    for (const n of ['Island Group', 'Ferry Alerts', 'Job Hunt', 'Flashlight', 'Notes']) assert.ok(t.includes(n), 'store lists ' + n);
+    assert.ok(t.includes('Island Group'), 'store lists Island Group');
+    for (const n of ['Ferry Alerts', 'Job Hunt', 'Flashlight', 'Notes']) assert.ok(!t.includes(n), 'retired app not listed: ' + n);
+    assert.deepStrictEqual(await page.evaluate(ids => ids.filter(id => phoneApp(id)), RETIRED), [], 'retired apps are gone');
     assert.match(t, /0 of 5 slots used/);
     assert.match(t, /MB/);
     noErrors(errors);
@@ -25,14 +28,14 @@ module.exports = [
     await newGame(page);
     await page.evaluate(() => { S.loc = 'home'; S.t = 10 * 60; phoneOpen('store'); });
     const t0 = await page.evaluate(() => S.t);
-    await page.locator('#phoneUI .ph-store', { hasText: 'Ferry Alerts' }).locator('button', { hasText: 'Install' }).click();
-    const r = await page.evaluate(() => ({ dt: S.t, inst: phoneInstalled('ferry') }));
+    await page.locator('#phoneUI .ph-store', { hasText: 'Island Group' }).locator('button', { hasText: 'Install' }).click();
+    const r = await page.evaluate(() => ({ dt: S.t, inst: phoneInstalled('group') }));
     assert.strictEqual(r.dt - t0, 6); assert.ok(r.inst);
     assert.match(await phoneText(page), /installed in 6 minutes/);
-    assert.match(await page.evaluate(() => S.log.map(e => e.s).join(' ')), /Installed <b>Ferry Alerts<\/b>/);
-    await page.evaluate(() => { S.loc = 'stDock'; render(); });
+    assert.match(await page.evaluate(() => S.log.map(e => e.s).join(' ')), /Installed <b>Island Group<\/b>/);
+    await page.evaluate(() => { definePhoneApp({ id: 'extra', name: 'Extra', ic: '🧪', desc: 'A test app', view: () => '<p>x</p>' }); S.loc = 'stDock'; render(); });
     const t1 = await page.evaluate(() => S.t);
-    await page.locator('#phoneUI .ph-store', { hasText: 'Notes' }).locator('button', { hasText: 'Install' }).click();
+    await page.locator('#phoneUI .ph-store', { hasText: 'Extra' }).locator('button', { hasText: 'Install' }).click();
     assert.strictEqual(await page.evaluate(() => S.t) - t1, 1);
     assert.match(await phoneText(page), /installed in 1 minute\b/);
     noErrors(errors);
@@ -41,8 +44,9 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => {
+      for (let i = 1; i <= 4; i++) definePhoneApp({ id: 'fill' + i, name: 'Filler ' + i, ic: '🧪', desc: 'A test app', view: () => '<p>x</p>' });
       definePhoneApp({ id: 'extra', name: 'Extra', ic: '🧪', desc: 'A sixth app', view: () => '<p>x</p>' });
-      S.loc = 'stDock'; for (const id of ['group', 'ferry', 'jobs', 'flash', 'notes']) phoneInstall(id);
+      S.loc = 'stDock'; for (const id of ['group', 'fill1', 'fill2', 'fill3', 'fill4']) phoneInstall(id);
       phoneOpen('store');
     });
     assert.strictEqual(await page.evaluate(() => phoneFree()), 0);
@@ -50,13 +54,13 @@ module.exports = [
     assert.match(t, /5 of 5 slots used — remove an app to install another/);
     assert.ok(await page.locator('#phoneUI .ph-store', { hasText: 'Extra' }).locator('button[disabled]', { hasText: 'Install' }).count(), 'install disabled when full');
     assert.strictEqual(await page.evaluate(() => phoneStoreInstall('extra')), false);
-    await page.locator('#phoneUI .ph-store', { hasText: 'Flashlight' }).locator('button', { hasText: 'Remove' }).click();
-    assert.deepStrictEqual(await page.evaluate(() => [phoneFree(), phoneInstalled('flash')]), [1, false]);
+    await page.locator('#phoneUI .ph-store', { hasText: 'Filler 2' }).locator('button', { hasText: 'Remove' }).click();
+    assert.deepStrictEqual(await page.evaluate(() => [phoneFree(), phoneInstalled('fill2')]), [1, false]);
     await page.locator('#phoneUI .ph-store', { hasText: 'Extra' }).locator('button', { hasText: 'Install' }).click();
     assert.ok(await page.evaluate(() => phoneInstalled('extra')));
     noErrors(errors);
   } },
-  { name: 'each placeholder app opens without errors', fn: async ctx => {
+  { name: 'each built-in app and Island Group opens without errors', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(apps => { S.loc = 'stDock'; apps.forEach(phoneInstall); phoneOpen(); }, APPS);
@@ -86,54 +90,6 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => phoneApp('group').badge()), 1);
     noErrors(errors);
   } },
-  { name: 'Ferry Alerts shows next sailings, last boat and a known outage', fn: async ctx => {
-    const { page, errors } = await open(ctx);
-    await newGame(page);
-    await page.evaluate(() => { S.loc = 'home'; S.t = 9 * 60; phoneInstall('ferry'); phoneOpen('ferry'); });
-    let t = await phoneText(page);
-    assert.match(t, /Next sailings from Anderson Island/); assert.match(t, /Last boat tonight/);
-    assert.strictEqual(await page.locator('#phoneUI .ph-li').count(), 3);
-    await page.evaluate(() => { S.week.b.push({ start: S.t - 10, end: S.t + 200, cause: 'test engine failure' }); render(); });
-    t = await phoneText(page);
-    assert.match(t, /Rider alert/); assert.match(t, /test engine failure/);
-    noErrors(errors);
-  } },
-  { name: 'Job Hunt opens the job listings', fn: async ctx => {
-    const { page, errors } = await open(ctx);
-    await newGame(page);
-    await page.evaluate(() => { S.loc = 'stDock'; phoneInstall('jobs'); phoneOpen('jobs'); });
-    await tap(page, 'Browse job listings');
-    assert.match(await page.textContent('#mbg h2'), /Job listings/);
-    noErrors(errors);
-  } },
-  { name: 'Flashlight drains battery; outage relief once', fn: async ctx => {
-    const { page, errors } = await open(ctx);
-    await newGame(page);
-    const r = await page.evaluate(() => {
-      S.loc = 'home'; S.t = 10 * 60; phoneInstall('flash'); S.phone = 80; S.phoneT = S.t;
-      const base = (() => { const s = S.phone; S.t += 60; afterAction(); const d = s - S.phone; S.phone = 80; S.phoneT = S.t; return d; })();
-      phoneFlash(true); S.t += 60; afterAction();
-      const lit = 80 - S.phone; phoneFlash(false);
-      S.power = { start: S.t - 5, end: S.t + 300 }; S.stress = 50;
-      phoneFlash(true); const s1 = S.stress; phoneFlash(false); phoneFlash(true); const s2 = S.stress;
-      return { base, lit, s1, s2 };
-    });
-    assert.strictEqual(r.lit - r.base, 6, 'about 1% per 10 min extra: ' + JSON.stringify(r));
-    assert.ok(r.s1 < 50, 'stress relief in an outage'); assert.strictEqual(r.s2, r.s1, 'only once per outage');
-    noErrors(errors);
-  } },
-  { name: 'Notes adds and checks off priorities', fn: async ctx => {
-    const { page, errors } = await open(ctx);
-    await newGame(page);
-    await page.evaluate(() => { S.prios = []; S.loc = 'stDock'; phoneInstall('notes'); phoneOpen('notes'); });
-    await tap(page, 'Pay rent');
-    await page.fill('#phNoteIn', 'Feed the cat');
-    await page.locator('#phoneUI .ph-add button').click();
-    assert.deepStrictEqual(await page.evaluate(() => S.prios.map(q => q.t)), ['Pay rent', 'Feed the cat']);
-    await page.locator('#phoneUI .ph-todo', { hasText: 'Pay rent' }).click();
-    assert.deepStrictEqual(await page.evaluate(() => S.prios.map(q => q.t + (q.done ? '✓' : ''))), ['Feed the cat', 'Pay rent✓']);
-    noErrors(errors);
-  } },
   { name: 'Clock shows alarms and opens the alarm modal above the phone', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
@@ -148,11 +104,11 @@ module.exports = [
   { name: 'installed apps persist through save and reload', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
-    await page.evaluate(() => { S.loc = 'stDock'; phoneInstall('ferry'); phoneInstall('notes'); saveGame(); });
+    await page.evaluate(() => { S.loc = 'stDock'; phoneInstall('group'); phoneInstall('telehealth'); saveGame(); });
     await reload(page);
     await page.click('text=Continue as T');
     await page.waitForSelector('.hud');
-    assert.deepStrictEqual(await page.evaluate(() => [phoneInstalled('ferry'), phoneInstalled('notes'), phoneInstalled('group'), phoneFree()]), [true, true, false, 3]);
+    assert.deepStrictEqual(await page.evaluate(() => [phoneInstalled('group'), phoneInstalled('telehealth'), phoneFree()]), [true, true, 3]);
     noErrors(errors);
   } },
 ];
