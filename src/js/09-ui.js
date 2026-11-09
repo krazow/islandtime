@@ -161,9 +161,10 @@ const TIPS=[
   {id:'bed',when:()=>S.loc==='home'&&tod()>=1080,t:'🛏️ Before bed, set your <b>⏰ alarms</b>: the plug-in clock, your phone, or both as backups. Each night you eat a day of food from the pantry.'},
   {id:'trading',when:()=>!!MARKETS[S.loc]&&!tradingLocked(),t:'🛒 <b>Trading:</b> buy on the mainland, sell on the island for more. Watch the badges: gas cans and drugs are contraband on the ferry.'},
   {id:'storm',when:()=>S.week.storm&&S.week.storm.day===day(),t:'🌬️ A storm means power outages. A <b>generator</b> (Home Depot, Lakewood) plus gas stashed in your shed keeps the fridge, heat and phone going.'},
-  {id:'home_low',when:()=>S.loc==='home'&&(S.home??70)<35,t:'🏚️ Your <b>Home</b> meter is low. A run-down house means worse sleep, more things breaking and fewer visitors. A <b>🧽 Deep clean</b> on a day off helps a lot. Too busy? <b>Call Gus</b> or <b>📣 post in the community group</b>.'},
+  {id:'home_low',when:()=>S.loc==='home'&&(S.home??70)<35,t:'🏚️ Your <b>Home</b> meter is low. A run-down house means worse sleep, more things breaking and fewer visitors. A <b>🧽 Deep clean</b> on a day off helps a lot. Too busy? <b>Call Gus</b> or <b>📣 post in the Island Group app</b> on your phone.'},
   {id:'home_meter',when:()=>S.loc==='home'&&(day()>=1||(S.home??70)<60),t:'🏠 The <b>Home</b> meter is how your house is holding up. Chores and repairs raise it; it slips a little every day. Keep it high for better sleep and cozy mornings. Settings ⚙️ has <b>📖 How your house works</b>.'},
   {id:'upkeep_due',when:()=>S.loc==='home'&&upAnyDue(),t:'🧰 Something around the house needs doing. Open <b>🏠 Inside the house</b> or <b>🌲 Outside &amp; property</b> below: jobs that are due are highlighted. Ignore them and they turn into events.'},
+  {id:'phone_apps',when:()=>Object.keys(S.friends).length>0||day()>=1,t:'📱 <b>Your phone</b> (top right): text and call friends, set alarms, and install up to <b>5 apps</b> from the 🛍️ App Store, like ferry alerts or the island community group. One bar on the island makes installs slow.'},
   {id:'friends',when:()=>Object.keys(S.friends).length>0,t:'🤝 You made a friend! Friends help out with rides, jump-starts and gas, and they’ll ask favors too. See them in the 📋 To-do tab.'},
 ];
 function tipsOn(){return prefs().tips}
