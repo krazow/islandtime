@@ -297,3 +297,8 @@ html.hc .hh-letter{background:#fff;border-color:#000}
 .season-end b{font-weight:700}
 .scene svg .snowline{filter:drop-shadow(0 -1px 0 rgba(255,255,255,.6))}
 html.rm .scene svg .snowline{filter:none}
+/* apps: money */
+.icu-bal{text-align:center;margin:4px 0 10px}.icu-bal small{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mute);font-weight:700}
+.icu-bal b{font-family:Fraunces,serif;font-size:32px}.icu-bal.neg b,.icu-neg{color:var(--bad,#b8452c)}
+.icu-bill.soon b{color:#9a5a12}.icu-bill.late b{color:var(--bad,#b8452c)}
+html.hc .icu-bal.neg b,html.hc .icu-neg,html.hc .icu-bill.late b,html.hc .icu-bill.soon b{color:#000;text-decoration:underline}
