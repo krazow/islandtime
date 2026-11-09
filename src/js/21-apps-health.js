@@ -3,10 +3,11 @@
 // On the island's one bar the video freezes on your own face. One visit a day: 20 min, $25 copay, battery.
 //   - 💊 renew the prescription: mail-order (+$15 for the meds), lands in your mailbox at 1 PM the next day.
 //     Saves the pharmacy trip, not the copay. Wednesday to Saturday only (the refill is due Thursday).
-//   - 😮‍💨 stress advice (stress −6) · 🤒 run-down advice (health +3)
+//   - 😮‍💨 stress advice (stress −8) · 🤒 run-down advice (health +3)
 //   - 🤕 the ankle: no visit, no charge, just “go to Urgent Care”. It doesn't replace the Thursday checkup either.
 // State: PH().tele = {visit: dayKey of today's visit, mail: dayKey the refill arrives (-1 = none), msg: {h,t}}
-const TELE_COPAY=25, TELE_RX=15, TELE_MIN=20, TELE_BAT=8, TELE_MAIL=780;   // mail comes at 1 PM
+const TELE_COPAY=20, TELE_RX=10,   // balance pass: was $25 + $15
+      TELE_MIN=20, TELE_BAT=8, TELE_MAIL=780;   // mail comes at 1 PM
 const TELE=()=>{const P=PH();P.tele=P.tele||{visit:-1,mail:-1};return P.tele};
 const teleWifi=()=>S.loc==='food';                                          // the Riv: the Wi-Fi password is taped to the register
 const teleOK=()=>phoneSignal()>=4||teleWifi();
@@ -33,9 +34,9 @@ function teleVisit(kind){
   if(kind==='rx'){T.mail=dk+1;
     say(`🩺 A video visit ${where}. The doctor renews your prescription in ninety seconds and spends the rest asking if you’re “getting outside.” It’s going out by mail: in your box tomorrow afternoon. $${cost} with the meds.`);
     teleMsg(`💊 <b>Prescription renewed.</b> It’s in the mail: your box, tomorrow around ${fmt(TELE_MAIL)}. No pharmacy run.`,'ok')}
-  else if(kind==='stress'){adj('stress',-6);
-    say(`🩺 A video visit ${where}. You describe your commute. The doctor goes quiet, then teaches you a breathing exercise “for the ferry line.” It sort of works. Stress −6.`);
-    teleMsg('😮‍💨 <b>Breathe in for four, out for six.</b> Stress −6.','ok')}
+  else if(kind==='stress'){adj('stress',-8);
+    say(`🩺 A video visit ${where}. You describe your commute. The doctor goes quiet, then teaches you a breathing exercise “for the ferry line.” It sort of works. Stress −8.`);
+    teleMsg('😮‍💨 <b>Breathe in for four, out for six.</b> Stress −8.','ok')}
   else{adj('health',3);
     say(`🩺 A video visit ${where}. Fluids, sleep, “maybe a vegetable.” You were hoping for something more dramatic. Health +3.`);
     teleMsg('🤒 <b>Fluids, sleep, a vegetable.</b> Health +3.','ok')}
@@ -73,7 +74,7 @@ definePhoneApp({id:'telehealth',name:'Telehealth',ic:'🩺',order:66,size:'64 MB
     const rw=teleRxWhy(),rc=TELE_COPAY+TELE_RX;
     h+=`<div class="ph-sub">Start a video visit · ${TELE_MIN} min · $${TELE_COPAY} copay</div>`;
     h+=vis('💊 Renew my prescription','rx',rw||(day()===5?`$${rc} with the meds. By mail: lands Sunday, after tonight.`:`$${rc} with the meds. By mail, in your box tomorrow. No pharmacy run.`),!!rw||!canEssential(rc));
-    h+=vis('😮‍💨 I’m stressed out','stress','Advice. Stress −6.',!canEssential(TELE_COPAY));
+    h+=vis('😮‍💨 I’m stressed out','stress','Advice. Stress −8.',!canEssential(TELE_COPAY));
     h+=vis('🤒 I feel run down','health','Advice. Health +3.',!canEssential(TELE_COPAY));
     if(inj)h+=phBtn('🤕 My ankle',()=>teleAnkle(),{sub:'A quick look on camera. No charge.'});
     h+=phNote(`Doesn’t replace your in-person checkup${apptActive()?` (${DAYS[APPT_DAY]} 2:30 PM)`:''}: they can’t take your blood pressure through a phone. Can’t treat injuries either.`);

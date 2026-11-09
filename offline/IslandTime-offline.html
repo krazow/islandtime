@@ -263,10 +263,6 @@ html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#0
 .ph-sinfo{flex:1;min-width:0}.ph-sinfo span{display:block;font-size:12px;color:var(--mute);line-height:1.3}.ph-sinfo small{display:block;font-size:11px;color:var(--mute);margin-top:2px}
 .ph-sbtns{flex:none;width:92px}.ph-sbtns .ph-btn{padding:6px 8px;margin:0 0 6px;text-align:center;font-size:13px}.ph-sbtns .ph-btn small{font-size:10px}
 .ph-big{font:700 44px/1.1 system-ui,sans-serif;text-align:center;margin-top:10px;font-variant-numeric:tabular-nums}
-.ph-flash{font-size:64px;text-align:center;margin:16px auto;width:120px;height:120px;line-height:120px;border-radius:50%;background:#2a2a2a;filter:grayscale(1);opacity:.6}
-.ph-flash.on{background:radial-gradient(circle,#fff8c8,#f5d76e 60%,#e3b23c);filter:none;opacity:1;box-shadow:0 0 40px #f5d76e}
-.ph-todo{gap:10px}.ph-todo b{font-weight:600}.ph-todo.done b{text-decoration:line-through;opacity:.55}.ph-ck{font-size:18px}
-.ph-add{margin-top:10px}
 /* phone: messages */
 .msg-mid{flex:1;min-width:0}.msg-mid span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msg-side{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}.msg-side small{font-size:11px;color:var(--mute)}
@@ -668,6 +664,10 @@ function price(g,side){
   const buy=Math.round(base*m);return {buy,sell:Math.round(buy*0.82)};
 }
 
+// what boarding here will cost: the cash fare, or a ride from a ⛴️ Ferry Pass book when that's what board() will use
+function fareTxt(mode){const k=mode==='drive'?'car':'walk';
+  if(typeof phoneInstalled==='function'&&phoneInstalled('ferrypass')&&phoneCan()){const n=(S.ph&&S.ph.fp&&S.ph.fp[k])||0;if(n>0)return `🎟️ ticket (${n} left)`}
+  return $(mode==='drive'?FARE_CAR:FARE_WALK)}
 function waitFerry(mode){
   if(mode==='drive'){const c=carHere();if(!c||c.fuel<0.1){say('⛽ The tank is empty. The deckhands won’t load a car that can’t drive.');return render()}}
   const side=L[S.loc].side;
@@ -676,7 +676,7 @@ function waitFerry(mode){
   if(!known){say('No sailings in sight. Something is very wrong with the ferry system.');return render()}
   if(known.d>day()){
     if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&canWalkCarry())
-      return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
+      return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+fareTxt('walk'):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
       return modal('🌙 No more boats tonight',`<p>The next sailing you could make is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You’re stuck on the mainland for the night. Sleep in the terminal, get a motel in Lakewood, or ask a friend for a couch.</p>`,[{l:'OK',fn:()=>render()}]);}
@@ -705,7 +705,7 @@ function waitFerry(mode){
     const nxt=(()=>{const save=S.t;S.t=s.abs-19;const n=findNext(side,'drive',true);S.t=save;return n})();
     return modal('Boat’s full 😩',`<p>The ${fmt(s.dep)} sailing filled up right in front of you.</p><p>Next drive-on: <b>${nxt?fmtAbs(nxt.abs):'unknown'}</b> (you’ll be first in line).</p>`,[
       {l:'Wait for the next boat',s:'Keep your car with you',fn:()=>{S.priority=true;S.t=s.abs-21>S.t?S.t:S.t;S.t=Math.max(S.t,s.abs+1);waitFerryFrom(side)}},
-      ...(canWalkCarry()?[{l:'Park it and walk on this boat',s:`Car stays at this landing. ${side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island'}`,fn:()=>board(side,s,'walk')}]:[])
+      ...(canWalkCarry()?[{l:'Park it and walk on this boat',s:`Car stays at this landing. ${side==='M'?'Walk-on fare '+fareTxt('walk'):'Free from the island'}`,fn:()=>board(side,s,'walk')}]:[])
     ]);
   }
   board(side,s,mode);
@@ -1600,6 +1600,9 @@ function processTimed(){
     else {S.pantry+=dl.n;S.delivery=null;say(`📦 Your island grocery delivery made it to the porch: +${dl.n} days of food.`);}
   }
 }
+// Is this week's gale known yet? The morning it hits (the island hears then), or a day early with 🌦️ Tides & Weather.
+function stormKnown(){const st=S.week.storm,d=day();if(!st||S.t>=st.end)return false;
+  return st.day===d||(st.day===d+1&&typeof phoneInstalled==='function'&&phoneInstalled('weather'))}
 function stormNight(d){const st=S.week.storm;if(!st)return false;const n=d*1440+1380;return n>=st.start&&n<st.end}
 function startDay(){
   const d=day();
@@ -1676,7 +1679,7 @@ function endDay(where){
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
-  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 🔎 on your phone, or the bulletin board.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
+  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
   S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}
@@ -1838,8 +1841,8 @@ function dockActions(a,side){
   const t=x=>x?(x.d>day()?`${DAYS[x.d].slice(0,3)} ${fmt(x.dep)}`:fmt(x.dep)):'none';
   if(out) a.push({ic:'🚨',l:'Ferry service suspended',s:`${out.cause}. Check the Ferry tab.`,dis:true});
   if(car&&car.fuel<0.1) a.push({ic:'⛽',l:'Can’t drive on: the tank is empty',s:'The deckhands won’t load a car that can’t drive itself off. Get it some gas first (see below).',dis:true});
-  else if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`${car.fuel<0.5?'⚠️ Running on fumes. ':''}Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+$(FARE_CAR):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
-  a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+$(FARE_WALK):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
+  else if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`${car.fuel<0.5?'⚠️ Running on fumes. ':''}Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+fareTxt('drive'):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
+  a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+fareTxt('walk'):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
   if(out&&m>=420&&m<=1140) a.push({ic:'⛵',l:'Look for the sailboat water taxi',s:'A neighbor runs people across during outages. $20, maybe.',fn:waterTaxi});
   if(side==='M'){
     if(S.phone<90) a.push({ic:'🔋',l:`Charge your phone at the outlet (${S.phone}%)`,s:'The one by the vending machines. 30 minutes: +30%.',fn:()=>{S.t+=30;phoneTick();S.phone=Math.min(100,S.phone+30);say('🔋 You sit on the floor by the vending machines while your phone charges.');afterAction()}});
@@ -2406,14 +2409,14 @@ function todoItems(){
   const d=day(),m=tod(),it=[];
   const J=curJob();
   if(J) J.days.forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
-  else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job on your phone (or the bulletin board), then make the interview.',urgent:!S.interview});
+  else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job in the 💼 Gig Work app or on the bulletin board at the old store, then make the interview.',urgent:!S.interview});
   if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${DAYS[S.interview.day]} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
   if(apptActive()) it.push({ok:S.appt,fail:S.apptMissed||(d>APPT_DAY)||(d===APPT_DAY&&m>885&&!S.appt),l:'Doctor’s appointment',s:`${DAYS[APPT_DAY]} 2:30 PM, Medical Clinic (Tacoma). Arrive 2:00–2:45.`,urgent:d===2&&!S.appt&&m<=885});
   it.push({ok:S.rx,fail:false,l:'Pick up prescription refill',s:d<3?'Ready Thursday at the Lakewood pharmacy. Run out Saturday night.':'Ready now at the Lakewood pharmacy.',urgent:d>=3&&!S.rx});
   it.push({ok:S.pantry>=2,fail:false,l:'Keep the pantry stocked',s:`${S.pantry} day${S.pantry===1?'':'s'} at home${S.carried?`, ${S.carried} in hand`:''}. You eat 1 per night.`,urgent:S.pantry<1});
   const isl=S.cars.find(c=>c.id==='isl');
   it.push({ok:isl.fuel>=3,fail:false,l:`Keep gas in the ${isl.diesel?'truck':'island car'}`,s:`${isl.fuel}/${isl.tank} gal. No gas on the island: fill up on the mainland, or pay Dale.`,urgent:isl.fuel<1.5});
-  if(S.week.storm&&S.week.storm.day>=d) it.push({ok:genReady()&&S.homeGas>=3,fail:false,l:'Be ready for the storm',s:`Gale on ${DAYS[S.week.storm.day]}. You need a generator at home (Home Depot, Lakewood) and 3 gal stashed in the shed (${S.homeGas} now), or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
+  if(stormKnown()) it.push({ok:genReady()&&S.homeGas>=3,fail:false,l:'Be ready for the storm',s:`${S.week.storm.day===d?`Gale today, from about ${fmt(S.week.storm.start)}`:`Gale tomorrow (${DAYS[S.week.storm.day]}): 🌦️ Tides & Weather saw it coming`}. You need a generator at home (Home Depot, Lakewood) and 3 gal stashed in the shed (${S.homeGas} now), or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
   if(d<=2) it.push({ok:S.bingo.nights>0,fail:d===2&&tod()>=1200&&!S.bingo.nights,l:'Optional: Bingo at the Riv',s:`Wednesday 6:00 PM, American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,urgent:false});
   if(S.battery==='weak') it.push({ok:false,fail:false,l:'Replace the car battery',s:'Gas station in Steilacoom. Until then, mornings are a gamble.',urgent:false});
   {const U=UP(),due=[U.fridge&&'fridge',U.mold&&'mold',U.damp>=3&&'damp',U.ash>=3&&'ash',U.chimney>=21&&'chimney',U.wood<=1&&'firewood',U.septic>=75&&'septic',U.gutters>=60&&'gutters',U.limbs>=60&&'tree limbs',U.well>45&&'well',U.moss>=60&&'roof moss',U.pot>=60&&'potholes',S.gen==='home'&&U.genSvc>14&&'generator',U.propane<25&&'propane'].filter(Boolean);
@@ -2563,7 +2566,13 @@ const ACH=[
   {id:'fred',ic:'🩴',n:'Pajama Fred’s friend',d:'Make friends with Pajama Fred.',t:()=>!!S.friends.fred},
   {id:'terminal',ic:'🪑',n:'A night in the terminal',d:'Sleep sitting up in the Steilacoom ferry terminal.',t:c=>c.where==='terminal'},
   {id:'pantry',ic:'🧺',n:'Fully stocked',d:'Have a week of food (7 days or more) in the pantry.',t:()=>S.pantry>=7},
-  {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0}];
+  {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0},
+  // phone apps (19-apps-travel.js, 20-apps-money.js): counters live in S.stats, so they're per game
+  {id:'commuter_pro',ic:'🎟️',n:'Commuter pro',d:'Ride the ferry 10 times on ⛴️ Ferry Pass tickets in one game.',t:()=>(S.stats.fpRides||0)>=10},
+  {id:'autopay',ic:'💳',n:'Never late on a bill',d:'Finish a month with 💳 autopay on since the first week and not one late bill.',
+    t:c=>{const I=S.ph&&S.ph.icu;return c.end&&!c.lost&&S.mode==='month'&&!!I&&I.auto&&(I.since??0)<=6&&phoneInstalled('bank')&&!(S.stats.lateBills>0)}},
+  {id:'gig_economy',ic:'💼',n:'Gig economy',d:'Earn $100 from 💼 Gig Work tasks in one game.',t:()=>(S.stats.gigPay||0)>=100},
+  {id:'weather_wise',ic:'🌦️',n:'Weather-wise',d:'Spend a gale or a hard freeze at home after 🌦️ Tides & Weather warned you the evening before.',t:()=>(S.stats.wxWise||0)>0}];
 function achGot(){try{const o=JSON.parse(localStorage.getItem(ACH_KEY)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch(e){return {}}}
 function achCount(){const g=achGot();return ACH.filter(a=>g[a.id]).length}
 function achUnlock(id){const a=ACH.find(x=>x.id===id);if(!a)return;const g=achGot();if(g[id])return;
@@ -3457,7 +3466,7 @@ function hhBillsNight(notes,dk){
   for(const k in HH_BILLS){const b=HB(k),B=HH_BILLS[k],due=hhDue(k);if(b.paid)continue;
     if(b.check>=0&&b.check<=dk){b.paid=true;if(b.late)notes.push(`✉️ Your check finally reached ${B.who}. Account settled.`);continue}
     if(dk<due)continue;
-    b.late++;if(b.late<=7)anyLate=true;
+    b.late++;if(b.late<=7)anyLate=true;if(b.late===1)S.stats.lateBills=(S.stats.lateBills||0)+1;
     if(b.late===1){if(b.check>=0){money(-B.fee);notes.push(`${B.ic} Your check to ${B.who} is still in the mail, and they don’t care: ${$(B.fee)} late fee, charged to your card.`)}
       else{b.fees+=B.fee;notes.push(`${B.ic} The ${B.n.toLowerCase()} bill was due today and you didn’t pay it. ${B.who} adds a ${$(B.fee)} late fee. (🏠 Inside the house → 🧾 Pay bills.)`)}
       adj('stress',3)}
@@ -3550,9 +3559,9 @@ function hhActions(a,loc){
         dis:g.fed===dk||(g.kibble<=0&&S.pantry<1),fn:()=>{S.t+=5;g.fed=dk;if(g.kibble>0)g.kibble--;else{S.pantry--;say(`🍳 ${g.n} gets scrambled eggs. ${g.n} is thrilled. Your pantry isn’t.`)}say(`🥣 ${g.n} inhales breakfast and looks at you like you’ve never fed it before.`);afterAction()}});
       a.push({cat:'yard',ic:'🦮',l:g.walked===dk?`Walked ${g.n} ✓`:`Walk ${g.n}`,due:g.walked!==dk,s:g.walked===dk?'Sniffed every fern on the road.':'30 min down the road and back. Stress −3. (Lake Josephine is better, if you’re going anyway.)',
         dis:g.walked===dk,fn:()=>{S.t+=30;g.walked=dk;adj('stress',-3);say(`🦮 ${g.n} reads the whole road like a newspaper. Deer, deer, neighbor’s cat, deer.`);afterAction()}});}
-    // storm prep: only when a gale is coming
+    // storm prep: only once the gale is known (that morning, or the day before with 🌦️ Tides & Weather)
     const st=S.week.storm;
-    if(st&&S.t<st.end&&d<=st.day){const sk=S.weekNo*7+st.day,soon=st.day-d<=1;
+    if(stormKnown()){const sk=S.weekNo*7+st.day,soon=st.day-d<=1;
       a.push({cat:'home',ic:'💧',l:H.water?'Water jugs filled ✓':'Fill water jugs and the bathtub',due:soon&&!H.water,s:H.water?'For when the power takes the well pump with it.':'15 min. No power means no well pump: this is your water for coffee and a sponge bath.',dis:H.water,
         fn:()=>{S.t+=15;H.water=true;say('💧 Four jugs, two stockpots and a bathtub full of water. The house looks ready for a siege.');afterAction()}});
       a.push({cat:'home',ic:'🔋',l:H.bankFull?'Power bank charged ✓':'Charge the power bank',due:soon&&H.bank&&!H.bankFull,s:!H.bank?'You don’t own one. Order one online (📦), two days to the Steilacoom lockers.':H.bankFull?'Your phone will make it through the outage.':'10 min to plug it in. Keeps your phone (and its alarm) alive through the outage.',dis:!H.bank||H.bankFull,
@@ -3979,7 +3988,7 @@ const apLi=(a,b,cls)=>`<div class="ph-li ${cls||''}"><b>${a}</b><span>${b}</span
 
 // ================= ⛴️ Ferry Pass =================
 const FP_BOOK={car:{n:'Vehicle + driver',ic:'🚗',fare:()=>FARE_CAR},walk:{n:'Passenger (walk-on)',ic:'🚶',fare:()=>FARE_WALK}};
-const FP_RIDES=10,FP_OFF=0.2,FP_MAX=30;
+const FP_RIDES=10,FP_OFF=0.25,FP_MAX=30;
 const fpPrice=k=>Math.round(FP_BOOK[k].fare()*FP_RIDES*(1-FP_OFF)*100)/100;
 function FP(){const P=PH();const f=P.fp=P.fp||{};f.car=f.car||0;f.walk=f.walk||0;f.seen=f.seen||[];return f}
 function fpBuy(k){const f=FP(),p=fpPrice(k);if(S.money<p||f[k]+FP_RIDES>FP_MAX||!phoneCan())return false;
@@ -3990,7 +3999,7 @@ function fpBuy(k){const f=FP(),p=fpPrice(k);if(S.money<p||f[k]+FP_RIDES>FP_MAX||
 function fpUseRide(mode){if(!S||!phoneInstalled('ferrypass'))return false;const f=FP(),k=mode==='drive'?'car':'walk';
   if(!(f[k]>0))return false;
   if(!phoneCan()){say('🪫 Your ferry tickets are on a dead phone. The ticket booth wants cash. You pay full fare.');return false}
-  f[k]--;
+  f[k]--;S.stats.fpRides=(S.stats.fpRides||0)+1;
   say(`🎟️ The booth scans your phone. One ${k==='car'?'vehicle':'walk-on'} ride used, ${f[k]} left.${f[k]===0?' That was the last one in the book.':''}`);
   return true}
 function fpSailings(side,n){const deps=side==='I'?AI_DEPS:ST_DEPS,out=[];
@@ -4009,7 +4018,7 @@ phoneOnTime(()=>{if(!S||!S.week||!phoneInstalled('ferrypass')||!phoneCan())retur
     phoneNotify('⛴️','Ferry Pass: sailings suspended',cause);
     say(`📱 ⛴️ <b>Ferry Pass</b> (${fmt(S.t)}): rider alert, sailings suspended: ${apEsc(b.cause)}. No estimate yet. Your phone knew before the ferry line did.`);
   }});
-definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 MB',desc:'Sailings, rider alerts, push alerts for outages, and 10-ride ticket books at 20% off.',
+definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 MB',desc:'Sailings, rider alerts, push alerts for outages, and 10-ride ticket books at 25% off.',
   badge:()=>activeOutage()?1:0,
   view(){const side=L[S.loc].side,from=side==='I'?'Anderson Island':'Steilacoom',d=day(),f=FP();let h='';
     const known=S.week.b.filter(b=>b.start<=S.t&&b.end>S.t);
@@ -4028,7 +4037,7 @@ definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 M
     h+=apCard(`🎟️ <b>On your phone:</b> ${FP_BOOK.car.ic} ${f.car} vehicle ride${f.car===1?'':'s'} · ${FP_BOOK.walk.ic} ${f.walk} walk-on ride${f.walk===1?'':'s'}`,'fp-books');
     for(const k of ['car','walk']){const p=fpPrice(k),full=f[k]+FP_RIDES>FP_MAX,poor=S.money<p;
       h+=phBtn(`${FP_BOOK[k].ic} 10 × ${FP_BOOK[k].n}: ${$(p)}`,()=>fpBuy(k),{dis:full||poor,
-        sub:full?`You already have ${f[k]}. That’s plenty.`:poor?`You have ${$(S.money)}.`:`${$(FP_BOOK[k].fare()*FP_RIDES)} at the booth. 20% off.`})}
+        sub:full?`You already have ${f[k]}. That’s plenty.`:poor?`You have ${$(S.money)}.`:`${$(FP_BOOK[k].fare()*FP_RIDES)} at the booth. ${Math.round(FP_OFF*100)}% off.`})}
     h+=apNote('Fares are collected in Steilacoom only (leaving the island is free), so a ride is used there. A dead phone means paying cash.');
     h+=apNote('🔔 Push alerts are on: you’ll hear about an outage the minute the county posts it. Be in line 20 minutes before a boat leaves.');
     return h}});
@@ -4147,8 +4156,14 @@ function wxTomorrowWarn(){const d=day();const out=[];
   return out}
 phoneOnTime(()=>{if(!S||!S.week||!phoneInstalled('weather')||!phoneCan()||tod()<1080)return;const W=WX(),k=dayKey();if(W.eve===k)return;W.eve=k;
   const ws=wxTomorrowWarn();if(!ws.length)return;W.alert=k;
+  {const d=day(),st=S.week.storm,X=seaX();   // remember which bad nights you were warned about (🌦️ Weather-wise)
+    if(st&&st.day===d+1)W.warn=k+1;else if(seasonId()==='winter'&&X.cold&&X.cold[d])W.warn=k}
   phoneNotify(ws[0][0],'Tides & Weather: '+ws.map(x=>x[1]).join(' · '),ws[0][2]);
   say(`📱 🌦️ <b>Tides & Weather</b>: ${ws.map(x=>`${x[0]} ${x[1]}. ${x[2]}`).join(' ')}`)});
+// 🌦️ Weather-wise: a gale or a hard freeze spent at home, warned about the evening before
+{const _up=upkeepNight;upkeepNight=function(where,notes,d){try{const W=S.ph&&S.ph.wx;
+  if(W&&W.warn===dayKey()&&where==='home'&&(stormNight(d)||(typeof coldNight==='function'&&coldNight(d))))S.stats.wxWise=(S.stats.wxWise||0)+1}catch(e){}
+  return _up.apply(this,arguments)}} // apps
 definePhoneApp({id:'weather',name:'Tides & Weather',ic:'🌦️',order:67,size:'18 MB',desc:'Forecast a day ahead of the island grapevine, tide tables, and a buzz the evening before bad weather.',
   badge:()=>{const W=S.ph&&S.ph.wx;return W&&W.alert===dayKey()&&W.seen!==dayKey()?1:0},
   view(){const d=day(),W=WX();W.seen=dayKey();let h='';
@@ -4194,7 +4209,7 @@ phoneOnTime(icuAutopay);
 function icuPay(ks){if(!phoneCan())return;ks=ks.filter(k=>hhOpenBills().includes(k));if(!ks.length)return;
   const tot=ks.reduce((s,k)=>s+hhOwed(k),0);ks.forEach(k=>hhPay(k,'online'));
   apmMsg('bank',`✅ Paid ${ks.length>1?ks.length+' bills':HH_BILLS[ks[0]].n.toLowerCase()}: ${$(tot)}.`);afterAction()}
-function icuAutoToggle(){const I=ICU();I.auto=!I.auto;
+function icuAutoToggle(){const I=ICU();I.auto=!I.auto;I.since=I.auto?dayKey():-1;
   say(I.auto?'💳 Autopay is on. Island Credit Union will pay each bill on its due day, whether or not the money is there. (If it isn’t: $25 overdraft fee.)':'💳 Autopay is off. The bills are back to being your problem.');
   apmMsg('bank',I.auto?'🔁 Autopay on: bills pay themselves on their due day.':'Autopay off.',I.auto?'ok':'');
   icuAutopay()}
@@ -4229,7 +4244,7 @@ const GIGS=[
   {id:'tag',ic:'🏷️',n:'Tag photos',min:30,pay:8,bat:6,st:2,t:['🏷️ Two hundred photos: is this a crosswalk? Is this a bus? Is this a crosswalk with a bus? You’re a robot’s teacher now.','🏷️ “Tag every photo with a dog.” Every photo has a dog. You’ve never been happier at work.']}];
 function gigWhere(){const l=S.loc;return l==='stDock'?'Waiting at the terminal is the gig economy’s natural habitat.':l==='aiDock'?'Waiting at the landing on one bar. Uploads crawl.':L[l].side==='I'?'One bar on the island: uploads take an extra 10 minutes.':'Good signal over here. Uploads are quick.'}
 function gigDo(id){const G=GIGS.find(x=>x.id===id),g=GIG();if(!G||!phoneCan()||g.n>=GIG_MAX||S.phone<=G.bat)return false;
-  const slow=phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(G.pay);adj('stress',G.st);g.n++;g.earned+=G.pay;S.stats.gigs=(S.stats.gigs||0)+1;
+  const slow=phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(G.pay);adj('stress',G.st);g.n++;g.earned+=G.pay;S.stats.gigs=(S.stats.gigs||0)+1;S.stats.gigPay=(S.stats.gigPay||0)+G.pay;
   say(`${pick(G.t)} +${$(G.pay)}.${slow?' The upload on one bar takes another ten minutes.':''}`);
   apmMsg('gigs',`${G.ic} Done: +${$(G.pay)} in ${G.min+slow} min.${g.n>=GIG_MAX?' That’s all the work the app has for you today.':''}`);
   afterAction();return true}
@@ -4247,7 +4262,7 @@ definePhoneApp({id:'gigs',name:'Gig Work',ic:'💼',order:66,size:'61 MB',desc:'
     return h}});
 
 // ---- 🛒 Mainland Market ----
-const MKT_PACKS=[{n:3,c:54},{n:5,c:88}],MKT_FEE=7,MKT_READY=120,MKT_OPEN=420,MKT_LAST=1140,MKT_CLOSE=1320;
+const MKT_PACKS=[{n:3,c:54},{n:5,c:88}],MKT_FEE=5,MKT_READY=120,MKT_OPEN=420,MKT_LAST=1140,MKT_CLOSE=1320;
 const mktOrder=()=>MKT().order;
 const mktReady=()=>{const o=mktOrder();return !!o&&S.t>=o.at};
 const mktWindow=()=>tod()>=MKT_OPEN&&tod()<MKT_LAST;
@@ -4290,10 +4305,11 @@ definePhoneApp({id:'market',name:'Mainland Market',ic:'🛒',order:67,size:'33 M
 // On the island's one bar the video freezes on your own face. One visit a day: 20 min, $25 copay, battery.
 //   - 💊 renew the prescription: mail-order (+$15 for the meds), lands in your mailbox at 1 PM the next day.
 //     Saves the pharmacy trip, not the copay. Wednesday to Saturday only (the refill is due Thursday).
-//   - 😮‍💨 stress advice (stress −6) · 🤒 run-down advice (health +3)
+//   - 😮‍💨 stress advice (stress −8) · 🤒 run-down advice (health +3)
 //   - 🤕 the ankle: no visit, no charge, just “go to Urgent Care”. It doesn't replace the Thursday checkup either.
 // State: PH().tele = {visit: dayKey of today's visit, mail: dayKey the refill arrives (-1 = none), msg: {h,t}}
-const TELE_COPAY=25, TELE_RX=15, TELE_MIN=20, TELE_BAT=8, TELE_MAIL=780;   // mail comes at 1 PM
+const TELE_COPAY=20, TELE_RX=10,   // balance pass: was $25 + $15
+      TELE_MIN=20, TELE_BAT=8, TELE_MAIL=780;   // mail comes at 1 PM
 const TELE=()=>{const P=PH();P.tele=P.tele||{visit:-1,mail:-1};return P.tele};
 const teleWifi=()=>S.loc==='food';                                          // the Riv: the Wi-Fi password is taped to the register
 const teleOK=()=>phoneSignal()>=4||teleWifi();
@@ -4320,9 +4336,9 @@ function teleVisit(kind){
   if(kind==='rx'){T.mail=dk+1;
     say(`🩺 A video visit ${where}. The doctor renews your prescription in ninety seconds and spends the rest asking if you’re “getting outside.” It’s going out by mail: in your box tomorrow afternoon. $${cost} with the meds.`);
     teleMsg(`💊 <b>Prescription renewed.</b> It’s in the mail: your box, tomorrow around ${fmt(TELE_MAIL)}. No pharmacy run.`,'ok')}
-  else if(kind==='stress'){adj('stress',-6);
-    say(`🩺 A video visit ${where}. You describe your commute. The doctor goes quiet, then teaches you a breathing exercise “for the ferry line.” It sort of works. Stress −6.`);
-    teleMsg('😮‍💨 <b>Breathe in for four, out for six.</b> Stress −6.','ok')}
+  else if(kind==='stress'){adj('stress',-8);
+    say(`🩺 A video visit ${where}. You describe your commute. The doctor goes quiet, then teaches you a breathing exercise “for the ferry line.” It sort of works. Stress −8.`);
+    teleMsg('😮‍💨 <b>Breathe in for four, out for six.</b> Stress −8.','ok')}
   else{adj('health',3);
     say(`🩺 A video visit ${where}. Fluids, sleep, “maybe a vegetable.” You were hoping for something more dramatic. Health +3.`);
     teleMsg('🤒 <b>Fluids, sleep, a vegetable.</b> Health +3.','ok')}
@@ -4360,7 +4376,7 @@ definePhoneApp({id:'telehealth',name:'Telehealth',ic:'🩺',order:66,size:'64 MB
     const rw=teleRxWhy(),rc=TELE_COPAY+TELE_RX;
     h+=`<div class="ph-sub">Start a video visit · ${TELE_MIN} min · $${TELE_COPAY} copay</div>`;
     h+=vis('💊 Renew my prescription','rx',rw||(day()===5?`$${rc} with the meds. By mail: lands Sunday, after tonight.`:`$${rc} with the meds. By mail, in your box tomorrow. No pharmacy run.`),!!rw||!canEssential(rc));
-    h+=vis('😮‍💨 I’m stressed out','stress','Advice. Stress −6.',!canEssential(TELE_COPAY));
+    h+=vis('😮‍💨 I’m stressed out','stress','Advice. Stress −8.',!canEssential(TELE_COPAY));
     h+=vis('🤒 I feel run down','health','Advice. Health +3.',!canEssential(TELE_COPAY));
     if(inj)h+=phBtn('🤕 My ankle',()=>teleAnkle(),{sub:'A quick look on camera. No charge.'});
     h+=phNote(`Doesn’t replace your in-person checkup${apptActive()?` (${DAYS[APPT_DAY]} 2:30 PM)`:''}: they can’t take your blood pressure through a phone. Can’t treat injuries either.`);

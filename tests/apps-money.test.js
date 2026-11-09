@@ -129,7 +129,7 @@ module.exports = [
     await page.evaluate(() => { S.t = 1440 + 600; S.phoneT = S.t; phoneRender(); });
     await tap(page, '3 days of food');
     let r = await page.evaluate(() => ({ money: S.money, o: MKT().order, t: S.t }));
-    assert.strictEqual(r.money, 200 - 61); assert.strictEqual(r.o.n, 3); assert.strictEqual(r.o.at, r.t + 120);
+    assert.strictEqual(r.money, 200 - 59); assert.strictEqual(r.o.n, 3); assert.strictEqual(r.o.at, r.t + 120);
     assert.strictEqual(r.t, 1440 + 610, 'one bar: 10 min to order');
     assert.match(await phoneText(page), /Being packed/);
     assert.strictEqual(await page.evaluate(() => mktPlace(5)), false, 'one order at a time');
@@ -155,7 +155,7 @@ module.exports = [
     await install(page, 'market');
     await page.evaluate(() => { S.money = 10; });
     assert.ok(await page.evaluate(() => mktPlace(5)), 'essentials go on the card');
-    assert.strictEqual(await page.evaluate(() => S.money), 10 - 95);
+    assert.strictEqual(await page.evaluate(() => S.money), 10 - 93);
     await page.evaluate(() => { S.t = 2 * 1440 + 1330; afterAction(); });
     let r = await page.evaluate(() => MKT().order);
     assert.ok(r.spoiled); assert.strictEqual(r.n, 2);

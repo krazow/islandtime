@@ -12,7 +12,7 @@ const apLi=(a,b,cls)=>`<div class="ph-li ${cls||''}"><b>${a}</b><span>${b}</span
 
 // ================= ⛴️ Ferry Pass =================
 const FP_BOOK={car:{n:'Vehicle + driver',ic:'🚗',fare:()=>FARE_CAR},walk:{n:'Passenger (walk-on)',ic:'🚶',fare:()=>FARE_WALK}};
-const FP_RIDES=10,FP_OFF=0.2,FP_MAX=30;
+const FP_RIDES=10,FP_OFF=0.25,FP_MAX=30;
 const fpPrice=k=>Math.round(FP_BOOK[k].fare()*FP_RIDES*(1-FP_OFF)*100)/100;
 function FP(){const P=PH();const f=P.fp=P.fp||{};f.car=f.car||0;f.walk=f.walk||0;f.seen=f.seen||[];return f}
 function fpBuy(k){const f=FP(),p=fpPrice(k);if(S.money<p||f[k]+FP_RIDES>FP_MAX||!phoneCan())return false;
@@ -23,7 +23,7 @@ function fpBuy(k){const f=FP(),p=fpPrice(k);if(S.money<p||f[k]+FP_RIDES>FP_MAX||
 function fpUseRide(mode){if(!S||!phoneInstalled('ferrypass'))return false;const f=FP(),k=mode==='drive'?'car':'walk';
   if(!(f[k]>0))return false;
   if(!phoneCan()){say('🪫 Your ferry tickets are on a dead phone. The ticket booth wants cash. You pay full fare.');return false}
-  f[k]--;
+  f[k]--;S.stats.fpRides=(S.stats.fpRides||0)+1;
   say(`🎟️ The booth scans your phone. One ${k==='car'?'vehicle':'walk-on'} ride used, ${f[k]} left.${f[k]===0?' That was the last one in the book.':''}`);
   return true}
 function fpSailings(side,n){const deps=side==='I'?AI_DEPS:ST_DEPS,out=[];
@@ -42,7 +42,7 @@ phoneOnTime(()=>{if(!S||!S.week||!phoneInstalled('ferrypass')||!phoneCan())retur
     phoneNotify('⛴️','Ferry Pass: sailings suspended',cause);
     say(`📱 ⛴️ <b>Ferry Pass</b> (${fmt(S.t)}): rider alert, sailings suspended: ${apEsc(b.cause)}. No estimate yet. Your phone knew before the ferry line did.`);
   }});
-definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 MB',desc:'Sailings, rider alerts, push alerts for outages, and 10-ride ticket books at 20% off.',
+definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 MB',desc:'Sailings, rider alerts, push alerts for outages, and 10-ride ticket books at 25% off.',
   badge:()=>activeOutage()?1:0,
   view(){const side=L[S.loc].side,from=side==='I'?'Anderson Island':'Steilacoom',d=day(),f=FP();let h='';
     const known=S.week.b.filter(b=>b.start<=S.t&&b.end>S.t);
@@ -61,7 +61,7 @@ definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 M
     h+=apCard(`🎟️ <b>On your phone:</b> ${FP_BOOK.car.ic} ${f.car} vehicle ride${f.car===1?'':'s'} · ${FP_BOOK.walk.ic} ${f.walk} walk-on ride${f.walk===1?'':'s'}`,'fp-books');
     for(const k of ['car','walk']){const p=fpPrice(k),full=f[k]+FP_RIDES>FP_MAX,poor=S.money<p;
       h+=phBtn(`${FP_BOOK[k].ic} 10 × ${FP_BOOK[k].n}: ${$(p)}`,()=>fpBuy(k),{dis:full||poor,
-        sub:full?`You already have ${f[k]}. That’s plenty.`:poor?`You have ${$(S.money)}.`:`${$(FP_BOOK[k].fare()*FP_RIDES)} at the booth. 20% off.`})}
+        sub:full?`You already have ${f[k]}. That’s plenty.`:poor?`You have ${$(S.money)}.`:`${$(FP_BOOK[k].fare()*FP_RIDES)} at the booth. ${Math.round(FP_OFF*100)}% off.`})}
     h+=apNote('Fares are collected in Steilacoom only (leaving the island is free), so a ride is used there. A dead phone means paying cash.');
     h+=apNote('🔔 Push alerts are on: you’ll hear about an outage the minute the county posts it. Be in line 20 minutes before a boat leaves.');
     return h}});
@@ -180,8 +180,14 @@ function wxTomorrowWarn(){const d=day();const out=[];
   return out}
 phoneOnTime(()=>{if(!S||!S.week||!phoneInstalled('weather')||!phoneCan()||tod()<1080)return;const W=WX(),k=dayKey();if(W.eve===k)return;W.eve=k;
   const ws=wxTomorrowWarn();if(!ws.length)return;W.alert=k;
+  {const d=day(),st=S.week.storm,X=seaX();   // remember which bad nights you were warned about (🌦️ Weather-wise)
+    if(st&&st.day===d+1)W.warn=k+1;else if(seasonId()==='winter'&&X.cold&&X.cold[d])W.warn=k}
   phoneNotify(ws[0][0],'Tides & Weather: '+ws.map(x=>x[1]).join(' · '),ws[0][2]);
   say(`📱 🌦️ <b>Tides & Weather</b>: ${ws.map(x=>`${x[0]} ${x[1]}. ${x[2]}`).join(' ')}`)});
+// 🌦️ Weather-wise: a gale or a hard freeze spent at home, warned about the evening before
+{const _up=upkeepNight;upkeepNight=function(where,notes,d){try{const W=S.ph&&S.ph.wx;
+  if(W&&W.warn===dayKey()&&where==='home'&&(stormNight(d)||(typeof coldNight==='function'&&coldNight(d))))S.stats.wxWise=(S.stats.wxWise||0)+1}catch(e){}
+  return _up.apply(this,arguments)}} // apps
 definePhoneApp({id:'weather',name:'Tides & Weather',ic:'🌦️',order:67,size:'18 MB',desc:'Forecast a day ahead of the island grapevine, tide tables, and a buzz the evening before bad weather.',
   badge:()=>{const W=S.ph&&S.ph.wx;return W&&W.alert===dayKey()&&W.seen!==dayKey()?1:0},
   view(){const d=day(),W=WX();W.seen=dayKey();let h='';

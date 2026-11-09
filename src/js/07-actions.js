@@ -110,8 +110,8 @@ function dockActions(a,side){
   const t=x=>x?(x.d>day()?`${DAYS[x.d].slice(0,3)} ${fmt(x.dep)}`:fmt(x.dep)):'none';
   if(out) a.push({ic:'🚨',l:'Ferry service suspended',s:`${out.cause}. Check the Ferry tab.`,dis:true});
   if(car&&car.fuel<0.1) a.push({ic:'⛽',l:'Can’t drive on: the tank is empty',s:'The deckhands won’t load a car that can’t drive itself off. Get it some gas first (see below).',dis:true});
-  else if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`${car.fuel<0.5?'⚠️ Running on fumes. ':''}Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+$(FARE_CAR):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
-  a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+$(FARE_WALK):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
+  else if(car) a.push({ic:'🚗',l:'Drive on the next sailing',s:`${car.fuel<0.5?'⚠️ Running on fumes. ':''}Next you can make: ${t(kD)}${kD?' · in line by '+fmt(kD.dep-20):''}${side==='M'?' · '+fareTxt('drive'):''}`,cls:'primary',dis:!kD,fn:()=>waitFerry('drive')});
+  a.push({ic:'🚶',l:'Walk on the next sailing',s:`Next: ${t(kW)}${kW&&kW.passenger?' (passenger-only boat)':''}${side==='M'?' · '+fareTxt('walk'):' · free'}${car?' · car stays here':''}`,cls:car?'':'primary',dis:!kW,fn:()=>waitFerry('walk')});
   if(out&&m>=420&&m<=1140) a.push({ic:'⛵',l:'Look for the sailboat water taxi',s:'A neighbor runs people across during outages. $20, maybe.',fn:waterTaxi});
   if(side==='M'){
     if(S.phone<90) a.push({ic:'🔋',l:`Charge your phone at the outlet (${S.phone}%)`,s:'The one by the vending machines. 30 minutes: +30%.',fn:()=>{S.t+=30;phoneTick();S.phone=Math.min(100,S.phone+30);say('🔋 You sit on the floor by the vending machines while your phone charges.');afterAction()}});

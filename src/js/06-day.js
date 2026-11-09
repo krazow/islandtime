@@ -18,6 +18,9 @@ function processTimed(){
     else {S.pantry+=dl.n;S.delivery=null;say(`📦 Your island grocery delivery made it to the porch: +${dl.n} days of food.`);}
   }
 }
+// Is this week's gale known yet? The morning it hits (the island hears then), or a day early with 🌦️ Tides & Weather.
+function stormKnown(){const st=S.week.storm,d=day();if(!st||S.t>=st.end)return false;
+  return st.day===d||(st.day===d+1&&typeof phoneInstalled==='function'&&phoneInstalled('weather'))}
 function stormNight(d){const st=S.week.storm;if(!st)return false;const n=d*1440+1380;return n>=st.start&&n<st.end}
 function startDay(){
   const d=day();
@@ -94,7 +97,7 @@ function endDay(where){
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
-  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 🔎 on your phone, or the bulletin board.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
+  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
   S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}
