@@ -273,3 +273,6 @@ html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#0
 .ph-call-log p{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin:6px 0;font-size:13.5px;line-height:1.4}
 .ph-vm{padding:2px 0 6px 48px}.ph-vm p{font-size:13px;margin:4px 0;color:var(--mute)}.ph-vm .ph-btn{margin:4px 0;padding:7px 10px}
 html.hc .ph-tabs{background:#ddd}
+/* household */
+.hh-letter{margin:0 0 8px;padding:8px 10px;background:#fbf8f1;border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.4}
+html.hc .hh-letter{background:#fff;border-color:#000}

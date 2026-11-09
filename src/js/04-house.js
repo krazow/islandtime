@@ -43,6 +43,7 @@ function upkeepNight(where,notes,d){
   if(home&&!burned&&U.propane>0&&!U.woodOut){U.woodOut=true;notes.push('🪵 Out of dry firewood, so the propane furnace runs all night and drinks the tank.')}
   if(U.fridge){adj('stress',4);homeAdj(-3);notes.push('🤢 Something in the fridge spoiled during the outage, and it’s making itself known. (Clean out the fridge.)')}
   if(U.mold){adj('health',-1);adj('stress',2);notes.push('🦠 The mold in the bathroom isn’t going away on its own.')}
+  hhNight(where,notes,d);
 }
 function choresPile(notes){const U=UP();let pile=0;const late=[];
   for(const k in CHORES){U[k]=(U[k]||0)+1;if(U[k]>1){pile+=U[k]-1;late.push(CHORES[k][1].replace(/^(Do|Make|Sweep up) (the |a load of )?/,'').toLowerCase())}}

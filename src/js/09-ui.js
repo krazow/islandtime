@@ -282,6 +282,7 @@ function todoItems(){
    it.push({ok:!due.length,fail:false,l:'House & yard upkeep',s:due.length?`Needs attention: ${due.join(', ')}. See 🏠 and 🌲 at home.`:'Everything’s in good shape.',urgent:due.length>=3});}
   it.push({ok:S.home>=50,fail:false,l:'Keep the house in shape',s:`🏠 Home ${S.home}/100. It slips every day. Below ${HOME_LOW}: worse sleep, more breakdowns, fewer visitors. ${HOME_HIGH}+: better rest and cozy mornings.`,urgent:S.home<HOME_LOW});
   if(S.injury) it.push({ok:S.injury.treated,fail:false,l:'Get your ankle treated',s:'Urgent Care in DuPont, 8 AM–8 PM. Nothing on the island.',urgent:!S.injury.treated});
+  hhTodo(it);
   return it;
 }
 // ---- my priorities: the player's own editable, ordered list (saved with the game) ----
