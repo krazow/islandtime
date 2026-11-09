@@ -181,7 +181,7 @@ Search `island life: community calendar` in `index.html`. State: `S.cal` (commun
 | id | hook | when | action |
 |---|---|---|---|
 | `veterans_day` | wake | month mode, week 2 Wed (Nov 11) | the Riv, 11:00–11:40 AM: 60 min, stress −6, Walt +2 (or meet Walt) |
-| `craft_bazaar` | wake | Sat, month weeks 3–4; week mode 60% roll | Lake Josephine (clubhouse), 10 AM–3 PM: wreath $25 (Home +3, stress −4) or browse (stress −2); may meet `bev` |
+| `craft_bazaar` | wake | Sat, month weeks 3–4; week mode 60% roll | American Legion Hall (`legion`), 10 AM–3 PM: wreath $25 (Home +3, stress −4) or browse (stress −2); may meet `bev` |
 | `lake_cleanup` | wake | Sun, month week 2; week mode always | Lake Josephine, 8–11 AM start: 120 min, stress −4, `S.rep+1` if it exists, a friend +2 (or meet the Hendersons) |
 | `fire_drill` | wake | Thu, month week 3; week mode always | the old store (fire station), 5:30–6:30 PM start: 90 min, stress −3, health +2, Rusty +2 (or meet him), `S.up.chimney=0` once |
 | `bev_bread` | wake | Bev is a close friend, 35% | +1 day of food |

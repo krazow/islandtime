@@ -17,7 +17,7 @@
 
 ## The game
 
-- **Work** in Lakewood Monday–Friday. Clock in by 9:00, and the 7:45 boat is the only one that gets you there.
+- **Work** in Lakewood Monday–Friday. Clock in by 9:00, and the 7:35 boat is the only one that gets you there.
 - **Ferry:** be in line 20 minutes early. Fog delays, commute boats fill up, Monday fuel runs cancel sailings, and breakdowns can strand you for a day or more. Then there's the neighbor's sailboat water taxi, the passenger-only backup boat, or a night in the Steilacoom terminal.
 - **Food:** the island's only store closed in February 2026. Shop on the mainland, order delivery, or get takeout.
 - **Gas:** there's none on the island, and gas cans are banned on the ferry. Drive over to fill up, pay Dale $12 a gallon, switch to diesel (two DOT cans are legal), or risk smuggling.
@@ -39,13 +39,22 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### 1.14.1: the real ferry and local fixes
+
+- ⛴️ **The real 2026 ferry schedule.** Departures, the 7:35 commute boat, the midday gap, the first and last boats, Ketron stops and the Monday fuel run (skipped on holidays) now match Pierce County's published 2026 timetable. Summer adds the extra peak runs, and July 2–5 runs two boats.
+- 💵 **Real fares.** Car + driver $24.94 ($33.86 in summer), walk-on $8.14. The Ferry Pass sells the county's **Value Pass**: 5 round trips for $96.08 (car) or $29.14 (walk-on).
+- 🌙 **The Steilacoom terminal isn't open all night.** Stranded after the last boat, you sleep in your car in the ferry lot or on the covered bench outside. Same cost to your stress and health.
+- 📦 **No parcel lockers.** Packages and Mainland Market groceries wait at a pickup counter by the Steilacoom ferry landing.
+- 🎄 **The holiday craft bazaar** is at the new **American Legion Hall** location on the island.
+- 📬 The post office is on Eckenstam-Johnson Road. The lake cleanup stays at Lake Josephine (the lakes aren't connected).
+
 ### New in 1.14: eight real phone apps, a guided first week, feedback
 **Phone apps** (5 slots, 8 to choose from; the old placeholder apps are retired and their slots freed)
 
 
 Three new apps in the 🛍️ App Store. Each takes one of your 5 slots.
 
-- ⛴️ **Ferry Pass** (replaces Ferry Alerts). The next 3 sailings from wherever you are, rider alerts, fog, ice and king-tide delays, and the last boat tonight. **Ticket books:** 10 vehicle + driver crossings for $198.75 or 10 walk-on crossings for $46.88 (25% off the booth price). Fares are only collected in Steilacoom, so that’s where a ride gets used instead of cash. Your tickets live on your phone: a dead phone means paying cash. **Push alerts:** the moment the county posts an outage, your phone buzzes, once per outage, even in your pocket.
+- ⛴️ **Ferry Pass** (replaces Ferry Alerts). The next 3 sailings from wherever you are, rider alerts, fog, ice and king-tide delays, and the last boat tonight. **Ticket books:** the county's Value Pass: 5 vehicle + driver round trips for $96.08 or 5 walk-on round trips for $29.14. Fares are only collected in Steilacoom, so that’s where a ride gets used instead of cash. Your tickets live on your phone: a dead phone means paying cash. **Push alerts:** the moment the county posts an outage, your phone buzzes, once per outage, even in your pocket.
 - 🚗 **Island Rides.** Car out of gas, battery dead, or parked in Steilacoom? A neighbor drives you to the island ferry landing, or from the landing to anywhere on the island, for $8–12. Pickup in 10–30 minutes (longer early and late), no drivers 11 PM–5 AM, island only. A 🚗 option shows up under 🧭 Go somewhere for an hour. Sometimes your driver becomes a friend.
 - 🌦️ **Tides & Weather.** Today and tomorrow in detail (gales, fog, ramp ice, snow, hard freezes, king tides, wildfire smoke and heat) and the rest of the week at lower confidence. It knows tomorrow’s weather a day before the morning gale warning, and buzzes you the evening before a gale, snow, ramp ice, a king tide or smoke (and on hard-freeze nights). Plus a tide table for Steilacoom, with king tides highlighted.
 
@@ -54,7 +63,7 @@ Three new apps in the 🛍️ App Store (each takes one of your 5 slots):
 
 - 💳 **Island Credit Union.** Your balance, or your card balance when you’re in the red, with the $1,500 card limit and how much is left for essentials. It spells out what card debt is costing your score. Every bill is listed with its amount and due day, and you can pay any open bill (or all of them) from the app. **Autopay** pays each bill on its due day. If the money isn’t there it pays anyway and charges a $25 overdraft fee.
 - 💼 **Gig Work.** Small remote tasks for dead time in the ferry line, at the terminal or in a motel: a survey (10 min, $3), transcribing a voicemail (20 min, $6), tagging photos (30 min, $8). Each costs battery and a little stress, and you get 4 a day. On the island’s one bar, every upload takes 10 extra minutes. It also shows your job or interview and opens the job listings, so it replaces Job Hunt.
-- 🛒 **Mainland Market.** Order 3 or 5 days of groceries from anywhere, 7 AM–7 PM, at supermarket prices plus a $5 pickup fee. It can go on the card. Two hours later it’s waiting in cold locker 9 at the Steilacoom ferry terminal: pick it up there (on foot you carry 4 days, and the rest waits). Leave it past 10 PM and the cold half spoils. One order at a time.
+- 🛒 **Mainland Market.** Order 3 or 5 days of groceries from anywhere, 7 AM–7 PM, at supermarket prices plus a $5 pickup fee. It can go on the card. Two hours later it’s waiting at the grocery pickup counter by the Steilacoom ferry landing: pick it up there (on foot you carry 4 days, and the rest waits). Leave it past 10 PM and the cold half spoils. One order at a time.
 
 
 - 🩺 **Telehealth** (new, in the App Store). Video visits with a real doctor, once a day: 20 minutes, a $20 copay and a chunk of battery. It needs real signal, so it works on the mainland or on the Riv’s Wi-Fi. On the island’s one bar the video freezes on your own face.
@@ -100,7 +109,7 @@ So every setup comes out ahead, and none is more than about 30% better than the 
 - 🌦️ **Weather-wise:** spend a gale or a hard freeze at home after Tides & Weather warned you the evening before.
 
 **Guided first week and feedback**
-- **A guided first week** replaces the old first-day tips. One short tip at a time, in the same yellow box, as you reach each place: Monday is the commute (be in line 20 minutes early for the 7:45), work, groceries and gas on the mainland, and getting home; Tuesday your 📱 phone and its 5 app slots (trading unlocks); Wednesday bingo at the Riv and island friends; Thursday the doctor and your prescription; Friday and the weekend the house, bills, Gus and a day off.
+- **A guided first week** replaces the old first-day tips. One short tip at a time, in the same yellow box, as you reach each place: Monday is the commute (be in line 20 minutes early for the 7:35), work, groceries and gas on the mainland, and getting home; Tuesday your 📱 phone and its 5 app slots (trading unlocks); Wednesday bingo at the Riv and island friends; Thursday the doctor and your prescription; Friday and the weekend the house, bills, Gus and a day off.
 - Winter and summer games get their own notes: ice on the ramp, dripping the faucets on freezing nights, tourists in the summer ferry line.
 - After **Got it**, the next tip waits until you do something, so the Next up card gets its turn. Tips stay off if you turned them off.
 - **📘 Replay the guided week** in ⚙️ Settings starts this game’s tips over.
@@ -139,8 +148,8 @@ So every setup comes out ahead, and none is more than about 30% better than the 
 **Household life**
 
 - 🧾 **Bills.** Electric (Island Power & Light Co-op), internet (OneBar Wireless), phone and home insurance (Fir & Tide Mutual), each due on its own day. In a one-week game they’re all due that week; in a month they’re spread out. Pay at home (🏠 Inside the house → 🧾 Pay bills): online in 5 minutes, or mail a check that takes 2 days to get there. Late means a late fee and a little stress. After a week you get a stern letter (the co-op’s is pink). After two weeks it goes to collections and lands on your card with a fee on top; for electric, that fee is the reconnect. Anything still unpaid when the game ends gets settled then. Electric runs higher in winter and lower in summer.
-- 📬 **Mail.** Letters arrive Monday to Saturday in your P.O. box at the island post office, next to the old store: bill statements, a seed catalog, a jury summons you get out of by living on an island, the co-op newsletter, and now and then a check for $12.40.
-- 📦 **Packages.** Order online at home: mouse traps, a power bank, a well-pump pressure switch, dog food. Nobody delivers to the island, so orders wait 2 days in the parcel lockers at the Steilacoom ferry terminal. Pick them up on your way through. After a week the lockers send them back (refund, minus $5).
+- 📬 **Mail.** Letters arrive Monday to Saturday in your P.O. box at the island post office on Eckenstam-Johnson Road: bill statements, a seed catalog, a jury summons you get out of by living on an island, the co-op newsletter, and now and then a check for $12.40.
+- 📦 **Packages.** Order online at home: mouse traps, a power bank, a well-pump pressure switch, dog food. Nobody delivers to the island, so orders wait 2 days at a pack-and-ship counter by the Steilacoom ferry landing. Pick them up on your way through. After a week the lockers send them back (refund, minus $5).
 - 🗑️ **Trash and dump runs.** A bag a night piles up by the shed. The island transfer station is open Wed, Sat and Sun, 9 AM–3 PM (also Fridays in summer, from 10 AM in winter). The dump run is in 🌲 Outside & property: load the car, 50 minutes, about a gallon of gas, $8–24. At 8+ bags the house slips a little each night, and raccoons may spread it across the yard.
 - 🐶 **A dog (optional).** A neighbor’s litter may turn up at the end of the road, or the county shelter van parks in the Steilacoom terminal lot on Saturdays ($85). A dog needs food (a bag lasts 30 days: Lakewood supermarket, Warehouse Club or online) and a walk every day. Walking at Lake Josephine counts and you might meet someone. A fed, walked dog lowers your stress at night. A hungry or unwalked one costs Home and stress, and so does leaving it alone overnight. If you never adopt, none of this costs you anything.
 - 🍳 **Cooking at home.** Cook a real dinner (4–10 PM, 45 min): health +2, stress −4, no extra food, and cheaper than the Riv. On a day off, batch-cook (2 hours): +1 day of food and 5 nights of good leftovers.
@@ -223,8 +232,8 @@ The five installable apps are placeholders for now. Each one is a self-contained
 **More life on the island**
 
 - 🇺🇸 **Veterans Day, Wednesday Nov 11** (month mode): the American Legion holds a ceremony at 11:00 AM by the flagpole outside the Riv. Show up and you’ll leave calmer, and closer to Walt (or finally meet him).
-- 🎄 **Holiday craft bazaar** at the community clubhouse by Lake Josephine, Saturdays in weeks 3 and 4 (and some Saturdays in a one-week game). Buy a cedar wreath for your door (Home +3) or just browse for fudge. You might meet Bev, who knits, has opinions, and grows far too much zucchini.
-- 🗑️ **Lake cleanup day**: grab a bag at Lake Josephine on a Sunday morning and work your way around to Lake Florence. Two hours, one lawn chair, nine golf balls, and a friend working the bag next to you.
+- 🎄 **Holiday craft bazaar** at the American Legion hall, Saturdays in weeks 3 and 4 (and some Saturdays in a one-week game). Buy a cedar wreath for your door (Home +3) or just browse for fudge. You might meet Bev, who knits, has opinions, and grows far too much zucchini.
+- 🗑️ **Lake cleanup day**: grab a bag at Lake Josephine on a Sunday morning and work your way around the shore. Two hours, one lawn chair, nine golf balls, and a friend working the bag next to you.
 - 🚒 **Fire District #27 drill**: a Thursday night drill at the station by the old store. Roll some hose, get a little healthier, meet Rusty in an unexpected outfit, and the volunteers check your chimney on the way home.
 - ⛵ **Sam’s boat project**: a $200 wooden skiff with “character.” Help scrape, sand or chip in, and be there when she (probably) floats.
 - 🧢 **Walt’s grandson**: Tyler is over from Tacoma and lives on his phone. Show him the eagles, teach him the woodpile, and come to the Legion send-off.
@@ -272,7 +281,9 @@ Score is based on cash, health, job standing and stress, with bonuses and penalt
 
 ## What's real and what isn't
 
-The **ferry schedule, prices and characters (including Dale) are made up**. These things are real as of mid-2026:
+The **characters (including Dale) are made up**. These things are real as of 2026:
+- The ferry runs on Pierce County's 2026 non-peak schedule: first boats 4:45 AM from Steilacoom and 5:15 AM from the island, last boats 10:20 PM from Steilacoom and 10:50 PM from the island, a midday gap (nothing leaves the island between 12:45 and 3:15), Ketron stops, and a Monday fuel run (skipped on holidays). In summer, extra runs and peak car fares; two boats July 2–5.
+- Fares: $24.94 car + driver ($33.86 in summer), $8.14 walk-on, collected in Steilacoom. The Value Pass is 5 round trips for $96.08 (car) or $29.14 (walk-on).
 - The Anderson Island General Store, the island's only grocery and gas station, closed Feb 2, 2026. A food co-op hopes to reopen it in 2027.
 - Pierce County ferry policy prohibits gasoline cans, full or empty, citing 49 CFR 176.76 and RCW 9.91.025. It allows limited diesel (two 5-gal DOT containers per vehicle), propane, and outboard tanks on trailered boats.
 - Fuel tankers cross on dedicated runs where only essential personnel may ride.

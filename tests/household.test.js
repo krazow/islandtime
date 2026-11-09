@@ -91,7 +91,7 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => hhMailHere().length), 0, 'box emptied');
     noErrors(errors);
   } },
-  { name: 'packages: order traps online, pick them up at the Steilacoom lockers', fn: async ctx => {
+  { name: 'packages: order traps online, pick them up at the Steilacoom shipping counter', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await atHome(page, 1, 1100);
@@ -100,7 +100,7 @@ module.exports = [
     assert.deepStrictEqual(await page.evaluate(() => HH().pkgs.map(p => p.k)), ['traps']);
     // not there yet the next day
     await page.evaluate(() => { S.cur = 2; S.t = 2 * 1440 + 900; S.loc = 'stDock'; render(); });
-    assert.strictEqual(await page.locator('.content button.act', { hasText: 'parcel lockers' }).count(), 0);
+    assert.strictEqual(await page.locator('.content button.act', { hasText: 'shipping counter' }).count(), 0);
     await page.evaluate(() => { S.cur = 3; S.t = 3 * 1440 + 900; render(); });
     assert.ok(await page.evaluate(() => todoItems().some(x => x.l === 'Pick up your packages')));
     await page.locator('.content button.act', { hasText: 'Pick up 1 package' }).click();

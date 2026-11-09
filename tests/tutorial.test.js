@@ -37,7 +37,7 @@ module.exports = [
     assert.ok(await page.$('#app .nextup'), 'Next up back after Got it');
     // the landing
     await at(page, 'aiDock', 7 * 60 + 10);
-    assert.strictEqual(await tipId(page), 'dock'); assert.match(await tip(page), /20 minutes before/); assert.match(await tip(page), /7:45/);
+    assert.strictEqual(await tipId(page), 'dock'); assert.match(await tip(page), /20 minutes before/); assert.match(await tip(page), /7:35/);
     await gotIt(page);
     await at(page, 'stDock', 8 * 60 + 15);
     assert.strictEqual(await tipId(page), 'mainland'); await gotIt(page);

@@ -361,11 +361,21 @@ const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunda
 const DATES=['Nov 2','Nov 3','Nov 4','Nov 5','Nov 6','Nov 7','Nov 8'];
 function dateTxt(d){try{const st=SEA().start; // season
   return new Date(st[0],st[1],st[2]+(S.weekNo||0)*7+d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}catch(e){return DATES[d]}}
-const AI_DEPS=[315,390,465,540,615,690,765,840,915,990,1065,1140,1215,1290];
-const ST_DEPS=[350,425,500,575,650,725,800,875,950,1025,1100,1175,1250,1325];
-const KETRON={I:[690,1215],M:[575,950,1175]};
-const FUEL_CANCEL={I:[690],M:[575]}; // Monday fuel run
-const FARE_CAR=26.5, FARE_WALK=6.25, FUEL_RATE=0.05, GAS_PRICE=4.59, DIESEL_PRICE=5.29, DALE_PRICE=12;
+// 2026 Pierce County ferry, non-peak (one boat). piercecountywa.gov/8922/2026-Ferry-Schedule
+const AI_DEPS=[315,380,455,535,605,670,765,915,995,1070,1140,1210,1310,1370];  // 5:15 6:20 7:35 8:55 10:05 11:10 12:45 3:15 4:35 5:50 7:00 8:10 9:50 10:50
+const ST_DEPS=[285,345,425,500,570,635,730,885,955,1035,1105,1175,1275,1340];  // 4:45 5:45 7:05 8:20 9:30 10:35 12:10 2:45 3:55 5:15 6:25 7:35 9:15 10:20
+const KETRON={I:[380,670,1210],M:[345,635,1175]};
+// Two-boat days add the peak-season extra runs (in the game's summer: July 2–5)
+const EXTRA_DEPS={I:[800,885,960,1040],M:[765,845,920,995]};
+// Observed holidays (no Monday fuel run): from the 2026 schedule's holiday list
+const FERRY_HOLIDAYS=['2026-01-19','2026-02-16','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-11','2026-11-26','2026-11-27','2026-12-24','2026-12-25','2026-12-31','2027-01-01','2027-01-18'];
+function gameDate(d){try{const st=SEA().start;return new Date(st[0],st[1],st[2]+(S.weekNo||0)*7+d)}catch(e){return new Date(2026,10,2+d)}}
+function isoDate(dt){return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`}
+function ferryHoliday(d){return FERRY_HOLIDAYS.includes(isoDate(gameDate(d)))}
+function twoBoatDay(d){const t=isoDate(gameDate(d));return t>='2026-07-02'&&t<='2026-07-05'}
+function deps(side,d){const b=side==='I'?AI_DEPS:ST_DEPS;return twoBoatDay(d)?[...b,...EXTRA_DEPS[side]].sort((x,y)=>x-y):b}
+const FUEL_CANCEL={I:[670],M:[570]}; // Monday fuel run: the 11:10 from the island, the 9:30 from Steilacoom
+const FARE_CAR_NONPEAK=24.94, FARE_CAR_PEAK=33.86, FARE_WALK=8.14, FUEL_RATE=0.05, GAS_PRICE=4.59, DIESEL_PRICE=5.29, DALE_PRICE=12;
 const GOODS={
   food:{n:'Food case',ic:'🥫',d:'Shelf-stable groceries, 3 days’ worth',base:{M:46,I:86},law:'ok'},
   med:{n:'Medical supplies',ic:'🩹',d:'First-aid kit, bandages, OTC cold & pain meds',base:{M:28,I:64},law:'ok'},
@@ -393,7 +403,7 @@ const NEWS=[
 ];
 const CAP_CAR=20, CAP_FOOT=6, APPT_DAY=3; // doctor's appointment is Thursday (bingo is Wednesday)
 const JOBS={
-  lakewood:{n:'Office job, Lakewood',loc:'work',start:540,end:1020,pay:170,days:[0,1,2,3,4],pitch:'9:00–5:00 weekdays. The 7:45 boat gets you there.'},
+  lakewood:{n:'Office job, Lakewood',loc:'work',start:540,end:1020,pay:170,days:[0,1,2,3,4],pitch:'9:00–5:00 weekdays. The 7:35 boat gets you there.'},
   riv:{n:'Line cook at the Riv',loc:'food',start:600,end:1080,pay:115,days:[1,2,3,4,5],pitch:'10:00–6:00, Tuesday–Saturday. On the island: no ferry, no gas money. Lower pay.'},
   tacoma:{n:'Records clerk, Tacoma hospital',loc:'office',start:510,end:990,pay:215,days:[0,1,2,3,4],pitch:'8:30–4:30 weekdays. Best pay, longest commute.'},
   dupont:{n:'Warehouse, DuPont (early shift)',loc:'whse',start:390,end:870,pay:185,days:[0,1,2,3,4],pitch:'6:30–2:30 weekdays. You need the 5:15 AM boat, but you’re home early.'},
@@ -413,6 +423,7 @@ const L={
   store:{name:'General Store (closed)',side:'I',ic:'🏚️',desc:'Closed since Feb 2026. The swap board out front is the island market'},
   dale:{name:'Dale’s Place',side:'I',ic:'🛢️',desc:'End of a gravel road. Has gas. Don’t ask.',hours:()=>[420,1260]},
   food:{name:'The Riv',side:'I',ic:'🍔',desc:'Riviera restaurant. Takeout, and Bingo on Wednesday nights',hours:()=>[660,1260]},
+  legion:{name:'American Legion Hall',side:'I',ic:'🇺🇸',desc:'The Legion post. Veterans, coffee, and the holiday bazaar'},
   lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
   stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
   gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
@@ -428,8 +439,10 @@ const L={
   clinic:{name:'Medical Clinic (Tacoma)',side:'M',ic:'🩺',desc:'Your doctor. Weekdays only',hours:d=>d<5?[480,1020]:null},
   urgent:{name:'Urgent Care (DuPont)',side:'M',ic:'🚑',desc:'Walk-in care, 8 AM–8 PM',hours:()=>[480,1200]},
 };
-const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2}};
+const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2},legion:{home:8,aiDock:9,store:4,lake:6,food:6,dale:9}};
 const MP={office:[13,7.5],whse:[-3.5,-5],depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
+// 2026 fares, round trip, collected at Steilacoom; vehicle fares are higher in peak season (the game's summer)
+function fareCar(){return (typeof seasonId==='function'&&seasonId()==='summer')?FARE_CAR_PEAK:FARE_CAR_NONPEAK}
 function dist(a,b){
   if(a===b) return 0;
   if(L[a].side==='I'){return (DI[a]&&DI[a][b])||(DI[b]&&DI[b][a])}
@@ -458,7 +471,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.14.0', SAVE_SCHEMA=6;
+const APP_VERSION='1.14.1', SAVE_SCHEMA=6;
 // Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -596,7 +609,7 @@ function newGame(diff,mode,season){
   S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
   uiNarr=[];
   say(`Monday, 5:30 AM. Your alarm goes off ${seasonId()==='summer'?'and it’s already light out':'in the dark'}. Work in Lakewood starts at 9:00. The pantry is getting thin.`); // season
-  if(!prefs().tips) say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
+  if(!prefs().tips) say('Tip: the commuter boat leaves the island at 7:35. You have to be in line 20 minutes early.');
   say('⛽ Your car has 4.5 gallons left, and there is no gas station on the island anymore.');
   seasonIntro(); // season
   startDay();
@@ -635,7 +648,7 @@ function hoursTxt(id){const h=L[id].hours;if(!h)return '';const r=h(day());retur
 // ---------------- ferry engine ----------------
 function sailing(side,d,dep,mode,knownOnly){
   const abs=d*1440+dep;
-  if(d===0&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
+  if(d===0&&!ferryHoliday(d)&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
   for(const b of S.week.b){
     if(knownOnly&&b.start>S.t) continue;
     if(abs>=b.start&&abs<b.end){
@@ -648,8 +661,7 @@ function sailing(side,d,dep,mode,knownOnly){
   return {abs,dep,d,delay,ketron:KETRON[side].includes(dep)};
 }
 function findNext(side,mode,knownOnly){
-  const deps=side==='I'?AI_DEPS:ST_DEPS;
-  for(let d=day();d<day()+4;d++) for(const dep of deps){
+  for(let d=day();d<day()+4;d++) for(const dep of deps(side,d)){
     const s=sailing(side,d,dep,mode,knownOnly);
     if(S.t>s.abs-20) continue;
     if(s.cancel) continue;
@@ -661,7 +673,7 @@ function findNext(side,mode,knownOnly){
 function activeOutage(){return S.week.b.find(b=>b.start<=S.t&&S.t<b.end)}
 function fullProb(side,d,dep){
   let p=0.05;
-  if(d<5){ if(side==='I'&&(dep===390||dep===465)) p=0.35; if(side==='M'&&(dep===1025||dep===1100)) p=0.35;}
+  if(d<5){ if(side==='I'&&(dep===380||dep===455)) p=0.35; if(side==='M'&&(dep===1035||dep===1105)) p=0.35;}
   if(d===4&&side==='M'&&dep>=875&&dep<=1175) p=0.55;
   if(d===5&&side==='I'&&dep<=690) p=0.3;
   if(d===6&&side==='M'&&dep>=875) p=0.45;
@@ -687,7 +699,7 @@ function price(g,side){
 // what boarding here will cost: the cash fare, or a ride from a ⛴️ Ferry Pass book when that's what board() will use
 function fareTxt(mode){const k=mode==='drive'?'car':'walk';
   if(typeof phoneInstalled==='function'&&phoneInstalled('ferrypass')&&phoneCan()){const n=(S.ph&&S.ph.fp&&S.ph.fp[k])||0;if(n>0)return `🎟️ ticket (${n} left)`}
-  return $(mode==='drive'?FARE_CAR:FARE_WALK)}
+  return $(mode==='drive'?fareCar():FARE_WALK)}
 function waitFerry(mode){
   if(mode==='drive'){const c=carHere();if(!c||c.fuel<0.1){say('⛽ The tank is empty. The deckhands won’t load a car that can’t drive.');return render()}}
   const side=L[S.loc].side;
@@ -766,7 +778,7 @@ function board(side,s,mode){
     }
   }
   if(S.cargo.diesel>0&&S.cargo.diesel<=2&&mode==='drive') say('A deckhand checks the DOT labels on your diesel cans, sees they’re upright and strapped down, and waves you through. That one’s legal.');
-  if(side==='M'){const f=mode==='drive'?FARE_CAR:FARE_WALK;if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
+  if(side==='M'){const f=mode==='drive'?fareCar():FARE_WALK;if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
   const car=carHere();
   const dur=20+(s.ketron?10:0);
   const to=side==='I'?'stDock':'aiDock';
@@ -1183,7 +1195,7 @@ defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
   say(`⏰ Your alarm clock never went off. The power blinked out overnight and reset it. It’s already <b>${fmt(S.t)}</b>.`);
   S.phoneT=S.t;
-  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
+  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:35.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
 }});
 defEvent({id:'phone_died',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=60+Math.floor(Math.random()*50);S.t+=late;S.phoneT=S.t;adj('stress',10);buzz([100,60,100]);
@@ -1355,9 +1367,9 @@ const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok()&&(seasonId()==='fall'
 defEvent({id:'veterans_day',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('vet'),
   run(){say(`🇺🇸 <b>Veterans Day</b>, ${dateTxt(day())}. The American Legion holds its ceremony at <b>11:00 AM</b> by the flagpole outside the Riv: colors, the names, and a bugler who’s been practicing since October. Coffee after.`)}});
 defEvent({id:'craft_bazaar',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('bazaar'),
-  run(){say('🎄 <b>Holiday craft bazaar</b> today, 10 AM to 3 PM at the community clubhouse up by Lake Josephine. Wreaths, jam, knitted everything. Cash preferred, exact change worshipped.')}});
+  run(){say('🎄 <b>Holiday craft bazaar</b> today, 10 AM to 3 PM at the American Legion hall. Wreaths, jam, knitted everything. Cash preferred, exact change worshipped.')}});
 defEvent({id:'lake_cleanup',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('cleanup'),
-  run(){say('🗑️ <b>Lake cleanup day.</b> Volunteers meet at Lake Josephine between 8 and 11 AM with grabbers and contractor bags, then work around to Lake Florence. Coffee provided. Gloves BYO.')}});
+  run(){say('🗑️ <b>Lake cleanup day.</b> Volunteers meet at Lake Josephine between 8 and 11 AM with grabbers and contractor bags, then work their way around the shore. Coffee provided. Gloves BYO.')}});
 defEvent({id:'fire_drill',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('drill'),
   run(){say('🚒 Fire District #27 runs a volunteer drill tonight at <b>6:30 PM</b>, at the station up the road from the old store. They’re short on hands and will happily take yours.')}});
 defEvent({id:'bev_bread',hook:'wake',priority:2,max:1,chance:0.35,cond:ctx=>atHomeWake(ctx)&&flv('bev')>=3,
@@ -1379,19 +1391,21 @@ function lifeActions(a,loc){
     if(S.friends.walt){friendPts('walt',2);say('🇺🇸 Walt reads the names in his Legion cap, without his glasses, from memory. Afterward he pours you a coffee and doesn’t say much. He doesn’t have to.')}
     else{meet('walt','Walt from the American Legion','you stood together at the Veterans Day ceremony');say('🇺🇸 Thirty islanders, one flag, one bugler who nails it. The old guy next to you in the Legion cap introduces himself as Walt and hands you a coffee.')}
     afterAction()}}]);
-  if(loc==='lake'){
+  if(loc==='legion'){
     const off=flv('bev')>=2?5:0,price=25-off;
     lifeSlot(a,'bazaar','🎄','Holiday craft bazaar',600,900,[
-      {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the clubhouse. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
+      {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the Legion hall. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
         C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);
         say('🎄 A cedar wreath with a pinecone the size of your fist. The cabin smells like a Christmas tree lot that also has a woodstove.');lifeBev();afterAction()}},
       {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
+  }
+  if(loc==='lake'){
     lifeSlot(a,'cleanup','🗑️','Lake cleanup',480,660,[{ic:'🗑️',l:'Volunteer at the lake cleanup',s:'2 hours with a grabber and a bag. Stress −4.',cls:'primary',fn:()=>{
       C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);if(typeof S.rep==='number')S.rep+=1;
       say('🗑️ Two tires, a lawn chair, nine golf balls and a 1987 Rainier can come out of the shallows. The eagles supervise.');
       const b=lifeBuddy(['hendersons','sam','rusty','bev']);
-      if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way to Lake Florence.`)}
-      else meet('hendersons','the Hendersons','you hauled a shopping cart out of Lake Florence together');
+      if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way around Lake Josephine.`)}
+      else meet('hendersons','the Hendersons','you hauled a shopping cart out of Lake Josephine together');
       afterAction()}}]);
   }
   if(loc==='store') lifeSlot(a,'drill','🚒','Fire District drill',1050,1110,[{ic:'🚒',l:'Join the volunteer fire drill',s:'90 min at the Fire District #27 station. Hoses, ladders, cocoa. Stress −3, health +2.',cls:'primary',fn:()=>{
@@ -1694,7 +1708,7 @@ function endDay(where){
   if(where==='home'&&homeTier()==='high'){rest+=4;adj('health',1)}
   if(where==='home'){adj('stress',-rest);adj('health',3);
     const offDay=!curJob()||!curJob().days.includes(d);if(offDay){adj('stress',-10);adj('health',3);notes.push('🛋️ A day off. You actually feel rested.')}}
-  else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push('🪑 You sleep sitting up in the Steilacoom terminal waiting room. The vending machine hums all night.')}
+  else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push(carHere()?'🚗 The terminal locks up after the last boat, so you sleep in your car in the ferry lot, seat reclined, coat for a blanket. The ferry horn wakes you at 4:30.':'🪑 The terminal locks up after the last boat. You spend the night on the bench under the overhang outside, coat zipped to your chin.')}
   else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
@@ -1744,7 +1758,7 @@ function afterAction(){
 }
 function strandedModal(){
   modal('Stranded on the mainland','<p>It’s late and you’re not getting home tonight. Where do you sleep?</p>',[
-    {l:'🪑 Steilacoom terminal waiting room',s:'Free. It’s open all night. It is not comfortable.',fn:()=>{S.loc='stDock';endDay('terminal')}},
+    {l:carHere()?'🚗 Sleep in your car in the ferry lot':'🪑 The bench outside the Steilacoom terminal',s:'Free. The waiting room locks after the last boat. It is not comfortable.',fn:()=>{S.loc='stDock';endDay('terminal')}},
     {l:'🏨 Motel in Lakewood',s:'$115. Real bed.',fn:()=>endDay('motel')},
   ],true);
 }
@@ -1871,7 +1885,7 @@ function dockActions(a,side){
     if(isl&&isl.loc==='stDock'&&!isl.diesel&&m>=360&&m<=1200) a.push({ic:'🛻',l:'Trade the Subaru for an old diesel pickup — $1,400',s:'Diesel is the one fuel you can legally bring over in cans (two 5-gal DOT cans).',dis:S.money<1400,fn:()=>{money(-1400);Object.assign(isl,{name:'Island truck (old diesel pickup)',diesel:true,tank:20,fuel:Math.max(isl.fuel,4)});S.t+=60;say('You swap the Subaru for a 1999 diesel pickup that rattles like a can of bolts. But diesel can legally ride the ferry in DOT cans. You’ve beaten the system, kind of.');afterAction()}});
     const noBoatTonight=(!car||!kD||kD.d>day())&&(!kW||kW.d>day()||!canWalkCarry());
     if(m>=1260||noBoatTonight){
-      a.push({ic:'🪑',l:'Sleep in the terminal',s:'It’s open all night. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
+      a.push({ic:carHere()?'🚗':'🪑',l:carHere()?'Sleep in your car in the ferry lot':'Sleep on the bench outside the terminal',s:'The waiting room locks after the last boat. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
       a.push({ic:'🏨',l:'Get a motel in Lakewood — $115',s:'Ends the day.',cls:'danger',fn:()=>endDay('motel')});
     }
   }
@@ -2172,6 +2186,7 @@ function sceneSVG(){
     if(loc==='store') fg+=`<rect x="150" y="104" width="130" height="50" fill="#e8dcc0"/><rect x="146" y="98" width="138" height="10" fill="#8a3b22"/><text x="215" y="122" text-anchor="middle" font-size="11" font-family="DM Sans" font-weight="700" fill="#2f3a3a">GENERAL STORE</text><rect x="200" y="130" width="30" height="24" fill="#5a4a3a"/><rect x="196" y="126" width="38" height="10" fill="#b8402a" transform="rotate(-8 215 131)"/><text x="215" y="134" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="DM Sans" transform="rotate(-8 215 131)">CLOSED</text><rect x="300" y="128" width="14" height="26" fill="#ddd"/><rect x="298" y="124" width="18" height="12" fill="#8a8a8a" opacity=".8"/>`;
     if(loc==='dale') fg+=`<rect x="170" y="116" width="80" height="38" fill="#6d5a45"/><polygon points="164,118 210,96 256,118" fill="#4b4b4b"/><rect x="262" y="132" width="16" height="22" rx="3" fill="#b8402a"/><rect x="282" y="134" width="16" height="20" rx="3" fill="#c98a12"/><rect x="200" y="128" width="20" height="26" fill="#2d241b"/>`;
     if(loc==='food') fg+=`<rect x="160" y="108" width="120" height="46" fill="#d7c7a5"/><rect x="156" y="102" width="128" height="9" fill="#2f5d4a"/><rect x="175" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/><rect x="235" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
+    if(loc==='legion') fg+=`<rect x="150" y="112" width="140" height="42" fill="#c9c1ad"/><polygon points="144,114 220,90 296,114" fill="#5a4a3a"/><rect x="208" y="128" width="22" height="26" fill="#5a4a3a"/><rect x="318" y="70" width="3" height="84" fill="#999"/><rect x="321" y="72" width="22" height="13" fill="#b23a3a"/><rect x="321" y="72" width="9" height="7" fill="#2c4a7a"/>`;
     if(loc==='lake') fg=`<ellipse cx="240" cy="150" rx="200" ry="22" fill="${water}"/>`+fg.replace(/170/g,'135')+`<path d="M300 60 q10 -6 20 0 q10 -6 20 0" stroke="#222" stroke-width="3" fill="none"/>`;
   } else {
     const b=[[10,50],[60,70],[120,40],[170,85],[230,55],[290,65],[350,45],[400,75],[440,50]];
@@ -2361,9 +2376,9 @@ function planTrip(to,byAbs,off){
   const side=L[S.loc].side,dockFrom=side==='I'?'aiDock':'stDock',dockTo=side==='I'?'stDock':'aiDock';
   const startLoc=off&&side==='I'?'home':S.loc,toDock=startLoc===dockFrom?0:dist(startLoc,dockFrom);
   const drive=to===dockTo?0:dist(dockTo,to);
-  const d=day()+off,deps=side==='I'?AI_DEPS:ST_DEPS,earliest=off?d*1440+300:S.t;
+  const d=day()+off,dl=deps(side,d),earliest=off?d*1440+300:S.t;
   const opts=[];
-  for(const dep of deps){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
+  for(const dep of dl){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
     const leave=sl.abs-20-toDock;if(leave<earliest)continue;
     const arrive=sl.abs+(sl.delay||0)+20+(sl.ketron?10:0)+drive;
     opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,why:sl.why,full:fullProb(side,d,dep)})} // season: why
@@ -2401,7 +2416,7 @@ function ferryView(){
     const past=abs<S.t;const st=s.cancel?`<span class="st x">CANCELED</span>`:s.passenger?`<span class="st p">PASS. ONLY</span>`:s.delay?`<span class="st d">+${s.delay} late</span>`:`<span class="st ok">${s.ketron?'via Ketron':'on time'}</span>`;
     return `<div class="row ${past?'past':''}"><span>${fmt(dep)}</span>${st}</div>`}).join('');
   let h=plannerView()+`<div class="board"><h3>⛴️ Today’s sailings · ${DAYS[d]}</h3><div style="font-size:12px;color:#9fc0c8">Status as of ${fmt(S.t)}. Things can change without warning.</div>
-   <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',AI_DEPS)}</div><div><div class="colh">Leave Steilacoom</div>${col('M',ST_DEPS)}</div></div></div>`;
+   <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',deps('I',day()))}</div><div><div class="colh">Leave Steilacoom</div>${col('M',deps('M',day()))}</div></div></div>`;
   const alerts=S.week.b.filter(b=>b.start<=S.t).map(b=>`<p>🚨 <b>${fmtAbs(b.start)}</b>: service suspended, ${b.cause}. ${S.t>=b.end?`<span style="color:var(--good)">Restored ${fmtAbs(b.end)}.</span>`:'<b>No restoration estimate.</b>'}</p>`).join('');
   h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}${seasonFerryNote()}</div>`; // season
   h+=`<div class="sect">Fuel & the ferry (current situation)</div><div class="rules">
@@ -2419,7 +2434,7 @@ function ferryView(){
   <p>Inspection odds go up with every contraband item you carry, and way up when the sheriff’s task force rides the boat. The neighbor’s sailboat isn’t inspected.</p></div>`;
   h+=`<div class="sect">How the ferry works</div><div class="rules">
   <p>🕐 <b>Be in line 20 minutes before departure</b>, cars and walk-ons alike, or you don’t board.</p>
-  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(FARE_CAR)} with a car, ${$(FARE_WALK)} on foot. Leaving the island is free.</p>
+  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(fareCar())} with a car, ${$(FARE_WALK)} on foot. Leaving the island is free.</p>
   <p>🚗 Commute-hour boats fill up with cars. Friday afternoon and Sunday evening are the worst. Walk-ons always fit.</p>
   <p>🔧 When the boat breaks down there’s no second boat this time of year. Long outages eventually get a passenger-only backup.</p>
   <p class="small-note" style="color:var(--mute)">This is a game schedule, inspired by the real Steilacoom–Anderson Island–Ketron route. For real sailings, check Pierce County’s ferry page.</p></div>`;
@@ -2584,7 +2599,7 @@ const ACH=[
   {id:'ankle',ic:'🩹',n:'Back on your feet',d:'Get a hurt ankle treated.',t:()=>!!(S.injury&&S.injury.treated)},
   {id:'supplier',ic:'🥫',n:'Island supplier',d:'Sell food or medical supplies to neighbors on the island.',t:null},
   {id:'fred',ic:'🩴',n:'Pajama Fred’s friend',d:'Make friends with Pajama Fred.',t:()=>!!S.friends.fred},
-  {id:'terminal',ic:'🪑',n:'A night in the terminal',d:'Sleep sitting up in the Steilacoom ferry terminal.',t:c=>c.where==='terminal'},
+  {id:'terminal',ic:'🪑',n:'A night at the ferry dock',d:'Spend a stranded night at the Steilacoom ferry landing.',t:c=>c.where==='terminal'},
   {id:'pantry',ic:'🧺',n:'Fully stocked',d:'Have a week of food (7 days or more) in the pantry.',t:()=>S.pantry>=7},
   {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0},
   // phone apps (19-apps-travel.js, 20-apps-money.js): counters live in S.stats, so they're per game
@@ -3105,7 +3120,7 @@ function otActions(a,d,m){
   if(E.ot===dk){a.push({cat:'work',ic:'⏱️',l:'Overtime done for today',s:'Once a day is plenty.',dis:true});return}
   if(E.full!==dk||m<J.end||m>J.end+30)return;
   const pay=otPay(J),end=S.t+OT_HOURS*60,arr=end+dist(J.loc,'stDock');
-  let boat=null;for(const dep of ST_DEPS){const s=sailing('M',d,dep,'walk',true);if(!s.cancel&&s.abs-20>=arr){boat=s;break}}
+  let boat=null;for(const dep of deps('M',d)){const s=sailing('M',d,dep,'walk',true);if(!s.cancel&&s.abs-20>=arr){boat=s;break}}
   a.push({cat:'work',ic:'⏱️',l:`Stay for overtime (${OT_HOURS} h) — ${$(pay)}`,s:`Time and a half. Done at ${fmt(end)}, so the earliest boat home is ${boat?fmt(boat.dep):'tomorrow'}. Stress +10.`,
     fn:()=>{E.ot=dk;S.t=end;phoneTick();money(pay);adj('stress',10);adj('job',2);S.stats.overtime=(S.stats.overtime||0)+1;
       say(`⏱️ ${pick(['Your boss says “Got a minute?” and it’s two hours.','You stay late to clear the backlog. The office gets very quiet after five.','Two more hours. You eat a granola bar from the bottom of your bag for dinner.'])} Time and a half: +${$(pay)}. ${boat?`Next boat home: ${fmt(boat.dep)}.`:'The boats are done for the night.'}`);afterAction()}});
@@ -3300,7 +3315,7 @@ function seasonDelay(side,d,dep){
 }
 function seasonFull(p,side,d,dep){
   const s=seasonId();
-  if(s==='summer'){p=Math.max(p,0.12);if(d>=4)p+=0.22;if(dep>=960)p+=0.12;if(fourthWeekend(d))p+=0.25}
+  if(s==='summer'){p=Math.max(p,0.12);if(d>=4)p+=0.22;if(dep>=960)p+=0.12;if(fourthWeekend(d))p+=twoBoatDay(d)?0.1:0.25}
   else if(s==='winter') p*=0.8;
   return p;
 }
@@ -3499,7 +3514,7 @@ function hhBillsNight(notes,dk){
 }
 // settle what's still owed when the game ends, so ignoring bills doesn't pay
 {const _fin=finish;finish=function(){try{if(S&&S.hh)for(const k in HH_BILLS){const b=HB(k);if(!b.paid){money(-(b.check>=0?0:hhOwed(k)));b.paid=true;b.how='end'}}}catch(e){}return _fin.apply(this,arguments)}}
-// ---- mail: letters land in your P.O. box at the island post office (next to the old store) ----
+// ---- mail: letters land in your P.O. box at the island post office (on Eckenstam-Johnson Road) ----
 const HH_LETTERS={
   jury:{once:true,min:3,t:'⚖️ A jury summons from Pierce County Superior Court: report to Tacoma at 8:00 AM on a Monday. Fuel-run Monday. You check “undue hardship,” write “I live on an island,” and mail it back. You’re excused before the envelope dries.',fx:()=>adj('stress',-2)},
   seeds:{once:true,t:'🌱 A seed catalog thick as a phone book. You dog-ear thirty-one pages of heirloom tomatoes for a yard that gets four hours of sun, in July.',fx:()=>adj('stress',-3)},
@@ -3526,17 +3541,17 @@ function hhReadMail(){
   modal('📬 Your P.O. box',lines.map(l=>`<p class="hh-letter">${l}</p>`).join('')+'<p style="font-size:12px;color:var(--mute)">The postmaster says hi. The postmaster always says hi.</p>',[{l:'OK',fn:()=>{}}]);
   afterAction();
 }
-// ---- packages: order online, they wait in the parcel lockers at the Steilacoom ferry terminal ----
+// ---- packages: order online, they wait at the pack-and-ship counter by the Steilacoom ferry landing ----
 const HH_SHOP={
   traps:{ic:'🪤',n:'Mouse traps (6-pack)',c:15,ok:()=>!UP().trapsOwned,get:()=>{UP().trapsOwned=true},t:'Six snap traps. Set them at home.'},
   bank:{ic:'🔋',n:'Power bank, 20,000 mAh',c:32,ok:()=>!HH().bank,get:()=>{HH().bank=true},t:'Keeps your phone alive through an outage, if you charge it before the storm.'},
   part:{ic:'🔧',n:'Well-pump pressure switch',c:26,ok:()=>!HH().part,get:()=>{HH().part=true},t:'The part that usually fails. Swap it in at home and the pump is good as new.'},
-  kibble:{ic:'🦴',n:'Dog food, 30-day bag',c:36,ok:()=>!!HH().dog,get:()=>{HH().dog.kibble+=30},t:'Heavy. Glad it’s the locker’s problem until you pick it up.'}};
+  kibble:{ic:'🦴',n:'Dog food, 30-day bag',c:36,ok:()=>!!HH().dog,get:()=>{HH().dog.kibble+=30},t:'Heavy. Glad it’s the shipping counter’s problem until you pick it up.'}};
 function hhShopModal(){
   const H=HH(),opts=Object.keys(HH_SHOP).filter(k=>HH_SHOP[k].ok()&&!H.pkgs.some(p=>p.k===k)).map(k=>{const I=HH_SHOP[k];
-    return {l:`${I.ic} ${I.n} — $${I.c}`,s:`${I.t} Ships to the parcel lockers at the Steilacoom ferry terminal in 2 days.`,dis:S.money<I.c,fn:()=>{money(-I.c);S.t+=5;phoneTick();H.pkgs.push({k,at:dayKey()+2});
-      say(`📦 Ordered: ${I.n.toLowerCase()}. “Delivery to Anderson Island is not available,” says the checkout page, so it’s going to the lockers at the Steilacoom terminal.`);afterAction()}}});
-  modal('📦 Order online',`<p>Nobody delivers to the island. Packages go to the parcel lockers by the Steilacoom ferry terminal: grab them on your way through.</p>${opts.length?'':'<p><i>Nothing you need right now.</i></p>'}`,opts.concat([{l:'Never mind',fn:()=>{}}]));
+    return {l:`${I.ic} ${I.n} — $${I.c}`,s:`${I.t} Ships to the pack-and-ship counter by the Steilacoom ferry landing in 2 days.`,dis:S.money<I.c,fn:()=>{money(-I.c);S.t+=5;phoneTick();H.pkgs.push({k,at:dayKey()+2});
+      say(`📦 Ordered: ${I.n.toLowerCase()}. “Delivery to Anderson Island is not available,” says the checkout page, so it’s going to the pack-and-ship counter by the Steilacoom ferry landing.`);afterAction()}}});
+  modal('📦 Order online',`<p>Nobody delivers to the island. Packages go to the pack-and-ship counter by the Steilacoom ferry landing: grab them on your way through.</p>${opts.length?'':'<p><i>Nothing you need right now.</i></p>'}`,opts.concat([{l:'Never mind',fn:()=>{}}]));
 }
 const hhPkgsReady=()=>HH().pkgs.filter(p=>p.at<=dayKey());
 // ---- trash and dump runs: the transfer station keeps island hours ----
@@ -3558,7 +3573,7 @@ function hhActions(a,loc){
     const ob=hhOpenBills(),urgent=ob.filter(k=>hhDue(k)-dk<=1),inMail=Object.keys(HH_BILLS).filter(k=>!HB(k).paid&&HB(k).check>=0);
     if(ob.length) a.push({cat:'home',ic:'🧾',l:`Pay bills (${ob.length})`,due:urgent.length>0,s:ob.map(k=>`${HH_BILLS[k].ic} ${HH_BILLS[k].n} ${$(hhOwed(k))}, ${hhDueTxt(k)}`).join(' · '),fn:hhBillsModal});
     else if(inMail.length) a.push({cat:'home',ic:'✉️',l:'Checks in the mail',s:inMail.map(k=>`${HH_BILLS[k].n}: gets there ${DAYS[HB(k).check%7]}`).join(' · '),dis:true});
-    a.push({cat:'home',ic:'📦',l:'Order something online',s:S.phone>0?'Mouse traps, a power bank, a pump part. It ships to the Steilacoom ferry terminal lockers: nobody delivers to the island.':'Your phone is dead.',dis:S.phone<=0,fn:hhShopModal});
+    a.push({cat:'home',ic:'📦',l:'Order something online',s:S.phone>0?'Mouse traps, a power bank, a pump part. It ships to the pack-and-ship counter by the Steilacoom ferry landing: nobody delivers to the island.':'Your phone is dead.',dis:S.phone<=0,fn:hhShopModal});
     if(H.part) a.push({cat:'yard',ic:'🔧',l:'Install the new pressure switch',due:UP().well>30,s:'30 min in the pump house with the power off. The well pump is good as new.',fn:()=>{S.t+=30;H.part=false;UP().well=0;homeAdj(1);say('🔧 Two wires, one fitting, a lot of muttering. The pump kicks on at 40 psi and off at 60, like the label says.');afterAction()}});
     // cooking
     const cookOK=m>=960&&m<1350,ateOut=S.ateOut===d;
@@ -3584,17 +3599,17 @@ function hhActions(a,loc){
     if(stormKnown()){const sk=S.weekNo*7+st.day,soon=st.day-d<=1;
       a.push({cat:'home',ic:'💧',l:H.water?'Water jugs filled ✓':'Fill water jugs and the bathtub',due:soon&&!H.water,s:H.water?'For when the power takes the well pump with it.':'15 min. No power means no well pump: this is your water for coffee and a sponge bath.',dis:H.water,
         fn:()=>{S.t+=15;H.water=true;say('💧 Four jugs, two stockpots and a bathtub full of water. The house looks ready for a siege.');afterAction()}});
-      a.push({cat:'home',ic:'🔋',l:H.bankFull?'Power bank charged ✓':'Charge the power bank',due:soon&&H.bank&&!H.bankFull,s:!H.bank?'You don’t own one. Order one online (📦), two days to the Steilacoom lockers.':H.bankFull?'Your phone will make it through the outage.':'10 min to plug it in. Keeps your phone (and its alarm) alive through the outage.',dis:!H.bank||H.bankFull,
+      a.push({cat:'home',ic:'🔋',l:H.bankFull?'Power bank charged ✓':'Charge the power bank',due:soon&&H.bank&&!H.bankFull,s:!H.bank?'You don’t own one. Order one online (📦), two days to the shipping counter in Steilacoom.':H.bankFull?'Your phone will make it through the outage.':'10 min to plug it in. Keeps your phone (and its alarm) alive through the outage.',dis:!H.bank||H.bankFull,
         fn:()=>{S.t+=10;H.bankFull=true;say('🔋 The power bank’s four little lights go solid. Your phone has a lifeboat.');afterAction()}});
       if(S.gen==='home') a.push({cat:'yard',ic:'⛽',l:H.genTop===sk?'Generator topped off ✓':'Top off and test the generator',due:soon&&H.genTop!==sk,s:H.genTop===sk?'It’ll start tonight.':S.homeGas<3?`Needs 3 gal in the shed (${S.homeGas} now).`:'20 min: fill it, a test run in the driveway. It starts on the first pull when it matters.',dis:H.genTop===sk||S.homeGas<3,
         fn:()=>{S.t+=20;H.genTop=sk;say('⛽ Topped off, choke, pull. It catches on the second try and settles into a rumble. Ready.');afterAction()}});
     }
   }
   if(loc==='store'){const n=hhMailHere().length;
-    a.push({cat:'here',ic:'📬',l:n?`Check your P.O. box (${n})`:'Your P.O. box is empty',s:n?'The little island post office next to the old store. 10 min.':'Just a key and a cobweb. Mail comes Monday to Saturday.',dis:!n,fn:hhReadMail});}
+    a.push({cat:'here',ic:'📬',l:n?`Check your P.O. box (${n})`:'Your P.O. box is empty',s:n?'The little island post office on Eckenstam-Johnson Road. 10 min.':'Just a key and a cobweb. Mail comes Monday to Saturday.',dis:!n,fn:hhReadMail});}
   if(loc==='stDock'){const r=hhPkgsReady();
-    if(r.length) a.push({cat:'trade',ic:'📦',l:`Pick up ${r.length} package${r.length>1?'s':''} from the parcel lockers`,s:r.map(p=>HH_SHOP[p.k].n).join(', ')+'. 5 min.',cls:'primary',fn:()=>{S.t+=5;r.forEach(p=>{HH_SHOP[p.k].get()});H.pkgs=H.pkgs.filter(p=>!r.includes(p));
-      say(`📦 Locker 14, code 0412, and there ${r.length>1?'they are':'it is'}: ${andList(r.map(p=>HH_SHOP[p.k].n.toLowerCase()))}.${r.some(p=>p.k==='traps')?' (Set the traps at home.)':''}`);afterAction()}});
+    if(r.length) a.push({cat:'trade',ic:'📦',l:`Pick up ${r.length} package${r.length>1?'s':''} from the shipping counter`,s:r.map(p=>HH_SHOP[p.k].n).join(', ')+'. 5 min.',cls:'primary',fn:()=>{S.t+=5;r.forEach(p=>{HH_SHOP[p.k].get()});H.pkgs=H.pkgs.filter(p=>!r.includes(p));
+      say(`📦 The clerk at the pack-and-ship counter checks your name, and there ${r.length>1?'they are':'it is'}: ${andList(r.map(p=>HH_SHOP[p.k].n.toLowerCase()))}.${r.some(p=>p.k==='traps')?' (Set the traps at home.)':''}`);afterAction()}});
     if(!H.dog&&d===5&&m>=600&&m<840) a.push({cat:'here',ic:'🐕',l:'Adopt a dog from the shelter van — $85',s:'The county shelter’s Saturday adoption van, parked in the terminal lot. A dog needs food and a walk every day.',dis:S.money<85,fn:()=>{money(-85);S.t+=40;hhAdopt('shelter');afterAction()}});}
   if((loc==='market'||loc==='warehouse')&&H.dog&&isOpen(loc)) a.push({cat:'trade',ic:'🦴',l:`Dog food, 30-day bag — $${loc==='warehouse'?30:38}`,s:`${H.dog.kibble} day${H.dog.kibble===1?'':'s'} left at home.`,dis:S.money<(loc==='warehouse'?30:38),fn:()=>{money(-(loc==='warehouse'?30:38));H.dog.kibble+=30;S.t+=5;say(`🦴 Forty pounds of kibble. ${H.dog.n} will smell it from the ferry.`);afterAction()}});
   if(loc==='lake'&&H.dog&&H.dog.walked!==dayKey()) a.push({cat:'here',ic:'🦮',l:`Walk ${H.dog.n} around Lake Josephine`,s:'45 min. Stress −6. Every dog on the island walks here, and so do their people.',fn:()=>{const g=H.dog;S.t+=45;g.walked=dayKey();adj('stress',-6);
@@ -3607,7 +3622,7 @@ function hhNight(where,notes,d){
   const H=HH(),dk=dayKey(),home=where==='home';
   hhBillsNight(notes,dk);hhMailNight(dk,d);
   // packages nobody picked up go back after a week (refund, minus a restocking fee)
-  const old=H.pkgs.filter(p=>dk-p.at>=7);if(old.length){old.forEach(p=>money(HH_SHOP[p.k].c-5));H.pkgs=H.pkgs.filter(p=>!old.includes(p));notes.push(`📦 The parcel lockers sent back ${andList(old.map(p=>HH_SHOP[p.k].n.toLowerCase()))}. Refunded, minus a $5 restocking fee.`)}
+  const old=H.pkgs.filter(p=>dk-p.at>=7);if(old.length){old.forEach(p=>money(HH_SHOP[p.k].c-5));H.pkgs=H.pkgs.filter(p=>!old.includes(p));notes.push(`📦 The shipping counter sent back ${andList(old.map(p=>HH_SHOP[p.k].n.toLowerCase()))}. Refunded, minus a $5 restocking fee.`)}
   // trash
   if(home){H.trash=Math.min(16,H.trash+1);
     if(H.trash>=8){homeAdj(-1);if(!H.trashWarn){H.trashWarn=true;notes.push(`🗑️ ${H.trash} bags of trash by the shed. It’s starting to smell like a decision. (Dump run: ${hhDumpTxt()}.)`)}}}
@@ -3644,8 +3659,8 @@ function hhTodo(it){
     it.push({ok:b.paid||b.check>=0,fail:false,l:`Pay the ${B.n.toLowerCase()} bill`,s:b.paid?`${B.ic} Paid${b.how==='collections'?', via collections. Ouch':b.how==='end'?'':''}.`:b.check>=0?`✉️ Check in the mail to ${B.who}.`:`${B.ic} ${$(hhOwed(k))} to ${B.who}, ${hhDueTxt(k)}. Pay at home: 🏠 Inside the house → 🧾 Pay bills.`,urgent:!b.paid&&b.check<0&&due-dk<=1});}
   if(H.trash>=5) it.push({ok:false,fail:false,l:'Take a dump run',s:`🗑️ ${H.trash} bags by the shed. Transfer station: ${hhDumpTxt()}.${H.trash>=8?' Raccoons are circling.':''}`,urgent:H.trash>=10});
   if(H.dog){const g=H.dog;it.push({ok:g.fed===dk&&g.walked===dk,fail:false,l:`Take care of ${g.n}`,s:`🐕 Fed ${g.fed===dk?'✓':'—'} · walked ${g.walked===dk?'✓':'—'} · ${g.kibble} day${g.kibble===1?'':'s'} of dog food.`,urgent:false})}
-  const pk=hhPkgsReady();if(pk.length) it.push({ok:false,fail:false,l:'Pick up your packages',s:`📦 ${andList(pk.map(p=>HH_SHOP[p.k].n.toLowerCase()))}, at the parcel lockers by the Steilacoom ferry terminal.`,urgent:false});
-  const mail=hhMailHere().length;if(mail>=3) it.push({ok:false,fail:false,l:'Check your mail',s:`📬 ${mail} pieces in your P.O. box at the island post office, next to the old store.`,urgent:false});
+  const pk=hhPkgsReady();if(pk.length) it.push({ok:false,fail:false,l:'Pick up your packages',s:`📦 ${andList(pk.map(p=>HH_SHOP[p.k].n.toLowerCase()))}, at the pack-and-ship counter by the Steilacoom ferry landing.`,urgent:false});
+  const mail=hhMailHere().length;if(mail>=3) it.push({ok:false,fail:false,l:'Check your mail',s:`📬 ${mail} pieces in your P.O. box at the island post office on Eckenstam-Johnson Road.`,urgent:false});
   const st=it.find(x=>x.l==='Be ready for the storm');
   if(st){const sk=S.weekNo*7+S.week.storm.day;st.s+=` Storm prep: 💧 water ${H.water?'✓':'—'} · 🔋 power bank ${H.bankFull?'✓':H.bank?'—':'(none)'}${S.gen==='home'?` · ⛽ generator ${H.genTop===sk?'✓':'—'}`:''}.`}
 }
@@ -4007,13 +4022,15 @@ const apNote=h=>`<p class="ph-note">${h}</p>`;
 const apLi=(a,b,cls)=>`<div class="ph-li ${cls||''}"><b>${a}</b><span>${b}</span></div>`;
 
 // ================= ⛴️ Ferry Pass =================
-const FP_BOOK={car:{n:'Vehicle + driver',ic:'🚗',fare:()=>FARE_CAR},walk:{n:'Passenger (walk-on)',ic:'🚶',fare:()=>FARE_WALK}};
-const FP_RIDES=10,FP_OFF=0.25,FP_MAX=30;
-const fpPrice=k=>Math.round(FP_BOOK[k].fare()*FP_RIDES*(1-FP_OFF)*100)/100;
+const FP_BOOK={car:{n:'Vehicle + driver',ic:'🚗',fare:()=>fareCar()},walk:{n:'Passenger (walk-on)',ic:'🚶',fare:()=>FARE_WALK}};
+// The county's Value Pass: 5 round trips at a fixed 2026 price (piercecountywa.gov/2201/Fares)
+const FP_RIDES=5,FP_MAX=15,FP_VALUE={car:96.08,walk:29.14};
+const fpPrice=k=>FP_VALUE[k];
+const FP_OFF_OF=k=>Math.max(0,1-FP_VALUE[k]/(FP_BOOK[k].fare()*FP_RIDES));
 function FP(){const P=PH();const f=P.fp=P.fp||{};f.car=f.car||0;f.walk=f.walk||0;f.seen=f.seen||[];return f}
 function fpBuy(k){const f=FP(),p=fpPrice(k);if(S.money<p||f[k]+FP_RIDES>FP_MAX||!phoneCan())return false;
   money(-p);S.stats.fares+=p;f[k]+=FP_RIDES;S.t+=1;phoneUse(1);
-  say(`🎟️ Ferry Pass: bought a 10-crossing ${k==='car'?'vehicle + driver':'walk-on'} book for ${$(p)}. ${f[k]} ride${f[k]===1?'':'s'} on your phone.`);
+  say(`🎟️ Ferry Pass: bought a ${FP_RIDES}-crossing ${k==='car'?'vehicle + driver':'walk-on'} book for ${$(p)}. ${f[k]} ride${f[k]===1?'':'s'} on your phone.`);
   afterAction();return true}
 // Called from board() where the fare is charged. true = a ride from the book paid for this crossing.
 function fpUseRide(mode){if(!S||!phoneInstalled('ferrypass'))return false;const f=FP(),k=mode==='drive'?'car':'walk';
@@ -4022,12 +4039,12 @@ function fpUseRide(mode){if(!S||!phoneInstalled('ferrypass'))return false;const 
   f[k]--;S.stats.fpRides=(S.stats.fpRides||0)+1;
   say(`🎟️ The booth scans your phone. One ${k==='car'?'vehicle':'walk-on'} ride used, ${f[k]} left.${f[k]===0?' That was the last one in the book.':''}`);
   return true}
-function fpSailings(side,n){const deps=side==='I'?AI_DEPS:ST_DEPS,out=[];
-  for(let d=day();d<day()+3&&out.length<n;d++)for(const dep of deps){if(out.length>=n)break;
+function fpSailings(side,n){const out=[];
+  for(let d=day();d<day()+3&&out.length<n;d++)for(const dep of deps(side,d)){if(out.length>=n)break;
     const s=sailing(side,d,dep,'walk',true);if(S.t>s.abs-20||s.cancel)continue;out.push(s)}
   return out}
-function fpLastBoat(side){const deps=side==='I'?AI_DEPS:ST_DEPS;
-  for(let i=deps.length-1;i>=0;i--){const s=sailing(side,day(),deps[i],'walk',true);if(s.cancel)continue;return s.abs>=S.t-20?s:null}return null}
+function fpLastBoat(side){const dl=deps(side,day());
+  for(let i=dl.length-1;i>=0;i--){const s=sailing(side,day(),dl[i],'walk',true);if(s.cancel)continue;return s.abs>=S.t-20?s:null}return null}
 const fpKey=b=>`${S.weekNo}:${b.start}`;
 // push alerts: the first moment a breakdown is known (S.t has passed its start), once per outage, phone closed or not
 phoneOnTime(()=>{if(!S||!S.week||!phoneInstalled('ferrypass')||!phoneCan())return;const f=FP();
@@ -4038,7 +4055,7 @@ phoneOnTime(()=>{if(!S||!S.week||!phoneInstalled('ferrypass')||!phoneCan())retur
     phoneNotify('⛴️','Ferry Pass: sailings suspended',cause);
     say(`📱 ⛴️ <b>Ferry Pass</b> (${fmt(S.t)}): rider alert, sailings suspended: ${apEsc(b.cause)}. No estimate yet. Your phone knew before the ferry line did.`);
   }});
-definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 MB',desc:'Sailings, rider alerts, push alerts for outages, and 10-ride ticket books at 25% off.',
+definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 MB',desc:'Sailings, rider alerts, push alerts for outages, and the county’s 5-round-trip Value Pass.',
   badge:()=>activeOutage()?1:0,
   view(){const side=L[S.loc].side,from=side==='I'?'Anderson Island':'Steilacoom',d=day(),f=FP();let h='';
     const known=S.week.b.filter(b=>b.start<=S.t&&b.end>S.t);
@@ -4057,7 +4074,7 @@ definePhoneApp({id:'ferrypass',name:'Ferry Pass',ic:'⛴️',order:65,size:'26 M
     h+=apCard(`🎟️ <b>On your phone:</b> ${FP_BOOK.car.ic} ${f.car} vehicle ride${f.car===1?'':'s'} · ${FP_BOOK.walk.ic} ${f.walk} walk-on ride${f.walk===1?'':'s'}`,'fp-books');
     for(const k of ['car','walk']){const p=fpPrice(k),full=f[k]+FP_RIDES>FP_MAX,poor=S.money<p;
       h+=phBtn(`${FP_BOOK[k].ic} 10 × ${FP_BOOK[k].n}: ${$(p)}`,()=>fpBuy(k),{dis:full||poor,
-        sub:full?`You already have ${f[k]}. That’s plenty.`:poor?`You have ${$(S.money)}.`:`${$(FP_BOOK[k].fare()*FP_RIDES)} at the booth. ${Math.round(FP_OFF*100)}% off.`})}
+        sub:full?`You already have ${f[k]}. That’s plenty.`:poor?`You have ${$(S.money)}.`:`${$(FP_BOOK[k].fare()*FP_RIDES)} at the booth. ${Math.round(FP_OFF_OF(k)*100)}% off.`})}
     h+=apNote('Fares are collected in Steilacoom only (leaving the island is free), so a ride is used there. A dead phone means paying cash.');
     h+=apNote('🔔 Push alerts are on: you’ll hear about an outage the minute the county posts it. Be in line 20 minutes before a boat leaves.');
     return h}});
@@ -4199,7 +4216,7 @@ definePhoneApp({id:'weather',name:'Tides & Weather',ic:'🌦️',order:67,size:'
 // ---------------- 📱 apps: money (Island Credit Union, Gig Work, Mainland Market) ----------------
 // Three installable phone apps (see the plug-in pattern at the top of 14-phone-apps.js).
 // State, all lazy so older saves just work: PH().icu={auto}, PH().gig={d,n,earned}, PH().mkt={order}.
-//   order = {n, cost, at (ready, abs min), close (locker cold storage ends, abs min), spoiled}
+//   order = {n, cost, at (ready, abs min), close (pickup counter closes, abs min), spoiled}
 const ICU=()=>{const P=PH();return P.icu||(P.icu={auto:false})};
 const GIG=()=>{const P=PH(),g=P.gig||(P.gig={d:-1,n:0,earned:0});if(g.d!==dayKey()){g.d=dayKey();g.n=0;g.earned=0}return g};
 const MKT=()=>{const P=PH();return P.mkt||(P.mkt={order:null})};
@@ -4289,11 +4306,11 @@ const mktWindow=()=>tod()>=MKT_OPEN&&tod()<MKT_LAST;
 function mktPlace(n){const P=MKT_PACKS.find(p=>p.n===n);if(!P||!phoneCan()||MKT().order||!mktWindow())return false;const cost=P.c+MKT_FEE;if(!canEssential(cost))return false;
   const min=phoneSignal()===1?10:5;S.t+=min;phoneUse(1);money(-cost);S.stats.food+=n;
   MKT().order={n,cost,at:S.t+MKT_READY,close:day()*1440+MKT_CLOSE,spoiled:false};
-  say(`🛒 Ordered ${n} days of groceries from Mainland Market: ${$(cost)} with the pickup fee. Ready around ${fmt(S.t+MKT_READY)} in the cold lockers at the Steilacoom terminal. ${S.money<0?'It went on the card.':''}`.trim());
-  apmMsg('market',`🛒 Order placed: ${n} days of food. Ready ${fmt(S.t+MKT_READY)} at the Steilacoom terminal lockers. Pick up by ${fmt(MKT_CLOSE)} or the cold stuff spoils.`);
+  say(`🛒 Ordered ${n} days of groceries from Mainland Market: ${$(cost)} with the pickup fee. Ready around ${fmt(S.t+MKT_READY)} at the grocery pickup counter by the Steilacoom ferry landing. ${S.money<0?'It went on the card.':''}`.trim());
+  apmMsg('market',`🛒 Order placed: ${n} days of food. Ready ${fmt(S.t+MKT_READY)} at the grocery pickup counter in Steilacoom. Pick up by ${fmt(MKT_CLOSE)} or the cold stuff spoils.`);
   afterAction();return true}
 function mktSpoil(notes){const o=mktOrder();if(!o||o.spoiled)return;o.spoiled=true;const lost=Math.ceil(o.n/2);o.n-=lost;
-  const t=`🥬 Your Mainland Market order sat in the terminal locker past ${fmt(MKT_CLOSE)}. The milk, the eggs and the chicken gave up: ${lost} day${lost>1?'s':''} of food spoiled. The cereal is fine. (${o.n} day${o.n===1?'':'s'} still waiting.)`;
+  const t=`🥬 Your Mainland Market order sat at the pickup counter past ${fmt(MKT_CLOSE)}. The milk, the eggs and the chicken gave up: ${lost} day${lost>1?'s':''} of food spoiled. The cereal is fine. (${o.n} day${o.n===1?'':'s'} still waiting.)`;
   if(notes)notes.push(t);else say(t)}
 phoneOnTime(()=>{const o=S&&S.ph&&S.ph.mkt&&S.ph.mkt.order;if(o&&!o.spoiled&&S.t>=o.close)mktSpoil()});
 // the night: anything ready today and not picked up spoils before morning
@@ -4301,20 +4318,20 @@ phoneOnTime(()=>{const o=S&&S.ph&&S.ph.mkt&&S.ph.mkt.order;if(o&&!o.spoiled&&S.t
 function mktPickup(){const o=mktOrder();if(!o||!mktReady()||S.loc!=='stDock')return false;
   const car=!!carHere(),room=Math.max(0,(car?14:4)-S.carried),take=Math.min(o.n,room);if(take<=0)return false;
   S.t+=5;S.carried+=take;o.n-=take;if(o.n<=0)MKT().order=null;
-  say(`🛒 Locker 9, the cold one. ${take} day${take>1?'s':''} of groceries in paper bags${o.spoiled?', minus what spoiled':''}.${o.n>0?` You can’t carry the other ${o.n} on foot: ${o.n>1?'they stay':'it stays'} in the locker.`:''} Now get ${take>1?'them':'it'} home.`);
+  say(`🛒 The pickup counter by the ferry landing. ${take} day${take>1?'s':''} of groceries in paper bags${o.spoiled?', minus what spoiled':''}.${o.n>0?` You can’t carry the other ${o.n} on foot: ${o.n>1?'they stay':'it stays'} at the counter.`:''} Now get ${take>1?'them':'it'} home.`);
   afterAction();return true}
-{const _actions=actions;actions=function(){const a=_actions();try{const o=mktOrder();   // apps: the locker pickup at the Steilacoom terminal
+{const _actions=actions;actions=function(){const a=_actions();try{const o=mktOrder();   // apps: the grocery pickup counter by the Steilacoom ferry landing
   if(o&&S.loc==='stDock'){const car=!!carHere(),room=(car?14:4)-S.carried;
     if(mktReady())a.push({cat:'trade',ic:'🛒',l:`Pick up your grocery order (${o.n} day${o.n>1?'s':''})`,cls:'primary',dis:room<=0,
-      s:room<=0?(car?'Your car is full of groceries.':'Your hands are full: on foot you carry 4 days of groceries.'):`Mainland Market, cold locker 9. 5 min.${!car&&o.n>room?` On foot you can take ${room}.`:''}${o.spoiled?'':` Cold stuff keeps until ${fmt(MKT_CLOSE)}.`}`,fn:mktPickup});
-    else a.push({cat:'trade',ic:'🛒',l:'Grocery order: still being packed',s:`Ready around ${fmt(o.at)} in the terminal lockers.`,dis:true})}}catch(e){}return a}}
-{const _todo=todoItems;todoItems=function(){const it=_todo();try{const o=mktOrder();if(o)it.push({ok:false,fail:false,l:'Pick up your grocery order',s:`🛒 ${o.n} day${o.n>1?'s':''} of food in the cold locker at the Steilacoom terminal${mktReady()?'':`, ready ${fmtAbs(o.at)}`}.${o.spoiled?'':` Cold stuff spoils after ${fmt(MKT_CLOSE)}.`}`,urgent:mktReady()&&!o.spoiled})}catch(e){}return it}} // apps
+      s:room<=0?(car?'Your car is full of groceries.':'Your hands are full: on foot you carry 4 days of groceries.'):`Mainland Market pickup counter. 5 min.${!car&&o.n>room?` On foot you can take ${room}.`:''}${o.spoiled?'':` Cold stuff keeps until ${fmt(MKT_CLOSE)}.`}`,fn:mktPickup});
+    else a.push({cat:'trade',ic:'🛒',l:'Grocery order: still being packed',s:`Ready around ${fmt(o.at)} at the Steilacoom pickup counter.`,dis:true})}}catch(e){}return a}}
+{const _todo=todoItems;todoItems=function(){const it=_todo();try{const o=mktOrder();if(o)it.push({ok:false,fail:false,l:'Pick up your grocery order',s:`🛒 ${o.n} day${o.n>1?'s':''} of food at the pickup counter in Steilacoom${mktReady()?'':`, ready ${fmtAbs(o.at)}`}.${o.spoiled?'':` Cold stuff spoils after ${fmt(MKT_CLOSE)}.`}`,urgent:mktReady()&&!o.spoiled})}catch(e){}return it}} // apps
 definePhoneApp({id:'market',name:'Mainland Market',ic:'🛒',order:67,size:'33 MB',desc:'Order groceries from anywhere; pick them up at the Steilacoom terminal.',
   badge:()=>mktReady()?1:0,
   view(){const o=mktOrder(),win=mktWindow();let h=apmShow('market');
-    if(o)h+=phCard(mktReady()?`📦 <b>Your order is ready:</b> ${o.n} day${o.n>1?'s':''} of food in cold locker 9 at the Steilacoom ferry terminal.${o.spoiled?' (Some of it spoiled.)':` Pick it up by ${fmt(MKT_CLOSE)} or the cold stuff goes bad.`}`
-      :`⏳ <b>Being packed:</b> ${o.n} days of food, ready around ${fmt(o.at)} at the Steilacoom terminal lockers.`,mktReady()&&!o.spoiled?'ok':'');
-    h+=phNote('Supermarket prices, no store trip. Nobody delivers to the island, so it goes to the cold lockers at the Steilacoom ferry terminal, ready 2 hours later. Pick it up the same day.');
+    if(o)h+=phCard(mktReady()?`📦 <b>Your order is ready:</b> ${o.n} day${o.n>1?'s':''} of food at the grocery pickup counter by the Steilacoom ferry landing.${o.spoiled?' (Some of it spoiled.)':` Pick it up by ${fmt(MKT_CLOSE)} or the cold stuff goes bad.`}`
+      :`⏳ <b>Being packed:</b> ${o.n} days of food, ready around ${fmt(o.at)} at the Steilacoom pickup counter.`,mktReady()&&!o.spoiled?'ok':'');
+    h+=phNote('Supermarket prices, no store trip. Nobody delivers to the island, so it goes to the grocery pickup counter by the Steilacoom ferry landing, ready 2 hours later. Pick it up the same day.');
     for(const P of MKT_PACKS){const cost=P.c+MKT_FEE,ok=canEssential(cost);
       h+=phBtn(`🛒 ${P.n} days of food — ${$(cost)}`,()=>mktPlace(P.n),{cls:!o&&win&&P.n===3?'primary':'',dis:!!o||!win||!ok,
         sub:o?'One order at a time.':!win?`Orders ${fmt(MKT_OPEN)}–${fmt(MKT_LAST)}.`:!ok?'Card’s maxed out.':`${$(P.c)} + ${$(MKT_FEE)} pickup fee${S.money<cost?' (on the card)':''}.${P.n>4?' On foot you carry 4 days.':''}`})}
@@ -4420,7 +4437,7 @@ const GUIDE=[
   {id:'goal',g:0,when:()=>day()===0&&S.loc==='home'&&tod()<600,
     t:()=>`👋 Welcome to the island, {{name}}. Work is on the mainland at <b>${fmt(tutJob()?tutJob().start:540)}</b>, and the island is on the wrong side of the water: open <b>🧭 Go somewhere</b> and drive to the <b>Ferry Landing</b>.`+tutSea({winter:'Ice on the ramp makes early boats late, so leave early.'})},
   {id:'dock',g:0,when:()=>S.loc==='aiDock',
-    t:()=>'⛴️ Be <b>in line 20 minutes before</b> your boat leaves or you don’t board (the commuter boat is the <b>7:45</b>, so 7:25). The ⛴️ Ferry tab has the schedule and a trip planner that does the math.'+tutSea({winter:'🧊 On icy mornings the crew sands the ramp first; nobody hurries.',summer:'☀️ In summer, tourists with kayaks fill the car deck: walk on if the line looks long.'})},
+    t:()=>'⛴️ Be <b>in line 20 minutes before</b> your boat leaves or you don’t board (the commuter boat is the <b>7:35</b>, so 7:15). The ⛴️ Ferry tab has the schedule and a trip planner that does the math.'+tutSea({winter:'🧊 On icy mornings the crew sands the ramp first; nobody hurries.',summer:'☀️ In summer, tourists with kayaks fill the car deck: walk on if the line looks long.'})},
   {id:'mainland',g:0,when:()=>S.loc==='stDock'&&!S.worked[day()]&&tod()<720,
     t:()=>`🌆 Steilacoom: civilization, with traffic lights. Drive to <b>${L[tutJobLoc()].name}</b> and clock in on time; your boss has heard every ferry excuse.`},
   {id:'work',g:0,when:()=>!!tutJob()&&S.loc===tutJobLoc()&&tutJob().days.includes(day())&&!S.worked[day()],

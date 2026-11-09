@@ -1,6 +1,6 @@
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.14.0', SAVE_SCHEMA=6;
+const APP_VERSION='1.14.1', SAVE_SCHEMA=6;
 // Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -138,7 +138,7 @@ function newGame(diff,mode,season){
   S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
   uiNarr=[];
   say(`Monday, 5:30 AM. Your alarm goes off ${seasonId()==='summer'?'and it’s already light out':'in the dark'}. Work in Lakewood starts at 9:00. The pantry is getting thin.`); // season
-  if(!prefs().tips) say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
+  if(!prefs().tips) say('Tip: the commuter boat leaves the island at 7:35. You have to be in line 20 minutes early.');
   say('⛽ Your car has 4.5 gallons left, and there is no gas station on the island anymore.');
   seasonIntro(); // season
   startDay();

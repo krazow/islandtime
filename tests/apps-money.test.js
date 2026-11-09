@@ -117,7 +117,7 @@ module.exports = [
     assert.match(await page.textContent('#mbg'), /Job listings/);
     noErrors(errors);
   } },
-  { name: 'market: order → terminal locker → groceries in hand; order window; one at a time', fn: async ctx => {
+  { name: 'market: order → Steilacoom pickup counter → groceries in hand; order window; one at a time', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await at(page, 'home', 1, 390);
@@ -145,7 +145,7 @@ module.exports = [
     await page.locator('button.act', { hasText: 'Pick up your grocery order' }).click();
     r = await page.evaluate(() => ({ carried: S.carried, o: MKT().order }));
     assert.strictEqual(r.carried, c0 + 3); assert.strictEqual(r.o, null);
-    assert.match(await log(page), /Locker 9/);
+    assert.match(await log(page), /pickup counter by the ferry landing/);
     noErrors(errors);
   } },
   { name: 'market: cold items spoil if not picked up by closing; card pays when broke', fn: async ctx => {
@@ -164,7 +164,7 @@ module.exports = [
     await page.evaluate(() => { S.carried = 3; render(); });
     await page.locator('button.act', { hasText: 'Pick up your grocery order' }).click();
     r = await page.evaluate(() => ({ carried: S.carried, o: MKT().order }));
-    assert.strictEqual(r.carried, 4); assert.strictEqual(r.o.n, 1, 'one day left in the locker');
+    assert.strictEqual(r.carried, 4); assert.strictEqual(r.o.n, 1, 'one day left at the counter');
     // overnight: an order nobody picked up spoils before morning
     await page.evaluate(() => { MKT().order = null; S.money = 500; S.t = 2 * 1440 + 800; mktPlace(3); const n = []; upkeepNight('home', n, day()); window.__n = n.join(' '); });
     assert.match(await page.evaluate(() => window.__n), /spoiled/);

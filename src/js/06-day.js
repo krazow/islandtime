@@ -92,7 +92,7 @@ function endDay(where){
   if(where==='home'&&homeTier()==='high'){rest+=4;adj('health',1)}
   if(where==='home'){adj('stress',-rest);adj('health',3);
     const offDay=!curJob()||!curJob().days.includes(d);if(offDay){adj('stress',-10);adj('health',3);notes.push('🛋️ A day off. You actually feel rested.')}}
-  else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push('🪑 You sleep sitting up in the Steilacoom terminal waiting room. The vending machine hums all night.')}
+  else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push(carHere()?'🚗 The terminal locks up after the last boat, so you sleep in your car in the ferry lot, seat reclined, coat for a blanket. The ferry horn wakes you at 4:30.':'🪑 The terminal locks up after the last boat. You spend the night on the bench under the overhang outside, coat zipped to your chin.')}
   else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
@@ -142,7 +142,7 @@ function afterAction(){
 }
 function strandedModal(){
   modal('Stranded on the mainland','<p>It’s late and you’re not getting home tonight. Where do you sleep?</p>',[
-    {l:'🪑 Steilacoom terminal waiting room',s:'Free. It’s open all night. It is not comfortable.',fn:()=>{S.loc='stDock';endDay('terminal')}},
+    {l:carHere()?'🚗 Sleep in your car in the ferry lot':'🪑 The bench outside the Steilacoom terminal',s:'Free. The waiting room locks after the last boat. It is not comfortable.',fn:()=>{S.loc='stDock';endDay('terminal')}},
     {l:'🏨 Motel in Lakewood',s:'$115. Real bed.',fn:()=>endDay('motel')},
   ],true);
 }

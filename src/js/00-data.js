@@ -4,11 +4,21 @@ const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunda
 const DATES=['Nov 2','Nov 3','Nov 4','Nov 5','Nov 6','Nov 7','Nov 8'];
 function dateTxt(d){try{const st=SEA().start; // season
   return new Date(st[0],st[1],st[2]+(S.weekNo||0)*7+d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}catch(e){return DATES[d]}}
-const AI_DEPS=[315,390,465,540,615,690,765,840,915,990,1065,1140,1215,1290];
-const ST_DEPS=[350,425,500,575,650,725,800,875,950,1025,1100,1175,1250,1325];
-const KETRON={I:[690,1215],M:[575,950,1175]};
-const FUEL_CANCEL={I:[690],M:[575]}; // Monday fuel run
-const FARE_CAR=26.5, FARE_WALK=6.25, FUEL_RATE=0.05, GAS_PRICE=4.59, DIESEL_PRICE=5.29, DALE_PRICE=12;
+// 2026 Pierce County ferry, non-peak (one boat). piercecountywa.gov/8922/2026-Ferry-Schedule
+const AI_DEPS=[315,380,455,535,605,670,765,915,995,1070,1140,1210,1310,1370];  // 5:15 6:20 7:35 8:55 10:05 11:10 12:45 3:15 4:35 5:50 7:00 8:10 9:50 10:50
+const ST_DEPS=[285,345,425,500,570,635,730,885,955,1035,1105,1175,1275,1340];  // 4:45 5:45 7:05 8:20 9:30 10:35 12:10 2:45 3:55 5:15 6:25 7:35 9:15 10:20
+const KETRON={I:[380,670,1210],M:[345,635,1175]};
+// Two-boat days add the peak-season extra runs (in the game's summer: July 2–5)
+const EXTRA_DEPS={I:[800,885,960,1040],M:[765,845,920,995]};
+// Observed holidays (no Monday fuel run): from the 2026 schedule's holiday list
+const FERRY_HOLIDAYS=['2026-01-19','2026-02-16','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-11','2026-11-26','2026-11-27','2026-12-24','2026-12-25','2026-12-31','2027-01-01','2027-01-18'];
+function gameDate(d){try{const st=SEA().start;return new Date(st[0],st[1],st[2]+(S.weekNo||0)*7+d)}catch(e){return new Date(2026,10,2+d)}}
+function isoDate(dt){return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`}
+function ferryHoliday(d){return FERRY_HOLIDAYS.includes(isoDate(gameDate(d)))}
+function twoBoatDay(d){const t=isoDate(gameDate(d));return t>='2026-07-02'&&t<='2026-07-05'}
+function deps(side,d){const b=side==='I'?AI_DEPS:ST_DEPS;return twoBoatDay(d)?[...b,...EXTRA_DEPS[side]].sort((x,y)=>x-y):b}
+const FUEL_CANCEL={I:[670],M:[570]}; // Monday fuel run: the 11:10 from the island, the 9:30 from Steilacoom
+const FARE_CAR_NONPEAK=24.94, FARE_CAR_PEAK=33.86, FARE_WALK=8.14, FUEL_RATE=0.05, GAS_PRICE=4.59, DIESEL_PRICE=5.29, DALE_PRICE=12;
 const GOODS={
   food:{n:'Food case',ic:'🥫',d:'Shelf-stable groceries, 3 days’ worth',base:{M:46,I:86},law:'ok'},
   med:{n:'Medical supplies',ic:'🩹',d:'First-aid kit, bandages, OTC cold & pain meds',base:{M:28,I:64},law:'ok'},
@@ -36,7 +46,7 @@ const NEWS=[
 ];
 const CAP_CAR=20, CAP_FOOT=6, APPT_DAY=3; // doctor's appointment is Thursday (bingo is Wednesday)
 const JOBS={
-  lakewood:{n:'Office job, Lakewood',loc:'work',start:540,end:1020,pay:170,days:[0,1,2,3,4],pitch:'9:00–5:00 weekdays. The 7:45 boat gets you there.'},
+  lakewood:{n:'Office job, Lakewood',loc:'work',start:540,end:1020,pay:170,days:[0,1,2,3,4],pitch:'9:00–5:00 weekdays. The 7:35 boat gets you there.'},
   riv:{n:'Line cook at the Riv',loc:'food',start:600,end:1080,pay:115,days:[1,2,3,4,5],pitch:'10:00–6:00, Tuesday–Saturday. On the island: no ferry, no gas money. Lower pay.'},
   tacoma:{n:'Records clerk, Tacoma hospital',loc:'office',start:510,end:990,pay:215,days:[0,1,2,3,4],pitch:'8:30–4:30 weekdays. Best pay, longest commute.'},
   dupont:{n:'Warehouse, DuPont (early shift)',loc:'whse',start:390,end:870,pay:185,days:[0,1,2,3,4],pitch:'6:30–2:30 weekdays. You need the 5:15 AM boat, but you’re home early.'},
@@ -56,6 +66,7 @@ const L={
   store:{name:'General Store (closed)',side:'I',ic:'🏚️',desc:'Closed since Feb 2026. The swap board out front is the island market'},
   dale:{name:'Dale’s Place',side:'I',ic:'🛢️',desc:'End of a gravel road. Has gas. Don’t ask.',hours:()=>[420,1260]},
   food:{name:'The Riv',side:'I',ic:'🍔',desc:'Riviera restaurant. Takeout, and Bingo on Wednesday nights',hours:()=>[660,1260]},
+  legion:{name:'American Legion Hall',side:'I',ic:'🇺🇸',desc:'The Legion post. Veterans, coffee, and the holiday bazaar'},
   lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
   stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
   gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
@@ -71,8 +82,10 @@ const L={
   clinic:{name:'Medical Clinic (Tacoma)',side:'M',ic:'🩺',desc:'Your doctor. Weekdays only',hours:d=>d<5?[480,1020]:null},
   urgent:{name:'Urgent Care (DuPont)',side:'M',ic:'🚑',desc:'Walk-in care, 8 AM–8 PM',hours:()=>[480,1200]},
 };
-const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2}};
+const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2},legion:{home:8,aiDock:9,store:4,lake:6,food:6,dale:9}};
 const MP={office:[13,7.5],whse:[-3.5,-5],depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
+// 2026 fares, round trip, collected at Steilacoom; vehicle fares are higher in peak season (the game's summer)
+function fareCar(){return (typeof seasonId==='function'&&seasonId()==='summer')?FARE_CAR_PEAK:FARE_CAR_NONPEAK}
 function dist(a,b){
   if(a===b) return 0;
   if(L[a].side==='I'){return (DI[a]&&DI[a][b])||(DI[b]&&DI[b][a])}

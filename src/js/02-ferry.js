@@ -1,7 +1,7 @@
 // ---------------- ferry engine ----------------
 function sailing(side,d,dep,mode,knownOnly){
   const abs=d*1440+dep;
-  if(d===0&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
+  if(d===0&&!ferryHoliday(d)&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
   for(const b of S.week.b){
     if(knownOnly&&b.start>S.t) continue;
     if(abs>=b.start&&abs<b.end){
@@ -14,8 +14,7 @@ function sailing(side,d,dep,mode,knownOnly){
   return {abs,dep,d,delay,ketron:KETRON[side].includes(dep)};
 }
 function findNext(side,mode,knownOnly){
-  const deps=side==='I'?AI_DEPS:ST_DEPS;
-  for(let d=day();d<day()+4;d++) for(const dep of deps){
+  for(let d=day();d<day()+4;d++) for(const dep of deps(side,d)){
     const s=sailing(side,d,dep,mode,knownOnly);
     if(S.t>s.abs-20) continue;
     if(s.cancel) continue;
@@ -27,7 +26,7 @@ function findNext(side,mode,knownOnly){
 function activeOutage(){return S.week.b.find(b=>b.start<=S.t&&S.t<b.end)}
 function fullProb(side,d,dep){
   let p=0.05;
-  if(d<5){ if(side==='I'&&(dep===390||dep===465)) p=0.35; if(side==='M'&&(dep===1025||dep===1100)) p=0.35;}
+  if(d<5){ if(side==='I'&&(dep===380||dep===455)) p=0.35; if(side==='M'&&(dep===1035||dep===1105)) p=0.35;}
   if(d===4&&side==='M'&&dep>=875&&dep<=1175) p=0.55;
   if(d===5&&side==='I'&&dep<=690) p=0.3;
   if(d===6&&side==='M'&&dep>=875) p=0.45;
@@ -53,7 +52,7 @@ function price(g,side){
 // what boarding here will cost: the cash fare, or a ride from a ⛴️ Ferry Pass book when that's what board() will use
 function fareTxt(mode){const k=mode==='drive'?'car':'walk';
   if(typeof phoneInstalled==='function'&&phoneInstalled('ferrypass')&&phoneCan()){const n=(S.ph&&S.ph.fp&&S.ph.fp[k])||0;if(n>0)return `🎟️ ticket (${n} left)`}
-  return $(mode==='drive'?FARE_CAR:FARE_WALK)}
+  return $(mode==='drive'?fareCar():FARE_WALK)}
 function waitFerry(mode){
   if(mode==='drive'){const c=carHere();if(!c||c.fuel<0.1){say('⛽ The tank is empty. The deckhands won’t load a car that can’t drive.');return render()}}
   const side=L[S.loc].side;
@@ -132,7 +131,7 @@ function board(side,s,mode){
     }
   }
   if(S.cargo.diesel>0&&S.cargo.diesel<=2&&mode==='drive') say('A deckhand checks the DOT labels on your diesel cans, sees they’re upright and strapped down, and waves you through. That one’s legal.');
-  if(side==='M'){const f=mode==='drive'?FARE_CAR:FARE_WALK;if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
+  if(side==='M'){const f=mode==='drive'?fareCar():FARE_WALK;if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
   const car=carHere();
   const dur=20+(s.ketron?10:0);
   const to=side==='I'?'stDock':'aiDock';

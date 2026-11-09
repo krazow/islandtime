@@ -9,7 +9,7 @@ module.exports = [
       S.cur = 4; S.t = 4 * 1440 + 1104; S.loc = 'stDock'; S.cars[0].loc = 'stDock'; S.cars[0].fuel = 10; S.carried = 6;
       S.week.b = [{ start: 4 * 1440 - 200, end: 5 * 1440 + 300, cause: 'test outage' }]; render();
       const labels = [...document.querySelectorAll('.content .act:not([disabled]) b')].map(x => x.textContent);
-      return { carry: canWalkCarry(), terminal: labels.some(l => /Sleep in the terminal/.test(l)), motel: labels.some(l => /motel/i.test(l)) };
+      return { carry: canWalkCarry(), terminal: labels.some(l => /Sleep (in your car|on the bench)/.test(l)), motel: labels.some(l => /motel/i.test(l)) };
     });
     assert.strictEqual(r.carry, false);
     assert.ok(r.terminal && r.motel, 'terminal and motel must be offered when no boat can take you tonight');

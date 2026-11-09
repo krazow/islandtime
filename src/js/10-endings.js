@@ -71,7 +71,7 @@ const ACH=[
   {id:'ankle',ic:'🩹',n:'Back on your feet',d:'Get a hurt ankle treated.',t:()=>!!(S.injury&&S.injury.treated)},
   {id:'supplier',ic:'🥫',n:'Island supplier',d:'Sell food or medical supplies to neighbors on the island.',t:null},
   {id:'fred',ic:'🩴',n:'Pajama Fred’s friend',d:'Make friends with Pajama Fred.',t:()=>!!S.friends.fred},
-  {id:'terminal',ic:'🪑',n:'A night in the terminal',d:'Sleep sitting up in the Steilacoom ferry terminal.',t:c=>c.where==='terminal'},
+  {id:'terminal',ic:'🪑',n:'A night at the ferry dock',d:'Spend a stranded night at the Steilacoom ferry landing.',t:c=>c.where==='terminal'},
   {id:'pantry',ic:'🧺',n:'Fully stocked',d:'Have a week of food (7 days or more) in the pantry.',t:()=>S.pantry>=7},
   {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0},
   // phone apps (19-apps-travel.js, 20-apps-money.js): counters live in S.stats, so they're per game

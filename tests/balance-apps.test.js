@@ -40,17 +40,17 @@ module.exports = [
     await at(page, 'stDock', 0, 1000);
     await page.evaluate(() => { const c = S.cars.find(c => c.id === 'isl'); c.loc = 'stDock'; c.fuel = 8; render(); });
     const sub = re => page.evaluate(src => { const a = actions().find(a => new RegExp(src).test(a.l)); return a ? a.s : ''; }, re.source);
-    assert.match(await sub(/Drive on the next/), /\$26\.50/);
-    assert.match(await sub(/Walk on the next/), /\$6\.25/);
+    assert.match(await sub(/Drive on the next/), /\$24\.94/);
+    assert.match(await sub(/Walk on the next/), /\$8\.14/);
     await install(page, 'ferrypass');
     await page.evaluate(() => { FP().car = 3; render(); });
     assert.match(await sub(/Drive on the next/), /🎟️ ticket \(3 left\)/);
     assert.doesNotMatch(await sub(/Drive on the next/), /\$26/);
-    assert.match(await sub(/Walk on the next/), /\$6\.25/, 'no walk-on rides in the book: cash');
+    assert.match(await sub(/Walk on the next/), /\$8\.14/, 'no walk-on rides in the book: cash');
     await page.evaluate(() => { FP().walk = 10; });
     assert.match(await sub(/Walk on the next/), /🎟️ ticket \(10 left\)/);
     await page.evaluate(() => { S.phone = 0; });
-    assert.match(await sub(/Drive on the next/), /\$26\.50/, 'dead phone: cash');
+    assert.match(await sub(/Drive on the next/), /\$24\.94/, 'dead phone: cash');
     // the island side is free either way
     await at(page, 'aiDock', 0, 600);
     assert.match(await sub(/Walk on the next/), /free/);

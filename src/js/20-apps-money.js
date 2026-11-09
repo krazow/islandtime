@@ -1,7 +1,7 @@
 // ---------------- 📱 apps: money (Island Credit Union, Gig Work, Mainland Market) ----------------
 // Three installable phone apps (see the plug-in pattern at the top of 14-phone-apps.js).
 // State, all lazy so older saves just work: PH().icu={auto}, PH().gig={d,n,earned}, PH().mkt={order}.
-//   order = {n, cost, at (ready, abs min), close (locker cold storage ends, abs min), spoiled}
+//   order = {n, cost, at (ready, abs min), close (pickup counter closes, abs min), spoiled}
 const ICU=()=>{const P=PH();return P.icu||(P.icu={auto:false})};
 const GIG=()=>{const P=PH(),g=P.gig||(P.gig={d:-1,n:0,earned:0});if(g.d!==dayKey()){g.d=dayKey();g.n=0;g.earned=0}return g};
 const MKT=()=>{const P=PH();return P.mkt||(P.mkt={order:null})};
@@ -91,11 +91,11 @@ const mktWindow=()=>tod()>=MKT_OPEN&&tod()<MKT_LAST;
 function mktPlace(n){const P=MKT_PACKS.find(p=>p.n===n);if(!P||!phoneCan()||MKT().order||!mktWindow())return false;const cost=P.c+MKT_FEE;if(!canEssential(cost))return false;
   const min=phoneSignal()===1?10:5;S.t+=min;phoneUse(1);money(-cost);S.stats.food+=n;
   MKT().order={n,cost,at:S.t+MKT_READY,close:day()*1440+MKT_CLOSE,spoiled:false};
-  say(`🛒 Ordered ${n} days of groceries from Mainland Market: ${$(cost)} with the pickup fee. Ready around ${fmt(S.t+MKT_READY)} in the cold lockers at the Steilacoom terminal. ${S.money<0?'It went on the card.':''}`.trim());
-  apmMsg('market',`🛒 Order placed: ${n} days of food. Ready ${fmt(S.t+MKT_READY)} at the Steilacoom terminal lockers. Pick up by ${fmt(MKT_CLOSE)} or the cold stuff spoils.`);
+  say(`🛒 Ordered ${n} days of groceries from Mainland Market: ${$(cost)} with the pickup fee. Ready around ${fmt(S.t+MKT_READY)} at the grocery pickup counter by the Steilacoom ferry landing. ${S.money<0?'It went on the card.':''}`.trim());
+  apmMsg('market',`🛒 Order placed: ${n} days of food. Ready ${fmt(S.t+MKT_READY)} at the grocery pickup counter in Steilacoom. Pick up by ${fmt(MKT_CLOSE)} or the cold stuff spoils.`);
   afterAction();return true}
 function mktSpoil(notes){const o=mktOrder();if(!o||o.spoiled)return;o.spoiled=true;const lost=Math.ceil(o.n/2);o.n-=lost;
-  const t=`🥬 Your Mainland Market order sat in the terminal locker past ${fmt(MKT_CLOSE)}. The milk, the eggs and the chicken gave up: ${lost} day${lost>1?'s':''} of food spoiled. The cereal is fine. (${o.n} day${o.n===1?'':'s'} still waiting.)`;
+  const t=`🥬 Your Mainland Market order sat at the pickup counter past ${fmt(MKT_CLOSE)}. The milk, the eggs and the chicken gave up: ${lost} day${lost>1?'s':''} of food spoiled. The cereal is fine. (${o.n} day${o.n===1?'':'s'} still waiting.)`;
   if(notes)notes.push(t);else say(t)}
 phoneOnTime(()=>{const o=S&&S.ph&&S.ph.mkt&&S.ph.mkt.order;if(o&&!o.spoiled&&S.t>=o.close)mktSpoil()});
 // the night: anything ready today and not picked up spoils before morning
@@ -103,20 +103,20 @@ phoneOnTime(()=>{const o=S&&S.ph&&S.ph.mkt&&S.ph.mkt.order;if(o&&!o.spoiled&&S.t
 function mktPickup(){const o=mktOrder();if(!o||!mktReady()||S.loc!=='stDock')return false;
   const car=!!carHere(),room=Math.max(0,(car?14:4)-S.carried),take=Math.min(o.n,room);if(take<=0)return false;
   S.t+=5;S.carried+=take;o.n-=take;if(o.n<=0)MKT().order=null;
-  say(`🛒 Locker 9, the cold one. ${take} day${take>1?'s':''} of groceries in paper bags${o.spoiled?', minus what spoiled':''}.${o.n>0?` You can’t carry the other ${o.n} on foot: ${o.n>1?'they stay':'it stays'} in the locker.`:''} Now get ${take>1?'them':'it'} home.`);
+  say(`🛒 The pickup counter by the ferry landing. ${take} day${take>1?'s':''} of groceries in paper bags${o.spoiled?', minus what spoiled':''}.${o.n>0?` You can’t carry the other ${o.n} on foot: ${o.n>1?'they stay':'it stays'} at the counter.`:''} Now get ${take>1?'them':'it'} home.`);
   afterAction();return true}
-{const _actions=actions;actions=function(){const a=_actions();try{const o=mktOrder();   // apps: the locker pickup at the Steilacoom terminal
+{const _actions=actions;actions=function(){const a=_actions();try{const o=mktOrder();   // apps: the grocery pickup counter by the Steilacoom ferry landing
   if(o&&S.loc==='stDock'){const car=!!carHere(),room=(car?14:4)-S.carried;
     if(mktReady())a.push({cat:'trade',ic:'🛒',l:`Pick up your grocery order (${o.n} day${o.n>1?'s':''})`,cls:'primary',dis:room<=0,
-      s:room<=0?(car?'Your car is full of groceries.':'Your hands are full: on foot you carry 4 days of groceries.'):`Mainland Market, cold locker 9. 5 min.${!car&&o.n>room?` On foot you can take ${room}.`:''}${o.spoiled?'':` Cold stuff keeps until ${fmt(MKT_CLOSE)}.`}`,fn:mktPickup});
-    else a.push({cat:'trade',ic:'🛒',l:'Grocery order: still being packed',s:`Ready around ${fmt(o.at)} in the terminal lockers.`,dis:true})}}catch(e){}return a}}
-{const _todo=todoItems;todoItems=function(){const it=_todo();try{const o=mktOrder();if(o)it.push({ok:false,fail:false,l:'Pick up your grocery order',s:`🛒 ${o.n} day${o.n>1?'s':''} of food in the cold locker at the Steilacoom terminal${mktReady()?'':`, ready ${fmtAbs(o.at)}`}.${o.spoiled?'':` Cold stuff spoils after ${fmt(MKT_CLOSE)}.`}`,urgent:mktReady()&&!o.spoiled})}catch(e){}return it}} // apps
+      s:room<=0?(car?'Your car is full of groceries.':'Your hands are full: on foot you carry 4 days of groceries.'):`Mainland Market pickup counter. 5 min.${!car&&o.n>room?` On foot you can take ${room}.`:''}${o.spoiled?'':` Cold stuff keeps until ${fmt(MKT_CLOSE)}.`}`,fn:mktPickup});
+    else a.push({cat:'trade',ic:'🛒',l:'Grocery order: still being packed',s:`Ready around ${fmt(o.at)} at the Steilacoom pickup counter.`,dis:true})}}catch(e){}return a}}
+{const _todo=todoItems;todoItems=function(){const it=_todo();try{const o=mktOrder();if(o)it.push({ok:false,fail:false,l:'Pick up your grocery order',s:`🛒 ${o.n} day${o.n>1?'s':''} of food at the pickup counter in Steilacoom${mktReady()?'':`, ready ${fmtAbs(o.at)}`}.${o.spoiled?'':` Cold stuff spoils after ${fmt(MKT_CLOSE)}.`}`,urgent:mktReady()&&!o.spoiled})}catch(e){}return it}} // apps
 definePhoneApp({id:'market',name:'Mainland Market',ic:'🛒',order:67,size:'33 MB',desc:'Order groceries from anywhere; pick them up at the Steilacoom terminal.',
   badge:()=>mktReady()?1:0,
   view(){const o=mktOrder(),win=mktWindow();let h=apmShow('market');
-    if(o)h+=phCard(mktReady()?`📦 <b>Your order is ready:</b> ${o.n} day${o.n>1?'s':''} of food in cold locker 9 at the Steilacoom ferry terminal.${o.spoiled?' (Some of it spoiled.)':` Pick it up by ${fmt(MKT_CLOSE)} or the cold stuff goes bad.`}`
-      :`⏳ <b>Being packed:</b> ${o.n} days of food, ready around ${fmt(o.at)} at the Steilacoom terminal lockers.`,mktReady()&&!o.spoiled?'ok':'');
-    h+=phNote('Supermarket prices, no store trip. Nobody delivers to the island, so it goes to the cold lockers at the Steilacoom ferry terminal, ready 2 hours later. Pick it up the same day.');
+    if(o)h+=phCard(mktReady()?`📦 <b>Your order is ready:</b> ${o.n} day${o.n>1?'s':''} of food at the grocery pickup counter by the Steilacoom ferry landing.${o.spoiled?' (Some of it spoiled.)':` Pick it up by ${fmt(MKT_CLOSE)} or the cold stuff goes bad.`}`
+      :`⏳ <b>Being packed:</b> ${o.n} days of food, ready around ${fmt(o.at)} at the Steilacoom pickup counter.`,mktReady()&&!o.spoiled?'ok':'');
+    h+=phNote('Supermarket prices, no store trip. Nobody delivers to the island, so it goes to the grocery pickup counter by the Steilacoom ferry landing, ready 2 hours later. Pick it up the same day.');
     for(const P of MKT_PACKS){const cost=P.c+MKT_FEE,ok=canEssential(cost);
       h+=phBtn(`🛒 ${P.n} days of food — ${$(cost)}`,()=>mktPlace(P.n),{cls:!o&&win&&P.n===3?'primary':'',dis:!!o||!win||!ok,
         sub:o?'One order at a time.':!win?`Orders ${fmt(MKT_OPEN)}–${fmt(MKT_LAST)}.`:!ok?'Card’s maxed out.':`${$(P.c)} + ${$(MKT_FEE)} pickup fee${S.money<cost?' (on the card)':''}.${P.n>4?' On foot you carry 4 days.':''}`})}

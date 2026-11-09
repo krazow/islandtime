@@ -17,7 +17,7 @@ const GUIDE=[
   {id:'goal',g:0,when:()=>day()===0&&S.loc==='home'&&tod()<600,
     t:()=>`👋 Welcome to the island, {{name}}. Work is on the mainland at <b>${fmt(tutJob()?tutJob().start:540)}</b>, and the island is on the wrong side of the water: open <b>🧭 Go somewhere</b> and drive to the <b>Ferry Landing</b>.`+tutSea({winter:'Ice on the ramp makes early boats late, so leave early.'})},
   {id:'dock',g:0,when:()=>S.loc==='aiDock',
-    t:()=>'⛴️ Be <b>in line 20 minutes before</b> your boat leaves or you don’t board (the commuter boat is the <b>7:45</b>, so 7:25). The ⛴️ Ferry tab has the schedule and a trip planner that does the math.'+tutSea({winter:'🧊 On icy mornings the crew sands the ramp first; nobody hurries.',summer:'☀️ In summer, tourists with kayaks fill the car deck: walk on if the line looks long.'})},
+    t:()=>'⛴️ Be <b>in line 20 minutes before</b> your boat leaves or you don’t board (the commuter boat is the <b>7:35</b>, so 7:15). The ⛴️ Ferry tab has the schedule and a trip planner that does the math.'+tutSea({winter:'🧊 On icy mornings the crew sands the ramp first; nobody hurries.',summer:'☀️ In summer, tourists with kayaks fill the car deck: walk on if the line looks long.'})},
   {id:'mainland',g:0,when:()=>S.loc==='stDock'&&!S.worked[day()]&&tod()<720,
     t:()=>`🌆 Steilacoom: civilization, with traffic lights. Drive to <b>${L[tutJobLoc()].name}</b> and clock in on time; your boss has heard every ferry excuse.`},
   {id:'work',g:0,when:()=>!!tutJob()&&S.loc===tutJobLoc()&&tutJob().days.includes(day())&&!S.worked[day()],

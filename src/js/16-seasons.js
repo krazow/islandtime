@@ -66,7 +66,7 @@ function seasonDelay(side,d,dep){
 }
 function seasonFull(p,side,d,dep){
   const s=seasonId();
-  if(s==='summer'){p=Math.max(p,0.12);if(d>=4)p+=0.22;if(dep>=960)p+=0.12;if(fourthWeekend(d))p+=0.25}
+  if(s==='summer'){p=Math.max(p,0.12);if(d>=4)p+=0.22;if(dep>=960)p+=0.12;if(fourthWeekend(d))p+=twoBoatDay(d)?0.1:0.25}
   else if(s==='winter') p*=0.8;
   return p;
 }

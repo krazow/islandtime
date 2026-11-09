@@ -120,7 +120,7 @@ function dockActions(a,side){
     if(isl&&isl.loc==='stDock'&&!isl.diesel&&m>=360&&m<=1200) a.push({ic:'🛻',l:'Trade the Subaru for an old diesel pickup — $1,400',s:'Diesel is the one fuel you can legally bring over in cans (two 5-gal DOT cans).',dis:S.money<1400,fn:()=>{money(-1400);Object.assign(isl,{name:'Island truck (old diesel pickup)',diesel:true,tank:20,fuel:Math.max(isl.fuel,4)});S.t+=60;say('You swap the Subaru for a 1999 diesel pickup that rattles like a can of bolts. But diesel can legally ride the ferry in DOT cans. You’ve beaten the system, kind of.');afterAction()}});
     const noBoatTonight=(!car||!kD||kD.d>day())&&(!kW||kW.d>day()||!canWalkCarry());
     if(m>=1260||noBoatTonight){
-      a.push({ic:'🪑',l:'Sleep in the terminal',s:'It’s open all night. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
+      a.push({ic:carHere()?'🚗':'🪑',l:carHere()?'Sleep in your car in the ferry lot':'Sleep on the bench outside the terminal',s:'The waiting room locks after the last boat. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
       a.push({ic:'🏨',l:'Get a motel in Lakewood — $115',s:'Ends the day.',cls:'danger',fn:()=>endDay('motel')});
     }
   }

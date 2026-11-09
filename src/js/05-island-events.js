@@ -5,7 +5,7 @@ defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
   say(`⏰ Your alarm clock never went off. The power blinked out overnight and reset it. It’s already <b>${fmt(S.t)}</b>.`);
   S.phoneT=S.t;
-  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:45.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
+  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:35.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
 }});
 defEvent({id:'phone_died',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=60+Math.floor(Math.random()*50);S.t+=late;S.phoneT=S.t;adj('stress',10);buzz([100,60,100]);
@@ -177,9 +177,9 @@ const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok()&&(seasonId()==='fall'
 defEvent({id:'veterans_day',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('vet'),
   run(){say(`🇺🇸 <b>Veterans Day</b>, ${dateTxt(day())}. The American Legion holds its ceremony at <b>11:00 AM</b> by the flagpole outside the Riv: colors, the names, and a bugler who’s been practicing since October. Coffee after.`)}});
 defEvent({id:'craft_bazaar',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('bazaar'),
-  run(){say('🎄 <b>Holiday craft bazaar</b> today, 10 AM to 3 PM at the community clubhouse up by Lake Josephine. Wreaths, jam, knitted everything. Cash preferred, exact change worshipped.')}});
+  run(){say('🎄 <b>Holiday craft bazaar</b> today, 10 AM to 3 PM at the American Legion hall. Wreaths, jam, knitted everything. Cash preferred, exact change worshipped.')}});
 defEvent({id:'lake_cleanup',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('cleanup'),
-  run(){say('🗑️ <b>Lake cleanup day.</b> Volunteers meet at Lake Josephine between 8 and 11 AM with grabbers and contractor bags, then work around to Lake Florence. Coffee provided. Gloves BYO.')}});
+  run(){say('🗑️ <b>Lake cleanup day.</b> Volunteers meet at Lake Josephine between 8 and 11 AM with grabbers and contractor bags, then work their way around the shore. Coffee provided. Gloves BYO.')}});
 defEvent({id:'fire_drill',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('drill'),
   run(){say('🚒 Fire District #27 runs a volunteer drill tonight at <b>6:30 PM</b>, at the station up the road from the old store. They’re short on hands and will happily take yours.')}});
 defEvent({id:'bev_bread',hook:'wake',priority:2,max:1,chance:0.35,cond:ctx=>atHomeWake(ctx)&&flv('bev')>=3,
@@ -201,19 +201,21 @@ function lifeActions(a,loc){
     if(S.friends.walt){friendPts('walt',2);say('🇺🇸 Walt reads the names in his Legion cap, without his glasses, from memory. Afterward he pours you a coffee and doesn’t say much. He doesn’t have to.')}
     else{meet('walt','Walt from the American Legion','you stood together at the Veterans Day ceremony');say('🇺🇸 Thirty islanders, one flag, one bugler who nails it. The old guy next to you in the Legion cap introduces himself as Walt and hands you a coffee.')}
     afterAction()}}]);
-  if(loc==='lake'){
+  if(loc==='legion'){
     const off=flv('bev')>=2?5:0,price=25-off;
     lifeSlot(a,'bazaar','🎄','Holiday craft bazaar',600,900,[
-      {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the clubhouse. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
+      {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the Legion hall. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
         C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);
         say('🎄 A cedar wreath with a pinecone the size of your fist. The cabin smells like a Christmas tree lot that also has a woodstove.');lifeBev();afterAction()}},
       {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
+  }
+  if(loc==='lake'){
     lifeSlot(a,'cleanup','🗑️','Lake cleanup',480,660,[{ic:'🗑️',l:'Volunteer at the lake cleanup',s:'2 hours with a grabber and a bag. Stress −4.',cls:'primary',fn:()=>{
       C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);if(typeof S.rep==='number')S.rep+=1;
       say('🗑️ Two tires, a lawn chair, nine golf balls and a 1987 Rainier can come out of the shallows. The eagles supervise.');
       const b=lifeBuddy(['hendersons','sam','rusty','bev']);
-      if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way to Lake Florence.`)}
-      else meet('hendersons','the Hendersons','you hauled a shopping cart out of Lake Florence together');
+      if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way around Lake Josephine.`)}
+      else meet('hendersons','the Hendersons','you hauled a shopping cart out of Lake Josephine together');
       afterAction()}}]);
   }
   if(loc==='store') lifeSlot(a,'drill','🚒','Fire District drill',1050,1110,[{ic:'🚒',l:'Join the volunteer fire drill',s:'90 min at the Fire District #27 station. Hoses, ladders, cocoa. Stress −3, health +2.',cls:'primary',fn:()=>{

@@ -16,6 +16,7 @@ function sceneSVG(){
     if(loc==='store') fg+=`<rect x="150" y="104" width="130" height="50" fill="#e8dcc0"/><rect x="146" y="98" width="138" height="10" fill="#8a3b22"/><text x="215" y="122" text-anchor="middle" font-size="11" font-family="DM Sans" font-weight="700" fill="#2f3a3a">GENERAL STORE</text><rect x="200" y="130" width="30" height="24" fill="#5a4a3a"/><rect x="196" y="126" width="38" height="10" fill="#b8402a" transform="rotate(-8 215 131)"/><text x="215" y="134" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="DM Sans" transform="rotate(-8 215 131)">CLOSED</text><rect x="300" y="128" width="14" height="26" fill="#ddd"/><rect x="298" y="124" width="18" height="12" fill="#8a8a8a" opacity=".8"/>`;
     if(loc==='dale') fg+=`<rect x="170" y="116" width="80" height="38" fill="#6d5a45"/><polygon points="164,118 210,96 256,118" fill="#4b4b4b"/><rect x="262" y="132" width="16" height="22" rx="3" fill="#b8402a"/><rect x="282" y="134" width="16" height="20" rx="3" fill="#c98a12"/><rect x="200" y="128" width="20" height="26" fill="#2d241b"/>`;
     if(loc==='food') fg+=`<rect x="160" y="108" width="120" height="46" fill="#d7c7a5"/><rect x="156" y="102" width="128" height="9" fill="#2f5d4a"/><rect x="175" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/><rect x="235" y="120" width="30" height="18" fill="${night?'#f7d77a':'#cfe0e6'}"/>`;
+    if(loc==='legion') fg+=`<rect x="150" y="112" width="140" height="42" fill="#c9c1ad"/><polygon points="144,114 220,90 296,114" fill="#5a4a3a"/><rect x="208" y="128" width="22" height="26" fill="#5a4a3a"/><rect x="318" y="70" width="3" height="84" fill="#999"/><rect x="321" y="72" width="22" height="13" fill="#b23a3a"/><rect x="321" y="72" width="9" height="7" fill="#2c4a7a"/>`;
     if(loc==='lake') fg=`<ellipse cx="240" cy="150" rx="200" ry="22" fill="${water}"/>`+fg.replace(/170/g,'135')+`<path d="M300 60 q10 -6 20 0 q10 -6 20 0" stroke="#222" stroke-width="3" fill="none"/>`;
   } else {
     const b=[[10,50],[60,70],[120,40],[170,85],[230,55],[290,65],[350,45],[400,75],[440,50]];
@@ -205,9 +206,9 @@ function planTrip(to,byAbs,off){
   const side=L[S.loc].side,dockFrom=side==='I'?'aiDock':'stDock',dockTo=side==='I'?'stDock':'aiDock';
   const startLoc=off&&side==='I'?'home':S.loc,toDock=startLoc===dockFrom?0:dist(startLoc,dockFrom);
   const drive=to===dockTo?0:dist(dockTo,to);
-  const d=day()+off,deps=side==='I'?AI_DEPS:ST_DEPS,earliest=off?d*1440+300:S.t;
+  const d=day()+off,dl=deps(side,d),earliest=off?d*1440+300:S.t;
   const opts=[];
-  for(const dep of deps){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
+  for(const dep of dl){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
     const leave=sl.abs-20-toDock;if(leave<earliest)continue;
     const arrive=sl.abs+(sl.delay||0)+20+(sl.ketron?10:0)+drive;
     opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,why:sl.why,full:fullProb(side,d,dep)})} // season: why
@@ -245,7 +246,7 @@ function ferryView(){
     const past=abs<S.t;const st=s.cancel?`<span class="st x">CANCELED</span>`:s.passenger?`<span class="st p">PASS. ONLY</span>`:s.delay?`<span class="st d">+${s.delay} late</span>`:`<span class="st ok">${s.ketron?'via Ketron':'on time'}</span>`;
     return `<div class="row ${past?'past':''}"><span>${fmt(dep)}</span>${st}</div>`}).join('');
   let h=plannerView()+`<div class="board"><h3>⛴️ Today’s sailings · ${DAYS[d]}</h3><div style="font-size:12px;color:#9fc0c8">Status as of ${fmt(S.t)}. Things can change without warning.</div>
-   <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',AI_DEPS)}</div><div><div class="colh">Leave Steilacoom</div>${col('M',ST_DEPS)}</div></div></div>`;
+   <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',deps('I',day()))}</div><div><div class="colh">Leave Steilacoom</div>${col('M',deps('M',day()))}</div></div></div>`;
   const alerts=S.week.b.filter(b=>b.start<=S.t).map(b=>`<p>🚨 <b>${fmtAbs(b.start)}</b>: service suspended, ${b.cause}. ${S.t>=b.end?`<span style="color:var(--good)">Restored ${fmtAbs(b.end)}.</span>`:'<b>No restoration estimate.</b>'}</p>`).join('');
   h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}${seasonFerryNote()}</div>`; // season
   h+=`<div class="sect">Fuel & the ferry (current situation)</div><div class="rules">
@@ -263,7 +264,7 @@ function ferryView(){
   <p>Inspection odds go up with every contraband item you carry, and way up when the sheriff’s task force rides the boat. The neighbor’s sailboat isn’t inspected.</p></div>`;
   h+=`<div class="sect">How the ferry works</div><div class="rules">
   <p>🕐 <b>Be in line 20 minutes before departure</b>, cars and walk-ons alike, or you don’t board.</p>
-  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(FARE_CAR)} with a car, ${$(FARE_WALK)} on foot. Leaving the island is free.</p>
+  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(fareCar())} with a car, ${$(FARE_WALK)} on foot. Leaving the island is free.</p>
   <p>🚗 Commute-hour boats fill up with cars. Friday afternoon and Sunday evening are the worst. Walk-ons always fit.</p>
   <p>🔧 When the boat breaks down there’s no second boat this time of year. Long outages eventually get a passenger-only backup.</p>
   <p class="small-note" style="color:var(--mute)">This is a game schedule, inspired by the real Steilacoom–Anderson Island–Ketron route. For real sailings, check Pierce County’s ferry page.</p></div>`;

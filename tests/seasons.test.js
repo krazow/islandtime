@@ -38,7 +38,7 @@ module.exports = [
   } },
   { name: 'summer: weekend evening boats fill up more than in fall; winter a bit less', fn: async ctx => {
     const { page, errors } = await open(ctx);
-    const fp = async s => { await seasonGame(page, s); return page.evaluate(() => { S.week.b = []; return [fullProb('M', 5, 1100), fullProb('I', 6, 1065), fullProb('I', 1, 540)]; }); };
+    const fp = async s => { await seasonGame(page, s); return page.evaluate(() => { S.week.b = []; return [fullProb('M', 5, 1105), fullProb('I', 6, 1070), fullProb('I', 1, 535)]; }); };
     const fall = await fp('fall'), sum = await fp('summer'), win = await fp('winter');
     assert.ok(sum[0] > fall[0] + 0.2, `Sat evening: summer ${sum[0]} vs fall ${fall[0]}`);
     assert.ok(sum[1] > fall[1], `Sun evening: summer ${sum[1]} vs fall ${fall[1]}`);
@@ -156,7 +156,7 @@ module.exports = [
       const m0 = S.money; bbq.fn();
       S.loc = 'home'; S.t = 5 * 1440 + 1310; const fw = actions().find(a => a.l === 'Watch the fireworks over the water');
       const st0 = S.stress; fw.fn();
-      const evening = sailing('M', 5, 1100), full = fullProb('M', 5, 1100), friday = fullProb('I', 4, 690);
+      const evening = sailing('M', 5, 1105), full = fullProb('M', 5, 1105), friday = fullProb('I', 4, 690);
       const date = dateTxt(5); S.weekNo = 1; S.week = genWeek('normal', 'summer');
       return { date, morning, paid: m0 - S.money, walt: !!S.friends.walt, fw: S.sea.fw, delay: evening.delay, why: evening.why, full, friday, nextWeek: S.week.sea.fourth };
     });
@@ -165,7 +165,7 @@ module.exports = [
     assert.strictEqual(r.paid, 12); assert.ok(r.walt, 'meets Walt at the BBQ');
     assert.ok(r.fw != null, 'watched the fireworks');
     assert.ok(r.delay >= 15 && /Fourth of July/.test(r.why));
-    assert.ok(r.full >= 0.65, 'Fourth evening boats are packed: ' + r.full);
+    assert.ok(r.full >= 0.5, 'Fourth evening boats are packed even with two boats running: ' + r.full);
     assert.strictEqual(r.nextWeek, -1, 'only in the first week');
     noErrors(errors);
   } },
@@ -197,7 +197,7 @@ module.exports = [
       const U = UP(); Object.assign(U, { wood: 5, propane: 60 }); S.week.storm = null; upkeepNight('home', [], 0);
       const g = genWeek('normal', 'fall');
       return { season: S.season, date: dateTxt(0), sea: S.week.sea, gsea: g.sea, delay: seasonDelay('I', 1, 390),
-        full: [fullProb('M', 4, 950), fullProb('I', 0, 390), fullProb('M', 6, 1100), fullProb('I', 2, 615)], wood: U.wood, propane: U.propane,
+        full: [fullProb('M', 4, 955), fullProb('I', 0, 380), fullProb('M', 6, 1105), fullProb('I', 2, 605)], wood: U.wood, propane: U.propane,
         dark: seasonDark(), mul: ['fog', 'storm', 'outage', 'rain', 'gut', 'moss'].map(k => seasonMul(k)), flavor: seasonFlavor() === FLAVOR_MORNING, life: LIFE_CAL.vet.d };
     });
     assert.strictEqual(r.season, 'fall'); assert.strictEqual(r.date, 'Nov 2');

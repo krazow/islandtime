@@ -20,7 +20,7 @@ function otActions(a,d,m){
   if(E.ot===dk){a.push({cat:'work',ic:'⏱️',l:'Overtime done for today',s:'Once a day is plenty.',dis:true});return}
   if(E.full!==dk||m<J.end||m>J.end+30)return;
   const pay=otPay(J),end=S.t+OT_HOURS*60,arr=end+dist(J.loc,'stDock');
-  let boat=null;for(const dep of ST_DEPS){const s=sailing('M',d,dep,'walk',true);if(!s.cancel&&s.abs-20>=arr){boat=s;break}}
+  let boat=null;for(const dep of deps('M',d)){const s=sailing('M',d,dep,'walk',true);if(!s.cancel&&s.abs-20>=arr){boat=s;break}}
   a.push({cat:'work',ic:'⏱️',l:`Stay for overtime (${OT_HOURS} h) — ${$(pay)}`,s:`Time and a half. Done at ${fmt(end)}, so the earliest boat home is ${boat?fmt(boat.dep):'tomorrow'}. Stress +10.`,
     fn:()=>{E.ot=dk;S.t=end;phoneTick();money(pay);adj('stress',10);adj('job',2);S.stats.overtime=(S.stats.overtime||0)+1;
       say(`⏱️ ${pick(['Your boss says “Got a minute?” and it’s two hours.','You stay late to clear the backlog. The office gets very quiet after five.','Two more hours. You eat a granola bar from the bottom of your bag for dinner.'])} Time and a half: +${$(pay)}. ${boat?`Next boat home: ${fmt(boat.dep)}.`:'The boats are done for the night.'}`);afterAction()}});
