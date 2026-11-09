@@ -327,7 +327,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.10.1', SAVE_SCHEMA=6;
+const APP_VERSION='1.11.0', SAVE_SCHEMA=6;
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
 const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
@@ -546,7 +546,7 @@ function waitFerry(mode){
   const known=findNext(side,mode,true), actual=findNext(side,mode,false);
   if(!known){say('No sailings in sight. Something is very wrong with the ferry system.');return render()}
   if(known.d>day()){
-    if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day())
+    if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&canWalkCarry())
       return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
@@ -1712,7 +1712,8 @@ function dockActions(a,side){
     if(!S.cars.some(c=>c.id==='beat')&&m>=360&&m<=1200) a.push({ic:'🚙',l:'Buy a mainland beater car — $700',s:'Lives in the terminal lot so you can walk on and still drive on this side.',dis:S.money<700,fn:()=>{money(-700);S.cars.push({id:'beat',name:'Mainland beater (2004 Corolla)',loc:'stDock',fuel:5,tank:12,diesel:false});S.t+=40;say('A guy from a classifieds ad meets you in the lot. 241,000 miles, one hubcap, runs great. Now you have a mainland car.');afterAction()}});
     const isl=S.cars.find(c=>c.id==='isl');
     if(isl&&isl.loc==='stDock'&&!isl.diesel&&m>=360&&m<=1200) a.push({ic:'🛻',l:'Trade the Subaru for an old diesel pickup — $1,400',s:'Diesel is the one fuel you can legally bring over in cans (two 5-gal DOT cans).',dis:S.money<1400,fn:()=>{money(-1400);Object.assign(isl,{name:'Island truck (old diesel pickup)',diesel:true,tank:20,fuel:Math.max(isl.fuel,4)});S.t+=60;say('You swap the Subaru for a 1999 diesel pickup that rattles like a can of bolts. But diesel can legally ride the ferry in DOT cans. You’ve beaten the system, kind of.');afterAction()}});
-    if(m>=1260||(kW&&kW.d>day())){
+    const noBoatTonight=(!car||!kD||kD.d>day())&&(!kW||kW.d>day()||!canWalkCarry());
+    if(m>=1260||noBoatTonight){
       a.push({ic:'🪑',l:'Sleep in the terminal',s:'It’s open all night. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
       a.push({ic:'🏨',l:'Get a motel in Lakewood — $115',s:'Ends the day.',cls:'danger',fn:()=>endDay('motel')});
     }

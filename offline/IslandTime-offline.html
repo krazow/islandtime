@@ -181,6 +181,16 @@ html.hc .hud-sub,html.hc .stat small{opacity:1}html.hc .act,html.hc .dest{border
 html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition:none!important}
 .today{background:#eef3f4;border-radius:10px;padding:9px 11px;margin-bottom:10px;font-size:13.5px;line-height:1.55}
 .today b{display:block;font-family:Fraunces;font-size:15px;margin-bottom:2px}
+/* pinned "Next up" card on the Here tab */
+.nextup{display:flex;align-items:flex-start;gap:6px;background:#fff;border:1.5px solid var(--line);border-left:5px solid var(--sound);border-radius:12px;padding:7px 4px 7px 10px;margin-bottom:10px;font-size:14px;line-height:1.4}
+.nextup .nu-b{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;color:inherit;font:inherit}
+.nextup .nu-l{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.nextup.two .nu-l{-webkit-line-clamp:1;display:block;white-space:nowrap;text-overflow:ellipsis}
+.nextup .nu-k{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--sound);font-weight:700;margin-right:4px}
+.nextup .nu-p{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute);font-size:13px}
+.nextup .nu-x{flex:none;border:0;background:none;color:var(--mute);font-size:12px;padding:2px 6px;min-width:32px;min-height:28px;border-radius:8px}
+.nextup .nu-x:focus-visible,.nextup .nu-b:focus-visible{outline:2px solid var(--fir)}
+html.hc .nextup{border-width:2px;border-left-width:5px;border-color:var(--ink);border-left-color:var(--deep)}html.hc .nextup .nu-k{color:var(--deep)}html.hc .nextup .nu-p,html.hc .nextup .nu-x{color:var(--ink)}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(10,25,30,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .modal{background:var(--paper);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .22s ease-out}
@@ -315,7 +325,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.10.1', SAVE_SCHEMA=6;
+const APP_VERSION='1.11.0', SAVE_SCHEMA=6;
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
 const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
@@ -356,7 +366,7 @@ function setPlayerName(n){
   try{localStorage.setItem(NAME_KEY,n)}catch(e){}
   if(S&&!S.over){S.name=n;if(old!==n)say('✏️ From now on, everyone on the island calls you {{name}}.');saveGame()}
   else{ // on the title screen: update the saved week too, so Continue uses the new name
-    const ls=store();if(ls)try{for(const k of [SAVE_KEY,...LEGACY_KEYS]){const v=ls.getItem(k);if(!v)continue;const d=JSON.parse(v);if(d&&d.S){d.S.name=n;ls.setItem(k,JSON.stringify(d))}}}catch(e){}
+    const ls=store();if(ls)try{for(const k of slotKeys()){const v=ls.getItem(k);if(!v)continue;const d=JSON.parse(v);if(d&&d.S){d.S.name=n;ls.setItem(k,JSON.stringify(d))}}}catch(e){}
     if(S&&S.over) S.name=n}
 }
 let NMV='';
@@ -400,9 +410,22 @@ window.openSettings=()=>{
     {l:'♿ Accessibility',s:`Text size: ${{n:'Normal',l:'Large',xl:'Extra large'}[prefs().fs]} · High contrast: ${prefs().hc?'On':'Off'} · Reduce motion: ${prefs().rm?'On':'Off'}`,fn:()=>accessModal()},
     {l:`💡 Tutorial tips: ${prefs().tips?'On':'Off'}`,s:prefs().tips?'Guided first day; trading and Dale unlock on Tuesday.':'Everything unlocked from the start.',fn:()=>{setPref('tips',!prefs().tips);openSettings()}},
     {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
+    {l:'📖 How your house works',s:'The Home meter, chores, repairs, Gus and the community group.',fn:()=>houseHelp()},
+    {l:`🏆 Achievements (${achCount()}/${ACH.length})`,s:'Badges earned on this device, across all your games.',fn:()=>achModal(openSettings)},
+    inGame?{l:`💾 Save slot: ${curSlot()}`,s:'Switch to another save slot. Your week is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:`Current slot: ${curSlot()}. Continue, start or delete games in three slots.`,fn:()=>slotsModal()},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
     {l:'Close',fn:()=>{}}]);
 };
+function houseHelp(){
+  modal('📖 How your house works',`<p><b>🏠 The Home meter</b> (0–100) is how your house is holding up. It slips every day. Above 75: better sleep and cozy mornings. Below 35: worse sleep, more things break, fewer friends drop by.</p>
+  <p><b>🧺 Chores</b> are daily: dishes, laundry, needles, the bed. Skip them and they pile up. A <b>🧽 deep clean</b> on a day off is the big reset.</p>
+  <p><b>🌲 Maintenance</b> creeps up on its own: gutters, roof moss, the chimney, the well, potholes. Open <b>🏠 Inside the house</b> and <b>🌲 Outside &amp; property</b> at home. Highlighted jobs are due. Ignored jobs turn into floods, leaks and fires.</p>
+  <p><b>⛴️ Contractors</b> (septic, tree crew, propane) live on the mainland. They ride the ferry, so when the boat is down, so are they.</p>
+  <p><b>🧰 Gus</b> is the island handyman. Call him and he does the 3 jobs that need it most. He takes cash, gas or groceries. He lives here, so the ferry can’t stop him. He runs on island time, so sometimes nothing can make him show up.</p>
+  <p><b>📣 The community group</b> is where islanders ask for help. Post once a day and see who answers in a few hours. Someone might come over, lend you a tool, or just argue in the comments.</p>
+  <p><b>🤲 Reputation</b>: help a neighbor from the group and people remember. More reputation and more friends mean better odds when you ask. Help enough, and they might show up on a weekend with ladders and a pie.</p>`,[
+    {l:'Back to settings',fn:()=>openSettings()},{l:'Close',fn:()=>{}}]);
+}
 function tryClose(){try{window.close()}catch(e){}
   setTimeout(()=>{if(!document.hidden){exitNotice=inGameExited?'✅ Your week is saved. Your browser won’t let a page close itself, so just close this tab or window. Continue picks up right where you left off.':'Your browser won’t let a page close itself. You can close this tab or window.';titleScreen()}},250)}
 let inGameExited=false;
@@ -418,11 +441,12 @@ function baseState(){
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
     cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
-    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],home:70,homeLow:false,cleaned:-1,up:upInit(),alertsSeen:{},over:false,
+    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],home:70,homeLow:false,cleaned:-1,up:upInit(),rep:0,comm:{post:-1,help:-1,flakes:0},alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},tips:{seen:[]},friends:{},power:null,battery:'ok',
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
     alarm:{plug:{on:true,time:330},phone:{on:false,time:330}},phone:80,phoneT:330,gen:null,
+    arcs:{sam:{b:0,k:-9,h:0},walt:{b:0,k:-9,h:0},hendersons:{b:0,k:-9,h:0},day:-9},cal:{vet:-1,bazaar:-1,cleanup:-1,drill:-1,bzWk:-1,bz:false,chim:false},
     week:null};
 }
 function newGame(diff,mode){
@@ -520,7 +544,7 @@ function waitFerry(mode){
   const known=findNext(side,mode,true), actual=findNext(side,mode,false);
   if(!known){say('No sailings in sight. Something is very wrong with the ferry system.');return render()}
   if(known.d>day()){
-    if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day())
+    if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&canWalkCarry())
       return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
@@ -848,7 +872,7 @@ function upkeepActions(a,d,m){
   if(U.mold) add({cat:'home',ic:'🦠',l:'Scrub the black mold',due:true,s:'1 hour with bleach and a mask. It’s costing you health every night.',fn:()=>{S.t+=60;U.mold=false;U.damp=0;homeAdj(6);adj('health',2);say('🦠 Mask on, bleach out, window open. The bathroom ceiling is white again.');afterAction()}});
   add({cat:'home',ic:'🧯',l:'Clean the woodstove ash',due:U.ash>=3,s:U.ash<=0?'Clean.':`15 min. ${U.ash} day${U.ash===1?'':'s'} of ash in the firebox.`,dis:U.ash<=0,fn:()=>{S.t+=15;U.ash=0;homeAdj(1);say('🧯 A bucket of ash out to the garden. The fire draws better already.');afterAction()}});
   add({cat:'home',ic:'🏚️',l:'Sweep the chimney',due:U.chimney>=21,s:U.chimney<5?'Swept recently.':`90 min on the roof with a brush. ${U.chimney} days of creosote building up${U.chimney>=21?': chimney fire risk':''}.`,dis:U.chimney<5||!lite,
-    fn:()=>{S.t+=90;U.chimney=0;homeAdj(2);if(Math.random()<0.04)upInjure('Coming down the wet ladder, your foot slips off the last rung.');else say('🏚️ A bucket of black flakes later, the flue is clean.');afterAction()}});
+    fn:()=>{if(U.chimney<21)achUnlock('chimney');S.t+=90;U.chimney=0;homeAdj(2);if(Math.random()<0.04)upInjure('Coming down the wet ladder, your foot slips off the last rung.');else say('🏚️ A bucket of black flakes later, the flue is clean.');afterAction()}});
   add({cat:'home',ic:'🪵',l:`Split and stack firewood (${U.wood} night${U.wood===1?'':'s'} left)`,due:U.wood<=1,s:doneToday('wood')?'Done for today. Your back says so.':'1 hour. +4 nights of dry wood. Without it, the propane furnace takes over.',dis:doneToday('wood')||U.wood>=14,
     fn:()=>{S.t+=60;U.wood=Math.min(14,U.wood+4);U.woodOut=false;U.done.wood=dk;adj('stress',-2);if(Math.random()<0.03)upInjure('You step on a wet round of fir and roll your ankle.');else say('🪵 Thunk. Thunk. A good hour of splitting, and a tidy stack under the eaves.');afterAction()}});
   if(U.trapsOwned) add({cat:'home',ic:'🪤',l:U.traps>0?`Mouse traps set (${U.traps} more nights)`:'Set the mouse traps',due:U.traps<=0,s:'10 min. Peanut butter under the sink and in the pantry. Keeps the mice out of your food for a week.',dis:U.traps>0,fn:()=>{S.t+=10;U.traps=7;say('🪤 Traps baited and set.');afterAction()}});
@@ -873,6 +897,101 @@ function upkeepActions(a,d,m){
   add({cat:'yard',ic:'🔥',l:pj?'Propane delivery booked':`Order propane — $${pc}`,due:U.propane<25&&!pj,s:pj?`The truck comes over on the ferry: ${fmtAbs(pj.due)}.`:`Tank at ${U.propane}%. ${phoneOK?'Fill-up plus a $45 island delivery fee. The truck rides the ferry.':'Your phone is dead.'}`,dis:!!pj||!phoneOK||S.money<pc||U.propane>=90,
     fn:()=>upSchedule('propane',pc,'Propane fill-up.')});
 }
+// ---- 🧰 island help: Gus the handyman, the Anderson Island community group, reputation (S.rep), work parties ----
+// Maintenance tasks ranked by how far past their due threshold they are (score >= 1 means due).
+const UP_TASKS={
+  mold:{ic:'🦠',n:'scrubbed the black mold',d:'Scrub the black mold',o:'black mold',sc:U=>U.mold?2.5:0,fix:U=>{U.mold=false;U.damp=0;homeAdj(6)}},
+  chimney:{ic:'🏚️',n:'swept the chimney',d:'Sweep the chimney',o:'chimney',sc:U=>U.chimney/21,fix:U=>{U.chimney=0;homeAdj(2)}},
+  gutters:{ic:'🍂',n:'cleared the gutters',d:'Clear the gutters',o:'gutters',sc:U=>U.gutters/60,fix:U=>{U.gutters=0;homeAdj(2)}},
+  limbs:{ic:'🌲',n:'trimmed the limbs over the roof',d:'Trim the limbs over the roof',o:'limbs over the roof',sc:U=>upJob('arborist')?0:U.limbs/60,fix:U=>{U.limbs=0}},
+  moss:{ic:'🟩',n:'treated the roof moss',d:'Treat the roof moss',o:'roof moss',sc:U=>U.moss/60,fix:U=>{U.moss=0;homeAdj(2)}},
+  pot:{ic:'🕳️',n:'filled the driveway potholes',d:'Fill the driveway potholes',o:'driveway potholes',sc:U=>U.pot/60,fix:U=>{U.pot=0}},
+  well:{ic:'🚰',n:'serviced the well pump',d:'Service the well pump',o:'well pump',sc:U=>U.well/46,fix:U=>{U.well=0}},
+  genSvc:{ic:'🔧',n:'serviced the generator',d:'Service the generator',o:'generator',sc:U=>S.gen==='home'?U.genSvc/15:0,fix:U=>{U.genSvc=0}},
+  damp:{ic:'🪟',n:'dried the windows and ran the bath fan',d:'Dry out the windows',o:'window condensation',sc:U=>U.damp/3,fix:U=>{U.damp=0;homeAdj(1)}},
+  ash:{ic:'🧯',n:'cleaned out the woodstove ash',d:'Clean out the woodstove ash',o:'woodstove ash',sc:U=>U.ash/3,fix:U=>{U.ash=0;homeAdj(1)}}};
+function upPressing(n=3,min=0.5){const U=UP();return Object.keys(UP_TASKS).map(k=>({k,s:UP_TASKS[k].sc(U)})).filter(x=>x.s>=min).sort((a,b)=>b.s-a.s).slice(0,n).map(x=>x.k)}
+function upFix(ks){const U=UP();ks.forEach(k=>UP_TASKS[k].fix(U));return ks.map(k=>UP_TASKS[k].n)}
+function upChoresDone(){const U=UP(),dk=dayKey();for(const k in CHORES){U[k]=0;U.done[k]=dk}}
+const andList=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+function upAnyDue(){const U=UP();return upPressing(1,1).length>0||Object.keys(CHORES).some(k=>U[k]>=2)||U.fridge||U.wood<=1||U.septic>=75||U.propane<25}
+const COMM=()=>S.comm||(S.comm={post:-1,help:-1,flakes:0});
+const COMM_NAME='the Anderson Island community group';
+const NEIGHBORS=[['marta','Marta, from up the road','answered your post in the community group'],['ken','Big Ken, who has a tractor','showed up from the community group'],
+  ['lorraine','Lorraine, who knows everyone','met through the community group'],['dev','Dev, the retired machinist','met through the community group']];
+function newNeighbor(how){const n=NEIGHBORS.filter(x=>!S.friends[x[0]]);if(!n.length)return false;const p=pick(n);return meet(p[0],p[1],how||p[2])}
+const GUS_FLAKE=['📱 Gus texts at 10:40: “Truck’s fine, but the ferry line was long and then I got talking. Tomorrow. Promise.” He wasn’t even taking the ferry.',
+  '📱 No Gus. Around noon: “Sorry, the Hendersons’ goat got out. Tomorrow.” You didn’t know the Hendersons had a goat.',
+  '📱 Gus texts a photo of a very large salmon. Then: “Tomorrow?”',
+  '📱 Gus calls: “I was halfway there and remembered it’s my mother’s birthday. She’s 91. Tomorrow, late morning-ish.”'];
+const gusRate=()=>flv('gus')>=2?60:90;
+Object.assign(PERKS,{gus:{2:'Gus gives you the friends rate: $60 cash instead of $90.',3:'Gus does the dishes and the laundry while he’s there. Don’t ask why. Just let him.'}});
+Object.assign(UP_JOBS,{
+  gus:{who:'Gus',island:true,done:j=>gusArrive(j)},
+  post:{who:'community group',island:true,done:j=>postReplies(j)}});
+function gusArrive(j){
+  if(!j.flaked&&Math.random()<0.25){const c=COMM();const line=GUS_FLAKE[c.flakes%GUS_FLAKE.length];c.flakes++;
+    UP().jobs.push(Object.assign({},j,{flaked:true,due:j.due+1440}));say(line);showTile('🧰','Gus didn’t show','Island time. He says tomorrow.','info');return}
+  const ks=upPressing(3),did=upFix(ks),home=S.loc==='home',first=!S.friends.gus;
+  let extra='';if(flv('gus')>=3){upChoresDone();homeAdj(4);extra=' He also did your dishes and a load of laundry, and folded it better than you do.'}
+  if(!did.length){UP().wood=Math.min(14,UP().wood+4);extra=' Nothing much needed fixing, so he split a pile of firewood and drank your coffee.'+extra}
+  homeAdj(3);adj('stress',-4);
+  say(`🧰 ${home?'Gus’s truck rattles up the driveway':'While you were out, Gus let himself in the back (nobody locks anything here)'}${j.flaked?', a day late and not one bit sorry':''}.${did.length?` He ${andList(did)}.`:''}${extra} “Call me when the next thing breaks.”`);
+  showTile('🧰','Gus came by',did.length?`Fixed: ${andList(ks.map(k=>UP_TASKS[k].ic))}`:'Firewood split','good');
+  if(first)meet('gus','Gus, the island handyman','fixed up your place');else friendPts('gus',2);
+}
+function gusModal(){
+  const rate=gusRate(),book=(pay,how)=>{pay();S.t+=10;phoneTick();const days=1+(Math.random()<0.5?1:0);
+    UP().jobs.push({k:'gus',due:(day()+days)*1440+600+Math.floor(Math.random()*120)});
+    say(`📱 You call Gus. ${how} “I’ll swing by ${days===1?'tomorrow':'the day after tomorrow'}, late morning. Maybe.” Island time.`);afterAction()};
+  modal('🧰 Call Gus, the island handyman',`<p>Gus has fixed half the houses on the island and lives on it, so the ferry doesn’t matter. He’ll do the 3 jobs that need it most.</p><p>He works on island time: tomorrow or the day after, late morning. Probably.</p>`,[
+    {l:`💵 Cash — $${rate}`,s:rate<90?'The friends rate.':'His going rate.',dis:S.money<rate,fn:()=>book(()=>money(-rate),`$${rate}, cash on arrival. You set it aside.`)},
+    {l:'🛢️ 5 gallons of gas from your shed',s:S.homeGas>=5?`You have ${S.homeGas} gal. On this island, gas is better than money.`:'You need 5 gal in the shed.',dis:S.homeGas<5,fn:()=>book(()=>{S.homeGas=Math.round((S.homeGas-5)*10)/10},'You offer 5 gallons of gas. A long pause. “Deal.”')},
+    {l:'🥫 2 days of groceries',s:S.pantry>=3?`Pantry: ${S.pantry} days. He takes 2.`:'You need at least 3 days in the pantry.',dis:S.pantry<3,fn:()=>book(()=>{S.pantry-=2},'You offer two days of groceries. “Do you have the good coffee?” You do.')},
+    {l:'Never mind',fn:()=>{}}]);
+}
+function postModal(){
+  const ks=upPressing(4);
+  const go=k=>{S.t+=10;phoneTick();COMM().post=dayKey();UP().jobs.push({k:'post',due:S.t+170+Math.floor(Math.random()*30),task:k});
+    say(`📣 You post in ${COMM_NAME}: “${k==='general'?'Anyone have a couple of hours to help around the house? Will pay in cookies.':`Anyone able to help? ${UP_TASKS[k].d}. I can’t get to it.`}” Now you wait.`);afterAction()};
+  modal('📣 Post asking for help',`<p>${COMM_NAME[0].toUpperCase()+COMM_NAME.slice(1)}: lost dogs, ferry complaints, free firewood, and neighbors who show up. Replies usually come in a few hours.</p><p style="font-size:13px;color:var(--mute)">The better known you are for helping others, the better your odds.</p>`,
+    ks.map(k=>({l:`${UP_TASKS[k].ic} ${UP_TASKS[k].d}`,s:UP_TASKS[k].sc(UP())>=1?'Due now.':'Coming due.',fn:()=>go(k)}))
+      .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
+}
+function postReplies(j){
+  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.min(0.75,0.25+0.08*((S.rep||0)+fr)),gen=j.task==='general'||!UP_TASKS[j.task];
+  const what=gen?'the chores':'the '+UP_TASKS[j.task].o,home=S.loc==='home';
+  const fix=()=>{if(gen){upChoresDone();homeAdj(10)}else upFix([j.task])};
+  const tile=(t,s,k)=>showTile('📣',t,s,k);
+  if(Math.random()<p){const r=Math.random();
+    if(r<0.55){fix();adj('stress',-3);say(`📣 A neighbor from ${COMM_NAME} answers your post and just shows up, gloves on. ${gen?'An hour later the dishes are done, the laundry’s folded and the floors are swept.':`They ${UP_TASKS[j.task].n}.`} They won’t take money. “Next time it’s you.”`);
+      tile('A neighbor showed up to help',gen?'Chores done · Home +10':`Done: ${what}`,'good');if(Math.random()<0.4)newNeighbor()}
+    else if(r<0.85){fix();if(home)S.t+=45;say(`📣 Nobody can come, but someone in ${COMM_NAME} leaves ${gen?'a carpet cleaner and a box of rags':'exactly the right tool'} on your porch. ${home?`45 minutes later, ${gen?'the house is clean':'it’s done'}.`:`You get to it ${gen?'when you’re home':'later'}.`} Return it clean or you’ll hear about it.`);
+      tile('Someone lent you the tool',home?'Done · 45 minutes of your time':`Done: ${what}`,'good')}
+    else {fix();adj('stress',2);say(`📣 Twelve replies in four minutes. Three people tag someone named Barb. Two argue about the 2019 ferry schedule. One actually comes over and does ${what}. Your phone won’t stop buzzing.`);
+      tile('12 replies at once','One of them actually helped','good')}
+  } else {const r=Math.random();
+    if(r<0.4){adj('stress',1);say(`📣 Your post in ${COMM_NAME} gets two likes and a thumbs-up emoji. Nobody answers. Everyone must be on the mainland.`);tile('Nobody answered','Two likes, though','info')}
+    else if(r<0.75){adj('stress',4);say(`📣 Your post turns into a 41-comment thread about the “right” way to do ${what}. Someone says it was better in the ’80s. Nobody offers to help.`);tile('A know-it-all comment thread','Stress +4 · nothing fixed','bad')}
+    else {say(`📣 The only reply is a DM: “Hi neighbor! Have you heard about gutter guards? 🙂 Financing available.” It’s a guy from Puyallup.`);tile('Someone tried to sell you something','Nothing fixed','info')}
+  }
+}
+function helpActions(a,d,m){
+  const c=COMM(),dk=dayKey(),phoneOK=S.phone>0,pj=upJob('post'),gj=upJob('gus');
+  a.push({cat:'yard',ic:'🧰',l:gj?'Gus is coming (probably)':'Call Gus, the island handyman',due:false,s:gj?`He said ${fmtAbs(gj.due)}. Ish. He lives here, so the ferry can’t stop him.`:!phoneOK?'Your phone is dead.':`Fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries. Tomorrow or the day after.`,
+    dis:!!gj||!phoneOK,fn:gusModal});
+  a.push({cat:'phone',ic:'📣',l:pj?'Waiting for replies in the community group':c.post===dk?'Posted in the community group today':'Post asking for help',s:pj?`Replies should trickle in around ${fmt(pj.due)}.`:c.post===dk?'One post a day, or people start muting you.':!phoneOK?'Your phone is dead.':'Ask the Anderson Island community group. 10 min. Answers come in a few hours.',
+    dis:!!pj||c.post===dk||!phoneOK,fn:postModal});
+  const ok=m>=480&&m<1140;
+  a.push({cat:'here',ic:'🤲',l:c.help===dk?'Helped a neighbor today ✓':'Help a neighbor from the community group',s:c.help===dk?`Island reputation: ${S.rep||0}.`:!ok?'People ask for help between 8 AM and 7 PM.':`1 hour. Someone always needs a hand. Island reputation: ${S.rep||0}. Stress −2.`,
+    dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;S.rep=(S.rep||0)+1;adj('stress',-2);
+      say(pick(['🤲 You help a guy from the group haul a chest freezer up his porch steps. He thanks you three times.','🤲 You spend an hour helping someone near Lake Josephine find their escaped chickens. You find four of five.','🤲 You hold a ladder while a neighbor clears her gutters, and hear the whole history of her septic system.','🤲 You drive a bag of groceries to an older neighbor who can’t make the ferry this week. She sends you home with jam.']));
+      if(Math.random()<0.15)newNeighbor('you helped them out');afterAction()}});
+}
+TILE_META.work_party=['🛠️','A community work party','good'];
+defEvent({id:'work_party',hook:'wake',priority:3,max:1,cond:()=>S.loc==='home'&&day()>=5&&(S.rep||0)>=3,chance:0.5,
+  run(){const ks=upPressing(2),did=upFix(ks);if(!did.length)upChoresDone();adj('stress',-6);homeAdj(6);
+    say(`🛠️ Three trucks pull into your driveway at 9 AM: neighbors from ${COMM_NAME}, with ladders, a thermos and a pie. “You’ve helped half of us. Our turn.” ${did.length?`By lunch they’ve ${andList(did)}.`:'By lunch the whole house is spotless.'}`)}});
 defEvent({id:'leaky_roof',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home',
   chance:()=>{const U=UP();let c=U.moss>=80?0.18:U.moss>=60?0.07:0;if(homeTier()==='low')c+=0.05;return rainTonight()?c*2:c},
   run(ctx){homeAdj(-5);adj('stress',4);UP().damp+=1;ctx.notes.push('💧 Drip. Drip. The moss on the roof finally won: there’s a pot on the bedroom floor catching rain. (Treat the roof moss.)')}});
@@ -1068,6 +1187,128 @@ function favorActions(a,loc){
   });
 }
 
+// ---- island life: community calendar and friend story arcs ----
+Object.assign(TILE_META,{veterans_day:['🇺🇸','Veterans Day at the Legion','info'],craft_bazaar:['🎄','Holiday craft bazaar today','info'],lake_cleanup:['🗑️','Lake cleanup day','info'],fire_drill:['🚒','Fire District drill tonight','info'],
+  bev_bread:['🍞','Zucchini bread from Bev','good'],arc_sam:['⛵','Sam’s boat project','info'],arc_walt:['🧢','Walt’s grandson','info'],arc_hendersons:['💍','The Hendersons’ fiftieth','info']});
+PERKS.bev={2:'Bev knocks $5 off anything on her bazaar table.',3:'Bev leaves zucchini bread on your porch now and then.'};
+// community calendar: d = day of week; ok() = which week (month mode) or a roll (week mode)
+const LIFE_CAL={
+  vet:{d:2,ok:()=>S.mode==='month'&&S.weekNo===1},                 // Wed Nov 11
+  bazaar:{d:5,ok:()=>S.mode==='month'?S.weekNo>=2:bazaarWeek()},   // Sat Nov 21 + 28 (week mode: 60%)
+  cleanup:{d:6,ok:()=>S.mode==='month'?S.weekNo===1:true},         // Sun Nov 15 (week mode: Sun Nov 8)
+  drill:{d:3,ok:()=>S.mode==='month'?S.weekNo===2:true},           // Thu Nov 19 (week mode: Thu Nov 5)
+};
+function bazaarWeek(){const C=S.cal;if(C.bzWk!==S.weekNo){C.bzWk=S.weekNo;C.bz=Math.random()<0.6}return !!C.bz}
+const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok();
+defEvent({id:'veterans_day',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('vet'),
+  run(){say(`🇺🇸 <b>Veterans Day</b>, ${dateTxt(day())}. The American Legion holds its ceremony at <b>11:00 AM</b> by the flagpole outside the Riv: colors, the names, and a bugler who’s been practicing since October. Coffee after.`)}});
+defEvent({id:'craft_bazaar',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('bazaar'),
+  run(){say('🎄 <b>Holiday craft bazaar</b> today, 10 AM to 3 PM at the community clubhouse up by Lake Josephine. Wreaths, jam, knitted everything. Cash preferred, exact change worshipped.')}});
+defEvent({id:'lake_cleanup',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('cleanup'),
+  run(){say('🗑️ <b>Lake cleanup day.</b> Volunteers meet at Lake Josephine between 8 and 11 AM with grabbers and contractor bags, then work around to Lake Florence. Coffee provided. Gloves BYO.')}});
+defEvent({id:'fire_drill',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('drill'),
+  run(){say('🚒 Fire District #27 runs a volunteer drill tonight at <b>6:30 PM</b>, at the station up the road from the old store. They’re short on hands and will happily take yours.')}});
+defEvent({id:'bev_bread',hook:'wake',priority:2,max:1,chance:0.35,cond:ctx=>atHomeWake(ctx)&&flv('bev')>=3,
+  run(){S.pantry+=1;say('🍞 A foil-wrapped loaf on the porch with a note: “Too much zucchini. Again. —Bev.” +1 day of food.')}});
+// one community event's status at its place: upcoming, open (acts), over, or done
+function lifeSlot(a,key,ic,name,from,to,acts){
+  if(!lifeToday(key)) return;
+  const m=tod();
+  if(S.cal[key]===dayKey()) a.push({ic:'✅',l:`${name} ✓`,s:'You were there. People will remember that, or at least your face.',cat:'here',dis:true});
+  else if(m<from) a.push({ic,l:`${name}: ${fmt(from)} today`,s:`Come back between ${fmt(from)} and ${fmt(to)}.`,cat:'here',dis:true});
+  else if(m<=to) acts.forEach(x=>a.push(Object.assign({cat:'here'},x)));
+  else a.push({ic,l:`${name} is over`,s:'Folding chairs are already stacked. Next year.',cat:'here',dis:true});
+}
+function lifeBuddy(ids){return ids.filter(id=>S.friends[id])}
+function lifeActions(a,loc){
+  const k=dayKey(),C=S.cal;
+  if(loc==='food') lifeSlot(a,'vet','🇺🇸','Veterans Day ceremony',660,700,[{ic:'🇺🇸',l:'Attend the Veterans Day ceremony',s:'About an hour at the flagpole with the Legion. Stress −6.',cls:'primary',fn:()=>{
+    C.vet=k;S.t+=60;phoneTick();adj('stress',-6);
+    if(S.friends.walt){friendPts('walt',2);say('🇺🇸 Walt reads the names in his Legion cap, without his glasses, from memory. Afterward he pours you a coffee and doesn’t say much. He doesn’t have to.')}
+    else{meet('walt','Walt from the American Legion','you stood together at the Veterans Day ceremony');say('🇺🇸 Thirty islanders, one flag, one bugler who nails it. The old guy next to you in the Legion cap introduces himself as Walt and hands you a coffee.')}
+    afterAction()}}]);
+  if(loc==='lake'){
+    const off=flv('bev')>=2?5:0,price=25-off;
+    lifeSlot(a,'bazaar','🎄','Holiday craft bazaar',600,900,[
+      {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the clubhouse. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
+        C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);
+        say('🎄 A cedar wreath with a pinecone the size of your fist. The cabin smells like a Christmas tree lot that also has a woodstove.');lifeBev();afterAction()}},
+      {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
+    lifeSlot(a,'cleanup','🗑️','Lake cleanup',480,660,[{ic:'🗑️',l:'Volunteer at the lake cleanup',s:'2 hours with a grabber and a bag. Stress −4.',cls:'primary',fn:()=>{
+      C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);if(typeof S.rep==='number')S.rep+=1;
+      say('🗑️ Two tires, a lawn chair, nine golf balls and a 1987 Rainier can come out of the shallows. The eagles supervise.');
+      const b=lifeBuddy(['hendersons','sam','rusty','bev']);
+      if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way to Lake Florence.`)}
+      else meet('hendersons','the Hendersons','you hauled a shopping cart out of Lake Florence together');
+      afterAction()}}]);
+  }
+  if(loc==='store') lifeSlot(a,'drill','🚒','Fire District drill',1050,1110,[{ic:'🚒',l:'Join the volunteer fire drill',s:'90 min at the Fire District #27 station. Hoses, ladders, cocoa. Stress −3, health +2.',cls:'primary',fn:()=>{
+    C.drill=k;S.t+=90;phoneTick();adj('stress',-3);adj('health',2);
+    if(S.friends.rusty){friendPts('rusty',2);say('🚒 Rusty, stone sober in turnout gear, shows you how to roll a hose. Who knew.')}
+    else{meet('rusty','Rusty from the bar','he showed you how to roll a fire hose at the drill');say('🚒 A guy you’ve only ever seen at the Riv’s bar turns out to be a volunteer firefighter. Rusty. He shows you how to roll a hose.')}
+    if(S.up&&!C.chim){C.chim=true;S.up.chimney=0;say('🏚️ On the way out, the captain says “you’re the cedar cabin back in the woods, right?” and two volunteers follow you home to check your chimney. They sweep it while they’re up there. No charge, just don’t burn wet wood.')}
+    afterAction()}}]);
+}
+function lifeBev(){if(S.friends.bev)friendPts('bev',1);else if(Math.random()<0.6)meet('bev','Bev the knitter','she talked you through her wreaths at the craft bazaar')}
+
+// friend story arcs: 3 beats each, S.arcs[id] = {b: beats done, k: dayKey of the last beat, h: times you helped}
+// beat 1: once you know them (a day later); beat 2: good friend or week 3; beat 3: close friend or week 4. At least 2 days apart, one arc beat a day.
+function arcReady(id){
+  const A=S.arcs[id],f=S.friends[id];if(!A||!f||A.b>=3) return false;
+  if(S.arcs.day===dayKey()||dayKey()-A.k<2) return false;
+  if(A.b===0) return f.day!==day()||S.weekNo>0;
+  if(A.b===1) return flv(id)>=2||S.weekNo>=2;
+  return flv(id)>=3||S.weekNo>=3;
+}
+function arcBeat(id){const A=S.arcs[id];A.b++;A.k=dayKey();S.arcs.day=dayKey();return A}
+const arcNo=(who,line)=>({l:'Not now',s:line,fn:()=>say(`${who}: “${line}”`)});
+defEvent({id:'arc_sam',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>atHomeWake(ctx)&&arcReady('sam'),
+  run(){const A=arcBeat('sam');
+    if(A.b===1) modal('⛵ Sam’s boat project','<p>Sam is at your door with two coffees and a photo of a 14-foot wooden skiff. “Bought her off a guy at Oro Bay for two hundred bucks and a chainsaw. She has character.”</p><p>The character is mostly rot.</p>',[
+      {l:'Help scrape the hull: 1 hour',s:'Stress −3. Sam +1.',fn:()=>{A.h++;S.t+=60;phoneTick();adj('stress',-3);friendPts('sam',1);say('⛵ An hour with a putty knife in Sam’s carport. You find three layers of paint and one of hope.')}},
+      arcNo('Sam','No rush. She’s not going anywhere. Literally.')]);
+    else if(A.b===2) modal('⛵ Sam’s boat, part two','<p>“She needs marine sealant and new oarlocks,” Sam says. “Twenty-five bucks gets her watertight. Or an hour of sanding, if you’re broke too.”</p>',[
+      {l:'Chip in $25',s:'Sam +2.',dis:S.money<25,fn:()=>{A.h++;money(-25);friendPts('sam',2);say('⛵ Sam writes “{{name}}: $25” on the transom in pencil. “Investor.”')}},
+      {l:'Sand for an hour',s:'Stress −2, Sam +1. Your shoulders will hear about it.',fn:()=>{A.h++;S.t+=60;phoneTick();adj('stress',-2);adj('health',-1);friendPts('sam',1);say('⛵ An hour of sanding. You are now 40% sawdust.')}},
+      arcNo('Sam','I’ll find the money. Somewhere. Probably the couch.')]);
+    else modal('⛵ Launch day','<p>Sam texts a photo of the skiff on a trailer at the Oro Bay ramp. “She floats. Probably. Come watch?”</p>',[
+      {l:'Go to the launch: 1 hour',s:A.h?'Stress −10. Sam +2. Bring a towel.':'Stress −6. Sam +1.',fn:()=>{S.t+=60;phoneTick();
+        if(A.h){adj('stress',-10);friendPts('sam',2);S.pantry+=2;say(`⛵ She floats. Sam has painted <b>${A.h>=2?'THE {{name}}':'THE RELUCTANT'}</b> on the bow. The first trip out comes back with a cooler of fish, and two days of dinners go in your freezer.`)}
+        else{adj('stress',-6);friendPts('sam',1);say('⛵ She floats. Sam rows a lap, takes on a little water, and declares victory.')}}},
+      arcNo('Sam','I’ll send video. If she sinks, it’ll be a good one.')]);
+  }});
+defEvent({id:'arc_walt',hook:'arrive',priority:2,max:3,chance:0.5,cond:ctx=>['food','aiDock','store','lake','home'].includes(ctx.at)&&tod()>=540&&tod()<=1230&&arcReady('walt'),
+  run(){const A=arcBeat('walt');
+    if(A.b===1) modal('🧢 Walt’s grandson','<p>Walt flags you down. “My grandson Tyler’s coming over from Tacoma for a few days. Sixteen. Lives on his phone. What do kids even <i>do</i> here?”</p>',[
+      {l:'Offer to show Tyler around: 30 min',s:'Stress −2. Walt +2.',fn:()=>{A.h++;S.t+=30;phoneTick();adj('stress',-2);friendPts('walt',2);say('🧢 You show Tyler the eagles at Lake Josephine. He takes 80 photos and admits, quietly, that it’s “kind of sick.”')}},
+      {l:'Suggest the eagles at Lake Josephine',s:'Free advice. Walt +1.',fn:()=>{A.h++;friendPts('walt',1);say('🧢 “Eagles. Huh. Kid likes birds of prey in video games.” Walt writes it down.')}},
+      arcNo('Walt','Fair enough. I’ll buy him a fishing pole and hope.')]);
+    else if(A.b===2) modal('🧢 Tyler and the woodpile','<p>Walt and Tyler pull up in the Legion pickup. “Kid wants to learn to split wood. I’ve got a bad shoulder and you’ve got a woodpile.”</p>',[
+      {l:'Teach him: 1 hour',s:'Your woodpile grows. Stress −3, Walt +1.',fn:()=>{A.h++;S.t+=60;phoneTick();adj('stress',-3);const U=UP();U.wood=Math.min(14,(U.wood||0)+4);homeAdj(2);friendPts('walt',1);say('🪓 Tyler splits four nights of firewood and asks zero questions about the Wi-Fi.')}},
+      arcNo('Walt','Next time. He’ll be back. He keeps saying he’ll be back.')]);
+    else modal('🧢 Tyler’s send-off','<p>Walt is a little misty. “Tyler wrote his history paper on my unit. Got an A. The Legion’s doing a potluck send-off tonight before he catches the boat. You’re invited.”</p>',[
+      {l:'Go to the send-off: 1 hour, $10 for the kitty',s:'Dinner handled. Stress −8, Walt +2.',dis:S.money<10,fn:()=>{S.t+=60;phoneTick();money(-10);S.ateOut=day();adj('stress',-8);friendPts('walt',2);
+        if(A.h>=2){S.phone=100;S.phoneT=S.t;say('🧢 Tyler hands you his spare battery pack, fully charged. “For when the power goes out. Grandpa says it always does.” Your phone is at 100%.')}
+        else say('🧢 Three kinds of casserole, one speech, and Walt pretending he has something in his eye.')}},
+      arcNo('Walt','I’ll tell him you said so long.')]);
+    return {stop:true};
+  }});
+defEvent({id:'arc_hendersons',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>atHomeWake(ctx)&&arcReady('hendersons')&&(S.arcs.hendersons.b<2||day()>=5),
+  run(){const A=arcBeat('hendersons');
+    if(A.b===1) modal('💍 The Hendersons’ fiftieth','<p>Mrs. Henderson calls over the fence. “Fifty years at the end of the month! We’re having folks to the clubhouse. Could you help me address invitations? My hands aren’t what they were.”</p>',[
+      {l:'Help with invitations: 45 min',s:'Stress −2. Hendersons +1.',fn:()=>{A.h++;S.t+=45;phoneTick();adj('stress',-2);friendPts('hendersons',1);say('💍 Forty-one envelopes. Half the addresses are just “the blue house past the lake.” The mail carrier will know.')}},
+      arcNo('The Hendersons','Oh, don’t you worry. I’ll make Dale do it.')]);
+    else if(A.b===2) modal('💍 About the cake','<p>“We wanted a bakery cake from Lakewood,” Mr. Henderson says, “but have you seen what they charge for the ferry? Chip in and we’ll get a sheet cake. Frosting’s frosting.”</p>',[
+      {l:'Chip in $20',s:'Hendersons +2.',dis:S.money<20,fn:()=>{A.h++;money(-20);friendPts('hendersons',2);say('💍 “Put your name on the card,” Mrs. Henderson insists. “Right under the grandkids.”')}},
+      {l:'Bake them something: 1 hour',s:'Uses 1 day of food. Stress −3, Hendersons +2.',dis:S.pantry<1,fn:()=>{A.h++;S.pantry--;S.t+=60;phoneTick();adj('stress',-3);friendPts('hendersons',2);say('💍 Your banana bread comes out lopsided. Mr. Henderson says lopsided is how you know it’s homemade.')}},
+      arcNo('The Hendersons','We’ll manage. We always have. Fifty years of managing.')]);
+    else modal('💍 Fifty years','<p>The anniversary brunch is this morning at the clubhouse. Half the island is coming, and somebody’s nephew brought a fiddle.</p>',[
+      {l:'Go to the brunch: 90 min',s:'Stress −12. Hendersons +2. Leftovers likely.',fn:()=>{S.t+=90;phoneTick();adj('stress',-12);S.pantry+=1;friendPts('hendersons',2);
+        if(A.h>=2){homeAdj(4);say('💍 They slow-dance to the fiddle. On the way out they press a framed photo of the ferry landing in 1976 into your hands. “For your wall.” And a foil brick of ham.')}
+        else say('💍 Toasts, a fiddle, and a foil brick of ham and cake for the road.')}},
+      {l:'Send a card instead',s:'They’ll understand. Mostly.',fn:()=>{friendPts('hendersons',0);say('💍 You leave a card in their mailbox. Mrs. Henderson waves it at you later, delighted.')}}]);
+  }});
+
 // ---- trip start (can block) ----
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
   cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&ctx.car.id==='isl'&&!ctx.o.started,
@@ -1215,9 +1456,9 @@ function processTimed(){
   if(S.power&&S.t>=S.power.end){S.power=null;if(L[S.loc].side==='I')say('💡 The power’s back on. Every appliance in the house beeps at once.')}
   for(const j of UP().jobs.slice()){
     if(S.t<j.due) continue;
-    const out=S.week.b.find(b=>j.due>=b.start&&j.due<b.end);
+    const out=!(UP_JOBS[j.k]||{}).island&&S.week.b.find(b=>j.due>=b.start&&j.due<b.end); // island jobs (Gus, the community group) don’t ride the ferry
     if(out){j.due=out.end+90;if(!j.warned){j.warned=true;say(`🚚 The ${UP_JOBS[j.k].who} is stuck in Steilacoom. The ferry’s down. They’ll come over when it’s running.`)}continue}
-    UP().jobs=UP().jobs.filter(x=>x!==j);UP_JOBS[j.k].done();say(UP_JOBS[j.k].msg);
+    UP().jobs=UP().jobs.filter(x=>x!==j);if(!UP_JOBS[j.k])continue;UP_JOBS[j.k].done(j);if(UP_JOBS[j.k].msg)say(UP_JOBS[j.k].msg);
   }
   const dl=S.delivery;
   if(dl&&S.t>=dl.due){
@@ -1255,7 +1496,7 @@ function dailyCard(d){
 }
 function endDay(where){
   processTimed();const dayCard=dailyCard(day());
-  const d=day(), notes=[];
+  const d=day(), notes=[];achCheck({where});
   if(where==='home') stash();
   // island events while you sleep (random outages etc.)
   upkeepNight(where,notes,d);
@@ -1366,7 +1607,7 @@ function actions(){
       if(S[src]>0) a.push({ic:'⛽',l:`Fuel the ${isl.diesel?'truck':'car'} from the shed`,s:`${S[src]} gal stashed. ${isl.diesel?'':'Keep 3 gal for the generator if a storm’s coming.'}`,dis:g<=0,fn:()=>{S[src]=Math.round((S[src]-g)*10)/10;isl.fuel=Math.round((isl.fuel+g)*10)/10;S.t+=10;say(`You pour ${g} gallons into the tank in the dark, spilling only a little.`);afterAction()}});}
     if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:S.money<96,fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
     else if(S.delivery) a.push({ic:'📦',l:'Grocery delivery on its way',s:`Due ${fmtAbs(S.delivery.due)}`,dis:true});
-    upkeepActions(a,d,m);
+    upkeepActions(a,d,m);helpActions(a,d,m);
     if(m<1260){const rn=U_REST(),gain=[8,5,3][rn]??1;a.push({ic:'☕',l:'Rest for an hour',s:`Coffee, rain, a book. Stress −${gain}.${rn>=2?' Diminishing returns: you’re getting restless.':''}`,fn:()=>{S.t+=60;adj('stress',-gain);S.rest={k:dayKey(),n:rn+1};say(rn>=3?'You stare at the ceiling. Resting more isn’t really helping now.':'You sit with coffee and watch the rain drip off the firs.');afterAction()}})}
   }
   if(loc==='aiDock'||loc==='stDock') dockActions(a,side);
@@ -1417,6 +1658,7 @@ function actions(){
   else if(loc==='work'||loc==='office'||loc==='whse') a.push({ic:'🏢',l:'You don’t work here',s:S.emp?`You work at ${L[curJob().loc].name}.`:'Not right now, anyway.',dis:true});
   jobActions(a,loc);
   favorActions(a,loc);
+  lifeActions(a,loc);
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
@@ -1468,7 +1710,8 @@ function dockActions(a,side){
     if(!S.cars.some(c=>c.id==='beat')&&m>=360&&m<=1200) a.push({ic:'🚙',l:'Buy a mainland beater car — $700',s:'Lives in the terminal lot so you can walk on and still drive on this side.',dis:S.money<700,fn:()=>{money(-700);S.cars.push({id:'beat',name:'Mainland beater (2004 Corolla)',loc:'stDock',fuel:5,tank:12,diesel:false});S.t+=40;say('A guy from a classifieds ad meets you in the lot. 241,000 miles, one hubcap, runs great. Now you have a mainland car.');afterAction()}});
     const isl=S.cars.find(c=>c.id==='isl');
     if(isl&&isl.loc==='stDock'&&!isl.diesel&&m>=360&&m<=1200) a.push({ic:'🛻',l:'Trade the Subaru for an old diesel pickup — $1,400',s:'Diesel is the one fuel you can legally bring over in cans (two 5-gal DOT cans).',dis:S.money<1400,fn:()=>{money(-1400);Object.assign(isl,{name:'Island truck (old diesel pickup)',diesel:true,tank:20,fuel:Math.max(isl.fuel,4)});S.t+=60;say('You swap the Subaru for a 1999 diesel pickup that rattles like a can of bolts. But diesel can legally ride the ferry in DOT cans. You’ve beaten the system, kind of.');afterAction()}});
-    if(m>=1260||(kW&&kW.d>day())){
+    const noBoatTonight=(!car||!kD||kD.d>day())&&(!kW||kW.d>day()||!canWalkCarry());
+    if(m>=1260||noBoatTonight){
       a.push({ic:'🪑',l:'Sleep in the terminal',s:'It’s open all night. Ends the day.',cls:'danger',fn:()=>endDay('terminal')});
       a.push({ic:'🏨',l:'Get a motel in Lakewood — $115',s:'Ends the day.',cls:'danger',fn:()=>endDay('motel')});
     }
@@ -1576,7 +1819,7 @@ function cargoActions(a){
 }
 function trade(g,dir){
   const side=L[S.loc].side,pr=price(g,side),mk=MARKETS[S.loc];
-  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell}
+  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell;if(side==='I'&&(g==='food'||g==='med'))achUnlock('supplier')}
   S.t+=g==='drugs'?15:5;
   if(g==='drugs'){
     adj('stress',dir==='sell'?8:6);
@@ -1625,9 +1868,14 @@ function gossip(){
 const SAVE_KEY='islandtime.save', LEGACY_KEYS=['islandtime.save.v2','islandtime.save.v1'], BEST_KEY='islandtime.best';
 let saveNotice='';
 function store(){try{return window.localStorage}catch(e){return null}}
+// Three save slots. Slot 1 is the original key (plus its legacy mirrors); slots 2 and 3 have their own keys.
+const SLOT_KEY='islandtime.slot', SLOT_N=3;
+function curSlot(){let n=1;try{n=parseInt(localStorage.getItem(SLOT_KEY)||'1',10)}catch(e){}return n>=1&&n<=SLOT_N?n:1}
+function setSlot(n){try{localStorage.setItem(SLOT_KEY,String(n))}catch(e){}}
+function slotKeys(n){n=n||curSlot();return n===1?[SAVE_KEY,...LEGACY_KEYS]:['islandtime.save.slot'+n]}
 function packSave(){return {schema:SAVE_SCHEMA,app:APP_VERSION,S,uiNarr,tab,at:Date.now()}}
 // The save is mirrored under the older key names so an older copy of the game (old install, cached phone app) still finds it.
-function saveGame(){const ls=store();if(!ls||!S)return;const keys=[SAVE_KEY,...LEGACY_KEYS];
+function saveGame(){const ls=store();if(!ls||!S)return;const keys=slotKeys();
   try{if(S.over)keys.forEach(k=>ls.removeItem(k));else{const v=JSON.stringify(packSave());keys.forEach(k=>{try{ls.setItem(k,v)}catch(e){}})}}catch(e){}}
 // Fill in anything an older (or newer) save is missing, without touching what it has.
 function fillDefaults(obj,def){
@@ -1638,6 +1886,9 @@ function fillDefaults(obj,def){
   return obj;
 }
 const num=(v,d)=>typeof v==='number'&&isFinite(v)?v:d;
+// numeric dotted version compare: >0 when a is newer than b ('1.10.0' > '1.9.2')
+const verCmp=(a,b)=>{const p=v=>String(v||'').split('.').map(n=>parseInt(n,10)||0),x=p(a),y=p(b);for(let i=0;i<Math.max(x.length,y.length);i++){const k=(x[i]||0)-(y[i]||0);if(k)return k}return 0};
+let newerWarned='';
 function migrate(d){
   if(!d||typeof d!=='object'||!d.S||typeof d.S!=='object') throw new Error('not an Island Time save');
   const from=d.schema||(d.S.cargo?2:1), x=d.S, notes=[];
@@ -1684,24 +1935,26 @@ function migrate(d){
   if(!Array.isArray(x.ev.force)) x.ev.force=[];
   w.news=w.news.map(n=>typeof n==='number'&&n<NEWS.length?n:-1);
   x.week=w;
-  if(from>SAVE_SCHEMA) notes.push(`this save is from a newer version (${d.app||'unknown'}). Anything this version doesn’t know about is kept but ignored`);
+  const newer=typeof d.app==='string'&&verCmp(d.app,APP_VERSION)>0?d.app:null;
+  if(from>SAVE_SCHEMA&&!newer) notes.push(`this save is from a newer version (${d.app||'unknown'}). Anything this version doesn’t know about is kept but ignored`);
   else if(from<SAVE_SCHEMA) notes.push(`upgraded from an older version${d.app?' ('+d.app+')':''}`);
-  return {schema:Math.max(from,SAVE_SCHEMA),app:d.app,S:x,uiNarr:Array.isArray(d.uiNarr)?d.uiNarr:[],tab:['act','ferry','todo','log'].includes(d.tab)?d.tab:'act',at:d.at,notes};
+  return {schema:Math.max(from,SAVE_SCHEMA),app:d.app,S:x,uiNarr:Array.isArray(d.uiNarr)?d.uiNarr:[],tab:['act','ferry','todo','log'].includes(d.tab)?d.tab:'act',at:d.at,notes,newer};
 }
-function rawSave(){const ls=store();if(!ls)return null;
+function rawSave(n){const ls=store();if(!ls)return null;
   let best=null;
-  for(const k of [SAVE_KEY,...LEGACY_KEYS]){const v=ls.getItem(k);if(!v)continue;let at=0;try{at=JSON.parse(v).at||0}catch(e){}
+  for(const k of slotKeys(n)){const v=ls.getItem(k);if(!v)continue;let at=0;try{at=JSON.parse(v).at||0}catch(e){}
     if(!best||at>best.at)best={k,v,at}}
   return best}
-function loadSave(){
-  const r=rawSave();if(!r)return null;
+function loadSave(n){
+  const r=rawSave(n);if(!r)return null;
   try{const d=migrate(JSON.parse(r.v));return d.S.over?null:d}
-  catch(e){try{const ls=store();ls.setItem('islandtime.save.broken',r.v);[SAVE_KEY,...LEGACY_KEYS].forEach(k=>ls.removeItem(k))}catch(_){}
+  catch(e){try{const ls=store(),sn=n||curSlot();ls.setItem('islandtime.save.broken'+(sn>1?'.slot'+sn:''),r.v);slotKeys(sn).forEach(k=>ls.removeItem(k))}catch(_){}
     saveNotice='Your saved game couldn’t be read, so it was set aside. Start a new week.';return null}
 }
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;
   render();
+  if(d.newer&&newerWarned!==d.newer){newerWarned=d.newer;modal('⚠️ Save from a newer version',`<p>This save is from Island Time ${esc(d.newer)}, newer than this copy (${APP_VERSION}). Update the game to keep everything: whatever this copy doesn’t know about is ignored, and may be lost once you keep playing here.</p>`,[{l:'Continue anyway',fn:()=>{}}])}
   if(d.notes&&d.notes.length) modal('Save loaded',`<p>Welcome back. Note: ${d.notes.join('; ')}.</p>`,[{l:'Continue',fn:()=>{}}]);
   if(S.t>=day()*1440+1410&&L[S.loc].side==='M') strandedModal();
 }
@@ -1802,6 +2055,7 @@ function render(){
   const pending=todoItems().filter(x=>x.urgent).length;
   h+=`<nav class="tabs">${[['act','🧭','Here'],['ferry','⛴️','Ferry'],['todo','📋','To-do'],['log','📜','Log']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}${k==='todo'&&pending?'<span class="dot"></span>':''}${k==='ferry'&&out?'<span class="dot"></span>':''}</button>`).join('')}</nav>`;
   app.innerHTML=withName(h);
+  achCheck();
   saveGame();
 }
 window.setTab=k=>{tab=k;render();window.scrollTo(0,0)};
@@ -1815,7 +2069,7 @@ function actView(){
   h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}<span class="tag ${S.phone<20?'bad':''}">${S.phone>0?'📱':'📵'} ${S.phone}%</span>${S.gen?`<span class="tag ${S.gen==='home'?'good':''}">🔌 ${S.gen==='home'?'generator':'generator in car'}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
   const acts=actions();
   h+=marketView();
-  h=tipView()+h;
+  {const tv=tipView();h=tv+(tv?'':nextView(acts))+h;} // the guided tip covers the same ground, so one at a time
   const btn=a=>{const i=ACTS.push(a.fn)-1;return `<button class="act ${a.cls||''}" ${a.dis?'disabled':''} onclick="ACT(${i})"><span class="ic">${a.ic}</span><span class="tx"><b>${a.l}</b>${a.s?'<span>'+a.s+'</span>':''}</span></button>`};
   if(acts.length>4){
     const groups={};acts.forEach(a=>{const c=catOf(a);(groups[c]=groups[c]||[]).push(a)});
@@ -1838,6 +2092,56 @@ function actView(){
   return h;
 }
 window.ACT=i=>{uiNarr=[];sfx('tap');ACTS[i]&&ACTS[i]()};
+// ---- "Next up": one suggestion pinned at the top of the Here tab (hide for today with ×) ----
+let NEXT_FN=null;
+function nextBoat(to,byTod){ // island → mainland appointment: which boat to catch
+  if(L[S.loc].side!=='I'||!L[to]||L[to].side!=='M') return null;
+  const r=planTrip(to,day()*1440+byTod,0);
+  if(r.best) return {txt:`⛴️ ${fmt(r.best.dep)} boat, leave ${fmt(r.best.leave)}`,to,by:byTod};
+  if(r.first) return {txt:`⛴️ ${fmt(r.first.dep)} boat gets you there ~${fmt(r.first.arrive)}`,to,by:byTod};
+  return {txt:'check the ⛴️ planner',to,by:byTod};
+}
+function nextUp(acts){
+  const d=day(),m=tod(),J=curJob();
+  const meet=(ic,to,at,what)=>{
+    const here=S.loc===to,b=here?null:nextBoat(to,at);
+    const t=here?`${ic} You’re here. ${what} at <b>${fmt(at)}</b>`:m>at?`${ic} Running late: get to ${L[to].name} (${what.toLowerCase()} ${fmt(at)})`:`${ic} Be at ${L[to].name} by <b>${fmt(at)}</b>`;
+    return {t:t+(b?' · '+b.txt:''),go:b?()=>{if(planTargets().includes(to)){PLAN.to=to;PLAN.by=at;PLAN.off=0}setTab('ferry')}:()=>setTab('todo')};
+  };
+  // (a) today's shift
+  if(J&&J.days.includes(d)&&!S.worked[d]&&m<J.start+240) return meet('💼',J.loc,J.start,'Shift');
+  // (b) interview today
+  const I=S.interview;
+  if(I&&I.day===d&&m<=I.time+20) return meet('📝',I.loc,I.time,'Interview');
+  // (c) doctor's appointment today (arrive 2:00–2:45)
+  if(apptActive()&&d===APPT_DAY&&!S.appt&&!S.apptMissed&&m<=885) return meet('🩺','clinic',870,'Appointment');
+  // (d) the most urgent to-do item
+  const dueHere=S.loc==='home'&&acts.some(a=>a.due&&!a.dis); // at home, the specific chore (f) beats the general upkeep item
+  const u=todoItems().find(x=>x.urgent&&!x.ok&&!x.fail&&!/^Work:|^Interview:/.test(x.l)&&!(dueHere&&x.l==='House & yard upkeep'));
+  if(u) return {t:`⚠️ <b>${u.l}</b> · ${u.s}`,go:()=>setTab('todo')};
+  // (e) late evening at home
+  if(S.loc==='home'&&m>=1260) return {t:`🛏️ Go to bed · alarm: ${alarmTxt()}`,go:()=>nextScroll('.sect,details.upk>summary',ACT_CATS.phone)};
+  // (f) a due house or yard task
+  if(S.loc==='home'){const a=acts.find(a=>a.due&&!a.dis&&(catOf(a)==='home'||catOf(a)==='yard'));
+    if(a){const c=catOf(a);return {t:`${a.ic} Due at home: <b>${a.l}</b>`,go:()=>{UPK_OPEN[c]=true;render();
+      nextScroll('details.upk>summary',ACT_CATS[c])}}}}
+  return null; // (g) falls through to the player's own #1 priority
+}
+function nextScroll(sel,label){const el=[...document.querySelectorAll(sel)].find(x=>x.textContent.startsWith(label));
+  el&&el.scrollIntoView({block:'start',behavior:document.documentElement.classList.contains('rm')?'auto':'smooth'})}
+function nextView(acts){
+  NEXT_FN=null;
+  if(!S||S.over||S.nextHide===dayKey()) return '';
+  const p=(S.prios||[]).find(q=>!q.done);
+  let n=null;try{n=nextUp(acts)}catch(e){n=null}
+  const pin=p?`📌 Your #1: ${esc(p.t)}`:'';
+  if(!n&&p) n={t:pin,go:()=>setTab('todo'),pin:true};
+  if(!n) return '';
+  NEXT_FN=n.go;const two=p&&!n.pin;
+  return `<div class="nextup${two?' two':''}" role="region" aria-label="Next up"><button class="nu-b" onclick="NEXT_GO()"><span class="nu-l"><span class="nu-k">Next up</span>${n.t}</span>${two?`<span class="nu-p" onclick="event.stopPropagation();setTab('todo')">${pin}</span>`:''}</button><button class="nu-x" aria-label="Hide Next up for today" title="Hide for today" onclick="NEXT_HIDE()">✕</button></div>`;
+}
+window.NEXT_GO=()=>{sfx('tap');NEXT_FN&&NEXT_FN()};
+window.NEXT_HIDE=()=>{S.nextHide=dayKey();render()};
 const ACT_CATS={work:'💼 Work & errands',ferry:'⛴️ Ferry & travel',trade:'🛒 Food & shopping',home:'🏠 Inside the house',yard:'🌲 Outside & property',fuel:'⛽ Fuel, car & power',phone:'📱 Phone & alarms',here:'🏡 Around here'};
 function curJob(){return S&&S.emp?JOBS[S.emp]||null:null}
 const dayList=ds=>ds.length===5&&ds[0]===0?'weekdays':ds.map(i=>DAYS[i].slice(0,3)).join(', ');
@@ -1852,6 +2156,9 @@ const TIPS=[
   {id:'bed',when:()=>S.loc==='home'&&tod()>=1080,t:'🛏️ Before bed, set your <b>⏰ alarms</b>: the plug-in clock, your phone, or both as backups. Each night you eat a day of food from the pantry.'},
   {id:'trading',when:()=>!!MARKETS[S.loc]&&!tradingLocked(),t:'🛒 <b>Trading:</b> buy on the mainland, sell on the island for more. Watch the badges: gas cans and drugs are contraband on the ferry.'},
   {id:'storm',when:()=>S.week.storm&&S.week.storm.day===day(),t:'🌬️ A storm means power outages. A <b>generator</b> (Home Depot, Lakewood) plus gas stashed in your shed keeps the fridge, heat and phone going.'},
+  {id:'home_low',when:()=>S.loc==='home'&&(S.home??70)<35,t:'🏚️ Your <b>Home</b> meter is low. A run-down house means worse sleep, more things breaking and fewer visitors. A <b>🧽 Deep clean</b> on a day off helps a lot. Too busy? <b>Call Gus</b> or <b>📣 post in the community group</b>.'},
+  {id:'home_meter',when:()=>S.loc==='home'&&(day()>=1||(S.home??70)<60),t:'🏠 The <b>Home</b> meter is how your house is holding up. Chores and repairs raise it; it slips a little every day. Keep it high for better sleep and cozy mornings. Settings ⚙️ has <b>📖 How your house works</b>.'},
+  {id:'upkeep_due',when:()=>S.loc==='home'&&upAnyDue(),t:'🧰 Something around the house needs doing. Open <b>🏠 Inside the house</b> or <b>🌲 Outside &amp; property</b> below: jobs that are due are highlighted. Ignore them and they turn into events.'},
   {id:'friends',when:()=>Object.keys(S.friends).length>0,t:'🤝 You made a friend! Friends help out with rides, jump-starts and gas, and they’ll ask favors too. See them in the 📋 To-do tab.'},
 ];
 function tipsOn(){return prefs().tips}
@@ -2057,12 +2364,14 @@ function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#ti
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
 function endScreen(h1,sub,lost){
+  achCheck({end:true,lost});const achNew=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
   const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
   saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
   app.innerHTML=withName(`<div class="end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>
   <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${g[0]}</div><div><b style="font-family:Fraunces;font-size:20px">${g[1]}</b><div style="color:var(--mute);font-size:14px">${g[2]}</div></div></div>
   <div class="kv"><span>Difficulty</span><b>${DF().ic} ${DF().n}</b></div>
   <div class="kv"><span>Score</span><b>${sc}${typeof newBest!=='undefined'&&newBest?' 🏆 new best':''}</b></div>${best!=null&&!isNaN(best)?`<div class="kv"><span>Previous best</span><b>${best}</b></div>`:''}
+  <div class="kv ach-end"><span>🏆 Achievements this game</span><b style="text-align:right">${achNew.length?achNew.map(a=>a.ic+' '+a.n).join(', '):'none new'}</b></div>
   <div class="kv"><span>Cash left</span><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
   <div class="kv"><span>Health / Job / Stress</span><b>${S.health} / ${S.job} / ${S.stress}</b></div>
   <div class="kv"><span>🏠 Home condition</span><b>${S.home} (${homeScore()>=0?'+':'−'}${Math.abs(homeScore())} pts)</b></div>
@@ -2088,6 +2397,66 @@ function endScreen(h1,sub,lost){
   window.scrollTo(0,0);
 }
 
+// ---------------- achievements ----------------
+// Kept per device under their own key, separate from saves: they survive new games, deleted slots and finished weeks.
+const ACH_KEY='islandtime.achievements';
+const ACH=[
+  {id:'never_stranded',ic:'⛴️',n:'Never stranded',d:'Finish a game without a single night stuck on the mainland.',t:c=>c.end&&!c.lost&&S.stats.stranded===0},
+  {id:'punctual',ic:'⏰',n:'Clocked in on time',d:'Get to work on time five days in one week.',t:()=>Object.keys(S.worked||{}).filter(i=>S.worked[i]&&!(S.late||{})[i]).length>=5},
+  {id:'chimney',ic:'🏚️',n:'Clean flue',d:'Sweep the chimney before it reaches 21 days of creosote.',t:null},
+  {id:'well_kept',ic:'🏡',n:'Well-kept home',d:'Finish a game with your home condition at 75 or better.',t:c=>c.end&&!c.lost&&S.home>=75},
+  {id:'month',ic:'🗓️',n:'A month on the island',d:'Make it through a whole month (4 weeks).',t:c=>c.end&&!c.lost&&S.mode==='month'},
+  {id:'coop',ic:'🛒',n:'Co-op founder',d:'Help the island raise enough to open the co-op store.',t:()=>!!S.coop.open},
+  {id:'bingo',ic:'🎱',n:'Bingo!',d:'Win money at American Legion bingo night.',t:()=>S.bingo.won>0},
+  {id:'close_friend',ic:'🤝',n:'Close friend',d:'Become close friends (level 3) with someone on the island.',t:()=>Object.values(S.friends||{}).some(f=>(f.lvl||1)>=3)},
+  {id:'ferry_hell',ic:'🔥',n:'Ferry Hell survivor',d:'Finish a game on Ferry Hell difficulty.',t:c=>c.end&&!c.lost&&S.diff==='hard'},
+  {id:'generator',ic:'🔌',n:'The lights stay on',d:'Have your generator carry the house through a power outage.',t:()=>S.ev.history.some(h=>h.id==='gen_saves')||(S.ev.past||[]).some(h=>h.id==='gen_saves')},
+  {id:'ankle',ic:'🩹',n:'Back on your feet',d:'Get a hurt ankle treated.',t:()=>!!(S.injury&&S.injury.treated)},
+  {id:'supplier',ic:'🥫',n:'Island supplier',d:'Sell food or medical supplies to neighbors on the island.',t:null},
+  {id:'fred',ic:'🩴',n:'Pajama Fred’s friend',d:'Make friends with Pajama Fred.',t:()=>!!S.friends.fred},
+  {id:'terminal',ic:'🪑',n:'A night in the terminal',d:'Sleep sitting up in the Steilacoom ferry terminal.',t:c=>c.where==='terminal'},
+  {id:'pantry',ic:'🧺',n:'Fully stocked',d:'Have a week of food (7 days or more) in the pantry.',t:()=>S.pantry>=7},
+  {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0}];
+function achGot(){try{const o=JSON.parse(localStorage.getItem(ACH_KEY)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch(e){return {}}}
+function achCount(){const g=achGot();return ACH.filter(a=>g[a.id]).length}
+function achUnlock(id){const a=ACH.find(x=>x.id===id);if(!a)return;const g=achGot();if(g[id])return;
+  g[id]={at:new Date().toISOString()};try{localStorage.setItem(ACH_KEY,JSON.stringify(g))}catch(e){}
+  if(S){S.achGame=(S.achGame||[]).filter(x=>x!==id).concat(id);if(!S.over)showTile('🏆','Achievement: '+a.n,a.d,'good')}}
+function achCheck(c){if(!S)return;c=c||{};const g=achGot();
+  for(const a of ACH){if(g[a.id]||!a.t)continue;let ok=false;try{ok=!!a.t(c)}catch(e){}if(ok)achUnlock(a.id)}}
+function achModal(back){const g=achGot();
+  modal(`🏆 Achievements (${achCount()}/${ACH.length})`,`<p style="font-size:13px;color:var(--mute)">Saved on this device. They carry over to every new game and save slot.</p>`+ACH.map(a=>{const on=g[a.id];
+    return `<div class="ach${on?' on':''}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;margin-bottom:6px;border-radius:10px;border:1.5px solid ${on?'var(--good)':'var(--line)'};background:${on?'#fff':'transparent'}${on?'':';opacity:.55'}"><span style="font-size:24px;width:30px;text-align:center;${on?'':'filter:grayscale(1)'}">${on?a.ic:'🔒'}</span><span style="flex:1;min-width:0"><b style="display:block;font-size:14.5px">${a.n}</b><span style="display:block;font-size:12.5px;color:var(--mute)">${on?`Earned ${esc(new Date(on.at).toLocaleDateString())}`:'How: '+a.d}</span></span></div>`}).join(''),
+  [{l:back?'Back to settings':'Close',fn:()=>{if(back)back()}}]);
+}
+window.achModal=achModal;
+
+// ---------------- save slots UI ----------------
+function slotInfo(n){const r=rawSave(n);if(!r)return null;
+  try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=DIFFS[x.diff]||DIFFS.normal;
+    return {name:x.name||currentName(),diff:`${D.ic} ${D.n}`,txt:`${x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}}
+  catch(e){return {broken:true,name:'Unreadable save',diff:'',txt:''}}}
+const slotLine=i=>i?(i.broken?'Unreadable save':`${esc(i.name)} · ${i.diff} · ${i.txt}`):'Empty';
+const SLOTBTN='flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink)';
+window.slotsModal=()=>{const cur=curSlot();
+  modal('💾 Save slots',`<p style="font-size:13px;color:var(--mute)">Keep up to three games going. Continue, a new week, Exit and transfer codes all use the current slot.</p>`+[1,2,3].map(n=>{const i=slotInfo(n);
+    return `<div class="slot" style="background:#fff;border:1.5px solid ${n===cur?'var(--buoy)':'var(--line)'};border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>Slot ${n}</b>${n===cur?' <span style="font-size:12px;color:var(--buoy);font-weight:700">· current</span>':''}<div style="font-size:13px;color:var(--mute);margin-top:2px">${slotLine(i)}</div>
+    <div style="display:flex;gap:6px;margin-top:8px">${i&&!i.broken?`<button style="${SLOTBTN};background:var(--buoy);color:#fff;border-color:var(--buoy)" onclick="slotAct(${n},'cont')">Continue</button>`:''}<button style="${SLOTBTN}" onclick="slotAct(${n},'new')">Start new here</button>${i?`<button style="${SLOTBTN};color:var(--bad)" onclick="slotAct(${n},'del')">Delete</button>`:''}</div></div>`}).join(''),
+  [{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
+};
+window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n);
+  if(a==='cont'){setSlot(n);return resumeGame()}
+  if(a==='new'){const go=()=>{setSlot(n);titleScreen();startNewWeek()};
+    return i?modal(`Start over in slot ${n}?`,`<p>The saved week in slot ${n} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new week here',fn:go},{l:'Cancel',fn:()=>slotsModal()}]):go()}
+  if(a==='del') modal(`🗑️ Delete slot ${n}?`,`<p>This erases the saved week in slot ${n} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal()}},{l:'Cancel',fn:()=>slotsModal()}]);
+};
+function slotSwitchModal(){const cur=curSlot();
+  modal('💾 Save slot',`<p>You’re playing in <b>slot ${cur}</b>. Your week is saved before you switch.</p>`,[
+    ...[1,2,3].map(n=>{const i=n===cur?null:slotInfo(n);return {l:`Slot ${n}${n===cur?' (this game)':''}`,s:n===cur?'You’re here.':i&&!i.broken?'Continue: '+slotLine(i):i?'Unreadable save: manage it from the title screen.':'Empty: start a new week here',dis:n===cur||!!(i&&i.broken),
+      fn:()=>{saveGame();MQ=[];clearTiles();setSlot(n);if(i)return resumeGame();S=null;titleScreen();startNewWeek()}}}),
+    {l:'Back to settings',fn:()=>openSettings()}]);
+}
+
 // ---------------- title ----------------
 function clearTiles(){tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove())}
 function titleScreen(){clearTiles();
@@ -2099,7 +2468,8 @@ function titleScreen(){clearTiles();
   <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
   <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
   <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Thursday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
-  ${(()=>{const d=loadSave();return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
+  ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
+  <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
   ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}${exitNotice?`<div class="hint">${exitNotice}</div>`:''}
   <button id="installBtn" class="ghost" style="display:${deferredInstall&&!isStandalone()?'block':'none'}" onclick="doInstall()">📲 Install as an app</button>

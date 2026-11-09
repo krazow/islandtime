@@ -37,6 +37,43 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.11: island help, Next up, island life, achievements
+**Island help for your house**
+
+- 🧰 **Gus, the island handyman.** Call him from home (🌲 Outside & property). Pay $90 cash, 5 gallons of gas from your shed, or 2 days of groceries, and he fixes the 3 jobs that need it most. He lives on the island, so ferry outages can’t stop him. Island time can: sometimes he shows up a day late.
+- 💛 **Gus becomes a friend.** Keep calling him and he gives you the friends rate ($60), then starts doing your dishes and laundry too.
+- 📣 **Post in the Anderson Island community group.** Once a day, ask for help with a specific job or general help around the house. Replies come in a few hours: a neighbor might show up, lend you a tool, flood your phone with twelve replies, argue in the comments, or try to sell you gutter guards.
+- 🤲 **Help a neighbor.** Spend an hour (8 AM–7 PM) helping someone from the group. It lowers your stress and builds your island reputation. More reputation and more friends mean better odds when you ask for help, and you might make new friends along the way.
+- 🛠️ **Community work parties.** Help enough people and neighbors may show up on a weekend morning with ladders and a pie to fix your two worst jobs.
+- 💡 **New tips** explain the Home meter, the 🏠/🌲 upkeep lists and what to do when your house is run down.
+- 📖 **How your house works**, a new page in Settings ⚙️, explains the Home meter, chores, maintenance, ferry-bound contractors, Gus, the community group and reputation.
+
+**Next up**
+- New **Next up** card at the top of the 🧭 Here tab: one suggestion for what to do now: today's shift, an interview, the doctor's appointment, your most urgent to-do, bedtime (with your alarm), or a house chore that's due.
+- Commuting from the island? Next up names the boat to catch and when to leave. Tap it to open the ⛴️ trip planner, already filled in.
+- Your own #1 priority from the 📋 To-do tab shows as a second line ("📌 Your #1: …").
+- Tap a house chore suggestion to open the right 🏠/🌲 list. Tap ✕ to hide the card for the rest of the day.
+
+**More life on the island**
+
+- 🇺🇸 **Veterans Day, Wednesday Nov 11** (month mode): the American Legion holds a ceremony at 11:00 AM by the flagpole outside the Riv. Show up and you’ll leave calmer, and closer to Walt (or finally meet him).
+- 🎄 **Holiday craft bazaar** at the community clubhouse by Lake Josephine, Saturdays in weeks 3 and 4 (and some Saturdays in a one-week game). Buy a cedar wreath for your door (Home +3) or just browse for fudge. You might meet Bev, who knits, has opinions, and grows far too much zucchini.
+- 🗑️ **Lake cleanup day**: grab a bag at Lake Josephine on a Sunday morning and work your way around to Lake Florence. Two hours, one lawn chair, nine golf balls, and a friend working the bag next to you.
+- 🚒 **Fire District #27 drill**: a Thursday night drill at the station by the old store. Roll some hose, get a little healthier, meet Rusty in an unexpected outfit, and the volunteers check your chimney on the way home.
+- ⛵ **Sam’s boat project**: a $200 wooden skiff with “character.” Help scrape, sand or chip in, and be there when she (probably) floats.
+- 🧢 **Walt’s grandson**: Tyler is over from Tacoma and lives on his phone. Show him the eagles, teach him the woodpile, and come to the Legion send-off.
+- 💍 **The Hendersons’ fiftieth**: invitations, a cake situation, and an anniversary brunch with a fiddle.
+- Friend stories unfold over the month as friendships grow, one small choice at a time. “Not now” is always an option. The island remembers, gently.
+
+**Achievements and save slots**
+- 🏆 **Achievements.** Earn 16 achievements for island milestones, such as never getting stranded, sweeping the chimney before it's a fire risk, winning at bingo, making a close friend, or surviving Ferry Hell. They're saved on your device and carry over to every new game and save slot. See them in ⚙️ Settings → 🏆 Achievements, where locked ones tell you how to earn them. The end screen lists any you earned that game.
+- 💾 **Three save slots.** Keep up to three games going at once. On the title screen, tap 💾 Save slots to continue, start a new game in, or delete each slot. While you play, ⚙️ Settings → 💾 Save slot lets you switch slots, and your current week is saved first. Your existing save is now slot 1, so nothing is lost.
+- Continue, Start a new week, Exit and transfer codes all use your current slot.
+
+**Reliability**
+- Loading a save made by a newer version of Island Time (on this device, or from a pasted transfer code) now loads everything it can and shows a one-time warning naming both versions, so you know to update the game before you lose anything.
+- Added an automated test suite (Playwright, Chromium) that checks the title screen, new week and month games, every tab, save and reload, upgrading old saves, the priorities list, house upkeep, the end-of-week screen, the newer-save warning, and a 1,500-step robot playthrough. It runs on every push and pull request.
+
 ### 1.10.1 fixes
 - **Resting has diminishing returns:** the first hour of rest in a day takes −8 stress, then −5, −3, and −1 after that, so you can't sit at home and grind stress to zero.
 - **Mice leave your last day of food alone**, so they can't send you to bed hungry.
