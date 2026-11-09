@@ -123,7 +123,7 @@ Object.assign(UP_JOBS,{
   gus:{who:'Gus',island:true,done:j=>gusArrive(j)},
   post:{who:'community group',island:true,done:j=>postReplies(j)}});
 function gusArrive(j){
-  if(!j.flaked&&Math.random()<0.25){const c=COMM();const line=GUS_FLAKE[c.flakes%GUS_FLAKE.length];c.flakes++;
+  if(!j.flaked&&!j.sure&&Math.random()<0.25){const c=COMM();const line=GUS_FLAKE[c.flakes%GUS_FLAKE.length];c.flakes++;
     UP().jobs.push(Object.assign({},j,{flaked:true,due:j.due+1440}));say(line);showTile('🧰','Gus didn’t show','Island time. He says tomorrow.','info');return}
   const ks=upPressing(3),did=upFix(ks),home=S.loc==='home',first=!S.friends.gus;
   let extra='';if(flv('gus')>=3){upChoresDone();homeAdj(4);extra=' He also did your dishes and a load of laundry, and folded it better than you do.'}
@@ -134,10 +134,11 @@ function gusArrive(j){
   if(first)meet('gus','Gus, the island handyman','fixed up your place');else friendPts('gus',2);
 }
 function gusModal(){
-  const rate=gusRate(),book=(pay,how)=>{pay();S.t+=10;phoneTick();const days=1+(Math.random()<0.5?1:0);
-    UP().jobs.push({k:'gus',due:(day()+days)*1440+600+Math.floor(Math.random()*120)});
-    say(`📱 You call Gus. ${how} “I’ll swing by ${days===1?'tomorrow':'the day after tomorrow'}, late morning. Maybe.” Island time.`);afterAction()};
-  modal('🧰 Call Gus, the island handyman',`<p>Gus has fixed half the houses on the island and lives on it, so the ferry doesn’t matter. He’ll do the 3 jobs that need it most.</p><p>He works on island time: tomorrow or the day after, late morning. Probably.</p>`,[
+  const sure=typeof gusFirstCall==='function'&&gusFirstCall(); // reputation 3+: first call, next day, no no-shows (15-economy.js)
+  const rate=gusRate(),book=(pay,how)=>{pay();S.t+=10;phoneTick();const days=sure?1:1+(Math.random()<0.5?1:0);
+    UP().jobs.push({k:'gus',due:(day()+days)*1440+(sure?540:600)+Math.floor(Math.random()*(sure?60:120)),sure});
+    say(sure?`📱 You call Gus. ${how} “For you? Tomorrow morning. First thing. Well, first-ish.”`:`📱 You call Gus. ${how} “I’ll swing by ${days===1?'tomorrow':'the day after tomorrow'}, late morning. Maybe.” Island time.`);afterAction()};
+  modal('🧰 Call Gus, the island handyman',`<p>Gus has fixed half the houses on the island and lives on it, so the ferry doesn’t matter. He’ll do the 3 jobs that need it most.</p>${sure?'<p>💛 <b>First call:</b> you’ve helped enough neighbors that Gus comes tomorrow morning, and he actually shows up.</p>':'<p>He works on island time: tomorrow or the day after, late morning. Probably.</p>'}`,[
     {l:`💵 Cash — $${rate}`,s:rate<90?'The friends rate.':'His going rate.',dis:S.money<rate,fn:()=>book(()=>money(-rate),`$${rate}, cash on arrival. You set it aside.`)},
     {l:'🛢️ 5 gallons of gas from your shed',s:S.homeGas>=5?`You have ${S.homeGas} gal. On this island, gas is better than money.`:'You need 5 gal in the shed.',dis:S.homeGas<5,fn:()=>book(()=>{S.homeGas=Math.round((S.homeGas-5)*10)/10},'You offer 5 gallons of gas. A long pause. “Deal.”')},
     {l:'🥫 2 days of groceries',s:S.pantry>=3?`Pantry: ${S.pantry} days. He takes 2.`:'You need at least 3 days in the pantry.',dis:S.pantry<3,fn:()=>book(()=>{S.pantry-=2},'You offer two days of groceries. “Do you have the good coffee?” You do.')},
