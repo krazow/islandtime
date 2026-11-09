@@ -6,3 +6,4 @@ windows/setup/*.syso
 windows/icon.ico
 windows/icon.png
 __pycache__/
+node_modules/
