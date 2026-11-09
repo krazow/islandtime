@@ -2,7 +2,8 @@
 // ---------------- data ----------------
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday'];
 const DATES=['Nov 2','Nov 3','Nov 4','Nov 5','Nov 6','Nov 7','Nov 8'];
-function dateTxt(d){try{return new Date(2026,10,2+(S.weekNo||0)*7+d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}catch(e){return DATES[d]}}
+function dateTxt(d){try{const st=SEA().start; // season
+  return new Date(st[0],st[1],st[2]+(S.weekNo||0)*7+d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}catch(e){return DATES[d]}}
 const AI_DEPS=[315,390,465,540,615,690,765,840,915,990,1065,1140,1215,1290];
 const ST_DEPS=[350,425,500,575,650,725,800,875,950,1025,1100,1175,1250,1325];
 const KETRON={I:[690,1215],M:[575,950,1175]};

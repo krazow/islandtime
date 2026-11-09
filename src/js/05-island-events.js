@@ -173,7 +173,7 @@ const LIFE_CAL={
   drill:{d:3,ok:()=>S.mode==='month'?S.weekNo===2:true},           // Thu Nov 19 (week mode: Thu Nov 5)
 };
 function bazaarWeek(){const C=S.cal;if(C.bzWk!==S.weekNo){C.bzWk=S.weekNo;C.bz=Math.random()<0.6}return !!C.bz}
-const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok();
+const lifeToday=k=>day()===LIFE_CAL[k].d&&LIFE_CAL[k].ok()&&(seasonId()==='fall'||k==='cleanup'||k==='drill'); // season: Veterans Day and the holiday bazaar are November-only
 defEvent({id:'veterans_day',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('vet'),
   run(){say(`🇺🇸 <b>Veterans Day</b>, ${dateTxt(day())}. The American Legion holds its ceremony at <b>11:00 AM</b> by the flagpole outside the Riv: colors, the names, and a bugler who’s been practicing since October. Coffee after.`)}});
 defEvent({id:'craft_bazaar',hook:'wake',priority:1,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&lifeToday('bazaar'),

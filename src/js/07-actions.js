@@ -67,6 +67,7 @@ function actions(){
   favorActions(a,loc);
   lifeActions(a,loc);
   hhActions(a,loc);
+  seasonActions(a,loc); // season
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});

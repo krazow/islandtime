@@ -14,7 +14,7 @@ function gradeOf(sc){
   if(sc>=900) return ['D','Considering Lakewood Apartments','You’ve started browsing mainland rentals “just to look.”'];
   return ['F','Moving Back to the Mainland','The island is beautiful. You’ll visit. On a Tuesday. Not a Friday.'];
 }
-function finish(){clearTiles();S.over=true;endScreen(S.mode==='month'?'{{name}}, you made it through the month':'{{name}}, you made it to Sunday night',S.mode==='month'?`Four weeks of island life.${S.coop.open?' And the island has a store again.':''}`:'You survived a week of island life.')}
+function finish(){clearTiles();S.over=true;endScreen(S.mode==='month'?'{{name}}, you made it through the month':'{{name}}, you made it to Sunday night',S.mode==='month'?`Four weeks of island life in ${SEA().month}.${S.coop.open?' And the island has a store again.':''}`:`You survived a week of island life in ${SEA().month}.`)} // season
 function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
@@ -22,9 +22,11 @@ function endScreen(h1,sub,lost){
   achCheck({end:true,lost});const achNew=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
   const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
   saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
+  // season: the end screen has a Season row; the title Continue button and save slots show the season
   app.innerHTML=withName(`<div class="end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>
   <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${g[0]}</div><div><b style="font-family:Fraunces;font-size:20px">${g[1]}</b><div style="color:var(--mute);font-size:14px">${g[2]}</div></div></div>
   <div class="kv"><span>Difficulty</span><b>${DF().ic} ${DF().n}</b></div>
+  <div class="kv season-end"><span>Season</span><b>${seasonBadge(S)} · ${seasonYear(seasonId())}${S.stats.pipes?` · 🧊 ${S.stats.pipes} burst pipe${S.stats.pipes>1?'s':''}`:''}${S.stats.veg?` · 🥒 ${S.stats.veg} garden harvest${S.stats.veg>1?'s':''}`:''}</b></div>
   <div class="kv"><span>Score</span><b>${sc}${typeof newBest!=='undefined'&&newBest?' 🏆 new best':''}</b></div>${best!=null&&!isNaN(best)?`<div class="kv"><span>Previous best</span><b>${best}</b></div>`:''}
   <div class="kv ach-end"><span>🏆 Achievements this game</span><b style="text-align:right">${achNew.length?achNew.map(a=>a.ic+' '+a.n).join(', '):'none new'}</b></div>
   <div class="kv"><span>Cash left</span><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
@@ -89,7 +91,7 @@ window.achModal=achModal;
 // ---------------- save slots UI ----------------
 function slotInfo(n){const r=rawSave(n);if(!r)return null;
   try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=DIFFS[x.diff]||DIFFS.normal;
-    return {name:x.name||currentName(),diff:`${D.ic} ${D.n}`,txt:`${x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}}
+    return {name:x.name||currentName(),diff:`${D.ic} ${D.n} · ${seasonBadge(x)}`,txt:`${x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}} // season
   catch(e){return {broken:true,name:'Unreadable save',diff:'',txt:''}}}
 const slotLine=i=>i?(i.broken?'Unreadable save':`${esc(i.name)} · ${i.diff} · ${i.txt}`):'Empty';
 const SLOTBTN='flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink)';
@@ -123,7 +125,7 @@ function titleScreen(){clearTiles();
   <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
   <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
   <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Thursday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
-  ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
+  ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${seasonBadge(d.S)} · ${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
   <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
   ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}${exitNotice?`<div class="hint">${exitNotice}</div>`:''}

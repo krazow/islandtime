@@ -58,7 +58,8 @@ function migrate(d){
   for(const g in GOODS) x.cargo[g]=Math.max(0,num(x.cargo[g],0));
   // week: regenerate whatever is missing
   if(!DIFFS[x.diff])x.diff='normal';
-  const w=x.week&&typeof x.week==='object'?x.week:{}, fresh=genWeek(x.diff);
+  if(!seasonOk(x.season))x.season='fall'; // season
+  const w=x.week&&typeof x.week==='object'?x.week:{}, fresh=genWeek(x.diff,x.season); // season
   if(!Array.isArray(w.b)) w.b=fresh.b;
   if(!Array.isArray(w.fog)) w.fog=fresh.fog;
   if(w.storm===undefined) w.storm=null;

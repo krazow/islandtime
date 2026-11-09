@@ -24,18 +24,19 @@ function startDay(){
   S.daily={money:S.money,waited:S.stats.waited,cross:S.stats.crossings,fares:S.stats.fares,ev:S.ev.history.length,day:d};
   if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. ${genReady()?(S.homeGas>=3?'Your generator is fueled and ready.':'Your generator needs at least 3 gallons in the shed…'):'No generator? Tonight might be cold.'}`);
   if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
-  if(d===0&&S.diff==='hard') say('🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.');
+  if(d===0&&S.diff==='hard') say(seasonId()==='winter'?'🔥 <b>Ferry Hell:</b> the boat is a wreck, the lines are long and money is tight. Good luck.':'🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.'); // season
   if(d===0&&S.diff==='easy') say('🌲 <b>Islander mode:</b> a quieter week on the water. A good time to learn the ropes.');
   if(d===0) say('⛽ Monday fuel run: with a fuel tanker aboard, federal hazmat rules let only crew and the tanker driver ride. The 9:35 AM from Steilacoom and the 11:30 AM from the island are canceled.');
   if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(S.mode==='month'&&S.weekNo>0?0.12:(d===4?1:0.3))){ // later weeks of a month: an occasional mishap, not a weekly certainty
     S.injuryRolled=true;
     if(Math.random()<0.7){S.injury={day:d,treated:false};adj('health',-15);
-      say('🤕 Hauling firewood in the dark, you slip on wet cedar needles. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.');}
+      say(seasonInjury()||'🤕 Hauling firewood in the dark, you slip on wet cedar needles. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.');} // season
   }
+  seasonMorning(d); // season
   if(S.week.news[d]>=0) say('📰 '+NEWS[S.week.news[d]].t);
   if(S.loc==='home') fireHook('wake',{});
   S.ev.force=[];
-  if(d>0) say(S.loc==='home'&&homeTier()==='high'&&Math.random()<0.5?FLAVOR_COZY[Math.floor(Math.random()*FLAVOR_COZY.length)]:FLAVOR_MORNING[Math.floor(Math.random()*FLAVOR_MORNING.length)]);
+  if(d>0) say(S.loc==='home'&&homeTier()==='high'&&Math.random()<0.5?(F=>F[Math.floor(Math.random()*F.length)])(seasonFlavor(true)):(F=>F[Math.floor(Math.random()*F.length)])(seasonFlavor())); // season
 }
 function dailyCard(d){
   const D=S.daily;if(!D||D.day!==d) return '';
@@ -52,6 +53,7 @@ function endDay(where){
   // island events while you sleep (random outages etc.)
   upkeepNight(where,notes,d);
   const nctx={where,notes};fireHook('night',nctx);
+  seasonNight(where,notes,d); // season
   if(S.ev.flags.genFail===d&&!stormNight(d)&&!notes.some(n=>n.includes('generator coughs')))notes.push('🔌 The generator coughs, sputters and dies. It hasn’t been serviced in weeks.');
   // storm power outage
   if(stormNight(d)){

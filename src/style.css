@@ -293,3 +293,7 @@ html.hc .hud :focus-visible,html.hc .title :focus-visible,html.hc nav.tabs :focu
 /* household */
 .hh-letter{margin:0 0 8px;padding:8px 10px;background:#fbf8f1;border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.4}
 html.hc .hh-letter{background:#fff;border-color:#000}
+/* seasons */
+.season-end b{font-weight:700}
+.scene svg .snowline{filter:drop-shadow(0 -1px 0 rgba(255,255,255,.6))}
+html.rm .scene svg .snowline{filter:none}

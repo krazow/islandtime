@@ -67,7 +67,7 @@ function lengthModal(then){
     {l:'⛴️ One week',s:'Monday to Sunday, about 20–30 minutes.',fn:()=>then('week')},
     {l:'🗓️ A whole month (4 weeks)',s:'Help the islanders raise $2,500 to reopen the store as a co-op, with groceries and gas pumps.',fn:()=>then('month')}]);
 }
-window.startNewWeek=()=>{const go=k=>lengthModal(mode=>{newGame(k,mode);tab='act';render()});const pickDiff=()=>diffModal(go);if(!profileName())nameModal({first:true,then:pickDiff});else pickDiff()};
+window.startNewWeek=()=>{const go=k=>lengthModal(mode=>seasonModal(sea=>{newGame(k,mode,sea);tab='act';render()}));const pickDiff=()=>diffModal(go);if(!profileName())nameModal({first:true,then:pickDiff});else pickDiff()}; // season
 
 // ---------------- settings ----------------
 let exitNotice='';
@@ -81,7 +81,7 @@ function accessModal(){
 }
 window.openSettings=()=>{
   const inGame=S&&!S.over&&!document.querySelector('.title,.end');
-  modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>${S&&!S.over?` · ${DF().ic} ${DF().n}`:''}.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
+  modal('⚙️ Settings',`<p>Playing as <b>{{name}}</b>${S&&!S.over?` · ${DF().ic} ${DF().n} · ${seasonBadge(S)}`:''}.</p><p style="font-size:12px;color:var(--mute)">Island Time version ${APP_VERSION}</p>`,[
     {l:'👤 Change name',s:'Updates your name everywhere in the game.',fn:()=>nameModal({back:openSettings})},
     {l:`🔊 Sound: ${prefs().sound?'On':'Off'}`,s:'Ferry horn, alerts and bingo calls.',fn:()=>{setPref('sound',!prefs().sound);if(prefs().sound)sfx('good');openSettings()}},
     ambSettingBtn(),
@@ -125,32 +125,36 @@ function baseState(){
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
     alarm:{plug:{on:true,time:330},phone:{on:false,time:330}},phone:80,phoneT:330,gen:null,
     arcs:{sam:{b:0,k:-9,h:0},walt:{b:0,k:-9,h:0},hendersons:{b:0,k:-9,h:0},day:-9},cal:{vet:-1,bazaar:-1,cleanup:-1,drill:-1,bzWk:-1,bz:false,chim:false},
+    season:'fall',sea:{}, // season
     week:null};
 }
-function newGame(diff,mode){
-  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=baseState();S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
+function newGame(diff,mode,season){
+  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=baseState();S.season=seasonOk(season)?season:'fall'; // season
+  S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
   uiNarr=[];
-  say('Monday, 5:30 AM. Your alarm goes off in the dark. Work in Lakewood starts at 9:00. The pantry is getting thin.');
+  say(`Monday, 5:30 AM. Your alarm goes off ${seasonId()==='summer'?'and it’s already light out':'in the dark'}. Work in Lakewood starts at 9:00. The pantry is getting thin.`); // season
   if(!prefs().tips) say('Tip: the commuter boat leaves the island at 7:45. You have to be in line 20 minutes early.');
   say('⛽ Your car has 4.5 gallons left, and there is no gas station on the island anymore.');
+  seasonIntro(); // season
   startDay();
   modal('There’s no gas on the island',`<p>The General Store was the island’s only gas station and only grocery store. It closed on <b>February 2, 2026</b>. A new co-op hopes to reopen it in 2027.</p>
   <p>And you can’t just bring gas over. <b>Gas cans, full or empty, are banned on the Pierce County ferry.</b> Gasoline can only come aboard in your vehicle’s own tank.</p>
   <p>So you can drive the car to the mainland to fill it (and pay the vehicle fare), buy smuggled gas from a neighbor at triple the price, or try smuggling some yourself. The deckhands do look.</p>
   <p style="font-size:13px;color:var(--mute)">The Ferry tab has the actual rules and their exemptions.</p>`,[{l:'Got it. Check the gas gauge.',fn:()=>{}}]);
 }
-function genWeek(diffKey){
-  const b=[];const r=Math.random;const D=DIFFS[diffKey||(S&&S.diff)||'normal']||DIFFS.normal;
+function genWeek(diffKey,sea){
+  const b=[];const r=Math.random;const D=DIFFS[diffKey||(S&&S.diff)||'normal']||DIFFS.normal;sea=sea||seasonId(); // season
   for(let k=0;k<(D.major2&&r()<D.major2?2:1);k++) if(r()<D.major){const day=1+Math.floor(r()*4);const start=day*1440+Math.floor((7+r()*11)*60);
     const durs=[300,480,900,1500,2200];b.push({start,end:start+durs[Math.floor(r()*durs.length)],cause:CAUSES[Math.floor(r()*CAUSES.length)]});}
   for(let d=0;d<7;d++){ if(r()<D.minor){const start=d*1440+Math.floor((d===0?10:6)*60+r()*10*60);
       if(!b.some(x=>start<x.end+120&&start>x.start-240)) b.push({start,end:start+90+Math.floor(r()*150),cause:CAUSES[Math.floor(r()*CAUSES.length)]});}}
-  const fog=[];for(let d=0;d<7;d++) fog.push(r()<D.fog?10+Math.floor(r()*20):0);
+  const fog=[];for(let d=0;d<7;d++) fog.push(r()<D.fog*seasonMul('fog',sea)?10+Math.floor(r()*20):0);
   const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]={M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
   let storm=null;
-  if(r()<D.storm){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)};
+  if(r()<D.storm*seasonMul('storm',sea)){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)}; // season
     const ws=st+20;if(!b.some(x=>ws<x.end&&ws+200>x.start)) b.push({start:ws,end:ws+120+Math.floor(r()*120),cause:'high winds (gale warning)'});}
-  return {b,fog,storm,px,news,bingo:Math.floor(r()*BINGO_FOR.length)};
+  const wk={b,fog,storm,px,news,bingo:Math.floor(r()*BINGO_FOR.length)};
+  return sea==='fall'?wk:seasonWeek(wk,sea,(S&&S.weekNo)||0); // season
 }
 const day=()=>S.cur;
 const tod=()=>S.t-S.cur*1440;
