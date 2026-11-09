@@ -402,9 +402,20 @@ window.openSettings=()=>{
     {l:'♿ Accessibility',s:`Text size: ${{n:'Normal',l:'Large',xl:'Extra large'}[prefs().fs]} · High contrast: ${prefs().hc?'On':'Off'} · Reduce motion: ${prefs().rm?'On':'Off'}`,fn:()=>accessModal()},
     {l:`💡 Tutorial tips: ${prefs().tips?'On':'Off'}`,s:prefs().tips?'Guided first day; trading and Dale unlock on Tuesday.':'Everything unlocked from the start.',fn:()=>{setPref('tips',!prefs().tips);openSettings()}},
     {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
+    {l:'📖 How your house works',s:'The Home meter, chores, repairs, Gus and the community group.',fn:()=>houseHelp()},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
     {l:'Close',fn:()=>{}}]);
 };
+function houseHelp(){
+  modal('📖 How your house works',`<p><b>🏠 The Home meter</b> (0–100) is how your house is holding up. It slips every day. Above 75: better sleep and cozy mornings. Below 35: worse sleep, more things break, fewer friends drop by.</p>
+  <p><b>🧺 Chores</b> are daily: dishes, laundry, needles, the bed. Skip them and they pile up. A <b>🧽 deep clean</b> on a day off is the big reset.</p>
+  <p><b>🌲 Maintenance</b> creeps up on its own: gutters, roof moss, the chimney, the well, potholes. Open <b>🏠 Inside the house</b> and <b>🌲 Outside &amp; property</b> at home. Highlighted jobs are due. Ignored jobs turn into floods, leaks and fires.</p>
+  <p><b>⛴️ Contractors</b> (septic, tree crew, propane) live on the mainland. They ride the ferry, so when the boat is down, so are they.</p>
+  <p><b>🧰 Gus</b> is the island handyman. Call him and he does the 3 jobs that need it most. He takes cash, gas or groceries. He lives here, so the ferry can’t stop him. He runs on island time, so sometimes nothing can make him show up.</p>
+  <p><b>📣 The community group</b> is where islanders ask for help. Post once a day and see who answers in a few hours. Someone might come over, lend you a tool, or just argue in the comments.</p>
+  <p><b>🤲 Reputation</b>: help a neighbor from the group and people remember. More reputation and more friends mean better odds when you ask. Help enough, and they might show up on a weekend with ladders and a pie.</p>`,[
+    {l:'Back to settings',fn:()=>openSettings()},{l:'Close',fn:()=>{}}]);
+}
 function tryClose(){try{window.close()}catch(e){}
   setTimeout(()=>{if(!document.hidden){exitNotice=inGameExited?'✅ Your week is saved. Your browser won’t let a page close itself, so just close this tab or window. Continue picks up right where you left off.':'Your browser won’t let a page close itself. You can close this tab or window.';titleScreen()}},250)}
 let inGameExited=false;
@@ -420,7 +431,7 @@ function baseState(){
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
     cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
-    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],home:70,homeLow:false,cleaned:-1,up:upInit(),alertsSeen:{},over:false,
+    gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],home:70,homeLow:false,cleaned:-1,up:upInit(),rep:0,comm:{post:-1,help:-1,flakes:0},alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
     ev:{last:{},count:{},history:[],force:[],flags:{}},tips:{seen:[]},friends:{},power:null,battery:'ok',
     bingo:{nights:0,won:0,donated:0,cards:0,reserved:-1,order:null,delay:0,comped:0},cigs:0,
@@ -875,6 +886,101 @@ function upkeepActions(a,d,m){
   add({cat:'yard',ic:'🔥',l:pj?'Propane delivery booked':`Order propane — $${pc}`,due:U.propane<25&&!pj,s:pj?`The truck comes over on the ferry: ${fmtAbs(pj.due)}.`:`Tank at ${U.propane}%. ${phoneOK?'Fill-up plus a $45 island delivery fee. The truck rides the ferry.':'Your phone is dead.'}`,dis:!!pj||!phoneOK||S.money<pc||U.propane>=90,
     fn:()=>upSchedule('propane',pc,'Propane fill-up.')});
 }
+// ---- 🧰 island help: Gus the handyman, the Anderson Island community group, reputation (S.rep), work parties ----
+// Maintenance tasks ranked by how far past their due threshold they are (score >= 1 means due).
+const UP_TASKS={
+  mold:{ic:'🦠',n:'scrubbed the black mold',d:'Scrub the black mold',o:'black mold',sc:U=>U.mold?2.5:0,fix:U=>{U.mold=false;U.damp=0;homeAdj(6)}},
+  chimney:{ic:'🏚️',n:'swept the chimney',d:'Sweep the chimney',o:'chimney',sc:U=>U.chimney/21,fix:U=>{U.chimney=0;homeAdj(2)}},
+  gutters:{ic:'🍂',n:'cleared the gutters',d:'Clear the gutters',o:'gutters',sc:U=>U.gutters/60,fix:U=>{U.gutters=0;homeAdj(2)}},
+  limbs:{ic:'🌲',n:'trimmed the limbs over the roof',d:'Trim the limbs over the roof',o:'limbs over the roof',sc:U=>upJob('arborist')?0:U.limbs/60,fix:U=>{U.limbs=0}},
+  moss:{ic:'🟩',n:'treated the roof moss',d:'Treat the roof moss',o:'roof moss',sc:U=>U.moss/60,fix:U=>{U.moss=0;homeAdj(2)}},
+  pot:{ic:'🕳️',n:'filled the driveway potholes',d:'Fill the driveway potholes',o:'driveway potholes',sc:U=>U.pot/60,fix:U=>{U.pot=0}},
+  well:{ic:'🚰',n:'serviced the well pump',d:'Service the well pump',o:'well pump',sc:U=>U.well/46,fix:U=>{U.well=0}},
+  genSvc:{ic:'🔧',n:'serviced the generator',d:'Service the generator',o:'generator',sc:U=>S.gen==='home'?U.genSvc/15:0,fix:U=>{U.genSvc=0}},
+  damp:{ic:'🪟',n:'dried the windows and ran the bath fan',d:'Dry out the windows',o:'window condensation',sc:U=>U.damp/3,fix:U=>{U.damp=0;homeAdj(1)}},
+  ash:{ic:'🧯',n:'cleaned out the woodstove ash',d:'Clean out the woodstove ash',o:'woodstove ash',sc:U=>U.ash/3,fix:U=>{U.ash=0;homeAdj(1)}}};
+function upPressing(n=3,min=0.5){const U=UP();return Object.keys(UP_TASKS).map(k=>({k,s:UP_TASKS[k].sc(U)})).filter(x=>x.s>=min).sort((a,b)=>b.s-a.s).slice(0,n).map(x=>x.k)}
+function upFix(ks){const U=UP();ks.forEach(k=>UP_TASKS[k].fix(U));return ks.map(k=>UP_TASKS[k].n)}
+function upChoresDone(){const U=UP(),dk=dayKey();for(const k in CHORES){U[k]=0;U.done[k]=dk}}
+const andList=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+function upAnyDue(){const U=UP();return upPressing(1,1).length>0||Object.keys(CHORES).some(k=>U[k]>=2)||U.fridge||U.wood<=1||U.septic>=75||U.propane<25}
+const COMM=()=>S.comm||(S.comm={post:-1,help:-1,flakes:0});
+const COMM_NAME='the Anderson Island community group';
+const NEIGHBORS=[['marta','Marta, from up the road','answered your post in the community group'],['ken','Big Ken, who has a tractor','showed up from the community group'],
+  ['lorraine','Lorraine, who knows everyone','met through the community group'],['dev','Dev, the retired machinist','met through the community group']];
+function newNeighbor(how){const n=NEIGHBORS.filter(x=>!S.friends[x[0]]);if(!n.length)return false;const p=pick(n);return meet(p[0],p[1],how||p[2])}
+const GUS_FLAKE=['📱 Gus texts at 10:40: “Truck’s fine, but the ferry line was long and then I got talking. Tomorrow. Promise.” He wasn’t even taking the ferry.',
+  '📱 No Gus. Around noon: “Sorry, the Hendersons’ goat got out. Tomorrow.” You didn’t know the Hendersons had a goat.',
+  '📱 Gus texts a photo of a very large salmon. Then: “Tomorrow?”',
+  '📱 Gus calls: “I was halfway there and remembered it’s my mother’s birthday. She’s 91. Tomorrow, late morning-ish.”'];
+const gusRate=()=>flv('gus')>=2?60:90;
+Object.assign(PERKS,{gus:{2:'Gus gives you the friends rate: $60 cash instead of $90.',3:'Gus does the dishes and the laundry while he’s there. Don’t ask why. Just let him.'}});
+Object.assign(UP_JOBS,{
+  gus:{who:'Gus',island:true,done:j=>gusArrive(j)},
+  post:{who:'community group',island:true,done:j=>postReplies(j)}});
+function gusArrive(j){
+  if(!j.flaked&&Math.random()<0.25){const c=COMM();const line=GUS_FLAKE[c.flakes%GUS_FLAKE.length];c.flakes++;
+    UP().jobs.push(Object.assign({},j,{flaked:true,due:j.due+1440}));say(line);showTile('🧰','Gus didn’t show','Island time. He says tomorrow.','info');return}
+  const ks=upPressing(3),did=upFix(ks),home=S.loc==='home',first=!S.friends.gus;
+  let extra='';if(flv('gus')>=3){upChoresDone();homeAdj(4);extra=' He also did your dishes and a load of laundry, and folded it better than you do.'}
+  if(!did.length){UP().wood=Math.min(14,UP().wood+4);extra=' Nothing much needed fixing, so he split a pile of firewood and drank your coffee.'+extra}
+  homeAdj(3);adj('stress',-4);
+  say(`🧰 ${home?'Gus’s truck rattles up the driveway':'While you were out, Gus let himself in the back (nobody locks anything here)'}${j.flaked?', a day late and not one bit sorry':''}.${did.length?` He ${andList(did)}.`:''}${extra} “Call me when the next thing breaks.”`);
+  showTile('🧰','Gus came by',did.length?`Fixed: ${andList(ks.map(k=>UP_TASKS[k].ic))}`:'Firewood split','good');
+  if(first)meet('gus','Gus, the island handyman','fixed up your place');else friendPts('gus',2);
+}
+function gusModal(){
+  const rate=gusRate(),book=(pay,how)=>{pay();S.t+=10;phoneTick();const days=1+(Math.random()<0.5?1:0);
+    UP().jobs.push({k:'gus',due:(day()+days)*1440+600+Math.floor(Math.random()*120)});
+    say(`📱 You call Gus. ${how} “I’ll swing by ${days===1?'tomorrow':'the day after tomorrow'}, late morning. Maybe.” Island time.`);afterAction()};
+  modal('🧰 Call Gus, the island handyman',`<p>Gus has fixed half the houses on the island and lives on it, so the ferry doesn’t matter. He’ll do the 3 jobs that need it most.</p><p>He works on island time: tomorrow or the day after, late morning. Probably.</p>`,[
+    {l:`💵 Cash — $${rate}`,s:rate<90?'The friends rate.':'His going rate.',dis:S.money<rate,fn:()=>book(()=>money(-rate),`$${rate}, cash on arrival. You set it aside.`)},
+    {l:'🛢️ 5 gallons of gas from your shed',s:S.homeGas>=5?`You have ${S.homeGas} gal. On this island, gas is better than money.`:'You need 5 gal in the shed.',dis:S.homeGas<5,fn:()=>book(()=>{S.homeGas=Math.round((S.homeGas-5)*10)/10},'You offer 5 gallons of gas. A long pause. “Deal.”')},
+    {l:'🥫 2 days of groceries',s:S.pantry>=3?`Pantry: ${S.pantry} days. He takes 2.`:'You need at least 3 days in the pantry.',dis:S.pantry<3,fn:()=>book(()=>{S.pantry-=2},'You offer two days of groceries. “Do you have the good coffee?” You do.')},
+    {l:'Never mind',fn:()=>{}}]);
+}
+function postModal(){
+  const ks=upPressing(4);
+  const go=k=>{S.t+=10;phoneTick();COMM().post=dayKey();UP().jobs.push({k:'post',due:S.t+170+Math.floor(Math.random()*30),task:k});
+    say(`📣 You post in ${COMM_NAME}: “${k==='general'?'Anyone have a couple of hours to help around the house? Will pay in cookies.':`Anyone able to help? ${UP_TASKS[k].d}. I can’t get to it.`}” Now you wait.`);afterAction()};
+  modal('📣 Post asking for help',`<p>${COMM_NAME[0].toUpperCase()+COMM_NAME.slice(1)}: lost dogs, ferry complaints, free firewood, and neighbors who show up. Replies usually come in a few hours.</p><p style="font-size:13px;color:var(--mute)">The better known you are for helping others, the better your odds.</p>`,
+    ks.map(k=>({l:`${UP_TASKS[k].ic} ${UP_TASKS[k].d}`,s:UP_TASKS[k].sc(UP())>=1?'Due now.':'Coming due.',fn:()=>go(k)}))
+      .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
+}
+function postReplies(j){
+  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.min(0.75,0.25+0.08*((S.rep||0)+fr)),gen=j.task==='general'||!UP_TASKS[j.task];
+  const what=gen?'the chores':'the '+UP_TASKS[j.task].o,home=S.loc==='home';
+  const fix=()=>{if(gen){upChoresDone();homeAdj(10)}else upFix([j.task])};
+  const tile=(t,s,k)=>showTile('📣',t,s,k);
+  if(Math.random()<p){const r=Math.random();
+    if(r<0.55){fix();adj('stress',-3);say(`📣 A neighbor from ${COMM_NAME} answers your post and just shows up, gloves on. ${gen?'An hour later the dishes are done, the laundry’s folded and the floors are swept.':`They ${UP_TASKS[j.task].n}.`} They won’t take money. “Next time it’s you.”`);
+      tile('A neighbor showed up to help',gen?'Chores done · Home +10':`Done: ${what}`,'good');if(Math.random()<0.4)newNeighbor()}
+    else if(r<0.85){fix();if(home)S.t+=45;say(`📣 Nobody can come, but someone in ${COMM_NAME} leaves ${gen?'a carpet cleaner and a box of rags':'exactly the right tool'} on your porch. ${home?`45 minutes later, ${gen?'the house is clean':'it’s done'}.`:`You get to it ${gen?'when you’re home':'later'}.`} Return it clean or you’ll hear about it.`);
+      tile('Someone lent you the tool',home?'Done · 45 minutes of your time':`Done: ${what}`,'good')}
+    else {fix();adj('stress',2);say(`📣 Twelve replies in four minutes. Three people tag someone named Barb. Two argue about the 2019 ferry schedule. One actually comes over and does ${what}. Your phone won’t stop buzzing.`);
+      tile('12 replies at once','One of them actually helped','good')}
+  } else {const r=Math.random();
+    if(r<0.4){adj('stress',1);say(`📣 Your post in ${COMM_NAME} gets two likes and a thumbs-up emoji. Nobody answers. Everyone must be on the mainland.`);tile('Nobody answered','Two likes, though','info')}
+    else if(r<0.75){adj('stress',4);say(`📣 Your post turns into a 41-comment thread about the “right” way to do ${what}. Someone says it was better in the ’80s. Nobody offers to help.`);tile('A know-it-all comment thread','Stress +4 · nothing fixed','bad')}
+    else {say(`📣 The only reply is a DM: “Hi neighbor! Have you heard about gutter guards? 🙂 Financing available.” It’s a guy from Puyallup.`);tile('Someone tried to sell you something','Nothing fixed','info')}
+  }
+}
+function helpActions(a,d,m){
+  const c=COMM(),dk=dayKey(),phoneOK=S.phone>0,pj=upJob('post'),gj=upJob('gus');
+  a.push({cat:'yard',ic:'🧰',l:gj?'Gus is coming (probably)':'Call Gus, the island handyman',due:false,s:gj?`He said ${fmtAbs(gj.due)}. Ish. He lives here, so the ferry can’t stop him.`:!phoneOK?'Your phone is dead.':`Fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries. Tomorrow or the day after.`,
+    dis:!!gj||!phoneOK,fn:gusModal});
+  a.push({cat:'phone',ic:'📣',l:pj?'Waiting for replies in the community group':c.post===dk?'Posted in the community group today':'Post asking for help',s:pj?`Replies should trickle in around ${fmt(pj.due)}.`:c.post===dk?'One post a day, or people start muting you.':!phoneOK?'Your phone is dead.':'Ask the Anderson Island community group. 10 min. Answers come in a few hours.',
+    dis:!!pj||c.post===dk||!phoneOK,fn:postModal});
+  const ok=m>=480&&m<1140;
+  a.push({cat:'here',ic:'🤲',l:c.help===dk?'Helped a neighbor today ✓':'Help a neighbor from the community group',s:c.help===dk?`Island reputation: ${S.rep||0}.`:!ok?'People ask for help between 8 AM and 7 PM.':`1 hour. Someone always needs a hand. Island reputation: ${S.rep||0}. Stress −2.`,
+    dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;S.rep=(S.rep||0)+1;adj('stress',-2);
+      say(pick(['🤲 You help a guy from the group haul a chest freezer up his porch steps. He thanks you three times.','🤲 You spend an hour helping someone near Lake Josephine find their escaped chickens. You find four of five.','🤲 You hold a ladder while a neighbor clears her gutters, and hear the whole history of her septic system.','🤲 You drive a bag of groceries to an older neighbor who can’t make the ferry this week. She sends you home with jam.']));
+      if(Math.random()<0.15)newNeighbor('you helped them out');afterAction()}});
+}
+TILE_META.work_party=['🛠️','A community work party','good'];
+defEvent({id:'work_party',hook:'wake',priority:3,max:1,cond:()=>S.loc==='home'&&day()>=5&&(S.rep||0)>=3,chance:0.5,
+  run(){const ks=upPressing(2),did=upFix(ks);if(!did.length)upChoresDone();adj('stress',-6);homeAdj(6);
+    say(`🛠️ Three trucks pull into your driveway at 9 AM: neighbors from ${COMM_NAME}, with ladders, a thermos and a pie. “You’ve helped half of us. Our turn.” ${did.length?`By lunch they’ve ${andList(did)}.`:'By lunch the whole house is spotless.'}`)}});
 defEvent({id:'leaky_roof',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home',
   chance:()=>{const U=UP();let c=U.moss>=80?0.18:U.moss>=60?0.07:0;if(homeTier()==='low')c+=0.05;return rainTonight()?c*2:c},
   run(ctx){homeAdj(-5);adj('stress',4);UP().damp+=1;ctx.notes.push('💧 Drip. Drip. The moss on the roof finally won: there’s a pot on the bedroom floor catching rain. (Treat the roof moss.)')}});
@@ -1217,9 +1323,9 @@ function processTimed(){
   if(S.power&&S.t>=S.power.end){S.power=null;if(L[S.loc].side==='I')say('💡 The power’s back on. Every appliance in the house beeps at once.')}
   for(const j of UP().jobs.slice()){
     if(S.t<j.due) continue;
-    const out=S.week.b.find(b=>j.due>=b.start&&j.due<b.end);
+    const out=!(UP_JOBS[j.k]||{}).island&&S.week.b.find(b=>j.due>=b.start&&j.due<b.end); // island jobs (Gus, the community group) don’t ride the ferry
     if(out){j.due=out.end+90;if(!j.warned){j.warned=true;say(`🚚 The ${UP_JOBS[j.k].who} is stuck in Steilacoom. The ferry’s down. They’ll come over when it’s running.`)}continue}
-    UP().jobs=UP().jobs.filter(x=>x!==j);UP_JOBS[j.k].done();say(UP_JOBS[j.k].msg);
+    UP().jobs=UP().jobs.filter(x=>x!==j);if(!UP_JOBS[j.k])continue;UP_JOBS[j.k].done(j);if(UP_JOBS[j.k].msg)say(UP_JOBS[j.k].msg);
   }
   const dl=S.delivery;
   if(dl&&S.t>=dl.due){
@@ -1368,7 +1474,7 @@ function actions(){
       if(S[src]>0) a.push({ic:'⛽',l:`Fuel the ${isl.diesel?'truck':'car'} from the shed`,s:`${S[src]} gal stashed. ${isl.diesel?'':'Keep 3 gal for the generator if a storm’s coming.'}`,dis:g<=0,fn:()=>{S[src]=Math.round((S[src]-g)*10)/10;isl.fuel=Math.round((isl.fuel+g)*10)/10;S.t+=10;say(`You pour ${g} gallons into the tank in the dark, spilling only a little.`);afterAction()}});}
     if(!S.delivery&&d<6) a.push({ic:'📦',l:'Order island grocery delivery — $96',s:'3 days of food, delivered tomorrow afternoon if the ferry is running.',dis:S.money<96,fn:()=>{money(-96);S.delivery={due:(d+1)*1440+840,n:3};S.t+=10;say('You text the island delivery service. They’re doing a mainland run tomorrow and will bring 3 days of groceries.');afterAction()}});
     else if(S.delivery) a.push({ic:'📦',l:'Grocery delivery on its way',s:`Due ${fmtAbs(S.delivery.due)}`,dis:true});
-    upkeepActions(a,d,m);
+    upkeepActions(a,d,m);helpActions(a,d,m);
     if(m<1260){const rn=U_REST(),gain=[8,5,3][rn]??1;a.push({ic:'☕',l:'Rest for an hour',s:`Coffee, rain, a book. Stress −${gain}.${rn>=2?' Diminishing returns: you’re getting restless.':''}`,fn:()=>{S.t+=60;adj('stress',-gain);S.rest={k:dayKey(),n:rn+1};say(rn>=3?'You stare at the ceiling. Resting more isn’t really helping now.':'You sit with coffee and watch the rain drip off the firs.');afterAction()}})}
   }
   if(loc==='aiDock'||loc==='stDock') dockActions(a,side);
@@ -1854,6 +1960,9 @@ const TIPS=[
   {id:'bed',when:()=>S.loc==='home'&&tod()>=1080,t:'🛏️ Before bed, set your <b>⏰ alarms</b>: the plug-in clock, your phone, or both as backups. Each night you eat a day of food from the pantry.'},
   {id:'trading',when:()=>!!MARKETS[S.loc]&&!tradingLocked(),t:'🛒 <b>Trading:</b> buy on the mainland, sell on the island for more. Watch the badges: gas cans and drugs are contraband on the ferry.'},
   {id:'storm',when:()=>S.week.storm&&S.week.storm.day===day(),t:'🌬️ A storm means power outages. A <b>generator</b> (Home Depot, Lakewood) plus gas stashed in your shed keeps the fridge, heat and phone going.'},
+  {id:'home_low',when:()=>S.loc==='home'&&(S.home??70)<35,t:'🏚️ Your <b>Home</b> meter is low. A run-down house means worse sleep, more things breaking and fewer visitors. A <b>🧽 Deep clean</b> on a day off helps a lot. Too busy? <b>Call Gus</b> or <b>📣 post in the community group</b>.'},
+  {id:'home_meter',when:()=>S.loc==='home'&&(day()>=1||(S.home??70)<60),t:'🏠 The <b>Home</b> meter is how your house is holding up. Chores and repairs raise it; it slips a little every day. Keep it high for better sleep and cozy mornings. Settings ⚙️ has <b>📖 How your house works</b>.'},
+  {id:'upkeep_due',when:()=>S.loc==='home'&&upAnyDue(),t:'🧰 Something around the house needs doing. Open <b>🏠 Inside the house</b> or <b>🌲 Outside &amp; property</b> below: jobs that are due are highlighted. Ignore them and they turn into events.'},
   {id:'friends',when:()=>Object.keys(S.friends).length>0,t:'🤝 You made a friend! Friends help out with rides, jump-starts and gas, and they’ll ask favors too. See them in the 📋 To-do tab.'},
 ];
 function tipsOn(){return prefs().tips}
