@@ -358,7 +358,7 @@ function setPlayerName(n){
   try{localStorage.setItem(NAME_KEY,n)}catch(e){}
   if(S&&!S.over){S.name=n;if(old!==n)say('✏️ From now on, everyone on the island calls you {{name}}.');saveGame()}
   else{ // on the title screen: update the saved week too, so Continue uses the new name
-    const ls=store();if(ls)try{for(const k of [SAVE_KEY,...LEGACY_KEYS]){const v=ls.getItem(k);if(!v)continue;const d=JSON.parse(v);if(d&&d.S){d.S.name=n;ls.setItem(k,JSON.stringify(d))}}}catch(e){}
+    const ls=store();if(ls)try{for(const k of slotKeys()){const v=ls.getItem(k);if(!v)continue;const d=JSON.parse(v);if(d&&d.S){d.S.name=n;ls.setItem(k,JSON.stringify(d))}}}catch(e){}
     if(S&&S.over) S.name=n}
 }
 let NMV='';
@@ -402,6 +402,8 @@ window.openSettings=()=>{
     {l:'♿ Accessibility',s:`Text size: ${{n:'Normal',l:'Large',xl:'Extra large'}[prefs().fs]} · High contrast: ${prefs().hc?'On':'Off'} · Reduce motion: ${prefs().rm?'On':'Off'}`,fn:()=>accessModal()},
     {l:`💡 Tutorial tips: ${prefs().tips?'On':'Off'}`,s:prefs().tips?'Guided first day; trading and Dale unlock on Tuesday.':'Everything unlocked from the start.',fn:()=>{setPref('tips',!prefs().tips);openSettings()}},
     {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
+    {l:`🏆 Achievements (${achCount()}/${ACH.length})`,s:'Badges earned on this device, across all your games.',fn:()=>achModal(openSettings)},
+    inGame?{l:`💾 Save slot: ${curSlot()}`,s:'Switch to another save slot. Your week is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:`Current slot: ${curSlot()}. Continue, start or delete games in three slots.`,fn:()=>slotsModal()},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
     {l:'Close',fn:()=>{}}]);
 };
@@ -850,7 +852,7 @@ function upkeepActions(a,d,m){
   if(U.mold) add({cat:'home',ic:'🦠',l:'Scrub the black mold',due:true,s:'1 hour with bleach and a mask. It’s costing you health every night.',fn:()=>{S.t+=60;U.mold=false;U.damp=0;homeAdj(6);adj('health',2);say('🦠 Mask on, bleach out, window open. The bathroom ceiling is white again.');afterAction()}});
   add({cat:'home',ic:'🧯',l:'Clean the woodstove ash',due:U.ash>=3,s:U.ash<=0?'Clean.':`15 min. ${U.ash} day${U.ash===1?'':'s'} of ash in the firebox.`,dis:U.ash<=0,fn:()=>{S.t+=15;U.ash=0;homeAdj(1);say('🧯 A bucket of ash out to the garden. The fire draws better already.');afterAction()}});
   add({cat:'home',ic:'🏚️',l:'Sweep the chimney',due:U.chimney>=21,s:U.chimney<5?'Swept recently.':`90 min on the roof with a brush. ${U.chimney} days of creosote building up${U.chimney>=21?': chimney fire risk':''}.`,dis:U.chimney<5||!lite,
-    fn:()=>{S.t+=90;U.chimney=0;homeAdj(2);if(Math.random()<0.04)upInjure('Coming down the wet ladder, your foot slips off the last rung.');else say('🏚️ A bucket of black flakes later, the flue is clean.');afterAction()}});
+    fn:()=>{if(U.chimney<21)achUnlock('chimney');S.t+=90;U.chimney=0;homeAdj(2);if(Math.random()<0.04)upInjure('Coming down the wet ladder, your foot slips off the last rung.');else say('🏚️ A bucket of black flakes later, the flue is clean.');afterAction()}});
   add({cat:'home',ic:'🪵',l:`Split and stack firewood (${U.wood} night${U.wood===1?'':'s'} left)`,due:U.wood<=1,s:doneToday('wood')?'Done for today. Your back says so.':'1 hour. +4 nights of dry wood. Without it, the propane furnace takes over.',dis:doneToday('wood')||U.wood>=14,
     fn:()=>{S.t+=60;U.wood=Math.min(14,U.wood+4);U.woodOut=false;U.done.wood=dk;adj('stress',-2);if(Math.random()<0.03)upInjure('You step on a wet round of fir and roll your ankle.');else say('🪵 Thunk. Thunk. A good hour of splitting, and a tidy stack under the eaves.');afterAction()}});
   if(U.trapsOwned) add({cat:'home',ic:'🪤',l:U.traps>0?`Mouse traps set (${U.traps} more nights)`:'Set the mouse traps',due:U.traps<=0,s:'10 min. Peanut butter under the sink and in the pantry. Keeps the mice out of your food for a week.',dis:U.traps>0,fn:()=>{S.t+=10;U.traps=7;say('🪤 Traps baited and set.');afterAction()}});
@@ -1257,7 +1259,7 @@ function dailyCard(d){
 }
 function endDay(where){
   processTimed();const dayCard=dailyCard(day());
-  const d=day(), notes=[];
+  const d=day(), notes=[];achCheck({where});
   if(where==='home') stash();
   // island events while you sleep (random outages etc.)
   upkeepNight(where,notes,d);
@@ -1578,7 +1580,7 @@ function cargoActions(a){
 }
 function trade(g,dir){
   const side=L[S.loc].side,pr=price(g,side),mk=MARKETS[S.loc];
-  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell}
+  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell;if(side==='I'&&(g==='food'||g==='med'))achUnlock('supplier')}
   S.t+=g==='drugs'?15:5;
   if(g==='drugs'){
     adj('stress',dir==='sell'?8:6);
@@ -1627,9 +1629,14 @@ function gossip(){
 const SAVE_KEY='islandtime.save', LEGACY_KEYS=['islandtime.save.v2','islandtime.save.v1'], BEST_KEY='islandtime.best';
 let saveNotice='';
 function store(){try{return window.localStorage}catch(e){return null}}
+// Three save slots. Slot 1 is the original key (plus its legacy mirrors); slots 2 and 3 have their own keys.
+const SLOT_KEY='islandtime.slot', SLOT_N=3;
+function curSlot(){let n=1;try{n=parseInt(localStorage.getItem(SLOT_KEY)||'1',10)}catch(e){}return n>=1&&n<=SLOT_N?n:1}
+function setSlot(n){try{localStorage.setItem(SLOT_KEY,String(n))}catch(e){}}
+function slotKeys(n){n=n||curSlot();return n===1?[SAVE_KEY,...LEGACY_KEYS]:['islandtime.save.slot'+n]}
 function packSave(){return {schema:SAVE_SCHEMA,app:APP_VERSION,S,uiNarr,tab,at:Date.now()}}
 // The save is mirrored under the older key names so an older copy of the game (old install, cached phone app) still finds it.
-function saveGame(){const ls=store();if(!ls||!S)return;const keys=[SAVE_KEY,...LEGACY_KEYS];
+function saveGame(){const ls=store();if(!ls||!S)return;const keys=slotKeys();
   try{if(S.over)keys.forEach(k=>ls.removeItem(k));else{const v=JSON.stringify(packSave());keys.forEach(k=>{try{ls.setItem(k,v)}catch(e){}})}}catch(e){}}
 // Fill in anything an older (or newer) save is missing, without touching what it has.
 function fillDefaults(obj,def){
@@ -1690,15 +1697,15 @@ function migrate(d){
   else if(from<SAVE_SCHEMA) notes.push(`upgraded from an older version${d.app?' ('+d.app+')':''}`);
   return {schema:Math.max(from,SAVE_SCHEMA),app:d.app,S:x,uiNarr:Array.isArray(d.uiNarr)?d.uiNarr:[],tab:['act','ferry','todo','log'].includes(d.tab)?d.tab:'act',at:d.at,notes};
 }
-function rawSave(){const ls=store();if(!ls)return null;
+function rawSave(n){const ls=store();if(!ls)return null;
   let best=null;
-  for(const k of [SAVE_KEY,...LEGACY_KEYS]){const v=ls.getItem(k);if(!v)continue;let at=0;try{at=JSON.parse(v).at||0}catch(e){}
+  for(const k of slotKeys(n)){const v=ls.getItem(k);if(!v)continue;let at=0;try{at=JSON.parse(v).at||0}catch(e){}
     if(!best||at>best.at)best={k,v,at}}
   return best}
-function loadSave(){
-  const r=rawSave();if(!r)return null;
+function loadSave(n){
+  const r=rawSave(n);if(!r)return null;
   try{const d=migrate(JSON.parse(r.v));return d.S.over?null:d}
-  catch(e){try{const ls=store();ls.setItem('islandtime.save.broken',r.v);[SAVE_KEY,...LEGACY_KEYS].forEach(k=>ls.removeItem(k))}catch(_){}
+  catch(e){try{const ls=store(),sn=n||curSlot();ls.setItem('islandtime.save.broken'+(sn>1?'.slot'+sn:''),r.v);slotKeys(sn).forEach(k=>ls.removeItem(k))}catch(_){}
     saveNotice='Your saved game couldn’t be read, so it was set aside. Start a new week.';return null}
 }
 function adopt(d){
@@ -1804,6 +1811,7 @@ function render(){
   const pending=todoItems().filter(x=>x.urgent).length;
   h+=`<nav class="tabs">${[['act','🧭','Here'],['ferry','⛴️','Ferry'],['todo','📋','To-do'],['log','📜','Log']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}${k==='todo'&&pending?'<span class="dot"></span>':''}${k==='ferry'&&out?'<span class="dot"></span>':''}</button>`).join('')}</nav>`;
   app.innerHTML=withName(h);
+  achCheck();
   saveGame();
 }
 window.setTab=k=>{tab=k;render();window.scrollTo(0,0)};
@@ -2059,12 +2067,14 @@ function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#ti
   const T={health:['Medevac off the island','Your health gave out. The fire department calls for the medevac helicopter.'],fired:['You’re fired','Your boss has run out of patience with “the ferry broke down again.”'],convicted:['Second arrest','Your second drug arrest. You won’t be going home to the island for a long time.'],banned:['Barred from the ferry','Second gas-can violation. You’re barred from riding the Pierce County ferry. On an island with no bridge, that’s checkmate.']}[why];
   endScreen(T[0],T[1],true)}
 function endScreen(h1,sub,lost){
+  achCheck({end:true,lost});const achNew=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
   const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
   saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
   app.innerHTML=withName(`<div class="end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>
   <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${g[0]}</div><div><b style="font-family:Fraunces;font-size:20px">${g[1]}</b><div style="color:var(--mute);font-size:14px">${g[2]}</div></div></div>
   <div class="kv"><span>Difficulty</span><b>${DF().ic} ${DF().n}</b></div>
   <div class="kv"><span>Score</span><b>${sc}${typeof newBest!=='undefined'&&newBest?' 🏆 new best':''}</b></div>${best!=null&&!isNaN(best)?`<div class="kv"><span>Previous best</span><b>${best}</b></div>`:''}
+  <div class="kv ach-end"><span>🏆 Achievements this game</span><b style="text-align:right">${achNew.length?achNew.map(a=>a.ic+' '+a.n).join(', '):'none new'}</b></div>
   <div class="kv"><span>Cash left</span><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
   <div class="kv"><span>Health / Job / Stress</span><b>${S.health} / ${S.job} / ${S.stress}</b></div>
   <div class="kv"><span>🏠 Home condition</span><b>${S.home} (${homeScore()>=0?'+':'−'}${Math.abs(homeScore())} pts)</b></div>
@@ -2090,6 +2100,66 @@ function endScreen(h1,sub,lost){
   window.scrollTo(0,0);
 }
 
+// ---------------- achievements ----------------
+// Kept per device under their own key, separate from saves: they survive new games, deleted slots and finished weeks.
+const ACH_KEY='islandtime.achievements';
+const ACH=[
+  {id:'never_stranded',ic:'⛴️',n:'Never stranded',d:'Finish a game without a single night stuck on the mainland.',t:c=>c.end&&!c.lost&&S.stats.stranded===0},
+  {id:'punctual',ic:'⏰',n:'Clocked in on time',d:'Get to work on time five days in one week.',t:()=>Object.keys(S.worked||{}).filter(i=>S.worked[i]&&!(S.late||{})[i]).length>=5},
+  {id:'chimney',ic:'🏚️',n:'Clean flue',d:'Sweep the chimney before it reaches 21 days of creosote.',t:null},
+  {id:'well_kept',ic:'🏡',n:'Well-kept home',d:'Finish a game with your home condition at 75 or better.',t:c=>c.end&&!c.lost&&S.home>=75},
+  {id:'month',ic:'🗓️',n:'A month on the island',d:'Make it through a whole month (4 weeks).',t:c=>c.end&&!c.lost&&S.mode==='month'},
+  {id:'coop',ic:'🛒',n:'Co-op founder',d:'Help the island raise enough to open the co-op store.',t:()=>!!S.coop.open},
+  {id:'bingo',ic:'🎱',n:'Bingo!',d:'Win money at American Legion bingo night.',t:()=>S.bingo.won>0},
+  {id:'close_friend',ic:'🤝',n:'Close friend',d:'Become close friends (level 3) with someone on the island.',t:()=>Object.values(S.friends||{}).some(f=>(f.lvl||1)>=3)},
+  {id:'ferry_hell',ic:'🔥',n:'Ferry Hell survivor',d:'Finish a game on Ferry Hell difficulty.',t:c=>c.end&&!c.lost&&S.diff==='hard'},
+  {id:'generator',ic:'🔌',n:'The lights stay on',d:'Have your generator carry the house through a power outage.',t:()=>S.ev.history.some(h=>h.id==='gen_saves')||(S.ev.past||[]).some(h=>h.id==='gen_saves')},
+  {id:'ankle',ic:'🩹',n:'Back on your feet',d:'Get a hurt ankle treated.',t:()=>!!(S.injury&&S.injury.treated)},
+  {id:'supplier',ic:'🥫',n:'Island supplier',d:'Sell food or medical supplies to neighbors on the island.',t:null},
+  {id:'fred',ic:'🩴',n:'Pajama Fred’s friend',d:'Make friends with Pajama Fred.',t:()=>!!S.friends.fred},
+  {id:'terminal',ic:'🪑',n:'A night in the terminal',d:'Sleep sitting up in the Steilacoom ferry terminal.',t:c=>c.where==='terminal'},
+  {id:'pantry',ic:'🧺',n:'Fully stocked',d:'Have a week of food (7 days or more) in the pantry.',t:()=>S.pantry>=7},
+  {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0}];
+function achGot(){try{const o=JSON.parse(localStorage.getItem(ACH_KEY)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch(e){return {}}}
+function achCount(){const g=achGot();return ACH.filter(a=>g[a.id]).length}
+function achUnlock(id){const a=ACH.find(x=>x.id===id);if(!a)return;const g=achGot();if(g[id])return;
+  g[id]={at:new Date().toISOString()};try{localStorage.setItem(ACH_KEY,JSON.stringify(g))}catch(e){}
+  if(S){S.achGame=(S.achGame||[]).filter(x=>x!==id).concat(id);if(!S.over)showTile('🏆','Achievement: '+a.n,a.d,'good')}}
+function achCheck(c){if(!S)return;c=c||{};const g=achGot();
+  for(const a of ACH){if(g[a.id]||!a.t)continue;let ok=false;try{ok=!!a.t(c)}catch(e){}if(ok)achUnlock(a.id)}}
+function achModal(back){const g=achGot();
+  modal(`🏆 Achievements (${achCount()}/${ACH.length})`,`<p style="font-size:13px;color:var(--mute)">Saved on this device. They carry over to every new game and save slot.</p>`+ACH.map(a=>{const on=g[a.id];
+    return `<div class="ach${on?' on':''}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;margin-bottom:6px;border-radius:10px;border:1.5px solid ${on?'var(--good)':'var(--line)'};background:${on?'#fff':'transparent'}${on?'':';opacity:.55'}"><span style="font-size:24px;width:30px;text-align:center;${on?'':'filter:grayscale(1)'}">${on?a.ic:'🔒'}</span><span style="flex:1;min-width:0"><b style="display:block;font-size:14.5px">${a.n}</b><span style="display:block;font-size:12.5px;color:var(--mute)">${on?`Earned ${esc(new Date(on.at).toLocaleDateString())}`:'How: '+a.d}</span></span></div>`}).join(''),
+  [{l:back?'Back to settings':'Close',fn:()=>{if(back)back()}}]);
+}
+window.achModal=achModal;
+
+// ---------------- save slots UI ----------------
+function slotInfo(n){const r=rawSave(n);if(!r)return null;
+  try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=DIFFS[x.diff]||DIFFS.normal;
+    return {name:x.name||currentName(),diff:`${D.ic} ${D.n}`,txt:`${x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}}
+  catch(e){return {broken:true,name:'Unreadable save',diff:'',txt:''}}}
+const slotLine=i=>i?(i.broken?'Unreadable save':`${esc(i.name)} · ${i.diff} · ${i.txt}`):'Empty';
+const SLOTBTN='flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink)';
+window.slotsModal=()=>{const cur=curSlot();
+  modal('💾 Save slots',`<p style="font-size:13px;color:var(--mute)">Keep up to three games going. Continue, a new week, Exit and transfer codes all use the current slot.</p>`+[1,2,3].map(n=>{const i=slotInfo(n);
+    return `<div class="slot" style="background:#fff;border:1.5px solid ${n===cur?'var(--buoy)':'var(--line)'};border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>Slot ${n}</b>${n===cur?' <span style="font-size:12px;color:var(--buoy);font-weight:700">· current</span>':''}<div style="font-size:13px;color:var(--mute);margin-top:2px">${slotLine(i)}</div>
+    <div style="display:flex;gap:6px;margin-top:8px">${i&&!i.broken?`<button style="${SLOTBTN};background:var(--buoy);color:#fff;border-color:var(--buoy)" onclick="slotAct(${n},'cont')">Continue</button>`:''}<button style="${SLOTBTN}" onclick="slotAct(${n},'new')">Start new here</button>${i?`<button style="${SLOTBTN};color:var(--bad)" onclick="slotAct(${n},'del')">Delete</button>`:''}</div></div>`}).join(''),
+  [{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
+};
+window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n);
+  if(a==='cont'){setSlot(n);return resumeGame()}
+  if(a==='new'){const go=()=>{setSlot(n);titleScreen();startNewWeek()};
+    return i?modal(`Start over in slot ${n}?`,`<p>The saved week in slot ${n} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new week here',fn:go},{l:'Cancel',fn:()=>slotsModal()}]):go()}
+  if(a==='del') modal(`🗑️ Delete slot ${n}?`,`<p>This erases the saved week in slot ${n} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal()}},{l:'Cancel',fn:()=>slotsModal()}]);
+};
+function slotSwitchModal(){const cur=curSlot();
+  modal('💾 Save slot',`<p>You’re playing in <b>slot ${cur}</b>. Your week is saved before you switch.</p>`,[
+    ...[1,2,3].map(n=>{const i=n===cur?null:slotInfo(n);return {l:`Slot ${n}${n===cur?' (this game)':''}`,s:n===cur?'You’re here.':i&&!i.broken?'Continue: '+slotLine(i):i?'Unreadable save: manage it from the title screen.':'Empty: start a new week here',dis:n===cur||!!(i&&i.broken),
+      fn:()=>{saveGame();MQ=[];clearTiles();setSlot(n);if(i)return resumeGame();S=null;titleScreen();startNewWeek()}}}),
+    {l:'Back to settings',fn:()=>openSettings()}]);
+}
+
 // ---------------- title ----------------
 function clearTiles(){tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove())}
 function titleScreen(){clearTiles();
@@ -2101,7 +2171,8 @@ function titleScreen(){clearTiles();
   <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
   <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
   <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Thursday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
-  ${(()=>{const d=loadSave();return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
+  ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
+  <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
   ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}${exitNotice?`<div class="hint">${exitNotice}</div>`:''}
   <button id="installBtn" class="ghost" style="display:${deferredInstall&&!isStandalone()?'block':'none'}" onclick="doInstall()">📲 Install as an app</button>
