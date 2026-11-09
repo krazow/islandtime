@@ -50,6 +50,10 @@ function price(g,side){
   const buy=Math.round(base*m);return {buy,sell:Math.round(buy*0.82)};
 }
 
+// what boarding here will cost: the cash fare, or a ride from a ⛴️ Ferry Pass book when that's what board() will use
+function fareTxt(mode){const k=mode==='drive'?'car':'walk';
+  if(typeof phoneInstalled==='function'&&phoneInstalled('ferrypass')&&phoneCan()){const n=(S.ph&&S.ph.fp&&S.ph.fp[k])||0;if(n>0)return `🎟️ ticket (${n} left)`}
+  return $(mode==='drive'?FARE_CAR:FARE_WALK)}
 function waitFerry(mode){
   if(mode==='drive'){const c=carHere();if(!c||c.fuel<0.1){say('⛽ The tank is empty. The deckhands won’t load a car that can’t drive.');return render()}}
   const side=L[S.loc].side;
@@ -58,7 +62,7 @@ function waitFerry(mode){
   if(!known){say('No sailings in sight. Something is very wrong with the ferry system.');return render()}
   if(known.d>day()){
     if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&canWalkCarry())
-      return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
+      return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+fareTxt('walk'):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
       return modal('🌙 No more boats tonight',`<p>The next sailing you could make is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You’re stuck on the mainland for the night. Sleep in the terminal, get a motel in Lakewood, or ask a friend for a couch.</p>`,[{l:'OK',fn:()=>render()}]);}
@@ -87,7 +91,7 @@ function waitFerry(mode){
     const nxt=(()=>{const save=S.t;S.t=s.abs-19;const n=findNext(side,'drive',true);S.t=save;return n})();
     return modal('Boat’s full 😩',`<p>The ${fmt(s.dep)} sailing filled up right in front of you.</p><p>Next drive-on: <b>${nxt?fmtAbs(nxt.abs):'unknown'}</b> (you’ll be first in line).</p>`,[
       {l:'Wait for the next boat',s:'Keep your car with you',fn:()=>{S.priority=true;S.t=s.abs-21>S.t?S.t:S.t;S.t=Math.max(S.t,s.abs+1);waitFerryFrom(side)}},
-      ...(canWalkCarry()?[{l:'Park it and walk on this boat',s:`Car stays at this landing. ${side==='M'?'Walk-on fare '+$(FARE_WALK):'Free from the island'}`,fn:()=>board(side,s,'walk')}]:[])
+      ...(canWalkCarry()?[{l:'Park it and walk on this boat',s:`Car stays at this landing. ${side==='M'?'Walk-on fare '+fareTxt('walk'):'Free from the island'}`,fn:()=>board(side,s,'walk')}]:[])
     ]);
   }
   board(side,s,mode);

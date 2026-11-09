@@ -37,7 +37,7 @@ module.exports = [
     await page.evaluate(() => { S.loc = 'stDock'; S.money = 500; phoneInstall('ferrypass'); phoneOpen('ferrypass'); });
     await tap(page, 'Passenger (walk-on)');
     const b = await page.evaluate(() => ({ m: S.money, walk: FP().walk, car: FP().car }));
-    assert.deepStrictEqual(b, { m: 450, walk: 10, car: 0 }, '10 × $6.25 at 20% off = $50');
+    assert.deepStrictEqual(b, { m: 453.12, walk: 10, car: 0 }, '10 × $6.25 at 25% off = $46.88');
     assert.match(await phoneText(page), /10 walk-on rides/);
     await page.evaluate(() => phoneClose());
     // board the next walk-on boat from Steilacoom
@@ -58,7 +58,7 @@ module.exports = [
     assert.deepStrictEqual(dead, { paid: 6.25, walk: 9 });
     // a car book, and boarding with the car uses it
     const car = await page.evaluate(() => { S.phone = 80; S.phoneT = S.t; S.money = 1000; fpBuy('car'); const m = S.money; const used = fpUseRide('drive'); return { cost: 1000 - m, used, left: FP().car }; });
-    assert.deepStrictEqual(car, { cost: 212, used: true, left: 9 });
+    assert.deepStrictEqual(car, { cost: 198.75, used: true, left: 9 });
     noErrors(errors);
   } },
   { name: 'Ferry Pass: push alert once per outage, with battery, only when installed', fn: async ctx => {

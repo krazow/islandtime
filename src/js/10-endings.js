@@ -73,7 +73,13 @@ const ACH=[
   {id:'fred',ic:'🩴',n:'Pajama Fred’s friend',d:'Make friends with Pajama Fred.',t:()=>!!S.friends.fred},
   {id:'terminal',ic:'🪑',n:'A night in the terminal',d:'Sleep sitting up in the Steilacoom ferry terminal.',t:c=>c.where==='terminal'},
   {id:'pantry',ic:'🧺',n:'Fully stocked',d:'Have a week of food (7 days or more) in the pantry.',t:()=>S.pantry>=7},
-  {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0}];
+  {id:'zen',ic:'🧘',n:'Island calm',d:'Bring your stress all the way down to 0.',t:()=>S.stress<=0},
+  // phone apps (19-apps-travel.js, 20-apps-money.js): counters live in S.stats, so they're per game
+  {id:'commuter_pro',ic:'🎟️',n:'Commuter pro',d:'Ride the ferry 10 times on ⛴️ Ferry Pass tickets in one game.',t:()=>(S.stats.fpRides||0)>=10},
+  {id:'autopay',ic:'💳',n:'Never late on a bill',d:'Finish a month with 💳 autopay on since the first week and not one late bill.',
+    t:c=>{const I=S.ph&&S.ph.icu;return c.end&&!c.lost&&S.mode==='month'&&!!I&&I.auto&&(I.since??0)<=6&&phoneInstalled('bank')&&!(S.stats.lateBills>0)}},
+  {id:'gig_economy',ic:'💼',n:'Gig economy',d:'Earn $100 from 💼 Gig Work tasks in one game.',t:()=>(S.stats.gigPay||0)>=100},
+  {id:'weather_wise',ic:'🌦️',n:'Weather-wise',d:'Spend a gale or a hard freeze at home after 🌦️ Tides & Weather warned you the evening before.',t:()=>(S.stats.wxWise||0)>0}];
 function achGot(){try{const o=JSON.parse(localStorage.getItem(ACH_KEY)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch(e){return {}}}
 function achCount(){const g=achGot();return ACH.filter(a=>g[a.id]).length}
 function achUnlock(id){const a=ACH.find(x=>x.id===id);if(!a)return;const g=achGot();if(g[id])return;

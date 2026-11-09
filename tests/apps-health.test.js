@@ -32,7 +32,7 @@ module.exports = [
     await tap(page, 'Renew my prescription');
     let r = await page.evaluate(() => ({ t: S.t, money: S.money, rx: S.rx, mail: PH().tele.mail, dk: dayKey(), bat: S.phone }));
     assert.strictEqual(r.t, 4 * 1440 + 620, '20 minutes');
-    assert.strictEqual(r.money, 460, '$25 visit + $15 meds');
+    assert.strictEqual(r.money, 470, '$20 visit + $10 meds');
     assert.strictEqual(r.rx, false, 'not until the mail comes');
     assert.strictEqual(r.mail, r.dk + 1);
     assert.ok(b0 - r.bat >= 8, 'video eats battery');
@@ -58,11 +58,11 @@ module.exports = [
     assert.match(await phoneText(page), /Riv’s Wi-Fi/);
     assert.match(await phoneText(page), /Too early/, 'too early in the week to renew');
     await tap(page, 'stressed');
-    assert.deepStrictEqual(await page.evaluate(() => [S.stress, S.money]), [44, 475]);
+    assert.deepStrictEqual(await page.evaluate(() => [S.stress, S.money]), [42, 480]);
     assert.ok(await page.locator('#phoneUI button[disabled]', { hasText: 'run down' }).count(), 'once a day');
     await page.evaluate(() => { S.cur = 2; S.t = 2 * 1440 + 720; S.phoneT = S.t; render(); });
     await tap(page, 'run down');
-    assert.deepStrictEqual(await page.evaluate(() => [S.health, S.money]), [53, 450]);
+    assert.deepStrictEqual(await page.evaluate(() => [S.health, S.money]), [53, 460]);
     noErrors(errors);
   } },
   { name: 'Telehealth can’t treat the ankle: go to Urgent Care, no charge', fn: async ctx => {

@@ -273,14 +273,14 @@ function todoItems(){
   const d=day(),m=tod(),it=[];
   const J=curJob();
   if(J) J.days.forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
-  else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job on your phone (or the bulletin board), then make the interview.',urgent:!S.interview});
+  else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job in the 💼 Gig Work app or on the bulletin board at the old store, then make the interview.',urgent:!S.interview});
   if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${DAYS[S.interview.day]} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
   if(apptActive()) it.push({ok:S.appt,fail:S.apptMissed||(d>APPT_DAY)||(d===APPT_DAY&&m>885&&!S.appt),l:'Doctor’s appointment',s:`${DAYS[APPT_DAY]} 2:30 PM, Medical Clinic (Tacoma). Arrive 2:00–2:45.`,urgent:d===2&&!S.appt&&m<=885});
   it.push({ok:S.rx,fail:false,l:'Pick up prescription refill',s:d<3?'Ready Thursday at the Lakewood pharmacy. Run out Saturday night.':'Ready now at the Lakewood pharmacy.',urgent:d>=3&&!S.rx});
   it.push({ok:S.pantry>=2,fail:false,l:'Keep the pantry stocked',s:`${S.pantry} day${S.pantry===1?'':'s'} at home${S.carried?`, ${S.carried} in hand`:''}. You eat 1 per night.`,urgent:S.pantry<1});
   const isl=S.cars.find(c=>c.id==='isl');
   it.push({ok:isl.fuel>=3,fail:false,l:`Keep gas in the ${isl.diesel?'truck':'island car'}`,s:`${isl.fuel}/${isl.tank} gal. No gas on the island: fill up on the mainland, or pay Dale.`,urgent:isl.fuel<1.5});
-  if(S.week.storm&&S.week.storm.day>=d) it.push({ok:genReady()&&S.homeGas>=3,fail:false,l:'Be ready for the storm',s:`Gale on ${DAYS[S.week.storm.day]}. You need a generator at home (Home Depot, Lakewood) and 3 gal stashed in the shed (${S.homeGas} now), or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
+  if(stormKnown()) it.push({ok:genReady()&&S.homeGas>=3,fail:false,l:'Be ready for the storm',s:`${S.week.storm.day===d?`Gale today, from about ${fmt(S.week.storm.start)}`:`Gale tomorrow (${DAYS[S.week.storm.day]}): 🌦️ Tides & Weather saw it coming`}. You need a generator at home (Home Depot, Lakewood) and 3 gal stashed in the shed (${S.homeGas} now), or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
   if(d<=2) it.push({ok:S.bingo.nights>0,fail:d===2&&tod()>=1200&&!S.bingo.nights,l:'Optional: Bingo at the Riv',s:`Wednesday 6:00 PM, American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,urgent:false});
   if(S.battery==='weak') it.push({ok:false,fail:false,l:'Replace the car battery',s:'Gas station in Steilacoom. Until then, mornings are a gamble.',urgent:false});
   {const U=UP(),due=[U.fridge&&'fridge',U.mold&&'mold',U.damp>=3&&'damp',U.ash>=3&&'ash',U.chimney>=21&&'chimney',U.wood<=1&&'firewood',U.septic>=75&&'septic',U.gutters>=60&&'gutters',U.limbs>=60&&'tree limbs',U.well>45&&'well',U.moss>=60&&'roof moss',U.pot>=60&&'potholes',S.gen==='home'&&U.genSvc>14&&'generator',U.propane<25&&'propane'].filter(Boolean);

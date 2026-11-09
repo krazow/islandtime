@@ -34,7 +34,7 @@ function hhBillsNight(notes,dk){
   for(const k in HH_BILLS){const b=HB(k),B=HH_BILLS[k],due=hhDue(k);if(b.paid)continue;
     if(b.check>=0&&b.check<=dk){b.paid=true;if(b.late)notes.push(`✉️ Your check finally reached ${B.who}. Account settled.`);continue}
     if(dk<due)continue;
-    b.late++;if(b.late<=7)anyLate=true;
+    b.late++;if(b.late<=7)anyLate=true;if(b.late===1)S.stats.lateBills=(S.stats.lateBills||0)+1;
     if(b.late===1){if(b.check>=0){money(-B.fee);notes.push(`${B.ic} Your check to ${B.who} is still in the mail, and they don’t care: ${$(B.fee)} late fee, charged to your card.`)}
       else{b.fees+=B.fee;notes.push(`${B.ic} The ${B.n.toLowerCase()} bill was due today and you didn’t pay it. ${B.who} adds a ${$(B.fee)} late fee. (🏠 Inside the house → 🧾 Pay bills.)`)}
       adj('stress',3)}
@@ -127,9 +127,9 @@ function hhActions(a,loc){
         dis:g.fed===dk||(g.kibble<=0&&S.pantry<1),fn:()=>{S.t+=5;g.fed=dk;if(g.kibble>0)g.kibble--;else{S.pantry--;say(`🍳 ${g.n} gets scrambled eggs. ${g.n} is thrilled. Your pantry isn’t.`)}say(`🥣 ${g.n} inhales breakfast and looks at you like you’ve never fed it before.`);afterAction()}});
       a.push({cat:'yard',ic:'🦮',l:g.walked===dk?`Walked ${g.n} ✓`:`Walk ${g.n}`,due:g.walked!==dk,s:g.walked===dk?'Sniffed every fern on the road.':'30 min down the road and back. Stress −3. (Lake Josephine is better, if you’re going anyway.)',
         dis:g.walked===dk,fn:()=>{S.t+=30;g.walked=dk;adj('stress',-3);say(`🦮 ${g.n} reads the whole road like a newspaper. Deer, deer, neighbor’s cat, deer.`);afterAction()}});}
-    // storm prep: only when a gale is coming
+    // storm prep: only once the gale is known (that morning, or the day before with 🌦️ Tides & Weather)
     const st=S.week.storm;
-    if(st&&S.t<st.end&&d<=st.day){const sk=S.weekNo*7+st.day,soon=st.day-d<=1;
+    if(stormKnown()){const sk=S.weekNo*7+st.day,soon=st.day-d<=1;
       a.push({cat:'home',ic:'💧',l:H.water?'Water jugs filled ✓':'Fill water jugs and the bathtub',due:soon&&!H.water,s:H.water?'For when the power takes the well pump with it.':'15 min. No power means no well pump: this is your water for coffee and a sponge bath.',dis:H.water,
         fn:()=>{S.t+=15;H.water=true;say('💧 Four jugs, two stockpots and a bathtub full of water. The house looks ready for a siege.');afterAction()}});
       a.push({cat:'home',ic:'🔋',l:H.bankFull?'Power bank charged ✓':'Charge the power bank',due:soon&&H.bank&&!H.bankFull,s:!H.bank?'You don’t own one. Order one online (📦), two days to the Steilacoom lockers.':H.bankFull?'Your phone will make it through the outage.':'10 min to plug it in. Keeps your phone (and its alarm) alive through the outage.',dis:!H.bank||H.bankFull,

@@ -31,7 +31,7 @@ phoneOnTime(icuAutopay);
 function icuPay(ks){if(!phoneCan())return;ks=ks.filter(k=>hhOpenBills().includes(k));if(!ks.length)return;
   const tot=ks.reduce((s,k)=>s+hhOwed(k),0);ks.forEach(k=>hhPay(k,'online'));
   apmMsg('bank',`✅ Paid ${ks.length>1?ks.length+' bills':HH_BILLS[ks[0]].n.toLowerCase()}: ${$(tot)}.`);afterAction()}
-function icuAutoToggle(){const I=ICU();I.auto=!I.auto;
+function icuAutoToggle(){const I=ICU();I.auto=!I.auto;I.since=I.auto?dayKey():-1;
   say(I.auto?'💳 Autopay is on. Island Credit Union will pay each bill on its due day, whether or not the money is there. (If it isn’t: $25 overdraft fee.)':'💳 Autopay is off. The bills are back to being your problem.');
   apmMsg('bank',I.auto?'🔁 Autopay on: bills pay themselves on their due day.':'Autopay off.',I.auto?'ok':'');
   icuAutopay()}
@@ -66,7 +66,7 @@ const GIGS=[
   {id:'tag',ic:'🏷️',n:'Tag photos',min:30,pay:8,bat:6,st:2,t:['🏷️ Two hundred photos: is this a crosswalk? Is this a bus? Is this a crosswalk with a bus? You’re a robot’s teacher now.','🏷️ “Tag every photo with a dog.” Every photo has a dog. You’ve never been happier at work.']}];
 function gigWhere(){const l=S.loc;return l==='stDock'?'Waiting at the terminal is the gig economy’s natural habitat.':l==='aiDock'?'Waiting at the landing on one bar. Uploads crawl.':L[l].side==='I'?'One bar on the island: uploads take an extra 10 minutes.':'Good signal over here. Uploads are quick.'}
 function gigDo(id){const G=GIGS.find(x=>x.id===id),g=GIG();if(!G||!phoneCan()||g.n>=GIG_MAX||S.phone<=G.bat)return false;
-  const slow=phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(G.pay);adj('stress',G.st);g.n++;g.earned+=G.pay;S.stats.gigs=(S.stats.gigs||0)+1;
+  const slow=phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(G.pay);adj('stress',G.st);g.n++;g.earned+=G.pay;S.stats.gigs=(S.stats.gigs||0)+1;S.stats.gigPay=(S.stats.gigPay||0)+G.pay;
   say(`${pick(G.t)} +${$(G.pay)}.${slow?' The upload on one bar takes another ten minutes.':''}`);
   apmMsg('gigs',`${G.ic} Done: +${$(G.pay)} in ${G.min+slow} min.${g.n>=GIG_MAX?' That’s all the work the app has for you today.':''}`);
   afterAction();return true}
@@ -84,7 +84,7 @@ definePhoneApp({id:'gigs',name:'Gig Work',ic:'💼',order:66,size:'61 MB',desc:'
     return h}});
 
 // ---- 🛒 Mainland Market ----
-const MKT_PACKS=[{n:3,c:54},{n:5,c:88}],MKT_FEE=7,MKT_READY=120,MKT_OPEN=420,MKT_LAST=1140,MKT_CLOSE=1320;
+const MKT_PACKS=[{n:3,c:54},{n:5,c:88}],MKT_FEE=5,MKT_READY=120,MKT_OPEN=420,MKT_LAST=1140,MKT_CLOSE=1320;
 const mktOrder=()=>MKT().order;
 const mktReady=()=>{const o=mktOrder();return !!o&&S.t>=o.at};
 const mktWindow=()=>tod()>=MKT_OPEN&&tod()<MKT_LAST;
