@@ -16,7 +16,7 @@ const advance = (page, min) => page.evaluate(m => { S.t += m; processTimed(); re
 const thread = (page, id) => page.evaluate(id => (MSG().th[id] || { m: [] }).m.map(m => ({ f: m.f, x: m.x })), id);
 
 module.exports = [
-  { name: 'thread list renders with every friend', only: 'index.html', fn: async ctx => {
+  { name: 'thread list renders with every friend', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page);
     await page.evaluate(() => phoneOpen());
@@ -27,7 +27,7 @@ module.exports = [
     assert.ok(rows.some(t => /The Hendersons/.test(t)), rows.join('|'));
     noErrors(errors);
   } },
-  { name: 'send a text, the reply arrives on game time, unread badge clears on reading', only: 'index.html', fn: async ctx => {
+  { name: 'send a text, the reply arrives on game time, unread badge clears on reading', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page);
     await page.evaluate(() => phoneOpen('msg', 'sam'));
@@ -52,7 +52,7 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => msgUnread()), 0);
     noErrors(errors);
   } },
-  { name: 'a text sent at night gets its reply the next morning', only: 'index.html', fn: async ctx => {
+  { name: 'a text sent at night gets its reply the next morning', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page, { at: 1400 });
     await page.evaluate(() => { msgSend('hendersons', 'thanks', 'Thanks again!'); });
@@ -67,7 +67,7 @@ module.exports = [
     assert.strictEqual(th[1].f, 0);
     noErrors(errors);
   } },
-  { name: 'asking Sam for a ride: a yes brings the ride option to the ferry landing', only: 'index.html', fn: async ctx => {
+  { name: 'asking Sam for a ride: a yes brings the ride option to the ferry landing', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page, { at: 400, lvl: 3 });
     await page.evaluate(() => phoneOpen('msg', 'sam'));
@@ -83,7 +83,7 @@ module.exports = [
     assert.strictEqual(await page.$('.ph-btn:has-text("ride to the ferry")'), null);
     noErrors(errors);
   } },
-  { name: 'Pajama Fred (good friend) names a known upcoming ferry outage', only: 'index.html', fn: async ctx => {
+  { name: 'Pajama Fred (good friend) names a known upcoming ferry outage', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page, { lvl: 2 });
     const when = await page.evaluate(() => { S.week.b = [{ start: S.t + 400, end: S.t + 700, cause: 'a test cause' }]; render(); return fmtAbs(S.t + 400); });
@@ -95,7 +95,7 @@ module.exports = [
     assert.ok(th[1].x.includes(when) && th[1].x.toLowerCase().includes('a test cause'), th[1].x);
     noErrors(errors);
   } },
-  { name: 'friends text first, about once a day; replying the same day is social', only: 'index.html', fn: async ctx => {
+  { name: 'friends text first, about once a day; replying the same day is social', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page, { at: 360, friends: ['sam', 'walt', 'fred', 'hendersons', 'rusty'] });
     const n = await page.evaluate(() => {
@@ -119,7 +119,7 @@ module.exports = [
     assert.strictEqual(r[2], 1, 'replying counts as keeping in touch');
     noErrors(errors);
   } },
-  { name: 'an old save without the phone state loads and Messages works', only: 'index.html', fn: async ctx => {
+  { name: 'an old save without the phone state loads and Messages works', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await setup(page);
     await page.evaluate(() => saveGame());

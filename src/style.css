@@ -260,3 +260,16 @@ html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#0
 .msg-empty,.msg-status{font-size:12px;color:var(--mute);text-align:center;margin:8px 0}.msg-status{text-align:right;font-style:italic}
 .msg-foot{font-size:11px;color:var(--mute);margin:8px 2px 0}
 .msg-thread .ph-msg.them{align-self:flex-start}.msg-thread .ph-msg.me{align-self:flex-end}
+/* phone: calls */
+.ph-tabs{display:flex;gap:4px;background:#e9e4d8;border-radius:10px;padding:3px;margin-bottom:8px}
+.ph-tab{flex:1;background:none;border:0;border-radius:8px;padding:7px 4px;font:inherit;font-size:12px;font-weight:600;color:inherit;cursor:pointer}
+.ph-tab.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.ph-dial{font-size:18px;opacity:.7}
+.ph-call{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:10px 0 6px}
+.ph-call span{font-size:12px;color:var(--mute)}
+.ph-call-av{width:72px;height:72px;border-radius:50%;background:#dfe8e4;display:flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:4px}
+.ph-ringing .ph-call-av{animation:phRing 1s ease-in-out infinite}html.rm .ph-ringing .ph-call-av{animation:none}
+@keyframes phRing{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}}
+.ph-call-log p{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin:6px 0;font-size:13.5px;line-height:1.4}
+.ph-vm{padding:2px 0 6px 48px}.ph-vm p{font-size:13px;margin:4px 0;color:var(--mute)}.ph-vm .ph-btn{margin:4px 0;padding:7px 10px}
+html.hc .ph-tabs{background:#ddd}

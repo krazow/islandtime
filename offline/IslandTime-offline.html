@@ -218,6 +218,78 @@ html.hc .nextup{border-width:2px;border-left-width:5px;border-color:var(--ink);b
 .grade{font-family:"Fraunces";font-size:58px;font-weight:800;color:var(--buoy);line-height:1}
 .kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
 .kv b{font-variant-numeric:tabular-nums}
+.phbtn{position:relative}
+.ph-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#e3642e;color:#fff;font:700 11px/18px system-ui,sans-serif;font-style:normal;padding:0 4px;text-align:center}
+.ph-bg{position:fixed;inset:0;z-index:40;background:rgba(10,25,30,.55);display:flex;align-items:flex-end;justify-content:center;padding:10px}
+.ph{width:100%;max-width:380px;height:min(88vh,720px);background:#111;border-radius:34px 34px 26px 26px;padding:10px 10px 8px;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.ph-anim{animation:phUp .22s ease-out}html.rm .ph-anim{animation:none}
+@keyframes phUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.ph-status{display:flex;justify-content:space-between;color:#fff;font:600 12px/1 system-ui,sans-serif;padding:6px 14px 8px;font-variant-numeric:tabular-nums}
+.ph-screen{flex:1;min-height:0;background:var(--paper,#f7f3ea);border-radius:24px;overflow:hidden;display:flex;flex-direction:column}
+.ph-body{flex:1;overflow-y:auto;padding:12px 14px 16px;font-size:14px}
+.ph-home{background:linear-gradient(160deg,#1d4b5a,#2f5d4a);color:#fff}
+.ph-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 6px;margin-bottom:14px}
+.ph-app{background:none;border:0;color:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:0}
+.ph-ic{position:relative;width:54px;height:54px;border-radius:15px;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.ph-empty .ph-ic{background:transparent;border:2px dashed rgba(255,255,255,.45);color:rgba(255,255,255,.7);font-size:22px;box-shadow:none}
+.ph-nm{font-size:11px;font-weight:600;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-sect{font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:.8;font-weight:700;margin:4px 2px 10px}
+.ph-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff;font-size:15px}
+.ph-back{background:none;border:0;font-size:28px;line-height:1;width:32px;cursor:pointer;color:inherit}
+.ph-nav{display:flex;justify-content:center;gap:10px;padding:8px 0 2px}
+.ph-nav button{background:#2a2a2a;color:#eee;border:0;border-radius:14px;padding:7px 16px;font-size:13px;cursor:pointer}
+.ph-btn{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0;font:inherit;font-size:14px;font-weight:600;color:inherit;cursor:pointer}
+.ph-btn small{display:block;font-weight:400;color:var(--mute);font-size:12px;margin-top:2px}
+.ph-btn.primary{background:var(--deep,#12313b);color:#fff;border-color:transparent}.ph-btn.primary small{color:rgba(255,255,255,.75)}
+.ph-btn:disabled{opacity:.45;cursor:default}
+.ph-dead{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;background:#000;color:#ddd}.ph-dead span{font-size:13px;color:#999}
+.ph-msg{max-width:78%;padding:8px 11px;border-radius:16px;margin:4px 0;font-size:14px;line-height:1.35}
+.ph-msg.them{background:#e9e4d8;border-bottom-left-radius:4px}
+.ph-msg.me{background:#2f6fd6;color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.ph-msg small{display:block;font-size:10px;opacity:.6;margin-top:3px}
+.ph-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;font:inherit;color:inherit}
+.ph-row b{display:block}.ph-row span{font-size:12px;color:var(--mute)}
+.ph-av{width:38px;height:38px;border-radius:50%;background:#dfe8e4;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+html.hc .ph-screen{background:#fff}html.hc .ph-msg.them{background:#ddd;color:#000}
+/* phone: apps */
+#phoneUI~.modal-bg{z-index:45}
+.ph-card{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;line-height:1.4}
+.ph-card.ok{border-color:#9cc7a8;background:#eef7f0}.ph-card.warn{border-color:#e8b48f;background:#fdf1e7}
+.ph-note{font-size:12px;color:var(--mute);margin:8px 2px}
+.ph-sub{font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--mute);margin:14px 2px 4px}
+.ph-li{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line)}.ph-li span{font-size:12px;color:var(--mute)}
+.ph-store{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.ph-sic{width:44px;height:44px;flex:none;border-radius:12px;background:#fff;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:24px}
+.ph-sinfo{flex:1;min-width:0}.ph-sinfo span{display:block;font-size:12px;color:var(--mute);line-height:1.3}.ph-sinfo small{display:block;font-size:11px;color:var(--mute);margin-top:2px}
+.ph-sbtns{flex:none;width:92px}.ph-sbtns .ph-btn{padding:6px 8px;margin:0 0 6px;text-align:center;font-size:13px}.ph-sbtns .ph-btn small{font-size:10px}
+.ph-big{font:700 44px/1.1 system-ui,sans-serif;text-align:center;margin-top:10px;font-variant-numeric:tabular-nums}
+.ph-flash{font-size:64px;text-align:center;margin:16px auto;width:120px;height:120px;line-height:120px;border-radius:50%;background:#2a2a2a;filter:grayscale(1);opacity:.6}
+.ph-flash.on{background:radial-gradient(circle,#fff8c8,#f5d76e 60%,#e3b23c);filter:none;opacity:1;box-shadow:0 0 40px #f5d76e}
+.ph-todo{gap:10px}.ph-todo b{font-weight:600}.ph-todo.done b{text-decoration:line-through;opacity:.55}.ph-ck{font-size:18px}
+.ph-add{margin-top:10px}
+/* phone: messages */
+.msg-mid{flex:1;min-width:0}.msg-mid span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-side{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}.msg-side small{font-size:11px;color:var(--mute)}
+.msg-dot{display:block;width:10px;height:10px;border-radius:50%;background:#2f6fd6}
+.msg-unread .msg-mid b,.msg-unread .msg-mid span{color:inherit;font-weight:700}
+.msg-head{display:flex;align-items:center;gap:10px;padding:0 2px 10px;border-bottom:1px solid var(--line);margin-bottom:8px}.msg-head span:not(.ph-av){display:block;font-size:12px;color:var(--mute)}
+.msg-thread{display:flex;flex-direction:column;padding-bottom:6px}
+.msg-empty,.msg-status{font-size:12px;color:var(--mute);text-align:center;margin:8px 0}.msg-status{text-align:right;font-style:italic}
+.msg-foot{font-size:11px;color:var(--mute);margin:8px 2px 0}
+.msg-thread .ph-msg.them{align-self:flex-start}.msg-thread .ph-msg.me{align-self:flex-end}
+/* phone: calls */
+.ph-tabs{display:flex;gap:4px;background:#e9e4d8;border-radius:10px;padding:3px;margin-bottom:8px}
+.ph-tab{flex:1;background:none;border:0;border-radius:8px;padding:7px 4px;font:inherit;font-size:12px;font-weight:600;color:inherit;cursor:pointer}
+.ph-tab.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.ph-dial{font-size:18px;opacity:.7}
+.ph-call{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:10px 0 6px}
+.ph-call span{font-size:12px;color:var(--mute)}
+.ph-call-av{width:72px;height:72px;border-radius:50%;background:#dfe8e4;display:flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:4px}
+.ph-ringing .ph-call-av{animation:phRing 1s ease-in-out infinite}html.rm .ph-ringing .ph-call-av{animation:none}
+@keyframes phRing{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}}
+.ph-call-log p{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin:6px 0;font-size:13.5px;line-height:1.4}
+.ph-vm{padding:2px 0 6px 48px}.ph-vm p{font-size:13px;margin:4px 0;color:var(--mute)}.ph-vm .ph-btn{margin:4px 0;padding:7px 10px}
+html.hc .ph-tabs{background:#ddd}
 </style>
 </head>
 <body>
@@ -769,7 +841,7 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 function powerOut(){return S.power&&S.t<S.power.end}
 function meet(id,name,how){if(S.friends[id]){friendPts(id,1);return false}S.friends[id]={name,how,day:day(),lvl:1,pts:0};say(`🤝 New friend: <b>${name}</b> (${how}).`);return true}
 const PERKS={
-  sam:{2:'Sam will drive you to the ferry most mornings: text him from home.',3:'Sam brings you a box of groceries from his mainland runs.'},
+  sam:{2:'Sam will drive you to the ferry most mornings: ask on your 📱 phone before 10:30.',3:'Sam brings you a box of groceries from his mainland runs.'},
   walt:{2:'Walt puts in a good word for you: better odds at job interviews.',3:'You’re on the list for the Legion’s Friday fish fry.'},
   fred:{2:'Fred always passes along what his deck-crew buddy hears.',3:'Fred keeps an eye on your car at the landing and tops it off from “a friend.”'},
   hendersons:{2:'The Hendersons invite you to dinner on weekends.',3:'The Hendersons drop off leftovers when the power’s out.'},
@@ -977,11 +1049,9 @@ function postReplies(j){
   }
 }
 function helpActions(a,d,m){
-  const c=COMM(),dk=dayKey(),phoneOK=S.phone>0,pj=upJob('post'),gj=upJob('gus');
-  a.push({cat:'yard',ic:'🧰',l:gj?'Gus is coming (probably)':'Call Gus, the island handyman',due:false,s:gj?`He said ${fmtAbs(gj.due)}. Ish. He lives here, so the ferry can’t stop him.`:!phoneOK?'Your phone is dead.':`Fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries. Tomorrow or the day after.`,
-    dis:!!gj||!phoneOK,fn:gusModal});
-  a.push({cat:'phone',ic:'📣',l:pj?'Waiting for replies in the community group':c.post===dk?'Posted in the community group today':'Post asking for help',s:pj?`Replies should trickle in around ${fmt(pj.due)}.`:c.post===dk?'One post a day, or people start muting you.':!phoneOK?'Your phone is dead.':'Ask the Anderson Island community group. 10 min. Answers come in a few hours.',
-    dis:!!pj||c.post===dk||!phoneOK,fn:postModal});
+  const c=COMM(),dk=dayKey(),phoneOK=S.phone>0,gj=upJob('gus');
+  a.push({cat:'yard',ic:'🧰',l:gj?'Gus is coming (probably)':'Call Gus from your 📱 phone (Phone → Island numbers)',due:false,s:gj?`He said ${fmtAbs(gj.due)}. Ish. He lives here, so the ferry can’t stop him.`:!phoneOK?'Your phone is dead.':`The island handyman fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries.`,
+    dis:true,fn:gusModal});
   const ok=m>=480&&m<1140;
   a.push({cat:'here',ic:'🤲',l:c.help===dk?'Helped a neighbor today ✓':'Help a neighbor from the community group',s:c.help===dk?`Island reputation: ${S.rep||0}.`:!ok?'People ask for help between 8 AM and 7 PM.':`1 hour. Someone always needs a hand. Island reputation: ${S.rep||0}. Stress −2.`,
     dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;S.rep=(S.rep||0)+1;adj('stress',-2);
@@ -1410,7 +1480,7 @@ function travelOpts(dest){
   if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
   else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
   if(side==='I'){
-    if(S.friends.sam&&S.loc==='home'&&dest==='aiDock'&&(S.ev.flags.samRide===day()||(flv('sam')>=2&&tod()<600&&S.phone>0&&S.ev.flags.samNo!==day()))) o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
+    if(S.friends.sam&&S.loc==='home'&&dest==='aiDock'&&S.ev.flags.samRide===day()) o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
     if(!fueled){o.push({m:'walk',l:`🚶 ${Math.round(base*4*inj)} min`,min:Math.round(base*4*inj),dis:!canWalkCarry()});
       o.push({m:'hitch',l:'👍 Hitch a ride',min:base+15,dis:!canWalkCarry()});}
   } else if(!fueled){
@@ -1453,6 +1523,7 @@ function stash(){
 
 }
 function processTimed(){
+  phoneTimed();
   if(S.power&&S.t>=S.power.end){S.power=null;if(L[S.loc].side==='I')say('💡 The power’s back on. Every appliance in the house beeps at once.')}
   for(const j of UP().jobs.slice()){
     if(S.t<j.due) continue;
@@ -1662,7 +1733,6 @@ function actions(){
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
-  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for {{name}}, bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
     const car=!!carHere();
     [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
@@ -2032,7 +2102,7 @@ function sceneSVG(){
 }
 function hud(){
   const d=day();
-  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
+  return `<div class="hud"><div class="hud-top"><div><div class="hud-day">${DAYS[d]}</div><div class="hud-sub">{{name}} · ${dateTxt(d)} · ${S.mode==='month'?`Week ${S.weekNo+1}/4`:`Day ${d+1} of 7`}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="hud-time">${fmt(S.t)}</div><button class="gear phbtn" onclick="phoneOpen()" aria-label="Open your phone">📱${(()=>{const n=phoneBadgeTotal();return n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''})()}</button><button class="gear" onclick="openSettings()" aria-label="Settings">⚙️</button></div></div>
   <div class="stats">
    <div class="stat"><small>Cash</small><b style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}$${Math.abs(Math.round(S.money))}</b></div>
    <div class="stat"><small>Food</small><b>${S.pantry}${S.carried?'<span style="font-size:10px;opacity:.7">+'+S.carried+'</span>':''}d</b>${meter(Math.min(100,S.pantry*20),true)}</div>
@@ -2055,6 +2125,7 @@ function render(){
   const pending=todoItems().filter(x=>x.urgent).length;
   h+=`<nav class="tabs">${[['act','🧭','Here'],['ferry','⛴️','Ferry'],['todo','📋','To-do'],['log','📜','Log']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}${k==='todo'&&pending?'<span class="dot"></span>':''}${k==='ferry'&&out?'<span class="dot"></span>':''}</button>`).join('')}</nav>`;
   app.innerHTML=withName(h);
+  phoneRender();
   achCheck();
   saveGame();
 }
@@ -2156,9 +2227,10 @@ const TIPS=[
   {id:'bed',when:()=>S.loc==='home'&&tod()>=1080,t:'🛏️ Before bed, set your <b>⏰ alarms</b>: the plug-in clock, your phone, or both as backups. Each night you eat a day of food from the pantry.'},
   {id:'trading',when:()=>!!MARKETS[S.loc]&&!tradingLocked(),t:'🛒 <b>Trading:</b> buy on the mainland, sell on the island for more. Watch the badges: gas cans and drugs are contraband on the ferry.'},
   {id:'storm',when:()=>S.week.storm&&S.week.storm.day===day(),t:'🌬️ A storm means power outages. A <b>generator</b> (Home Depot, Lakewood) plus gas stashed in your shed keeps the fridge, heat and phone going.'},
-  {id:'home_low',when:()=>S.loc==='home'&&(S.home??70)<35,t:'🏚️ Your <b>Home</b> meter is low. A run-down house means worse sleep, more things breaking and fewer visitors. A <b>🧽 Deep clean</b> on a day off helps a lot. Too busy? <b>Call Gus</b> or <b>📣 post in the community group</b>.'},
+  {id:'home_low',when:()=>S.loc==='home'&&(S.home??70)<35,t:'🏚️ Your <b>Home</b> meter is low. A run-down house means worse sleep, more things breaking and fewer visitors. A <b>🧽 Deep clean</b> on a day off helps a lot. Too busy? <b>Call Gus</b> or <b>📣 post in the Island Group app</b> on your phone.'},
   {id:'home_meter',when:()=>S.loc==='home'&&(day()>=1||(S.home??70)<60),t:'🏠 The <b>Home</b> meter is how your house is holding up. Chores and repairs raise it; it slips a little every day. Keep it high for better sleep and cozy mornings. Settings ⚙️ has <b>📖 How your house works</b>.'},
   {id:'upkeep_due',when:()=>S.loc==='home'&&upAnyDue(),t:'🧰 Something around the house needs doing. Open <b>🏠 Inside the house</b> or <b>🌲 Outside &amp; property</b> below: jobs that are due are highlighted. Ignore them and they turn into events.'},
+  {id:'phone_apps',when:()=>Object.keys(S.friends).length>0||day()>=1,t:'📱 <b>Your phone</b> (top right): text and call friends, set alarms, and install up to <b>5 apps</b> from the 🛍️ App Store, like ferry alerts or the island community group. One bar on the island makes installs slow.'},
   {id:'friends',when:()=>Object.keys(S.friends).length>0,t:'🤝 You made a friend! Friends help out with rides, jump-starts and gas, and they’ll ask favors too. See them in the 📋 To-do tab.'},
 ];
 function tipsOn(){return prefs().tips}
@@ -2478,6 +2550,478 @@ function titleScreen(){clearTiles();
   exitNotice='';
 }
 titleScreen();
+// ---------------- 📱 phone: core (screen, app system, timers) ----------------
+// Plug-in files (12-phone-messages.js, 13-phone-calls.js, 14-phone-apps.js) register apps with definePhoneApp().
+// State lives in S.ph (created lazily, so older saves just work). Each plug-in keeps its own sub-object.
+const PHONE_SLOTS=5;
+const PHONE_APPS=[];          // {id,name,ic,builtin,desc,size,badge(),view(arg),order}
+const PH_TIMERS=[];           // functions run from processTimed() while the game clock moves
+let PH_OPEN=false, PH_NAV=[{app:null,arg:null}], PH_ACTS=[];
+function PH(){S.ph=S.ph||{};const p=S.ph;p.apps=p.apps||[];p.inst=p.inst||{};return p}
+function definePhoneApp(a){const i=PHONE_APPS.findIndex(x=>x.id===a.id);const app=Object.assign({builtin:false,size:'40 MB',order:50,badge:()=>0,desc:''},a);if(i>=0)PHONE_APPS[i]=app;else PHONE_APPS.push(app);PHONE_APPS.sort((x,y)=>x.order-y.order)}
+function phoneApp(id){return PHONE_APPS.find(a=>a.id===id)}
+function phoneOnTime(fn){PH_TIMERS.push(fn)}
+function phoneSignal(){return L[S.loc].side==='I'?1:4}           // the island's famous one bar
+function phoneCan(){return S.phone>0}
+function phoneUse(pct){phoneTick();S.phone=Math.max(0,Math.round(S.phone-pct))}   // battery cost of using it
+function phoneInstalled(id){const a=phoneApp(id);return !!a&&(a.builtin||PH().apps.includes(id))}
+function phoneFree(){return PHONE_SLOTS-PH().apps.length}
+// install takes time: one bar of signal on the island makes it slow
+function phoneInstall(id){const a=phoneApp(id),P=PH();if(!a||a.builtin||P.apps.includes(id))return false;if(P.apps.length>=PHONE_SLOTS||!phoneCan())return false;
+  const min=phoneSignal()===1?6:1;S.t+=min;phoneUse(1);P.apps.push(id);P.inst[id]=(P.inst[id]||0)+1;
+  say(`📲 Installed <b>${a.name}</b>.${min>1?' One bar of signal on the island: it took '+min+' minutes.':''}`);return true}
+function phoneUninstall(id){const P=PH();const i=P.apps.indexOf(id);if(i<0)return false;P.apps.splice(i,1);say(`🗑️ Removed ${phoneApp(id).name} from your phone.`);return true}
+function phoneBadgeTotal(){if(!S)return 0;return PHONE_APPS.filter(a=>phoneInstalled(a.id)).reduce((n,a)=>{try{return n+(a.badge()||0)}catch(e){return n}},0)}
+// a notification: a tile now, and the badge tells the rest
+function phoneNotify(ic,title,sub){if(!phoneCan())return;showTile(ic,title,sub||'','info');try{sfx('info')}catch(e){}}
+// buttons inside the phone register their handlers here (like ACTS for the main screen)
+function phBtn(label,fn,opt){opt=opt||{};const i=PH_ACTS.push(fn)-1;return `<button class="ph-btn ${opt.cls||''}" ${opt.dis?'disabled':''} onclick="PHA(${i})">${label}${opt.sub?`<small>${opt.sub}</small>`:''}</button>`}
+window.PHA=i=>{const f=PH_ACTS[i];if(!f)return;f();if(S&&!S.over){render()}};
+window.phoneOpen=(app,arg)=>{if(!S||S.over)return;PH_OPEN=true;PH_NAV=[{app:null,arg:null}];if(app)PH_NAV.push({app,arg});phoneRender()};
+window.phoneClose=()=>{PH_OPEN=false;const el=document.getElementById('phoneUI');el&&el.remove();if(S&&!S.over)render()};
+window.phoneGo=(app,arg)=>{PH_NAV.push({app,arg});phoneRender()};
+window.phoneBack=()=>{if(PH_NAV.length>1)PH_NAV.pop();phoneRender()};
+window.phoneHome=()=>{PH_NAV=[{app:null,arg:null}];phoneRender()};
+function phoneScreen(){
+  const top=PH_NAV[PH_NAV.length-1];
+  if(!phoneCan()) return `<div class="ph-dead"><div style="font-size:40px">🪫</div><b>Battery dead</b><span>Charge it at home, in the car, or at the outlet by the vending machines in the Steilacoom terminal.</span></div>`;
+  if(top.app){const a=phoneApp(top.app);if(!a||!phoneInstalled(a.id)){PH_NAV.pop();return phoneScreen()}
+    let body='';try{body=a.view(top.arg)}catch(e){body=`<p>Something went wrong in ${a.name}.</p>`;console.error(e)}
+    return `<div class="ph-bar"><button class="ph-back" onclick="phoneBack()" aria-label="Back">‹</button><b>${a.ic} ${a.name}</b><span></span></div><div class="ph-body">${body}</div>`}
+  const icon=a=>{const n=(()=>{try{return a.badge()||0}catch(e){return 0}})();return `<button class="ph-app" onclick="phoneGo('${a.id}')"><span class="ph-ic">${a.ic}${n?`<i class="ph-badge">${n>9?'9+':n}</i>`:''}</span><span class="ph-nm">${a.name}</span></button>`};
+  const built=PHONE_APPS.filter(a=>a.builtin),mine=PH().apps.map(phoneApp).filter(Boolean);
+  const empty=Array.from({length:PHONE_SLOTS-mine.length},()=>`<button class="ph-app ph-empty" onclick="${phoneApp('store')?"phoneGo('store')":''}" aria-label="Empty app slot"><span class="ph-ic">＋</span><span class="ph-nm">Empty</span></button>`);
+  return `<div class="ph-body ph-home"><div class="ph-grid">${built.map(icon).join('')}</div><div class="ph-sect">Your apps · ${mine.length}/${PHONE_SLOTS}</div><div class="ph-grid">${mine.map(icon).join('')}${empty.join('')}</div></div>`;
+}
+function phoneRender(){
+  if(!PH_OPEN||!S||S.over){const el=document.getElementById('phoneUI');el&&el.remove();return}
+  PH_ACTS=[];
+  let el=document.getElementById('phoneUI'),fresh=!el;
+  if(!el){el=document.createElement('div');el.id='phoneUI';el.className='ph-bg';el.addEventListener('click',e=>{if(e.target===el)phoneClose()});document.body.appendChild(el)}
+  const bars=phoneSignal(),bat=S.phone;
+  el.innerHTML=withName(`<div class="ph${fresh?' ph-anim':''}" role="dialog" aria-label="Your phone"><div class="ph-status"><span>${fmt(S.t)}</span><span>${'▮'.repeat(bars)}<span style="opacity:.3">${'▮'.repeat(4-bars)}</span> ${L[S.loc].side==='I'?'AI':'5G'} · ${bat<=15?'🪫':'🔋'}${bat}%</span></div>
+    <div class="ph-screen">${phoneScreen()}</div>
+    <div class="ph-nav"><button onclick="phoneHome()" aria-label="Home screen">⌂ Home</button><button onclick="phoneClose()" aria-label="Put the phone away">✕ Put away</button></div></div>`);
+}
+// called from processTimed(): plug-ins deliver replies, calls etc. on game time
+function phoneTimed(){for(const f of PH_TIMERS){try{f()}catch(e){console.error(e)}}}
+// ---- shared rules for Messages and Calls ----
+// Is a friend reachable right now? 'asleep' (10:30 PM–6:30 AM), 'busy' (sometimes), or 'ok'.
+function phoneFriendAvail(id){const m=tod();if(m>=1350||m<390)return 'asleep';const f=S.friends[id];if(!f)return 'none';
+  const k=`${id}:${dayKey()}:${Math.floor(m/120)}`;let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))>>>0;   // stable per 2-hour block
+  return (h%100)<(f.lvl>=3?8:f.lvl>=2?15:22)?'busy':'ok'}
+// Being in touch builds friendships, but only once per friend per day (texting and calling share this).
+function phoneSocial(id,n){const P=PH();P.social=P.social||{};if(P.social[id]===dayKey())return false;P.social[id]=dayKey();friendPts(id,n||1);return true}
+// Ask Sam for a ride to the ferry landing (from home, morning). Returns 'yes' | 'no' | 'not-now'.
+function phoneAskRide(){const P=PH();if(!S.friends.sam||S.loc!=='home'||tod()>=630)return 'not-now';
+  if(P.rideAsk===dayKey())return S.ev.flags.samRide===day()?'yes':'no';P.rideAsk=dayKey();
+  const lv=flv('sam'),ok=Math.random()<(lv>=3?0.95:lv>=2?0.85:0.5);
+  if(ok){S.ev.flags.samRide=day();return 'yes'}S.ev.flags.samNo=day();return 'no'}
+// ---------------- 📱 phone: 💬 Messages ----------------
+// Texting friends with choice buttons. Replies arrive on game time (phoneOnTime), friends text first now and then.
+// State: PH().msg = {th:{id:{m:[{f,t,x}],u}}, q:[pending replies], inc:{id:dayKey of an unanswered text from them}, plan:{d,at:[]}}
+const MSG_CAP=40;
+function MSG(){const P=PH();const M=P.msg=P.msg||{};M.th=M.th||{};M.q=M.q||[];M.inc=M.inc||{};return M}
+function msgThread(id){const M=MSG();return M.th[id]=M.th[id]||{m:[],u:0}}
+function msgPush(id,f,x,t){const T=msgThread(id);T.m.push({f,t:t==null?S.t:t,x});if(T.m.length>MSG_CAP)T.m.splice(0,T.m.length-MSG_CAP);return T}
+const msgFirst=id=>{const n=((S.friends[id]||{}).name||id).split(',')[0];return n[0].toUpperCase()+n.slice(1)};
+const MSG_AV={sam:'🐔',walt:'🎖️',fred:'🩴',hendersons:'🥧',rusty:'🍺',gus:'🧰',bev:'🧶',marta:'🌻',ken:'🚜',lorraine:'📣',dev:'⚙️'};
+const msgAv=id=>MSG_AV[id]||esc(msgFirst(id)[0]);
+const msgUnread=()=>{if(!S||!S.ph||!S.ph.msg)return 0;const th=S.ph.msg.th||{};return Object.keys(th).reduce((n,id)=>n+(S.friends[id]?(th[id].u||0):0),0)};
+const msgRnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const msgWed=()=>day()%7===2;
+
+// ---- what friends say ----
+const MSG_GEN={
+  otw:['👍','Cool. Drive safe.','See you soon.','K.'],
+  late:['Of course it is. Ferry gonna ferry.','Classic. No worries.','The boat giveth, the boat taketh away.'],
+  thanks:['Anytime!','Of course. Island rules.','You’d do the same.'],
+  how:['Not bad! Rained, stopped, rained. You?','Good! Quiet day. The good kind.','Fine. The power flickered twice, so, normal.'],
+  inc:['Ha, yes.','👍','Right?'],
+};
+const MSG_P={
+  sam:{otw:['Yay! The chickens will be thrilled. Well, indifferent. But I’ll be thrilled!','On my way too! Wait, where are we going?'],
+    late:['Ugh, the boat! Want me to save you some eggs anyway? 🥚','No stress! The hens are running late too. They don’t lay on ferry days, I swear.'],
+    thanks:['Anytime!! Seriously. I like having a neighbor who isn’t a raccoon.','Of course! Payment accepted in compliments to my chickens.'],
+    how:['GREAT. Henrietta laid a double-yolker. Big day over here.','Good! A raccoon tested the coop door at 3 AM. The coop door won. 🐔','Busy! I’m building the chickens a little porch. Don’t ask why.'],
+    inc:['Haha yes! 🐔','Knew you’d get it.','Love that. Talk later!']},
+  walt:{otw:['Copy.','Roger. Don’t speed on Eckenstam-Johnson. Deputy’s bored today.'],
+    late:['Ferry’s been running late since 1974. Sit tight.','Figures. Bring a book next time.'],
+    thanks:['Don’t mention it. Really. I have a reputation.','Least I could do. The Legion takes care of its own. You count now.'],
+    how:['Fine. Fixed the Legion hall’s toilet. Again.','Can’t complain. Do anyway. Knees.','Quiet. Too quiet. Somebody’s planning a potluck.'],
+    inc:['Good.','Copy that.','Mm-hm.']},
+  fred:{otw:['Cool cool. I’m in my pajamas, so I’m not.','👍 (sent from bed)'],
+    late:['Yeah, my guy on the deck says the ramp was acting up. You didn’t hear it from me.','Boat’s slow cuz the new deckhand can’t throw a line. Heard it from Denny.'],
+    thanks:['You’re a good egg.','Pay it forward. Or pay it toward a pack of smokes. Either.'],
+    how:['Same pajamas as yesterday. Different socks. Growth.','Chillin at the landing. Deck crew says the captain’s in a mood.','Good! Found a dollar in my pajama pocket. From last week, I think.'],
+    inc:['😎','Heard that.','Word.']},
+  hendersons:{otw:['Wonderful! Don’s putting the kettle on. – Ruth','We’ll leave the porch light on, dear.'],
+    late:['Oh, that ferry. Don wrote a letter about it in 1998. Nothing changed. – Ruth','Take your time, dear. The casserole keeps.'],
+    thanks:['Oh, it was nothing! Come by for pie. – Ruth','You’re very welcome. Don says you’re “alright,” which is high praise. – Ruth'],
+    how:['Lovely! Don made chili. There is so much chili. Do you want chili? – Ruth','Busy busy. Book club, then the casserole for the potluck, then a nap. – Ruth','Don found the remote. A good day. – Ruth'],
+    inc:['😊 – Ruth','Wonderful! – Ruth','Ha! Don laughed out loud. – Ruth']},
+  rusty:{otw:['Bar’s open. Your stool’s free. Nobody else wants it, it wobbles.','👍 First one’s on you.'],
+    late:['Ferry. Shocking. I’ll keep the fryer hot.','The 4:40 always is. Grab a beer in Steilacoom, it’s tradition.'],
+    thanks:['Yeah yeah. You’re buying next round.','No problem. Tell the kitchen I said you’re OK.'],
+    how:['Slow night at the Riv. Two guys arguing about the 2019 ferry schedule.','Good. Fryer’s fixed. Mostly.','Fine. Some tourist asked if the island has an Uber. I laughed for an hour.'],
+    inc:['Ha.','Yup.','You know it.']},
+  gus:{otw:['Same. I’ll be there when I’m there.','👍 Bring coffee if you got it.'],
+    late:['Ferry? Never touch the stuff. Island guy.','Island time. I’m an expert.'],
+    thanks:['No sweat. Your gutters are still gonna clog though.','Anytime. Well, any time after 10.'],
+    how:['Fixing a well pump in the rain. Living the dream.','Good. Found the 10 mm socket. It was in my pocket.','Slow. Which means somebody’s roof is about to leak.'],
+    inc:['👍','Yep.','Ha, figures.']},
+};
+const msgLine=(id,k)=>pick(((MSG_P[id]||{})[k])||MSG_GEN[k]||MSG_GEN.inc);
+
+// replies to requests: built when the reply arrives, so they use what’s true then
+function msgReplyText(it){const id=it.id,lv=flv(id);
+  if(it.k==='ride')return it.ride==='yes'?pick(['Yes! Leaving in 10. I’ll honk. The chickens send their regards. 🐔','Sure thing! Gotta be back for feeding anyway. Ready when you are.','Yep! Bring your coffee, my cup holder’s full of feed.']):
+    pick(['Ah, sorry! I’m stuck here today. Hen emergency. Long story.','Can’t this morning, my truck’s doing the thing again. Sorry!!','Oh no, I already went over on the early boat. Next time!']);
+  if(it.k==='boat'){
+    if(lv>=2){const b=msgNextOutage();
+      if(!b)return pick(['Deck crew says smooth sailing through tomorrow. Which means nothing, but still.','Nothing from my guy. Boat’s behaving. For now.','All quiet on the deck. Captain even smiled. Weird.']);
+      if(b.start<=S.t)return `Boat’s down right now: ${b.cause}. My buddy figures back around ${fmtAbs(b.end)}. Maybe. 🩴`;
+      return pick([`Heads up: deck crew says they’ll be pulling the boat around ${fmtAbs(b.start)}. ${b.cause[0].toUpperCase()+b.cause.slice(1)}. You didn’t hear it from me.`,`My guy on the deck says trouble around ${fmtAbs(b.start)}: ${b.cause}. Plan around it. 🩴`]);}
+    return pick(['Something about the boat maybe? Or was it the bus. Ask me when we’re closer, I protect my sources.','Eh, heard a rumor. Can’t say. Buy me a coffee sometime.','I hear stuff. Not telling stuff. Yet. 🩴']);}
+  if(it.k==='bingo')return id==='walt'?pick(['Six sharp. Legion’s calling. First card’s on me.','Wouldn’t miss it. Bring quarters.','Of course. Somebody has to keep Rusty honest.']):
+    lv>=2?pick(['Saving you a seat at the bar. Don’t be late, the stool police are vicious.','Yep. Your seat’s saved. Don’t make me defend it again.']):pick(['Wouldn’t miss it. Come early, seats go fast.','Yeah. Walt’s calling, so it’ll be loud.']);
+  if(it.k==='mainland')return pick(['Oh, would you? A rotisserie chicken from the store, if it’s no trouble. Don isn’t allowed to choose anymore. – Ruth','Aren’t you sweet. Don wants the good crackers. You’ll know them. They’re expensive. – Ruth','Just come home safe, dear. And maybe a lemon. One lemon. – Ruth']);
+  return msgLine(id,it.k);
+}
+// the next ferry outage today or tomorrow (Pajama Fred’s deck-crew perk), including one going on now
+function msgNextOutage(){const lim=(day()+2)*1440;return S.week.b.filter(b=>b.end>S.t&&b.start<lim).sort((a,b)=>a.start-b.start)[0]||null}
+
+// when the reply comes: 3–25 min (close friends 2–10), next morning if asleep, later if busy
+function msgDelay(id,k){const av=phoneFriendAvail(id),m=tod();
+  if(av==='asleep'){const wake=msgRnd(390,480);return (m>=1350?1440-m+wake:wake-m)}
+  let d=k==='ride'?msgRnd(2,8):flv(id)>=3?msgRnd(2,10):msgRnd(3,25);
+  if(av==='busy'&&k!=='ride')d+=msgRnd(30,90);return d}
+
+// ---- sending ----
+function msgSend(id,k,text){if(!phoneCan()||!S.friends[id])return;const M=MSG();phoneUse(1);msgPush(id,1,text);
+  if(M.inc[id]===dayKey()){delete M.inc[id];phoneSocial(id,1)}         // answering their text the same day
+  const it={id,k,at:S.t+msgDelay(id,k),d:dayKey(),soc:k==='how'||k==='mainland'};
+  if(k==='ride'){it.ride=phoneAskRide();if(it.ride==='not-now')return;if(it.ride==='yes')delete S.ev.flags.samRide}  // the 🤝 option appears when Sam answers
+  M.q.push(it)}
+function msgDeliver(it){const M=MSG();
+  if(it.k==='ride'&&it.ride==='yes'&&it.d===dayKey())S.ev.flags.samRide=day();
+  if(it.soc)phoneSocial(it.id,1);
+  const x=msgReplyText(it);const T=msgPush(it.id,0,x,Math.min(S.t,it.at));T.u++;
+  phoneNotify('💬',msgFirst(it.id),x.length>70?x.slice(0,68)+'…':x)}
+
+// ---- friends text first: about one text a day once you have friends ----
+const MSG_INC=[
+  {who:['sam'],x:()=>pick(['The chickens laid NINE eggs today. Nine! Want some? 🥚','Henrietta escaped again. If you see a judgmental chicken on your porch, she’s mine.','Made too much cornbread. Porch drop incoming.'])},
+  {who:['walt'],x:()=>msgWed()?'Bingo tonight. Six sharp at the Riv. Don’t be late, the good dabbers go fast.':pick(['Legion pancake fund needs a volunteer flipper. Thought of you. Don’t thank me.','Saw your car. Tire’s low. Fix it before it’s a problem.'])},
+  {who:['rusty'],x:()=>msgWed()?'Bingo tonight. I’ll save you a stool. The wobbly one.':pick(['Kitchen made too many fries. Come eat them before I do.','Some guy just tried to pay with a ferry ticket. Island economy.'])},
+  {who:['fred'],x:()=>{const b=flv('fred')>=2&&msgNextOutage();return b&&b.start>S.t?`Psst. Deck crew says watch out around ${fmtAbs(b.start)}. Didn’t hear it from me. 🩴`:pick(['Ferry line’s past the store already. Leave early.','New deckhand dropped a rope in the water. Twice. Morale is high.','I’m at the landing in my pajamas. Just letting you know where I am in life.'])}},
+  {who:['hendersons'],x:()=>pick(['Don made too much pot roast. Again. Come by, or we’re leaving it on your porch. – Ruth','Book club is reading a murder mystery set on a ferry. Don is furious. – Ruth','We have leftovers. We always have leftovers. Please help. – Ruth'])},
+  {who:['gus'],x:()=>pick(['Drove past your place. Gutters. We should talk. No rush. Some rush.','Got a free afternoon Thursday. Ish. Holler if something breaks.'])},
+  {who:null,x:()=>pick(['Eagle on the snag by Lake Josephine right now. Just thought you should know. 🦅','Ferry line’s long today. Pack a snack.','Power flickered over here. You OK?','Deer in my yard eating my one nice plant. Living the dream.','Saw an orca off the south end this morning! Or a log. Pretty sure orca.'])},
+];
+function msgIncoming(){const ids=Object.keys(S.friends);if(!ids.length)return;
+  const w=ids.map(id=>flv(id)+(MSG_P[id]?1:0));let r=Math.random()*w.reduce((a,b)=>a+b,0),id=ids[0];
+  for(let i=0;i<ids.length;i++){r-=w[i];if(r<0){id=ids[i];break}}
+  const own=MSG_INC.filter(c=>c.who&&c.who.includes(id));const c=own.length&&Math.random()<0.75?pick(own):MSG_INC[MSG_INC.length-1];
+  const x=c.x(),M=MSG();const T=msgPush(id,0,x);T.u++;M.inc[id]=dayKey();
+  phoneNotify('💬',msgFirst(id),x.length>70?x.slice(0,68)+'…':x)}
+function msgPlan(M){const r=Math.random(),n=r<0.3?0:r<0.78?1:2,from=Math.max(tod(),480)+20,at=[];
+  for(let i=0;i<n&&from<1260;i++)at.push(day()*1440+msgRnd(from,1260));M.plan={d:dayKey(),at:at.sort((a,b)=>a-b)}}
+
+phoneOnTime(()=>{if(!S||S.over)return;const M=MSG();
+  for(const it of M.q.slice().sort((a,b)=>a.at-b.at)){if(it.at>S.t)break;M.q=M.q.filter(x=>x!==it);if(S.friends[it.id])msgDeliver(it)}
+  if(!M.plan||M.plan.d!==dayKey()){if(!Object.keys(S.friends).length)return;msgPlan(M)}
+  while(M.plan.at.length&&M.plan.at[0]<=S.t){M.plan.at.shift();msgIncoming()}
+});
+
+// ---- screens ----
+function msgList(){const M=MSG(),ids=Object.keys(S.friends);
+  if(!ids.length)return `<p style="color:var(--mute);text-align:center;margin-top:30px">No one to text yet.<br>Make friends on the island and they’ll show up here.</p>`;
+  const last=id=>{const T=M.th[id];return T&&T.m.length?T.m[T.m.length-1]:null};
+  ids.sort((a,b)=>((last(b)||{t:-1}).t)-((last(a)||{t:-1}).t));
+  return ids.map(id=>{const l=last(id),u=(M.th[id]||{}).u||0;
+    return `<button class="ph-row msg-row${u?' msg-unread':''}" onclick="phoneGo('msg','${id}')"><span class="ph-av">${msgAv(id)}</span><span class="msg-mid"><b>${esc(msgFirst(id))}</b><span>${l?(l.f?'You: ':'')+esc(l.x):'Say hi 👋'}</span></span><span class="msg-side">${l?`<small>${fmtAbs(l.t)}</small>`:''}${u?'<i class="msg-dot" aria-label="unread"></i>':''}</span></button>`}).join('')}
+function msgView(id){const M=MSG(),f=S.friends[id];if(!f)return msgList();
+  const T=msgThread(id);T.u=0;
+  const pend=M.q.find(it=>it.id===id),av=phoneFriendAvail(id),first=msgFirst(id);
+  let h=`<div class="msg-head"><span class="ph-av">${msgAv(id)}</span><div><b>${esc(first)}</b><span>${esc(f.name)} · ${LVL_NAME[flv(id)]||'Friend'}</span></div></div><div class="msg-thread">`;
+  h+=T.m.length?T.m.map(m=>`<div class="ph-msg ${m.f?'me':'them'}">${esc(m.x)}<small>${fmtAbs(m.t)}</small></div>`).join(''):`<p class="msg-empty">No messages yet. Say hi.</p>`;
+  if(pend)h+=`<div class="msg-status">${av==='asleep'?`Delivered. ${esc(first)} is probably asleep.`:'Delivered. Waiting for a reply…'}</div>`;
+  h+='</div><div class="ph-sect">Write…</div>';
+  const send=(k,txt,sub,dis)=>phBtn(txt,()=>msgSend(id,k,txt),{sub,dis:dis||!!pend});
+  if(id==='sam'){const P=PH(),asked=P.rideAsk===dayKey();if(S.loc==='home'&&tod()<630)h+=send('ride','Any chance of a ride to the ferry?',asked?'You already asked today.':'Sam might drive you to the landing.',asked);}
+  if(id==='fred')h+=send('boat','Hear anything about the boat today?',flv(id)>=2?'Fred’s deck-crew buddy knows things.':'Fred might not tell you much yet.');
+  if((id==='walt'||id==='rusty')&&msgWed()&&tod()<1140)h+=send('bingo','Bingo tonight?','6:00 PM at the Riv.');
+  if(id==='hendersons'&&L[S.loc].side==='M')h+=send('mainland','Need anything from the mainland?','They’re retirees. They always need something.');
+  h+=send('how','How’s it going?',M.inc[id]===dayKey()?'Answer their text: good for the friendship.':'Keeping in touch is good for a friendship.');
+  h+=send('otw','On my way!')+send('late','Running late. Ferry’s a mess.')+send('thanks','Thanks again!');
+  h+=`<p class="msg-foot">Each text uses a little battery.${pend?' One text at a time: wait for the reply.':''}</p>`;
+  setTimeout(()=>{const b=document.querySelector('#phoneUI .ph-body'),t=document.querySelector('#phoneUI .msg-thread');if(b&&t)b.scrollTop=Math.max(0,t.offsetTop+t.offsetHeight-b.offsetTop-b.clientHeight*0.6)},0);
+  return h}
+definePhoneApp({id:'msg',name:'Messages',ic:'💬',builtin:true,order:10,badge:msgUnread,view:arg=>arg?msgView(arg):msgList()});
+// ---------------- 📱 phone: calls (contacts, island numbers, recents, incoming calls) ----------------
+// State: PH().calls = {log:[], ring:null, next:abs time of the next incoming call, vm:{id:dayKey}, dinner:dayKey}
+// Created lazily, so older saves just work. The live call screen is transient (CALL_NOW), not saved.
+let CALL_TAB='contacts', CALL_NOW=null;
+function CL(){const P=PH();P.calls=P.calls||{};const c=P.calls;c.log=c.log||[];c.vm=c.vm||{};return c}
+const CALL_WHO={sam:'Sam',walt:'Walt',fred:'Fred',hendersons:'the Hendersons',rusty:'Rusty',gus:'Gus',bev:'Bev'};
+const CALL_AV={sam:'🐔',walt:'🎖️',fred:'🩴',hendersons:'🥧',rusty:'🍺',gus:'🧰',bev:'🧶'};
+function callWho(id,cap){const f=S.friends[id];let n=CALL_WHO[id]||(f?f.name.split(',')[0]:'Someone');return cap?n[0].toUpperCase()+n.slice(1):n}
+// what they say when you catch up
+const CALL_CHAT={
+  sam:['“The hens are on strike again. Henrietta looked me dead in the eye and laid nothing.”','“I named the new rooster Ferry. He’s loud, he’s late, and he breaks down when it rains.”','“Swing by for eggs. I have thirty-one. I have a problem.”'],
+  walt:['“Legion meeting ran long. Somebody moved to amend the minutes about the coffee again.”','“Back in ’79 the ferry ran on time once. We had a parade.”','“You keeping out of trouble? Good. Somebody on this island should.”'],
+  fred:['“I’m in my good pajamas today. The flannel ones. Big day.”','“Deck crew says the new guy parked a truck on the ramp crooked and they had to re-board half the line.”','“Heard a guy tried to bring a goat on as a passenger. They let him. Island rules.”'],
+  hendersons:['Mrs. Henderson tells you about her tomatoes while Mr. Henderson corrects the dates in the background.','“We’ve been retired eleven years and we have never been busier.” Mr. Henderson: “Twelve.”','They put you on speaker. You can hear the pot roast. Somehow.'],
+  rusty:['“Riv’s quiet tonight. Just me, the jukebox and a guy who swears he’s from Ketron.”','“Bingo Wednesday. I’ll save you a stool if the Legion doesn’t take them all.”','“Somebody left a single boot at the bar. Not a pair. One boot. Mystery of the week.”'],
+  gus:['“Three furnaces and a goat fence today. The goat was not helpful.”','“Island time isn’t a schedule, it’s a philosophy.”','“If you hear a drip, call me. If you hear a hiss, call me faster.”'],
+  bev:['“I’m knitting a ferry. Don’t ask why. It’s for the bazaar.”','“Zucchini update: there is too much zucchini.”'],
+};
+const CALL_CHAT_ANY=['You talk about the weather, the ferry and the weather again. It helps more than you’d think.'];
+// their outgoing voicemail greeting
+const CALL_GREET={sam:'“You’ve reached Sam. I’m probably out with the chickens. Leave a message, or an egg.”',walt:'“This is Walt. Leave it after the beep. Speak up.”',fred:'“Fred here. If I didn’t pick up, I’m asleep or on the boat. Probably both.”',
+  hendersons:'“You’ve reached the Hendersons.” (Two voices, slightly out of sync.) “Please leave a message.”',rusty:'“It’s Rusty. If it’s about your tab, I’m not here.”',gus:'“Gus. Leave your address and what’s broken. I’ll get there.” (Island time.)'};
+// what they say when they call you, and what they leave if you miss them
+const CALL_IN={sam:['“Hey! Quick chicken update—no, wait, it’s a long chicken update.”','“You need eggs? Say yes. Please say yes.”'],walt:['“Just checking in. Legion’s doing a pancake breakfast. You’re coming.”'],
+  fred:['“Morning, neighbor. Or afternoon. Pajamas don’t have a clock.”'],hendersons:['“We were just talking about you! Nice things. Mostly.”'],rusty:['“Riv’s got a new pickle jar. Thought you should know.”'],gus:['“Your gutters still holding? Just asking. Professional curiosity.”'],bev:['“I made too many scarves. Do you have a neck?”']};
+const CALL_VM={sam:'“It’s Sam. Henrietta laid an egg. Big news. Call me back.”',walt:'“Walt here. Nothing urgent. Call when you can. Speak up when you do.”',fred:'“Fred. Heard some boat stuff. Might be nothing. Probably nothing. Call me.”',
+  hendersons:'“Hi, it’s the Hendersons, just saying hello!” Mr. Henderson: “Is it recording?”',rusty:'“Rusty. Your table at the Riv misses you. That’s all.”',gus:'“Gus. Just making sure the house is still standing. Bye.”',bev:'“It’s Bev. About the zucchini. Call me.”'};
+const callPick=(m,id,any)=>pick((m[id]&&m[id].length?m[id]:any));
+
+function callLog(e){const c=CL();c.log.unshift(Object.assign({t:S.t},e));if(c.log.length>20)c.log.length=20}
+function callBadge(){if(!S)return 0;const c=CL();return (callRinging()?1:0)+c.log.filter(e=>(e.dir==='missed'&&!e.seen)||(e.vm&&!e.heard)).length}
+function callRinging(){const c=CL();return c.ring&&S.t<=c.ring.until&&phoneCan()?c.ring:null}
+// a call takes time and battery: 1% per 5 minutes on top of the usual drain
+function callTime(min){S.t+=min;phoneUse(Math.max(1,Math.round(min/5)));processTimed()}
+
+function callStart(id){
+  const av=phoneFriendAvail(id),w=callWho(id,1);
+  callTime(1);
+  CALL_NOW={id,t:S.t,lines:[],done:{}};
+  if(av==='asleep'||av==='busy'){CALL_NOW.st='out';CALL_NOW.lines.push(`It rings and rings. ${av==='asleep'?'It’s late.':`${w} must be busy.`}`,CALL_GREET[id]||'“Leave a message after the beep.”');callLog({id,dir:'out',ans:false})}
+  else {CALL_NOW.st='on';CALL_NOW.lines.push(`${w} picks up. “Hey, {{name}}!”`);callLog({id,dir:'out',ans:true})}
+}
+function callSay(s){CALL_NOW.lines.push(s)}
+function callEnd(){CALL_NOW=null}
+// friend-specific asks: [label, sub, show?, fn]
+function callAsks(id){
+  const w=callWho(id,1),d=day(),out=[];
+  if(id==='sam'&&S.loc==='home'&&tod()<630) out.push(['🚗 Ride to the ferry?','Sam’s headed that way some mornings.',()=>{const r=phoneAskRide();callTime(2);
+    if(r==='yes'){callSay('“Sure thing. Holler when you’re ready and I’ll pull the truck around. Mind the egg cartons.”');say('📞 Sam will drive you to the ferry landing today. Look for 🤝 <b>Ride with Sam</b>.')}
+    else if(r==='no')callSay('“Ah, not today. I’ve got a chicken situation. Long story. Next time!”');
+    else callSay('“Bit late for that, isn’t it?”')}]);
+  if(id==='fred') out.push(['⛴️ Any word on the boat?','Fred hears things from the deck crew.',()=>{callTime(3);
+    const b=S.week.b.filter(b=>b.end>S.t&&Math.floor(b.start/1440)<=d+1).sort((x,y)=>x.start-y.start)[0];
+    if(b&&flv('fred')>=2){const cause=b.cause.split(' (')[0],when=b.start<=S.t?`It’s down right now. Back maybe around ${fmtAbs(b.end)}.`:`${Math.floor(b.start/1440)===d?'Today':'Tomorrow'}, from about ${fmt(b.start)}.`;
+      callSay(`“Okay, you didn’t hear this from me. My buddy on the deck crew says ${cause}. ${when} Plan around it.”`);say(`📞 Fred’s deck-crew tip: <b>${cause}</b>. ${when}`)}
+    else if(b)callSay('“Something’s brewing with the boat. Couldn’t get details. My buddy clams up unless he knows you. Get to know me better and I’ll get to know him better.”');
+    else callSay('“Quiet on the wire. Which, honestly, makes me nervous. But quiet.” He yawns. You hear flannel.')}]);
+  if(id==='walt'&&!S.emp) out.push(['💼 Any work going?','Walt knows everybody.',()=>{callTime(5);adj('stress',-3);phoneSocial('walt',1);
+    callSay(flv('walt')>=2?`“I’ll make some calls. Get an interview lined up and I’ll put in a good word. People listen to the Legion.”`:'“Check the listings and the bulletin board by the old store. And stand up straight in the interview. That’s free advice.”')}]);
+  if(id==='hendersons'&&d%7>=4&&CL().dinner!==dayKey()) out.push(['🍲 Dinner this weekend?','They love company. Stress −4.',()=>{callTime(5);CL().dinner=dayKey();adj('stress',-4);
+    if(S.ateOut!==d){S.ateOut=d;callSay('“Tonight! Pot roast. We’ll bring a plate if you can’t make it over.” Mr. Henderson: “Two plates.” Dinner tonight is handled.');say('🍲 The Hendersons have tonight’s dinner covered: pot roast.')}
+    else{S.pantry+=1;callSay('“You’ve eaten? Then we’ll drop leftovers on your porch. Don’t argue.” +1 day of food.');say('🍲 The Hendersons drop pot roast leftovers on your porch: +1 day of food.')}}]);
+  return out.map(([l,s,fn])=>({l,s,fn}));
+}
+function callScreen(){
+  const C=CALL_NOW,id=C.id,f=S.friends[id];
+  let h=`<div class="ph-call"><div class="ph-call-av">${CALL_AV[id]||'🙂'}</div><b>${C.st==='out'?'Calling':C.st==='vm'?'Voicemail':'On a call with'} ${esc(callWho(id,1))}${C.st==='out'?'…':''}</b><span>${f?esc(f.name):''}</span></div>`;
+  h+=`<div class="ph-call-log">${C.lines.map(s=>`<p>${s}</p>`).join('')}</div>`;
+  if(!phoneCan()) return h+`<p>Your phone dies mid-sentence.</p>`+phBtn('OK',()=>{callEnd()});
+  if(C.st==='out'){
+    h+=phBtn('🎙️ Leave a voicemail',()=>{callTime(2);const c=CL();if(c.vm[id]!==dayKey()){c.vm[id]=dayKey();friendPts(id,0.5)}
+      C.st='vm';callSay('You leave a message: “Hey, it’s {{name}}. Just calling to say hi. Call me back.” Beep.')},{cls:'primary',sub:'Two minutes. They’ll like hearing from you.'});
+    h+=phBtn('📵 Hang up',callEnd);
+  } else if(C.st==='vm') h+=phBtn('📵 Hang up',callEnd,{cls:'primary'});
+  else {
+    if(!C.done.chat) h+=phBtn('💬 Just catching up',()=>{callTime(15);C.done.chat=1;const first=phoneSocial(id,1);adj('stress',first?-5:-2);callSay(callPick(CALL_CHAT,id,CALL_CHAT_ANY))},{cls:'primary',sub:'15 minutes. Stress −5.'});
+    for(const a of callAsks(id)) if(!C.done[a.l]) h+=phBtn(a.l,()=>{C.done[a.l]=1;a.fn()},{sub:a.s});
+    h+=phBtn(C.lines.length>1?'📵 Hang up':'📵 Never mind',callEnd);
+  }
+  return h;
+}
+function callIncoming(r){
+  const w=callWho(r.id,1);
+  return `<div class="ph-call ph-ringing"><div class="ph-call-av">${CALL_AV[r.id]||'🙂'}</div><b>${esc(w)} is calling…</b><span>Incoming call</span></div>`+
+    phBtn('📞 Answer',()=>{const c=CL();c.ring=null;callLog({id:r.id,dir:'in',ans:true});callTime(1);CALL_NOW={id:r.id,t:S.t,st:'on',lines:[`${w}: ${callPick(CALL_IN,r.id,['“Hey, {{name}}! Just calling to say hi.”'])}`],done:{}}},{cls:'primary'})+
+    phBtn('📵 Decline',()=>{const c=CL();c.ring=null;callLog({id:r.id,dir:'missed',seen:true})});
+}
+function callRow(ic,title,sub,fn,extra){const i=PH_ACTS.push(fn)-1;return `<button class="ph-row" onclick="PHA(${i})"><span class="ph-av">${ic}</span><span style="flex:1"><b>${title}</b><span>${sub}</span></span>${extra||''}</button>`}
+function callTabs(){const c=CL(),n=c.log.filter(e=>(e.dir==='missed'&&!e.seen)||(e.vm&&!e.heard)).length;
+  const t=(k,l)=>{const i=PH_ACTS.push(()=>{CALL_TAB=k})-1;return `<button class="ph-tab${CALL_TAB===k?' on':''}" onclick="PHA(${i})">${l}</button>`};
+  return `<div class="ph-tabs">${t('contacts','Contacts')}${t('services','Island numbers')}${t('recents','Recents'+(n?` (${n})`:''))}</div>`}
+function callView(){
+  const c=CL();
+  if(CALL_NOW&&(S.t-CALL_NOW.t>180||!S.friends[CALL_NOW.id]))CALL_NOW=null;   // a call left hanging when you put the phone away
+  if(CALL_NOW) return callScreen();
+  const r=callRinging();if(r) return callIncoming(r);
+  let h=callTabs();
+  if(CALL_TAB==='contacts'){
+    const ids=Object.keys(S.friends);
+    if(!ids.length) return h+'<p style="color:var(--mute)">No contacts yet. Island friends you make will show up here.</p>';
+    h+=ids.map(id=>{const f=S.friends[id],av=phoneFriendAvail(id);return callRow(CALL_AV[id]||'🙂',esc(callWho(id,1)),`${esc(f.name)} · ${LVL_NAME[flv(id)]||'Friend'}${av==='asleep'?' · 💤 probably asleep':''}`,()=>callStart(id),'<span class="ph-dial">📞</span>')}).join('');
+  } else if(CALL_TAB==='services'){
+    const gj=upJob('gus');
+    h+=`<div class="ph-sect" style="opacity:.6">Anderson Island</div>`;
+    h+=callRow('🧰','Gus, island handyman',gj?`Booked: he said ${fmtAbs(gj.due)}. Ish.`:`Fixes the 3 most pressing jobs. $${gusRate()} cash, 5 gal of gas, or 2 days of groceries.`,()=>{if(gj){callTime(2);say('📞 Gus: “Yep, still coming. Island time. Don’t worry about it.”');return}phoneClose();gusModal()},'<span class="ph-dial">📞</span>');
+    const d=day(),m=tod(),res=S.bingo.reserved===d;
+    h+=callRow('🍺','The Riv',d===2&&res?'Your bingo table is reserved for tonight.':d===2&&m<1080?'Reserve a bingo table for tonight. 5 minutes.':'Bar & grill. Bingo reservations on Wednesdays before 6 PM.',()=>{
+      if(d===2&&m<1080&&!res){S.bingo.reserved=d;S.t+=5;phoneUse(1);processTimed();say('📞 “Table for {{name}}, bingo tonight? You got it, hon.” Reserved.')}
+      else {callTime(1);say(d===2&&res?'📞 “Yes, hon, you’re on the list. RESERVED tent and everything.”':'📞 “Riv. Bingo’s Wednesday, hon. Call that day before six and we’ll hold you a table.”')}},'<span class="ph-dial">📞</span>');
+  } else {
+    c.log.forEach(e=>{if(e.dir==='missed')e.seen=true});
+    if(!c.log.length) return h+'<p style="color:var(--mute)">No calls yet.</p>';
+    h+=c.log.map(e=>{const w=esc(callWho(e.id,1)),when=`${DAYS[Math.floor(e.t/1440)]?.slice(0,3)||''} ${fmt(e.t)}`;
+      const sub=e.dir==='missed'?`Missed call · ${when}`:e.dir==='in'?`Incoming · ${when}`:`Outgoing${e.ans?'':' · no answer'} · ${when}`;
+      let row=callRow(CALL_AV[e.id]||'🙂',e.dir==='missed'?`<span style="color:#c0392b">${w}</span>`:w,sub,()=>{if(S.friends[e.id])callStart(e.id)},'<span class="ph-dial">📞</span>');
+      if(e.vm) row+=`<div class="ph-vm">${e.heard?`<p>🎙️ ${e.vm}</p>`:phBtn('▶️ Play voicemail',()=>{e.heard=true;phoneUse(1)},{sub:'New voicemail'})}</div>`;
+      return row}).join('');
+  }
+  return h;
+}
+definePhoneApp({id:'phone',name:'Phone',ic:'📞',builtin:true,order:20,badge:callBadge,view:callView});
+
+// Friends call you sometimes: every few days, during waking hours, only when the phone has battery.
+function callSchedule(c,from){let t=from+Math.floor((1.5+Math.random()*2.5)*1440);const m=((t%1440)+1440)%1440;if(m<540||m>1200)t=Math.floor(t/1440)*1440+540+Math.floor(Math.random()*600);c.next=t}
+phoneOnTime(()=>{
+  if(!S||!S.friends)return;const c=CL();
+  if(c.ring&&S.t>c.ring.until){const r=c.ring;c.ring=null;const vm=Math.random()<0.7&&CALL_VM[r.id];callLog({id:r.id,t:r.t,dir:'missed',seen:false,vm:vm||null,heard:false});
+    if(phoneCan())phoneNotify('📞',`Missed call: ${callWho(r.id,1)}`,vm?'New voicemail · Phone → Recents':'Phone → Recents')}
+  if(c.next==null){callSchedule(c,S.t);return}
+  if(S.t<c.next||c.ring||CALL_NOW)return;
+  const m=tod();if(m<540||m>1230){c.next=(day()+(m<540?0:1))*1440+540+Math.floor(Math.random()*600);return}   // too early or late: later
+  const ids=Object.keys(S.friends).filter(id=>phoneFriendAvail(id)==='ok');
+  callSchedule(c,S.t);
+  if(!ids.length||!phoneCan())return;
+  const id=pick(ids);c.ring={id,t:S.t,until:S.t+30};
+  phoneNotify('📞',`${callWho(id,1)} is calling`,'Open your 📱 phone to answer');
+});
+// ---------------- 📱 phone: apps (App Store, Clock, installable apps) ----------------
+// HOW TO ADD AN APP (plug-in pattern)
+//   definePhoneApp({
+//     id:'myapp', name:'My App', ic:'🧩', order:60,   // order sorts icons on the home screen
+//     builtin:false,                                     // false = installable from the App Store, takes 1 of PHONE_SLOTS
+//     size:'25 MB', desc:'One line for the App Store.',
+//     badge:()=>0,                                       // number on the icon (0 = none)
+//     view:arg=>'<p>html</p>'+phBtn('Do it',()=>{...},{sub:'detail',cls:'primary',dis:false}),
+//   });
+//   - Keep state in a lazily created sub-object of PH() (e.g. PH().myapp=PH().myapp||{}), so older saves just work.
+//   - Anything that should happen while game time passes goes in phoneOnTime(fn).
+//   - A phBtn handler that spends game time should do S.t+=n and then afterAction() (like actions on the main screen).
+//   - Opening a game modal (modal(), jobModal() …) from inside the phone is fine: modals show above the phone.
+// Each app below is a small self-contained block; the five installable ones are PLACEHOLDERS for the real apps.
+const phEsc=s=>typeof esc==='function'?esc(s):String(s);
+const phCard=(h,cls)=>`<div class="ph-card ${cls||''}">${h}</div>`;
+const phNote=h=>`<p class="ph-note">${h}</p>`;
+
+// ---- 🛍️ App Store (builtin) ----
+let PH_STORE_MSG=null;   // {h,t}: the last install/remove result, shown until game time moves on (not saved)
+const phStoreMsg=h=>{PH_STORE_MSG={h,t:S.t}};
+function phoneStoreApps(){return PHONE_APPS.filter(a=>!a.builtin)}
+function phoneStoreInstall(id){
+  const a=phoneApp(id);if(!a)return false;
+  if(phoneFree()<=0){phStoreMsg(`No room for ${a.name}: ${PHONE_SLOTS} of ${PHONE_SLOTS} slots used. Remove an app first.`);return false}
+  const t0=S.t,ok=phoneInstall(id);if(!ok){phStoreMsg(`Couldn’t install ${a.name}.`);return false}
+  const min=S.t-t0;
+  phStoreMsg(`📲 ${a.ic} <b>${a.name}</b> installed in ${min} minute${min===1?'':'s'}${phoneSignal()===1?' (one bar on the island)':''}.`);
+  afterAction();return true}
+function phoneStoreRemove(id){const a=phoneApp(id);if(phoneUninstall(id))phStoreMsg(`🗑️ Removed ${a.name}. A slot is free.`)}
+definePhoneApp({id:'store',name:'App Store',ic:'🛍️',builtin:true,order:90,desc:'Install up to 5 apps.',
+  view(){
+    const used=PH().apps.length,full=used>=PHONE_SLOTS,isl=phoneSignal()===1;
+    const M=PH_STORE_MSG&&PH_STORE_MSG.t===S.t?PH_STORE_MSG:null;let h=M?phCard(M.h,/^📲|^🗑️/.test(M.h)?'ok':'warn'):'';
+    h+=phCard(full?`<b>${used} of ${PHONE_SLOTS} slots used</b> — remove an app to install another.`
+      :`<b>${used} of ${PHONE_SLOTS} slots used.</b> ${isl?'One bar on the island: an install takes about 6 minutes.':'Good signal: an install takes a minute.'}`,full?'warn':'');
+    for(const a of phoneStoreApps()){const inst=phoneInstalled(a.id);
+      h+=`<div class="ph-store"><span class="ph-sic">${a.ic}</span><div class="ph-sinfo"><b>${a.name}</b><span>${a.desc}</span><small>${a.size}${inst?' · installed':''}</small></div><div class="ph-sbtns">`+
+        (inst?phBtn('Open',()=>phoneGo(a.id),{cls:'primary'})+phBtn('Remove',()=>phoneStoreRemove(a.id))
+          :phBtn('Install',()=>phoneStoreInstall(a.id),{cls:full?'':'primary',dis:full,sub:full?'No free slot':isl?'~6 min':'~1 min'}))+`</div></div>`}
+    return h}});
+
+// ---- ⏰ Clock (builtin) ----
+definePhoneApp({id:'clock',name:'Clock',ic:'⏰',builtin:true,order:30,desc:'Your alarms.',
+  view(){const A=S.alarm;
+    return `<div class="ph-big">${fmt(S.t)}</div><div style="text-align:center;color:var(--mute);margin-bottom:10px">${DAYS[day()]}</div>`+
+      phCard(`🔌 <b>Plug-in clock:</b> ${A.plug.on?fmt(A.plug.time):'off'}<br>📱 <b>Phone alarm:</b> ${A.phone.on?fmt(A.phone.time):'off'}`)+
+      phNote(`You’ll wake to: ${alarmTxt()}.`)+phBtn('⏰ Set alarms',()=>alarmModal(),{cls:'primary',sub:'The plug-in clock, your phone, or both as backups.'})}});
+
+// ---- 📣 Island Group (PLACEHOLDER — replace with the real app) ----
+// The Anderson Island community group: posting for help lives here now (it used to be an action on the main screen).
+definePhoneApp({id:'group',name:'Island Group',ic:'📣',order:60,size:'38 MB',desc:'The Anderson Island community group. Ask neighbors for help.',
+  badge:()=>PH().grpNew?1:0,
+  view(){const P=PH(),c=COMM(),dk=dayKey(),pj=upJob('post');let h='';
+    if(P.grpNew){h+=phCard('📣 New replies to your post. (See what happened in your log.)','ok');P.grpNew=false}
+    h+=phNote('Lost dogs, ferry complaints, free firewood, and neighbors who show up.');
+    h+=phCard(pj?`⏳ <b>Waiting for replies.</b> They should trickle in around ${fmt(pj.due)}.`:c.post===dk?'✅ <b>You posted today.</b> One post a day, or people start muting you.':'Nothing posted today.');
+    h+=phBtn('📣 Post asking for help',()=>postModal(),{cls:'primary',dis:!!pj||c.post===dk||!phoneCan(),sub:pj||c.post===dk?'Once a day.':'10 min. Answers come in a few hours.'});
+    h+=phNote(`Island reputation: ${S.rep||0}. The more you help others, the better your odds.`);
+    return h}});
+// light up the badge when replies arrive (wraps the house module's handler)
+if(typeof postReplies==='function'){const _postReplies=postReplies;postReplies=function(j){const r=_postReplies(j);if(S&&phoneInstalled('group'))PH().grpNew=true;return r}}
+
+// ---- ⛴️ Ferry Alerts (PLACEHOLDER — replace with the real app) ----
+function phoneSailings(side,n){   // the next n sailings you could still make from this side (known outages only)
+  const deps=side==='I'?AI_DEPS:ST_DEPS,out=[];
+  for(let d=day();d<day()+3&&out.length<n;d++)for(const dep of deps){if(out.length>=n)break;
+    const s=sailing(side,d,dep,'walk',true);if(S.t>s.abs-20||s.cancel)continue;out.push(s)}
+  return out}
+function phoneLastBoat(side){const deps=side==='I'?AI_DEPS:ST_DEPS;
+  for(let i=deps.length-1;i>=0;i--){const s=sailing(side,day(),deps[i],'walk',true);if(s.cancel)continue;return s.abs>=S.t-20?s:null}return null}
+definePhoneApp({id:'ferry',name:'Ferry Alerts',ic:'⛴️',order:61,size:'22 MB',desc:'Next sailings, rider alerts and fog delays.',
+  badge:()=>activeOutage()?1:0,
+  view(){const side=L[S.loc].side,from=side==='I'?'Anderson Island':'Steilacoom',d=day();let h='';
+    const known=S.week.b.filter(b=>b.start<=S.t&&b.end>S.t);
+    for(const b of known)h+=phCard(`🚨 <b>Rider alert:</b> ferry service suspended (${phEsc(b.cause)}).`,'warn');
+    if(S.week.fog[d]&&tod()<660)h+=phCard(`🌫️ <b>Fog:</b> morning sailings running ${S.week.fog[d]}+ min late.`,'warn');
+    if(!known.length&&!(S.week.fog[d]&&tod()<660))h+=phCard('✅ No alerts right now.','ok');
+    const nx=phoneSailings(side,3);
+    h+=`<div class="ph-sub">Next sailings from ${from}</div>`;
+    h+=nx.length?nx.map(s=>`<div class="ph-li"><b>${fmtAbs(s.abs)}</b><span>${s.passenger?'🚶 passenger-only backup boat':s.delay?`🌫️ ~${s.delay} min late`:'on time'}</span></div>`).join(''):'<div class="ph-li"><span>No sailings found.</span></div>';
+    const lb=phoneLastBoat(side);
+    h+=phCard(lb?`🌙 <b>Last boat tonight:</b> ${fmt(lb.dep)} from ${from}${lb.passenger?' (passenger-only)':''}.`:`🌙 <b>No more boats from ${from} tonight.</b>`);
+    h+=phNote('Be in line 20 minutes before a boat leaves.');
+    return h}});
+
+// ---- 🔎 Job Hunt (PLACEHOLDER — replace with the real app) ----
+definePhoneApp({id:'jobs',name:'Job Hunt',ic:'🔎',order:62,size:'55 MB',desc:'Job listings on the mainland. Set up interviews.',
+  badge:()=>!S.emp&&!S.interview?1:0,
+  view(){const J=curJob(),I=S.interview;let h='';
+    h+=phCard(J?`💼 You work as <b>${J.n}</b>.`:'💼 You’re out of work.',J?'':'warn');
+    if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${DAYS[I.day]} ${fmt(I.time)} at ${L[I.loc].name}.`);
+    h+=phBtn('🔎 Browse job listings',()=>jobModal(),{cls:'primary',sub:J?'Switching jobs means quitting.':'Find something and set up an interview.'});
+    return h}});
+
+// ---- 🔦 Flashlight (PLACEHOLDER — replace with the real app) ----
+// On: drains about 1% battery per 10 game minutes. In a power outage at home, switching it on once calms you a little.
+const FL=()=>{const P=PH();P.flash=P.flash||{on:false,t:0,acc:0,out:-1};return P.flash};
+function phoneFlash(on){const f=FL();if(on===f.on)return;f.on=on;f.t=S.t;f.acc=0;
+  if(on){if(powerOut()&&S.loc==='home'&&f.out!==S.power.start){f.out=S.power.start;adj('stress',-3);say('🔦 You flick on the phone’s flashlight. The dark house feels a little less spooky.')}
+    else say('🔦 Flashlight on.')}
+  else say('🔦 Flashlight off.')}
+phoneOnTime(()=>{const f=S&&S.ph&&S.ph.flash;if(!f||!f.on)return;
+  if(Math.floor(f.t/1440)!==day()){f.on=false;f.t=S.t;f.acc=0;return}   // you slept: it got switched off
+  const el=S.t-f.t;if(el<=0)return;f.t=S.t;f.acc+=el/10;const n=Math.floor(f.acc);
+  if(n>0){f.acc-=n;phoneUse(n)}
+  if(!phoneCan()){f.on=false;say('🔦 The flashlight drained your phone. It’s dead.')}});
+definePhoneApp({id:'flash',name:'Flashlight',ic:'🔦',order:63,size:'4 MB',desc:'A light for power outages and dark driveways. Uses battery.',
+  badge:()=>FL().on?1:0,
+  view(){const f=FL();
+    return `<div class="ph-flash ${f.on?'on':''}">🔦</div>`+
+      phBtn(f.on?'Turn off':'Turn on',()=>phoneFlash(!f.on),{cls:'primary',sub:'Uses about 1% battery every 10 minutes.'})+
+      (powerOut()&&L[S.loc].side==='I'?phNote('⚡ The island’s power is out.'):'')}});
+
+// ---- 📝 Notes (PLACEHOLDER — replace with the real app) ----
+// Shows the same list as "My priorities" in the 📋 To-do tab (S.prios).
+const NOTE_TPL=['Buy groceries on the mainland','Fill up with gas in Steilacoom','Charge my phone','Pay rent','Call Gus about the house','Catch an earlier boat'];
+definePhoneApp({id:'notes',name:'Notes',ic:'📝',order:64,size:'12 MB',desc:'Your priorities list, in your pocket.',
+  view(){const P=S.prios||[],full=P.length>=PRIO_MAX;let h='';
+    h+=P.length?P.map((q,i)=>`<button class="ph-row ph-todo ${q.done?'done':''}" onclick="prioToggle(${i})"><span class="ph-ck">${q.done?'☑':'☐'}</span><b>${phEsc(q.t)}</b></button>`).join('')
+      :phNote('No notes yet. Same list as “My priorities” in the 📋 To-do tab.');
+    if(full)h+=phNote(`That’s ${PRIO_MAX}: the most the list holds.`);
+    else{h+=`<div class="prio-add ph-add"><input id="phNoteIn" maxlength="${PRIO_LEN}" placeholder="New note…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();prioAdd(this.value)}"><button onclick="prioAdd(document.getElementById('phNoteIn').value)">Add</button></div>`;
+      h+=`<div class="ph-sub">Quick add</div>`+NOTE_TPL.filter(t=>!P.some(q=>q.t===t)).slice(0,4).map(t=>phBtn('＋ '+t,()=>prioAdd(t))).join('')}
+    if(P.some(q=>q.done))h+=phBtn('Clear checked-off notes',()=>prioClear());
+    return h}});
 </script>
 </body>
 </html>

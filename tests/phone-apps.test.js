@@ -7,7 +7,7 @@ const tap = (page, label) => page.locator('#phoneUI button', { hasText: label })
 
 // The phone isn't in the committed offline build until it is rebuilt for a release, so these run on index.html only.
 module.exports = [
-  { only: 'index.html', name: 'App Store lists the installable apps; home screen shows Clock and App Store', fn: async ctx => {
+  { name: 'App Store lists the installable apps; home screen shows Clock and App Store', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => phoneOpen());
@@ -20,7 +20,7 @@ module.exports = [
     assert.match(t, /MB/);
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'install takes 6 min on the island, 1 on the mainland; narrated', fn: async ctx => {
+  { name: 'install takes 6 min on the island, 1 on the mainland; narrated', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => { S.loc = 'home'; S.t = 10 * 60; phoneOpen('store'); });
@@ -37,7 +37,7 @@ module.exports = [
     assert.match(await phoneText(page), /installed in 1 minute\b/);
     noErrors(errors);
   } },
-  { only: 'index.html', name: '5-slot limit enforced; removing frees a slot', fn: async ctx => {
+  { name: '5-slot limit enforced; removing frees a slot', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => {
@@ -56,7 +56,7 @@ module.exports = [
     assert.ok(await page.evaluate(() => phoneInstalled('extra')));
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'each placeholder app opens without errors', fn: async ctx => {
+  { name: 'each placeholder app opens without errors', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(apps => { S.loc = 'stDock'; apps.forEach(phoneInstall); phoneOpen(); }, APPS);
@@ -68,7 +68,7 @@ module.exports = [
     }
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'Island Group posts for help; the old Here action is gone', fn: async ctx => {
+  { name: 'Island Group posts for help; the old Here action is gone', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => { S.loc = 'home'; S.t = 10 * 60; setTab('act'); });
@@ -86,7 +86,7 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => phoneApp('group').badge()), 1);
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'Ferry Alerts shows next sailings, last boat and a known outage', fn: async ctx => {
+  { name: 'Ferry Alerts shows next sailings, last boat and a known outage', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => { S.loc = 'home'; S.t = 9 * 60; phoneInstall('ferry'); phoneOpen('ferry'); });
@@ -98,7 +98,7 @@ module.exports = [
     assert.match(t, /Rider alert/); assert.match(t, /test engine failure/);
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'Job Hunt opens the job listings', fn: async ctx => {
+  { name: 'Job Hunt opens the job listings', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => { S.loc = 'stDock'; phoneInstall('jobs'); phoneOpen('jobs'); });
@@ -106,7 +106,7 @@ module.exports = [
     assert.match(await page.textContent('#mbg h2'), /Job listings/);
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'Flashlight drains battery; outage relief once', fn: async ctx => {
+  { name: 'Flashlight drains battery; outage relief once', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => {
@@ -122,7 +122,7 @@ module.exports = [
     assert.ok(r.s1 < 50, 'stress relief in an outage'); assert.strictEqual(r.s2, r.s1, 'only once per outage');
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'Notes adds and checks off priorities', fn: async ctx => {
+  { name: 'Notes adds and checks off priorities', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => { S.prios = []; S.loc = 'stDock'; phoneInstall('notes'); phoneOpen('notes'); });
@@ -134,7 +134,7 @@ module.exports = [
     assert.deepStrictEqual(await page.evaluate(() => S.prios.map(q => q.t + (q.done ? '✓' : ''))), ['Feed the cat', 'Pay rent✓']);
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'Clock shows alarms and opens the alarm modal above the phone', fn: async ctx => {
+  { name: 'Clock shows alarms and opens the alarm modal above the phone', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => phoneOpen('clock'));
@@ -145,7 +145,7 @@ module.exports = [
     assert.ok(z[0] > z[1], 'modal above the phone ' + z);
     noErrors(errors);
   } },
-  { only: 'index.html', name: 'installed apps persist through save and reload', fn: async ctx => {
+  { name: 'installed apps persist through save and reload', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await page.evaluate(() => { S.loc = 'stDock'; phoneInstall('ferry'); phoneInstall('notes'); saveGame(); });

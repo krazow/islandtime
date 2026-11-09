@@ -69,7 +69,6 @@ function actions(){
   cargoActions(a);
   fuelHelp(a);
   if(loc!=='home'&&m>=1140) a.push({ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:!S.alarm.phone.on?'Only your plug-in clock is set, and it’s at home. Turn on your phone alarm if you might not make it back tonight.':`Phone alarm on · battery ${S.phone}%.`,fn:alarmModal});
-  if(d===2&&m<1080&&S.bingo.reserved!==d) a.push({ic:'📞',l:'Call the Riv and reserve a bingo table',s:S.phone>0?'For tonight. Takes 5 minutes, works from anywhere.':'Your phone is dead.',dis:S.phone<=0,fn:()=>{S.bingo.reserved=d;S.t+=5;say('📞 “Table for {{name}}, bingo tonight? You got it, hon.” Reserved.');afterAction()}});
   if(loc==='market'&&open){
     const car=!!carHere();
     [[1,19],[3,54],[5,88]].forEach(([n,c])=>a.push({ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries — $${c}`,s:`${S.carried} in bags${car?'':' · on foot you can carry 4 max'}`,dis:S.money<c||(!car&&S.carried+n>4)||S.carried+n>14,fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=15+n*5;say(`Groceries: ${n} day${n>1?'s':''} for $${c}. Now get them home before they spoil.`);afterAction()}}));
