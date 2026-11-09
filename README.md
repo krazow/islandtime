@@ -39,6 +39,73 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.14: eight real phone apps, a guided first week, feedback
+**Phone apps** (5 slots, 8 to choose from; the old placeholder apps are retired and their slots freed)
+
+
+Three new apps in the 🛍️ App Store. Each takes one of your 5 slots.
+
+- ⛴️ **Ferry Pass** (replaces Ferry Alerts). The next 3 sailings from wherever you are, rider alerts, fog, ice and king-tide delays, and the last boat tonight. **Ticket books:** 10 vehicle + driver crossings for $198.75 or 10 walk-on crossings for $46.88 (25% off the booth price). Fares are only collected in Steilacoom, so that’s where a ride gets used instead of cash. Your tickets live on your phone: a dead phone means paying cash. **Push alerts:** the moment the county posts an outage, your phone buzzes, once per outage, even in your pocket.
+- 🚗 **Island Rides.** Car out of gas, battery dead, or parked in Steilacoom? A neighbor drives you to the island ferry landing, or from the landing to anywhere on the island, for $8–12. Pickup in 10–30 minutes (longer early and late), no drivers 11 PM–5 AM, island only. A 🚗 option shows up under 🧭 Go somewhere for an hour. Sometimes your driver becomes a friend.
+- 🌦️ **Tides & Weather.** Today and tomorrow in detail (gales, fog, ramp ice, snow, hard freezes, king tides, wildfire smoke and heat) and the rest of the week at lower confidence. It knows tomorrow’s weather a day before the morning gale warning, and buzzes you the evening before a gale, snow, ramp ice, a king tide or smoke (and on hard-freeze nights). Plus a tide table for Steilacoom, with king tides highlighted.
+
+
+Three new apps in the 🛍️ App Store (each takes one of your 5 slots):
+
+- 💳 **Island Credit Union.** Your balance, or your card balance when you’re in the red, with the $1,500 card limit and how much is left for essentials. It spells out what card debt is costing your score. Every bill is listed with its amount and due day, and you can pay any open bill (or all of them) from the app. **Autopay** pays each bill on its due day. If the money isn’t there it pays anyway and charges a $25 overdraft fee.
+- 💼 **Gig Work.** Small remote tasks for dead time in the ferry line, at the terminal or in a motel: a survey (10 min, $3), transcribing a voicemail (20 min, $6), tagging photos (30 min, $8). Each costs battery and a little stress, and you get 4 a day. On the island’s one bar, every upload takes 10 extra minutes. It also shows your job or interview and opens the job listings, so it replaces Job Hunt.
+- 🛒 **Mainland Market.** Order 3 or 5 days of groceries from anywhere, 7 AM–7 PM, at supermarket prices plus a $5 pickup fee. It can go on the card. Two hours later it’s waiting in cold locker 9 at the Steilacoom ferry terminal: pick it up there (on foot you carry 4 days, and the rest waits). Leave it past 10 PM and the cold half spoils. One order at a time.
+
+
+- 🩺 **Telehealth** (new, in the App Store). Video visits with a real doctor, once a day: 20 minutes, a $20 copay and a chunk of battery. It needs real signal, so it works on the mainland or on the Riv’s Wi-Fi. On the island’s one bar the video freezes on your own face.
+  - 💊 **Renew your prescription** (Wednesday to Saturday, +$10 for the meds). It comes by mail and lands in your box the next afternoon around 1 PM. No pharmacy run, but it costs more than picking it up. Ask on Saturday and it arrives Sunday, after you’ve already run out that night.
+  - 😮‍💨 **Stressed out?** A breathing exercise “for the ferry line.” Stress −8.
+  - 🤒 **Run down?** Fluids, sleep, a vegetable. Health +3.
+  - 🤕 **Your ankle:** a quick look on camera and “go to Urgent Care.” No charge. Telehealth doesn’t replace your Thursday checkup either.
+- 📣 **Island Group** now shows your island reputation at the top, what it unlocks, and the last three replies to your posts.
+- 🧹 **Retired apps.** Ferry Alerts, Job Hunt, Flashlight and Notes are gone from the App Store. Newer apps replace them. If you had any of them installed, the slots are free again, and you get a note about it once when you load your game.
+
+**App balance**
+
+With 8 apps and 5 slots, every app should be worth its slot and no single setup should be the right answer. We played a month (Normal and Ferry Hell) many times with a test player that installs a setup on day one and uses it every day. Then we nudged a few prices.
+
+## What changed
+
+- ⛴️ **Ferry Pass:** ticket books are now **25% off** (was 20%). That's $198.75 for 10 vehicle + driver crossings (was $212) and $46.88 for 10 walk-on crossings (was $50). A commuter who buys books uses about 15 rides a month and has a few left over at the end, so at 20% off the pass barely beat cash.
+- 🩺 **Telehealth:** the copay is **$20** (was $25). Mail-order meds are **$10** (was $15), so a prescription renewal is $30 in all (was $40). The "I'm stressed out" visit now takes **stress −8** (was −6).
+- 🛒 **Mainland Market:** the pickup fee is **$5** (was $7).
+- No changes to Gig Work pay or limits ($3 / $6 / $8, 4 tasks a day), Island Rides ($8–12), the autopay overdraft fee ($25) or Tides & Weather. Gig Work was already worth about $170–190 a month to someone who works in the ferry line. Rides and Weather pay off in time and in storms more than in dollars.
+
+## What the test player found (a month, 20 games each, the same luck for every setup)
+
+| Setup (5 apps) | Normal: money vs no apps (median) | Ferry Hell: money vs no apps (median) | Also |
+|---|---|---|---|
+| 🧳 Commuter: Ferry Pass, Island Rides, Tides & Weather, Mainland Market, Gig Work | **+$224** | **+$294** | Less time standing in line. A little more stress from gigs. |
+| 💰 Saver: Credit Union (autopay), Gig Work, Mainland Market, Ferry Pass, Island Group | **+$284** | **+$382** | Score +313 on Normal. |
+| 🏡 Homebody: Island Group, Telehealth, Tides & Weather, Credit Union, Mainland Market | about even (−$25) | not measured | Lower stress all month, health +4 at the end, score +91. It's the best setup if you work on the island: no ferry for your prescription. |
+
+So every setup comes out ahead, and none is more than about 30% better than the next.
+
+## Smaller fixes
+
+- 📋 **To-do: the storm.** "Be ready for the storm" now shows up only once the gale is known. That's the morning it hits, or the day before if you have 🌦️ Tides & Weather. The storm-prep actions at home (water jugs, power bank, generator) follow the same rule. Before, the To-do list warned you all week, which made the forecast app pointless.
+- 🎟️ **Ferry buttons:** at the Steilacoom terminal, "Drive on" and "Walk on" now show **🎟️ ticket (n left)** instead of the cash fare when a Ferry Pass book will pay for the trip.
+- 🔎 **Looking for work:** the To-do list and the "You're fired" note now point you to the 💼 Gig Work app (which has the job listings) or the bulletin board at the old store.
+
+## Four new achievements (20 in all)
+
+- 🎟️ **Commuter pro:** ride the ferry 10 times on Ferry Pass tickets in one game.
+- 💳 **Never late on a bill:** finish a month with autopay on since the first week, and not one bill paid late.
+- 💼 **Gig economy:** earn $100 from Gig Work tasks in one game.
+- 🌦️ **Weather-wise:** spend a gale or a hard freeze at home after Tides & Weather warned you the evening before.
+
+**Guided first week and feedback**
+- **A guided first week** replaces the old first-day tips. One short tip at a time, in the same yellow box, as you reach each place: Monday is the commute (be in line 20 minutes early for the 7:45), work, groceries and gas on the mainland, and getting home; Tuesday your 📱 phone and its 5 app slots (trading unlocks); Wednesday bingo at the Riv and island friends; Thursday the doctor and your prescription; Friday and the weekend the house, bills, Gus and a day off.
+- Winter and summer games get their own notes: ice on the ramp, dripping the faucets on freezing nights, tourists in the summer ferry line.
+- After **Got it**, the next tip waits until you do something, so the Next up card gets its turn. Tips stay off if you turned them off.
+- **📘 Replay the guided week** in ⚙️ Settings starts this game’s tips over.
+- **💬 Send feedback** in ⚙️ Settings (and on the end screen): pick Bug, Idea or Something felt unfair, write a line or two, then open a GitHub issue or copy the report. The report adds the version, season, difficulty, day, place and your stats. Your in-game name is only included if you tick the box.
+
 ### New in 1.13: seasons, a fairer Hard mode, household life, polish
 **Seasons**
 
