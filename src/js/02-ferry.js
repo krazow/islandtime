@@ -128,7 +128,7 @@ function board(side,s,mode){
     }
   }
   if(S.cargo.diesel>0&&S.cargo.diesel<=2&&mode==='drive') say('A deckhand checks the DOT labels on your diesel cans, sees they’re upright and strapped down, and waves you through. That one’s legal.');
-  if(side==='M'){const f=mode==='drive'?FARE_CAR:FARE_WALK;money(-f);S.stats.fares+=f;}
+  if(side==='M'){const f=mode==='drive'?FARE_CAR:FARE_WALK;if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
   const car=carHere();
   const dur=20+(s.ketron?10:0);
   const to=side==='I'?'stDock':'aiDock';
