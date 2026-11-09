@@ -1,0 +1,5 @@
+- **A guided first week** replaces the old first-day tips. One short tip at a time, in the same yellow box, as you reach each place: Monday is the commute (be in line 20 minutes early for the 7:45), work, groceries and gas on the mainland, and getting home; Tuesday your 📱 phone and its 5 app slots (trading unlocks); Wednesday bingo at the Riv and island friends; Thursday the doctor and your prescription; Friday and the weekend the house, bills, Gus and a day off.
+- Winter and summer games get their own notes: ice on the ramp, dripping the faucets on freezing nights, tourists in the summer ferry line.
+- After **Got it**, the next tip waits until you do something, so the Next up card gets its turn. Tips stay off if you turned them off.
+- **📘 Replay the guided week** in ⚙️ Settings starts this game’s tips over.
+- **💬 Send feedback** in ⚙️ Settings (and on the end screen): pick Bug, Idea or Something felt unfair, write a line or two, then open a GitHub issue or copy the report. The report adds the version, season, difficulty, day, place and your stats. Your in-game name is only included if you tick the box.

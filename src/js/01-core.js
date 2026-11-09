@@ -90,7 +90,8 @@ window.openSettings=()=>{
     {l:`🔊 Sound: ${prefs().sound?'On':'Off'}`,s:'Ferry horn, alerts and bingo calls.',fn:()=>{setPref('sound',!prefs().sound);if(prefs().sound)sfx('good');openSettings()}},
     ambSettingBtn(),
     {l:'♿ Accessibility',s:`Text size: ${{n:'Normal',l:'Large',xl:'Extra large'}[prefs().fs]} · High contrast: ${prefs().hc?'On':'Off'} · Reduce motion: ${prefs().rm?'On':'Off'}`,fn:()=>accessModal()},
-    {l:`💡 Tutorial tips: ${prefs().tips?'On':'Off'}`,s:prefs().tips?'Guided first day; trading and Dale unlock on Tuesday.':'Everything unlocked from the start.',fn:()=>{setPref('tips',!prefs().tips);openSettings()}},
+    {l:`💡 Tutorial tips: ${prefs().tips?'On':'Off'}`,s:prefs().tips?'A guided first week, one tip at a time; trading and Dale unlock on Tuesday.':'Everything unlocked from the start.',fn:()=>{setPref('tips',!prefs().tips);openSettings()}}, // tutorial
+    ...tutSettingRows(inGame), // tutorial: 📘 Replay the guided week, 💬 Send feedback
     {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
     {l:'📖 How your house works',s:'The Home meter, chores, repairs, Gus and the community group.',fn:()=>houseHelp()},
     {l:`🏆 Achievements (${achCount()}/${ACH.length})`,s:'Badges earned on this device, across all your games.',fn:()=>achModal(openSettings)},
