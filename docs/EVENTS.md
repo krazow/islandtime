@@ -149,3 +149,23 @@ Any text can contain the token `{{name}}`. It's replaced with the player's curre
 ## Saves
 
 New state lives in `S.ev`, `S.friends`, `S.power`, `S.battery`, `S.bingo` and `S.week.bingo`. `migrate()` fills these in for older saves (save schema 4).
+
+## House & upkeep events (1.10)
+
+State lives in `S.up` (see `upInit()`); `upkeepNight()` advances it every night before the `night` hook fires, and `upkeepActions()` builds the 🏠/🌲 fold-outs at home. The Home meter is `S.home` (`homeAdj()`, `homeTier()`).
+
+| id | hook | fires when |
+|---|---|---|
+| `leaky_roof` | night | roof moss ≥ 60 (×2 on rainy nights; more if Home is low) |
+| `mice` | night | no traps set; more likely when Home is low |
+| `mouse_caught` | night | traps set (flavor) |
+| `black_mold` | night | condensation (`damp`) ≥ 4; then −1 health a night until scrubbed |
+| `chimney_fire` | night | stove burned tonight and chimney unswept ≥ 21 days (worse with ash) |
+| `crawl_flood` | night | rainy night and gutters ≥ 60% full |
+| `limb_roof` | night | storm night and limbs over the roof ≥ 60 |
+| `septic_backup` | night | septic ≥ 95% |
+| `clogged_drain` | wake | low Home, or septic ≥ 75% |
+| `well_quit` | wake | well pump unserviced > 45 days |
+| `friend_dropin` | wake | weekend, you have friends; much likelier when Home is high |
+
+Also: potholes multiply `flat_tire` from home (×2 / ×4), an unserviced generator can fail (`genFails()`), a maintained well makes `no_water` rarer, and outages that spoil food set `S.up.fridge`. Contractor visits are `S.up.jobs` (`UP_JOBS`), delayed by ferry outages like grocery delivery.

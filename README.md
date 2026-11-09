@@ -37,6 +37,13 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.10: your house
+- **🏠 Home meter** (0–100, next to Job): it slips every day, more on workdays, in busy weeks, and after storms and outages. Below 35 you sleep worse, the house breaks down more, and friends visit less. At 75+ you rest better, wake to cozy mornings, and earn up to +180 points at the end.
+- **Inside the house** (fold-out at home): daily chores (dishes, laundry, sweeping up cedar needles, making the bed) that pile up when skipped; a deep clean on your day off; fridge cleanout after an outage; wiping condensation to stop **black mold**; woodstove ash, chimney sweeping (or a **chimney fire** and a visit from Fire District #27) and splitting firewood; mouse traps from Home Depot; and septic pump-outs.
+- **Outside & property:** clear the gutters (or the crawlspace floods in heavy rain), trim the limbs over the roof yourself (risky) or hire a tree crew, service the well pump (fewer "no water" mornings), treat roof moss (or the roof leaks), fill driveway potholes (or get flat tires), service the generator (or it may not start in an outage), and order propane.
+- **Contractors ride the ferry:** the septic truck, tree crew and propane truck come over the next day, and get stuck on the mainland when the ferry is down.
+- Outdoor work is daylight-only (7 AM–5 PM). The To-do tab lists whatever needs attention.
+
 ### New in 1.9
 - **My priorities** (📋 To-do tab): your own editable, ordered list under "This week". Add anything, tap 📌 on a weekly task to pin it, reorder with ▲▼, edit ✏️, delete 🗑️, and tap an item to check it off. Saved with your game.
 
