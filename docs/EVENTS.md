@@ -1,5 +1,7 @@
 # Island events framework
 
+> **Where the code lives (1.11.1+):** the game is built from `src/`. Events and their framework are in `src/js/03-events.js` (framework, tiles, pop-ups, night events), `src/js/04-house.js` (Home meter, upkeep, island help) and `src/js/05-island-events.js` (wake, bingo, Pajama Fred, community calendar, story arcs, trip events). After editing, run `python3 tools/build.py`. References to `index.html` below mean the built file.
+
 Life on Anderson Island isn't just the ferry. Non-ferry events (power outages, dead batteries, neighbors, bingo nights) run through a small framework in `index.html`. Search for `ISLAND EVENTS FRAMEWORK`.
 
 ## Defining an event

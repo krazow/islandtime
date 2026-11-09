@@ -45,6 +45,9 @@ jobs:
       - name: Install Pillow (for the Windows icon)
         run: pip install pillow
 
+      - name: Build index.html from src/
+        run: python3 tools/build.py
+
       - name: Build the single-file offline game
         run: python3 tools/build-offline.py
 

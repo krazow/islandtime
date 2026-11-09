@@ -24,6 +24,9 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Check index.html is built from src/
+        run: python3 tools/build.py --check
+
       - name: Build the single-file offline game
         run: python3 tools/build-offline.py
 

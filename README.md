@@ -37,6 +37,9 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### 1.11.1: under the hood
+- The game's code is now organized into modules in `src/` and built into the single `index.html` with `tools/build.py`. Nothing changes for players; the automated tests check that `index.html` always matches `src/`.
+
 ### New in 1.11: island help, Next up, island life, achievements
 **Island help for your house**
 
@@ -118,7 +121,15 @@ Sources: [Pierce County hazardous liquids policy](https://www.piercecountywa.gov
 ## Project layout
 
 ```
-index.html              the whole game (HTML/CSS/JS, no dependencies)
+src/                    the game's source: edit here
+  shell.html            page skeleton (placeholders for styles and code)
+  style.css             all styles
+  js/00-data.js …       the code, in load order: data, core/settings, ferry engine,
+  js/10-endings.js      events framework, house, island events, day cycle, location
+                        actions, saves, UI (Next up, tips, planner, priorities), endings
+index.html              the whole game as one file, built from src/ (commit it: GitHub Pages serves it)
+tools/build.py          builds index.html from src/  (--check: fail if out of date)
+tests/                  Playwright test suite: npm test  (runs on every push)
 sw.js, manifest.webmanifest, icons/   installable offline web app (PWA)
 fonts/                  Fraunces heading font + its license (SIL OFL 1.1)
 offline/IslandTime-offline.html       single-file offline build (generated)
@@ -127,11 +138,13 @@ windows/                Windows installer source (Go) + build.sh
 screenshots/
 ```
 
-**After editing `index.html`:**
-1. Run `python3 tools/build-offline.py` to refresh the offline file.
-2. Bump `VERSION` in `sw.js` so installed apps update.
-3. Bump `APP_VERSION` in `index.html`.
-4. If the save format changes, bump `SAVE_SCHEMA` and add a step to `migrate()`.
+**After editing the game (in `src/`):**
+1. Run `python3 tools/build.py` to rebuild `index.html`, then `python3 tools/build-offline.py` to refresh the offline file.
+2. Run the tests: `npm test` (or `node tests/run.js` with Playwright installed).
+3. Bump `VERSION` in `sw.js` so installed apps update, and `APP_VERSION` in `src/js/01-core.js`.
+4. If the save format changes, bump `SAVE_SCHEMA` and add a step to `migrate()` (in `src/js/08-save.js`).
+
+Don't edit `index.html` directly: the next build overwrites it, and the Tests workflow fails if it doesn't match `src/`.
 
 **Windows installer:** `windows/build.sh` builds it from any OS. It needs Go 1.21+ and Python 3 with Pillow.
 
