@@ -123,7 +123,7 @@ function msgList(){const M=MSG(),ids=Object.keys(S.friends);
   const last=id=>{const T=M.th[id];return T&&T.m.length?T.m[T.m.length-1]:null};
   ids.sort((a,b)=>((last(b)||{t:-1}).t)-((last(a)||{t:-1}).t));
   return ids.map(id=>{const l=last(id),u=(M.th[id]||{}).u||0;
-    return `<button class="ph-row msg-row${u?' msg-unread':''}" onclick="phoneGo('msg','${id}')"><span class="ph-av">${msgAv(id)}</span><span class="msg-mid"><b>${esc(msgFirst(id))}</b><span>${l?(l.f?'You: ':'')+esc(l.x):'Say hi 👋'}</span></span><span class="msg-side">${l?`<small>${fmtAbs(l.t)}</small>`:''}${u?'<i class="msg-dot" aria-label="unread"></i>':''}</span></button>`}).join('')}
+    return `<button class="ph-row msg-row${u?' msg-unread':''}" onclick="phoneGo('msg','${id}')"><span class="ph-av">${msgAv(id)}</span><span class="msg-mid"><b>${typeof npcIc==='function'?npcIc(id):''}${esc(msgFirst(id))}</b><span>${l?(l.f?'You: ':'')+esc(l.x):'Say hi 👋'}</span></span><span class="msg-side">${l?`<small>${fmtAbs(l.t)}</small>`:''}${u?'<i class="msg-dot" aria-label="unread"></i>':''}</span></button>`}).join('')}
 function msgView(id){const M=MSG(),f=S.friends[id];if(!f)return msgList();
   const T=msgThread(id);T.u=0;
   const pend=M.q.find(it=>it.id===id),av=phoneFriendAvail(id),first=msgFirst(id);

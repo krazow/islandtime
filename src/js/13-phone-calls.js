@@ -98,7 +98,7 @@ function callView(){
   if(CALL_TAB==='contacts'){
     const ids=Object.keys(S.friends);
     if(!ids.length) return h+'<p style="color:var(--mute)">No contacts yet. Island friends you make will show up here.</p>';
-    h+=ids.map(id=>{const f=S.friends[id],av=phoneFriendAvail(id);return callRow(CALL_AV[id]||'🙂',esc(callWho(id,1)),`${esc(f.name)} · ${LVL_NAME[flv(id)]||'Friend'}${av==='asleep'?' · 💤 probably asleep':''}`,()=>callStart(id),'<span class="ph-dial">📞</span>')}).join('');
+    h+=ids.map(id=>{const f=S.friends[id],av=phoneFriendAvail(id);return callRow(CALL_AV[id]||'🙂',(typeof npcIc==='function'?npcIc(id):'')+esc(callWho(id,1)),`${esc(f.name)} · ${LVL_NAME[flv(id)]||'Friend'}${av==='asleep'?' · 💤 probably asleep':''}`,()=>callStart(id),'<span class="ph-dial">📞</span>')}).join('');
   } else if(CALL_TAB==='services'){
     const gj=upJob('gus');
     h+=`<div class="ph-sect" style="opacity:.6">Anderson Island</div>`;
