@@ -39,4 +39,11 @@ module.exports = [
     assert.match(r.known, /emergency gas request/);
     noErrors(errors);
   } },
+  { name: 'fuel: real miles ÷ mpg (island 25 mph, mainland 32 mph; Subaru 24 mpg, beater 22, diesel 18)', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(() => ({ isl: fuelFor({ id: 'isl' }, 60, 'I'), beat: fuelFor({ id: 'beat' }, 60, 'M'), dsl: fuelFor({ id: 'isl', diesel: true }, 60, 'I') }));
+    assert.ok(Math.abs(r.isl - 25 / 24) < 1e-9 && Math.abs(r.beat - 32 / 22) < 1e-9 && Math.abs(r.dsl - 25 / 18) < 1e-9, JSON.stringify(r));
+    noErrors(errors);
+  } },
 ];

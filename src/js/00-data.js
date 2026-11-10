@@ -18,6 +18,11 @@ function ferryHoliday(d){return FERRY_HOLIDAYS.includes(isoDate(gameDate(d)))}
 function twoBoatDay(d){const t=isoDate(gameDate(d));return t>='2026-07-02'&&t<='2026-07-05'}
 function deps(side,d){const b=side==='I'?AI_DEPS:ST_DEPS;return twoBoatDay(d)?[...b,...EXTRA_DEPS[side]].sort((x,y)=>x-y):b}
 const FUEL_CANCEL={I:[670],M:[570]}; // Monday fuel run: the 11:10 from the island, the 9:30 from Steilacoom
+// Fuel: real miles ÷ real mpg. Average speed by side (island back roads ~25 mph, mainland with I-5 ~32 mph);
+// mpg by car (EPA: model-year 2022 light trucks averaged 23.4 mpg; an old Subaru and a tired beater do a bit worse/better).
+const FUEL_MPH={I:25,M:32}, FUEL_MPG={isl:24,beat:22,diesel:18};
+function fuelFor(car,min,side){side=side||((typeof L!=='undefined'&&L[S.loc])?L[S.loc].side:'I');const mpg=car&&car.diesel?FUEL_MPG.diesel:(car&&FUEL_MPG[car.id])||24;
+  return min*FUEL_MPH[side]/60/mpg}
 const FARE_CAR_NONPEAK=24.94, FARE_CAR_PEAK=33.86, FARE_WALK=8.14, FUEL_RATE=0.05, GAS_PRICE=4.59, DIESEL_PRICE=5.29, DALE_PRICE=12;
 const GOODS={
   food:{n:'Food case',ic:'🥫',d:'Shelf-stable groceries, 3 days’ worth',base:{M:46,I:86},law:'ok'},

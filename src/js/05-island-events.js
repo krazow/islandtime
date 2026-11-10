@@ -382,7 +382,7 @@ function playBingo(cards,price){
 function travelOpts(dest){
   const base=dist(S.loc,dest), side=L[S.loc].side, car=carHere(), o=[];
   const inj=S.injury&&!S.injury.treated?1.5:1;
-  const fueled=car&&car.fuel>=base*FUEL_RATE;
+  const fueled=car&&car.fuel>=fuelFor(car,base,side);
   if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
   else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
   if(side==='I'){
@@ -413,7 +413,7 @@ function go(dest,o){
     min+=extra;}
   S.t+=min;
   if(o.m==='car'||o.m==='friend'||o.m==='ride'){phoneTick();S.phone=Math.min(100,S.phone+Math.round(min*0.8))}
-  if(car&&o.m==='car'){car.loc=dest;car.fuel=Math.max(0,Math.round((car.fuel-min*FUEL_RATE)*10)/10);if(car.fuel<1.5&&car.fuel>0)say(`⛽ The low-fuel light is on in the ${car.name.split(' (')[0].toLowerCase()}. ${car.fuel} gallons left.`);if(car.fuel===0)say('⛽ The engine coughs and dies as you pull in. Totally empty.');}
+  if(car&&o.m==='car'){car.loc=dest;car.fuel=Math.max(0,Math.round((car.fuel-fuelFor(car,min))*100)/100);if(car.fuel<1.5&&car.fuel>0)say(`⛽ The low-fuel light is on in the ${car.name.split(' (')[0].toLowerCase()}. ${car.fuel} gallons left.`);if(car.fuel===0)say('⛽ The engine coughs and dies as you pull in. Totally empty.');}
   S.loc=dest;
   if(car&&car.id==='beat'&&dest==='stDock'&&Math.random()<0.25){S.t+=10;say('The terminal lot is full. You park way up the hill and hike down.');}
   if(dest==='home'&&S.carried>0){S.pantry+=S.carried;say(`You unload ${S.carried} day${S.carried>1?'s':''} of groceries into the pantry.`);S.carried=0;}
