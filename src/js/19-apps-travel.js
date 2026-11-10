@@ -11,7 +11,7 @@ const apNote=h=>`<p class="ph-note">${h}</p>`;
 const apLi=(a,b,cls)=>`<div class="ph-li ${cls||''}"><b>${a}</b><span>${b}</span></div>`;
 
 // ================= ⛴️ Ferry Pass =================
-const FP_BOOK={car:{n:'Vehicle + driver',ic:'🚗',fare:()=>fareCar()},walk:{n:'Passenger (walk-on)',ic:'🚶',fare:()=>FARE_WALK}};
+const FP_BOOK={car:{n:'Vehicle + driver',ic:'🚗',fare:()=>fareCar()},walk:{n:'Passenger (walk-on)',ic:'🚶',fare:()=>(typeof fareWalk==='function'?fareWalk():FARE_WALK)}};
 // The county's Value Pass: 5 round trips at a fixed 2026 price (piercecountywa.gov/2201/Fares)
 const FP_RIDES=5,FP_MAX=15,FP_VALUE={car:96.08,walk:29.14};
 const fpPrice=k=>FP_VALUE[k];

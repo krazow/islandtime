@@ -264,7 +264,7 @@ function ferryView(){
   <p>Inspection odds go up with every contraband item you carry, and way up when the sheriff’s task force rides the boat. The neighbor’s sailboat isn’t inspected.</p></div>`;
   h+=`<div class="sect">How the ferry works</div><div class="rules">
   <p>🕐 <b>Be in line 20 minutes before departure</b>, cars and walk-ons alike, or you don’t board.</p>
-  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(fareCar())} with a car, ${$(FARE_WALK)} on foot. Leaving the island is free.</p>
+  <p>💵 Fares are collected at Steilacoom only (round trip): ${$(fareCar())} with a car, ${$((typeof fareWalk==='function'?fareWalk():FARE_WALK))} on foot. Leaving the island is free.</p>
   <p>🚗 Commute-hour boats fill up with cars. Friday afternoon and Sunday evening are the worst. Walk-ons always fit.</p>
   <p>🔧 When the boat breaks down there’s no second boat this time of year. Long outages eventually get a passenger-only backup.</p>
   <p class="small-note" style="color:var(--mute)">This is a game schedule, inspired by the real Steilacoom–Anderson Island–Ketron route. For real sailings, check Pierce County’s ferry page.</p></div>`;
