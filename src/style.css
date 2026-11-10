@@ -333,3 +333,14 @@ html.hc .tip .tut-k{color:#000}
 .fb-end{text-align:center;margin-top:14px}
 .linkbtn{background:none;border:0;padding:4px;color:var(--mute);text-decoration:underline;font:inherit;font-size:13.5px;cursor:pointer}
 html.hc .fb-text,html.hc .fb-rep,html.hc .fb-type{border-color:#000}
+
+/* ⌨️ keyboard shortcut hints (desktop only) */
+.kn{display:none}
+@media (hover:hover) and (pointer:fine){
+  button.act{position:relative}
+  .kn{display:block;position:absolute;top:6px;right:8px;font:600 10px/1 ui-monospace,Menlo,Consolas,monospace;font-style:normal;color:var(--mute);border:1px solid currentColor;border-radius:4px;padding:2px 4px;opacity:.55;pointer-events:none}
+  button.act:hover .kn{opacity:.9}
+}
+.keys{display:grid;gap:6px;margin:4px 0 10px}
+.keys-row{display:flex;gap:12px;align-items:baseline}
+.keys-row kbd{min-width:84px;font:600 12px ui-monospace,Menlo,Consolas,monospace;background:var(--card,#f4f1ea);border:1px solid var(--line,#ccc);border-bottom-width:2px;border-radius:5px;padding:2px 6px;text-align:center}

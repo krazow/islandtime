@@ -56,6 +56,8 @@ The island post office was inside the old store building, so it closed with the 
   - A letter that goes to the wrong mailbox just never arrives.
   - No Island Group app? The to-do list reminds you to get it from the App Store.
 
+- ⌨️ **Keyboard shortcuts** on a computer: **1–9** press the numbered buttons (a small number shows on each), **H F T L** switch tabs, **P** opens or puts away the phone, **Backspace** goes back in the phone, **Esc** closes a pop-up, **?** shows the list. Also in ⚙️ Settings. They never fire while you're typing.
+
 ### 1.14.1: the real ferry and local fixes
 
 - ⛴️ **The real 2026 ferry schedule.** Departures, the 7:35 commute boat, the midday gap, the first and last boats, Ketron stops and the Monday fuel run (skipped on holidays) now match Pierce County's published 2026 timetable. Summer adds the extra peak runs, and July 2–5 runs two boats.

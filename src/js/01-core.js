@@ -94,6 +94,7 @@ window.openSettings=()=>{
     ...tutSettingRows(inGame), // tutorial: 📘 Replay the guided week, 💬 Send feedback
     {l:`🔔 Event pop-ups: ${popupsOn()?'On':'Off'}`,s:popupsOn()?'An OK window for each random event. Tap to turn off (tiles still show).':'Only the small tiles show. Tap to turn pop-ups back on.',fn:()=>{try{localStorage.setItem(POPUP_KEY,popupsOn()?'off':'on')}catch(e){}openSettings()}},
     {l:'📖 How your house works',s:'The Home meter, chores, repairs, Gus and the community group.',fn:()=>houseHelp()},
+    {l:'⌨️ Keyboard shortcuts',s:'On a computer: numbers press buttons, P for the phone, ? for the list.',fn:()=>keysModal(openSettings)},
     {l:`🏆 Achievements (${achCount()}/${ACH.length})`,s:'Badges earned on this device, across all your games.',fn:()=>achModal(openSettings)},
     inGame?{l:`💾 Save slot: ${curSlot()}`,s:'Switch to another save slot. Your week is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:`Current slot: ${curSlot()}. Continue, start or delete games in three slots.`,fn:()=>slotsModal()},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
