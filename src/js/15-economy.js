@@ -31,7 +31,7 @@ const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
 // On time +3, late −4; a scheduled shift you skip −15 and reputation −5; at 0 you're fired (reputation −10).
 const rivJob=()=>ECO().rivJob||null;
 function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
-  if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');
+  if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');S.firedAt=Object.assign(S.firedAt||{},{riv:dayKey()});
     notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');repAdd(-10,'fired from the Riv: the whole island eats there',{notes})}}
 function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
   notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);repAdd(-5,'no-show at the Riv',{notes});rivMeter(-15,notes)}

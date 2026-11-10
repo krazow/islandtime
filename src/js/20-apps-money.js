@@ -85,7 +85,7 @@ definePhoneApp({id:'gigs',name:'Gig Work',ic:'💼',order:66,size:'61 MB',desc:'
   badge:()=>!S.emp&&!S.interview?1:0,
   view(){const J=curJob(),I=S.interview,g=GIG(),left=gigMax()-g.n,slow=phoneSignal()===1?GIG_SLOW:0;let h=apmShow('gigs');
     h+=phCard(J?`💼 You work as <b>${J.n}</b>.`:'💼 You’re out of work. Rent doesn’t care.',J?'':'warn');
-    if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${DAYS[I.day]} ${fmt(I.time)} at ${L[I.loc].name}.`);
+    if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${ivDay(I)} ${fmt(I.time)} at ${L[I.loc].name}.`);
     h+=phBtn('🔎 Browse job listings',()=>jobModal(),{cls:J?'':'primary',sub:J?'Switching jobs means quitting.':'Find something and set up an interview.'});
     h+=`<div class="ph-sub">Quick gigs · ${left} of ${gigMax()} left today · ${gigStars()}</div>`;if(gigRep()<=-20)h+=phNote(gigRep()<=-60?'Your rating tanked: fewer tasks, lower pay. Word travels, even online.':'Your rating slipped: one less task a day, and no island gigs.');
     h+=phNote(`Pocket change for dead time: in line, at the terminal, at a motel. ${gigWhere()}`);

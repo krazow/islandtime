@@ -59,6 +59,7 @@ definePhoneApp({id:'group',name:'Island Group',ic:'📣',order:60,size:'38 MB',d
     h+=`<div class="ph-rep"><span>🤲</span><div><b>Island reputation: ${r}</b><small>${r>=8?'Half the island owes you a casserole.':r>=3?'People know your car. In a good way.':'Mostly known as “the one who moved into that house.”'}</small></div></div>`;
     h+=phNote('Lost dogs, ferry complaints, free firewood, and neighbors who show up.');
     h+=phCard(pj?(pj.sched?`📅 <b>Help is coming ${postWhen(pj.at)}</b>, if anyone answers. Be home: they wait half an hour.`:`⏳ <b>Waiting for replies.</b> They should trickle in around ${fmt(pj.due)}.`):c.post===dk?'✅ <b>You posted today.</b> One post a day, or people start muting you.':'Nothing posted today.');
+    if(pj&&pj.sched)h+=phBtn('✖️ Cancel: tell them not to come',()=>postCancel(),{dis:!phoneCan(),sub:S.t<pj.at-120?'5 min. No harm done this far ahead.':'Last-minute: reputation −2.'});
     h+=phBtn('📣 Post asking for help',()=>postModal(),{cls:'primary',dis:!!pj||c.post===dk||!phoneCan(),sub:pj?'One at a time.':c.post===dk?'Once a day.':'10 min. Pick the day and time they come by.'});
     const lg=P.grpLog||[];
     if(lg.length)h+=`<div class="ph-sub">Recent replies</div>`+lg.slice().reverse().map(e=>`<div class="ph-grp"><small>${DAYS[e.d]||''}</small>${e.s}</div>`).join('');

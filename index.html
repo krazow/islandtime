@@ -1158,6 +1158,11 @@ function postWhenModal(k){const sl=postSlots(),what=k==='general'?'help around t
       say(`📣 You post in ${COMM_NAME}: “${k==='general'?'Anyone have a couple of hours to help around the house? Will pay in cookies.':`Anyone able to help? ${UP_TASKS[k].d}. I can’t get to it.`} ${postWhen(at)} works for me.” Be home then.`);
       try{showTile('📣','Help scheduled',`${postWhen(at)} at your place. Be home.`,'info')}catch(e){}afterAction()}})).concat([{l:'Never mind',fn:()=>{}}]));
 }
+// cancel a scheduled visit: free with 2+ hours' notice, reputation −2 if it's last-minute
+function postCancel(){const j=upJob('post');if(!j||!j.sched||!phoneCan())return;const late=S.t>=j.at-120;
+  UP().jobs=UP().jobs.filter(x=>x!==j);S.t+=5;phoneTick();
+  say(`📣 You edit your post: “All set, no need to come by ${postWhen(j.at)}. Thanks everyone!”${late?' Two people were already putting their boots on.':''}`);
+  if(late&&typeof repAdd==='function')repAdd(-2,'cancelled on a neighbor at the last minute');afterAction()}
 // at the time: home → the usual replies; out → whoever came finds an empty house (if anybody came)
 function postArrive(j){
   if(!j.sched||S.loc==='home')return postReplies(j);
@@ -1734,7 +1739,7 @@ function endDay(where){
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
   if(where!=='home'&&S.carried>0&&!S.cooler){const lost=Math.ceil(S.carried/2);S.carried-=lost;notes.push(`🥛 ${lost} day${lost>1?'s':''} of groceries spoiled overnight. No cooler.`)}
-  if(S.emp&&curJob().days.includes(d)&&!S.worked[d]){if(typeof weatherExcuse==='function'&&weatherExcuse(d)){adj('job',-6);notes.push('💼 You missed work today. Your boss texts: “Roads are a mess. Stay safe. But we really need you tomorrow.”')}else{adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}} // season
+  if(S.emp&&curJob().days.includes(d)&&!S.worked[d]&&jobStarted(d)){if(typeof weatherExcuse==='function'&&weatherExcuse(d)){adj('job',-6);notes.push('💼 You missed work today. Your boss texts: “Roads are a mess. Stay safe. But we really need you tomorrow.”')}else{adj('job',-15);notes.push('💼 You missed work today. Your boss texts: “{{name}}??”')}} // season
   if(S.interview&&S.interview.day===d){notes.push(`📝 You missed your interview for ${JOBS[S.interview.job].n}.`);S.interview=null}
   if(apptActive()&&d===APPT_DAY&&!S.appt&&!S.apptMissed){S.apptMissed=true;adj('health',-15);notes.push('🩺 You missed your doctor’s appointment. Next opening: three weeks out.')}
   if(d>=5&&!S.rx){adj('health',-8);notes.push('💊 You’re out of your prescription. You don’t feel right.')}
@@ -1755,7 +1760,7 @@ function endDay(where){
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
-  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);if(S.emp==='riv')repAdd(-10,'fired from the Riv: the whole island eats there',{notes});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
+  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);S.firedAt=Object.assign(S.firedAt||{},{[S.emp]:dayKey()});if(S.emp==='riv')repAdd(-10,'fired from the Riv: the whole island eats there',{notes});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
   S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}
@@ -1934,6 +1939,7 @@ function dockActions(a,side){
 }
 function workActions(a,d,m){
   const J=curJob();if(!J) return;
+  if(!jobStarted(d)){a.push({ic:'🗓️',l:'You start tomorrow',s:`${J.n}. First day: your next shift day.`,dis:true});return}
   if(!J.days.includes(d)){a.push({ic:'🌲',l:'You’re off today',s:`You work ${dayList(J.days)}.`,dis:true});return}
   if(S.worked[d]){a.push({ic:'✅',l:'Shift done for today',s:'Go home. Or shop. Probably shop.',dis:true});return}
   if(m<J.start-120){a.push({ic:'🔒',l:'Not open yet',s:`Your shift starts at ${fmt(J.start)}.`,dis:true});return}
@@ -1947,20 +1953,29 @@ function workActions(a,d,m){
   if(start<mid&&J.loc!=='food') a.push({ic:'🩺',l:`Work until ${fmt(mid)}, then leave`,s:`Half day. ${d===APPT_DAY&&apptActive()?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(mid,Math.round(pay*0.55),d===APPT_DAY&&apptActive()?-2:-8,`You leave at ${fmt(mid)} with a mumbled explanation.`)});
 }
 // ---------------- job hunting ----------------
-function jobOpenings(){return Object.keys(JOBS).filter(k=>k!==S.emp&&!(S.firedFrom||[]).includes(k))}
-function interviewSlot(k){const J=JOBS[k];for(let d=day()+1;d<=6;d++){if(J.days.includes(d)||d<5)return {day:d,time:J.loc==='food'?900:600}}return null}
+// fired from a job: off the listings for a week, then they'll see you again (with worse odds)
+const JOB_COOLDOWN=7;
+const jobFiredAt=k=>(S.firedAt&&S.firedAt[k]!=null)?S.firedAt[k]:-99;
+const jobWasFired=k=>(S.firedFrom||[]).includes(k);
+function jobOpenings(){return Object.keys(JOBS).filter(k=>k!==S.emp&&!(jobWasFired(k)&&dayKey()-jobFiredAt(k)<JOB_COOLDOWN))}
+// a new job starts the day after you're hired
+const jobStarted=i=>!(S.empStart>S.weekNo*7+i);
+// interviews: the next weekday (or a Saturday at the Riv) this week; on a weekend in a month game, early next week
+function interviewSlot(k){const J=JOBS[k],time=J.loc==='food'?900:600;for(let d=day()+1;d<=6;d++){if(J.days.includes(d)||d<5)return {day:d,time}}
+  if(S.mode==='month'&&S.weekNo<3)for(let d=7;d<=8;d++){if(J.days.includes(d%7)||d%7<5)return {day:d,time}}return null}
+const ivDay=I=>I.day>6?'next '+DAYS[I.day%7]:DAYS[I.day];
 function jobModal(){
   const open=jobOpenings();
-  modal('🔎 Job listings',`<p>${S.emp?`You work as: <b>${curJob().n}</b>. Switching means quitting.`:'You’re out of work. Rent doesn’t care.'}</p>${S.interview?`<p class="warn">You already have an interview: ${JOBS[S.interview.job].n}, ${DAYS[S.interview.day]} ${fmt(S.interview.time)}.</p>`:''}`,
-    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);const shut=k==='riv'&&repVal()<=-30;if(shut)return {l:`${J.n}: ${$(J.pay)}/day`,s:'“The Riv’s not hiring. For you.” Word gets around on an island.',dis:true,fn:()=>{}};return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch} Interview: ${DAYS[slot.day]} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
-      dis:!slot||!!S.interview,fn:()=>{S.interview={job:k,day:slot.day,time:slot.time,loc:J.loc};S.t+=15;say(`📝 You applied. Interview for <b>${J.n}</b>: ${DAYS[slot.day]} at ${fmt(slot.time)}, ${L[J.loc].name}.`);showTile('📝','Interview scheduled',`${DAYS[slot.day]} ${fmt(slot.time)} · ${L[J.loc].name}`,'info');afterAction()}}}).concat([{l:'Close',fn:()=>{}}]));
+  modal('🔎 Job listings',`<p>${S.emp?`You work as: <b>${curJob().n}</b>. Switching means quitting.`:'You’re out of work. Rent doesn’t care.'}</p>${S.interview?`<p class="warn">You already have an interview: ${JOBS[S.interview.job].n}, ${ivDay(S.interview)} ${fmt(S.interview.time)}.</p>`:''}`,
+    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);const shut=k==='riv'&&repVal()<=-30;if(shut)return {l:`${J.n}: ${$(J.pay)}/day`,s:'“The Riv’s not hiring. For you.” Word gets around on an island.',dis:true,fn:()=>{}};return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch}${jobWasFired(k)?' They remember firing you: lower odds.':''} Interview: ${ivDay(slot)} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
+      dis:!slot||!!S.interview,fn:()=>{S.interview={job:k,day:slot.day,time:slot.time,loc:J.loc};S.t+=15;say(`📝 You applied. Interview for <b>${J.n}</b>: ${ivDay(slot)} at ${fmt(slot.time)}, ${L[J.loc].name}.`);showTile('📝','Interview scheduled',`${ivDay(slot)} ${fmt(slot.time)} · ${L[J.loc].name}`,'info');afterAction()}}}).concat([{l:'Close',fn:()=>{}}]));
 }
 function jobActions(a,loc){
   const iv=S.interview,m=tod();
   if(iv&&iv.loc===loc&&iv.day===day()){
     if(m>=iv.time-45&&m<=iv.time+20) a.push({ic:'🤝',l:`Interview: ${JOBS[iv.job].n}`,s:'About 45 minutes. Be yourself. Or a calmer version.',cls:'primary',fn:()=>{
-      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1)+(iv.job==='riv'?(S.rep>=0?S.rep*0.003:S.rep*0.0075):0);
-      if(Math.random()<odds){const old=S.emp;S.emp=iv.job;S.job=60;S.interview=null;adj('stress',-8);say(`🎉 You got the job: <b>${JOBS[S.emp].n}</b>! ${old?'You give notice at your old job. ':''}You start on your next shift day.`);showTile('🎉','You’re hired!',JOBS[S.emp].n,'good')}
+      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1)+(iv.job==='riv'?(S.rep>=0?S.rep*0.003:S.rep*0.0075):0)-(jobWasFired(iv.job)?0.2:0);
+      if(Math.random()<odds){const old=S.emp;S.emp=iv.job;S.job=60;S.empStart=dayKey()+1;S.interview=null;adj('stress',-8);say(`🎉 You got the job: <b>${JOBS[S.emp].n}</b>! ${old?'You give notice at your old job. ':''}You start tomorrow, or on your next shift day after that.`);showTile('🎉','You’re hired!',JOBS[S.emp].n,'good')}
       else{S.interview=null;adj('stress',8);say('😞 “We went with someone with more experience.” Back to the listings.');showTile('😞','Didn’t get the job',JOBS[iv.job].n,'bad')}
       afterAction()}});
     else if(m<iv.time-45) a.push({ic:'📅',l:`Interview here at ${fmt(iv.time)}`,s:'Check in up to 45 minutes early.',dis:true});
@@ -1977,7 +1992,7 @@ function weekRollover(notes){
   if(S.injury&&S.injury.treated)S.injury=null;
   S.ev.past=(S.ev.past||[]).concat(S.ev.history.map(h=>({id:h.id,w:wk})));S.ev.history=[];S.ev.last={};S.ev.count={};S.ev.flags={};
   Object.assign(S.bingo,{reserved:-1,playing:-1,order:null,delay:0});
-  if(S.interview)S.interview=null;
+  if(S.interview){if(S.interview.day>6)S.interview.day-=7;else S.interview=null}
   S.quests=(S.quests||[]).filter(q=>!q.done&&q.due>=7).map(q=>Object.assign(q,{due:q.due-7}));
   S.week=genWeek(S.diff);PLAN={to:null,by:null,off:0};
 }
@@ -2334,7 +2349,7 @@ function nextUp(acts){
     return {t:t+(b?' · '+b.txt:''),go:b?()=>{if(planTargets().includes(to)){PLAN.to=to;PLAN.by=at;PLAN.off=0}setTab('ferry')}:()=>setTab('todo')};
   };
   // (a) today's shift
-  if(J&&J.days.includes(d)&&!S.worked[d]&&m<J.start+240) return meet('💼',J.loc,J.start,'Shift');
+  if(J&&J.days.includes(d)&&!S.worked[d]&&jobStarted(d)&&m<J.start+240) return meet('💼',J.loc,J.start,'Shift');
   // (b) interview today
   const I=S.interview;
   if(I&&I.day===d&&m<=I.time+20) return meet('📝',I.loc,I.time,'Interview');
@@ -2488,9 +2503,9 @@ function ferryView(){
 function todoItems(){
   const d=day(),m=tod(),it=[];
   const J=curJob();
-  if(J) J.days.forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
+  if(J) J.days.filter(i=>jobStarted(i)).forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
   else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job in the 💼 Gig Work app or on the bulletin board at the old store, then make the interview.',urgent:!S.interview});
-  if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${DAYS[S.interview.day]} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
+  if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${ivDay(S.interview)} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
   if(apptActive()) it.push({ok:S.appt,fail:S.apptMissed||(d>APPT_DAY)||(d===APPT_DAY&&m>885&&!S.appt),l:'Doctor’s appointment',s:`${DAYS[APPT_DAY]} 2:30 PM, Medical Clinic (Tacoma). Arrive 2:00–2:45.`,urgent:d===2&&!S.appt&&m<=885});
   it.push({ok:S.rx,fail:false,l:'Pick up prescription refill',s:d<3?'Ready Thursday at the Lakewood pharmacy. Run out Saturday night.':'Ready now at the Lakewood pharmacy.',urgent:d>=3&&!S.rx});
   it.push({ok:S.pantry>=2,fail:false,l:'Keep the pantry stocked',s:`${S.pantry} day${S.pantry===1?'':'s'} at home${S.carried?`, ${S.carried} in hand`:''}. You eat 1 per night.`,urgent:S.pantry<1});
@@ -3123,6 +3138,7 @@ definePhoneApp({id:'group',name:'Island Group',ic:'📣',order:60,size:'38 MB',d
     h+=`<div class="ph-rep"><span>🤲</span><div><b>Island reputation: ${r}</b><small>${r>=8?'Half the island owes you a casserole.':r>=3?'People know your car. In a good way.':'Mostly known as “the one who moved into that house.”'}</small></div></div>`;
     h+=phNote('Lost dogs, ferry complaints, free firewood, and neighbors who show up.');
     h+=phCard(pj?(pj.sched?`📅 <b>Help is coming ${postWhen(pj.at)}</b>, if anyone answers. Be home: they wait half an hour.`:`⏳ <b>Waiting for replies.</b> They should trickle in around ${fmt(pj.due)}.`):c.post===dk?'✅ <b>You posted today.</b> One post a day, or people start muting you.':'Nothing posted today.');
+    if(pj&&pj.sched)h+=phBtn('✖️ Cancel: tell them not to come',()=>postCancel(),{dis:!phoneCan(),sub:S.t<pj.at-120?'5 min. No harm done this far ahead.':'Last-minute: reputation −2.'});
     h+=phBtn('📣 Post asking for help',()=>postModal(),{cls:'primary',dis:!!pj||c.post===dk||!phoneCan(),sub:pj?'One at a time.':c.post===dk?'Once a day.':'10 min. Pick the day and time they come by.'});
     const lg=P.grpLog||[];
     if(lg.length)h+=`<div class="ph-sub">Recent replies</div>`+lg.slice().reverse().map(e=>`<div class="ph-grp"><small>${DAYS[e.d]||''}</small>${e.s}</div>`).join('');
@@ -3178,7 +3194,7 @@ const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
 // On time +3, late −4; a scheduled shift you skip −15 and reputation −5; at 0 you're fired (reputation −10).
 const rivJob=()=>ECO().rivJob||null;
 function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
-  if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');
+  if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');S.firedAt=Object.assign(S.firedAt||{},{riv:dayKey()});
     notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');repAdd(-10,'fired from the Riv: the whole island eats there',{notes})}}
 function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
   notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);repAdd(-5,'no-show at the Riv',{notes});rivMeter(-15,notes)}
@@ -4401,7 +4417,7 @@ definePhoneApp({id:'gigs',name:'Gig Work',ic:'💼',order:66,size:'61 MB',desc:'
   badge:()=>!S.emp&&!S.interview?1:0,
   view(){const J=curJob(),I=S.interview,g=GIG(),left=gigMax()-g.n,slow=phoneSignal()===1?GIG_SLOW:0;let h=apmShow('gigs');
     h+=phCard(J?`💼 You work as <b>${J.n}</b>.`:'💼 You’re out of work. Rent doesn’t care.',J?'':'warn');
-    if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${DAYS[I.day]} ${fmt(I.time)} at ${L[I.loc].name}.`);
+    if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${ivDay(I)} ${fmt(I.time)} at ${L[I.loc].name}.`);
     h+=phBtn('🔎 Browse job listings',()=>jobModal(),{cls:J?'':'primary',sub:J?'Switching jobs means quitting.':'Find something and set up an interview.'});
     h+=`<div class="ph-sub">Quick gigs · ${left} of ${gigMax()} left today · ${gigStars()}</div>`;if(gigRep()<=-20)h+=phNote(gigRep()<=-60?'Your rating tanked: fewer tasks, lower pay. Word travels, even online.':'Your rating slipped: one less task a day, and no island gigs.');
     h+=phNote(`Pocket change for dead time: in line, at the terminal, at a motel. ${gigWhere()}`);

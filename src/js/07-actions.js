@@ -127,6 +127,7 @@ function dockActions(a,side){
 }
 function workActions(a,d,m){
   const J=curJob();if(!J) return;
+  if(!jobStarted(d)){a.push({ic:'🗓️',l:'You start tomorrow',s:`${J.n}. First day: your next shift day.`,dis:true});return}
   if(!J.days.includes(d)){a.push({ic:'🌲',l:'You’re off today',s:`You work ${dayList(J.days)}.`,dis:true});return}
   if(S.worked[d]){a.push({ic:'✅',l:'Shift done for today',s:'Go home. Or shop. Probably shop.',dis:true});return}
   if(m<J.start-120){a.push({ic:'🔒',l:'Not open yet',s:`Your shift starts at ${fmt(J.start)}.`,dis:true});return}
@@ -140,20 +141,29 @@ function workActions(a,d,m){
   if(start<mid&&J.loc!=='food') a.push({ic:'🩺',l:`Work until ${fmt(mid)}, then leave`,s:`Half day. ${d===APPT_DAY&&apptActive()?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(mid,Math.round(pay*0.55),d===APPT_DAY&&apptActive()?-2:-8,`You leave at ${fmt(mid)} with a mumbled explanation.`)});
 }
 // ---------------- job hunting ----------------
-function jobOpenings(){return Object.keys(JOBS).filter(k=>k!==S.emp&&!(S.firedFrom||[]).includes(k))}
-function interviewSlot(k){const J=JOBS[k];for(let d=day()+1;d<=6;d++){if(J.days.includes(d)||d<5)return {day:d,time:J.loc==='food'?900:600}}return null}
+// fired from a job: off the listings for a week, then they'll see you again (with worse odds)
+const JOB_COOLDOWN=7;
+const jobFiredAt=k=>(S.firedAt&&S.firedAt[k]!=null)?S.firedAt[k]:-99;
+const jobWasFired=k=>(S.firedFrom||[]).includes(k);
+function jobOpenings(){return Object.keys(JOBS).filter(k=>k!==S.emp&&!(jobWasFired(k)&&dayKey()-jobFiredAt(k)<JOB_COOLDOWN))}
+// a new job starts the day after you're hired
+const jobStarted=i=>!(S.empStart>S.weekNo*7+i);
+// interviews: the next weekday (or a Saturday at the Riv) this week; on a weekend in a month game, early next week
+function interviewSlot(k){const J=JOBS[k],time=J.loc==='food'?900:600;for(let d=day()+1;d<=6;d++){if(J.days.includes(d)||d<5)return {day:d,time}}
+  if(S.mode==='month'&&S.weekNo<3)for(let d=7;d<=8;d++){if(J.days.includes(d%7)||d%7<5)return {day:d,time}}return null}
+const ivDay=I=>I.day>6?'next '+DAYS[I.day%7]:DAYS[I.day];
 function jobModal(){
   const open=jobOpenings();
-  modal('🔎 Job listings',`<p>${S.emp?`You work as: <b>${curJob().n}</b>. Switching means quitting.`:'You’re out of work. Rent doesn’t care.'}</p>${S.interview?`<p class="warn">You already have an interview: ${JOBS[S.interview.job].n}, ${DAYS[S.interview.day]} ${fmt(S.interview.time)}.</p>`:''}`,
-    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);const shut=k==='riv'&&repVal()<=-30;if(shut)return {l:`${J.n}: ${$(J.pay)}/day`,s:'“The Riv’s not hiring. For you.” Word gets around on an island.',dis:true,fn:()=>{}};return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch} Interview: ${DAYS[slot.day]} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
-      dis:!slot||!!S.interview,fn:()=>{S.interview={job:k,day:slot.day,time:slot.time,loc:J.loc};S.t+=15;say(`📝 You applied. Interview for <b>${J.n}</b>: ${DAYS[slot.day]} at ${fmt(slot.time)}, ${L[J.loc].name}.`);showTile('📝','Interview scheduled',`${DAYS[slot.day]} ${fmt(slot.time)} · ${L[J.loc].name}`,'info');afterAction()}}}).concat([{l:'Close',fn:()=>{}}]));
+  modal('🔎 Job listings',`<p>${S.emp?`You work as: <b>${curJob().n}</b>. Switching means quitting.`:'You’re out of work. Rent doesn’t care.'}</p>${S.interview?`<p class="warn">You already have an interview: ${JOBS[S.interview.job].n}, ${ivDay(S.interview)} ${fmt(S.interview.time)}.</p>`:''}`,
+    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);const shut=k==='riv'&&repVal()<=-30;if(shut)return {l:`${J.n}: ${$(J.pay)}/day`,s:'“The Riv’s not hiring. For you.” Word gets around on an island.',dis:true,fn:()=>{}};return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch}${jobWasFired(k)?' They remember firing you: lower odds.':''} Interview: ${ivDay(slot)} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
+      dis:!slot||!!S.interview,fn:()=>{S.interview={job:k,day:slot.day,time:slot.time,loc:J.loc};S.t+=15;say(`📝 You applied. Interview for <b>${J.n}</b>: ${ivDay(slot)} at ${fmt(slot.time)}, ${L[J.loc].name}.`);showTile('📝','Interview scheduled',`${ivDay(slot)} ${fmt(slot.time)} · ${L[J.loc].name}`,'info');afterAction()}}}).concat([{l:'Close',fn:()=>{}}]));
 }
 function jobActions(a,loc){
   const iv=S.interview,m=tod();
   if(iv&&iv.loc===loc&&iv.day===day()){
     if(m>=iv.time-45&&m<=iv.time+20) a.push({ic:'🤝',l:`Interview: ${JOBS[iv.job].n}`,s:'About 45 minutes. Be yourself. Or a calmer version.',cls:'primary',fn:()=>{
-      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1)+(iv.job==='riv'?(S.rep>=0?S.rep*0.003:S.rep*0.0075):0);
-      if(Math.random()<odds){const old=S.emp;S.emp=iv.job;S.job=60;S.interview=null;adj('stress',-8);say(`🎉 You got the job: <b>${JOBS[S.emp].n}</b>! ${old?'You give notice at your old job. ':''}You start on your next shift day.`);showTile('🎉','You’re hired!',JOBS[S.emp].n,'good')}
+      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1)+(iv.job==='riv'?(S.rep>=0?S.rep*0.003:S.rep*0.0075):0)-(jobWasFired(iv.job)?0.2:0);
+      if(Math.random()<odds){const old=S.emp;S.emp=iv.job;S.job=60;S.empStart=dayKey()+1;S.interview=null;adj('stress',-8);say(`🎉 You got the job: <b>${JOBS[S.emp].n}</b>! ${old?'You give notice at your old job. ':''}You start tomorrow, or on your next shift day after that.`);showTile('🎉','You’re hired!',JOBS[S.emp].n,'good')}
       else{S.interview=null;adj('stress',8);say('😞 “We went with someone with more experience.” Back to the listings.');showTile('😞','Didn’t get the job',JOBS[iv.job].n,'bad')}
       afterAction()}});
     else if(m<iv.time-45) a.push({ic:'📅',l:`Interview here at ${fmt(iv.time)}`,s:'Check in up to 45 minutes early.',dis:true});
@@ -170,7 +180,7 @@ function weekRollover(notes){
   if(S.injury&&S.injury.treated)S.injury=null;
   S.ev.past=(S.ev.past||[]).concat(S.ev.history.map(h=>({id:h.id,w:wk})));S.ev.history=[];S.ev.last={};S.ev.count={};S.ev.flags={};
   Object.assign(S.bingo,{reserved:-1,playing:-1,order:null,delay:0});
-  if(S.interview)S.interview=null;
+  if(S.interview){if(S.interview.day>6)S.interview.day-=7;else S.interview=null}
   S.quests=(S.quests||[]).filter(q=>!q.done&&q.due>=7).map(q=>Object.assign(q,{due:q.due-7}));
   S.week=genWeek(S.diff);PLAN={to:null,by:null,off:0};
 }

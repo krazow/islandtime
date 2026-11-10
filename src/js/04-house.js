@@ -167,6 +167,11 @@ function postWhenModal(k){const sl=postSlots(),what=k==='general'?'help around t
       say(`📣 You post in ${COMM_NAME}: “${k==='general'?'Anyone have a couple of hours to help around the house? Will pay in cookies.':`Anyone able to help? ${UP_TASKS[k].d}. I can’t get to it.`} ${postWhen(at)} works for me.” Be home then.`);
       try{showTile('📣','Help scheduled',`${postWhen(at)} at your place. Be home.`,'info')}catch(e){}afterAction()}})).concat([{l:'Never mind',fn:()=>{}}]));
 }
+// cancel a scheduled visit: free with 2+ hours' notice, reputation −2 if it's last-minute
+function postCancel(){const j=upJob('post');if(!j||!j.sched||!phoneCan())return;const late=S.t>=j.at-120;
+  UP().jobs=UP().jobs.filter(x=>x!==j);S.t+=5;phoneTick();
+  say(`📣 You edit your post: “All set, no need to come by ${postWhen(j.at)}. Thanks everyone!”${late?' Two people were already putting their boots on.':''}`);
+  if(late&&typeof repAdd==='function')repAdd(-2,'cancelled on a neighbor at the last minute');afterAction()}
 // at the time: home → the usual replies; out → whoever came finds an empty house (if anybody came)
 function postArrive(j){
   if(!j.sched||S.loc==='home')return postReplies(j);

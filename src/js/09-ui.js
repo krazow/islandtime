@@ -119,7 +119,7 @@ function nextUp(acts){
     return {t:t+(b?' · '+b.txt:''),go:b?()=>{if(planTargets().includes(to)){PLAN.to=to;PLAN.by=at;PLAN.off=0}setTab('ferry')}:()=>setTab('todo')};
   };
   // (a) today's shift
-  if(J&&J.days.includes(d)&&!S.worked[d]&&m<J.start+240) return meet('💼',J.loc,J.start,'Shift');
+  if(J&&J.days.includes(d)&&!S.worked[d]&&jobStarted(d)&&m<J.start+240) return meet('💼',J.loc,J.start,'Shift');
   // (b) interview today
   const I=S.interview;
   if(I&&I.day===d&&m<=I.time+20) return meet('📝',I.loc,I.time,'Interview');
@@ -273,9 +273,9 @@ function ferryView(){
 function todoItems(){
   const d=day(),m=tod(),it=[];
   const J=curJob();
-  if(J) J.days.forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
+  if(J) J.days.filter(i=>jobStarted(i)).forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
   else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job in the 💼 Gig Work app or on the bulletin board at the old store, then make the interview.',urgent:!S.interview});
-  if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${DAYS[S.interview.day]} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
+  if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${ivDay(S.interview)} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
   if(apptActive()) it.push({ok:S.appt,fail:S.apptMissed||(d>APPT_DAY)||(d===APPT_DAY&&m>885&&!S.appt),l:'Doctor’s appointment',s:`${DAYS[APPT_DAY]} 2:30 PM, Medical Clinic (Tacoma). Arrive 2:00–2:45.`,urgent:d===2&&!S.appt&&m<=885});
   it.push({ok:S.rx,fail:false,l:'Pick up prescription refill',s:d<3?'Ready Thursday at the Lakewood pharmacy. Run out Saturday night.':'Ready now at the Lakewood pharmacy.',urgent:d>=3&&!S.rx});
   it.push({ok:S.pantry>=2,fail:false,l:'Keep the pantry stocked',s:`${S.pantry} day${S.pantry===1?'':'s'} at home${S.carried?`, ${S.carried} in hand`:''}. You eat 1 per night.`,urgent:S.pantry<1});
