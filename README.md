@@ -49,7 +49,12 @@ The island post office was inside the old store building, so it closed with the 
   - 🟪 FedEx overnight: $14, next day, no Sunday delivery, arrives by 11 AM.
   - 🏪 Hold at the Steilacoom pickup counter: free, 2 days, as before.
 - Deliveries that land on a Sunday (or a Saturday, for UPS) slide to the next delivery day. Packages wait on the porch until you bring them in, and you bring them in automatically when you sleep at home. The to-do list tracks what's on the way.
-- ❓ **1 in 10 deliveries goes to the wrong address.** A letter just never shows up. For a package, tracking says "delivered", and it isn't on your porch. For now these are recorded as missing; a way to track them down is coming.
+- ❓ **1 in 10 deliveries goes to the wrong address**, and the 📣 **Island Group** app sorts it out (new **📦 Lost & found** section at the top of the app):
+  - **Your package is missing:** tracking says "delivered" and it's not on your porch. Post "Missing package" and a neighbor who has it drops it on your porch a few hours later.
+  - **A neighbor got yours:** sometimes they post first ("Got a package for you…"). Reply "That's mine!" and they bring it over.
+  - **Someone else's package lands on your porch** (about 1 delivery day in 12): post "Found a package for…" and they come get it. A good deed: reputation +1, and maybe a new friend.
+  - A letter that goes to the wrong mailbox just never arrives.
+  - No Island Group app? The to-do list reminds you to get it from the App Store.
 
 ### 1.14.1: the real ferry and local fixes
 

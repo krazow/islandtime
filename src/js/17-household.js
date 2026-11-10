@@ -113,7 +113,7 @@ const hhDelivered=p=>p.via&&p.via!=='counter'&&p.st==='transit'&&(dayKey()>p.at|
 function hhDeliver(say2){const H=HH();
   H.pkgs.filter(hhDelivered).forEach(p=>{
     if(p.w){hhMissing().push({kind:'pkg',k:p.k,via:p.via,at:p.at});H.pkgs=H.pkgs.filter(x=>x!==p);
-      say2(`📦 ${CARRIERS[p.via].sh} tracking: your ${HH_SHOP[p.k].n} was “delivered, left at front door” at ${fmt(CARRIERS[p.via].time+Math.floor(Math.random()*50))}. It’s not on your porch. It’s not behind the planter. It went to the wrong house.`)}
+      say2(`📦 ${CARRIERS[p.via].sh} tracking: your ${HH_SHOP[p.k].n} was “delivered, left at front door” at ${fmt(CARRIERS[p.via].time+Math.floor(Math.random()*50))}. It’s not on your porch. It’s not behind the planter. It went to the wrong house. Somebody on the island has it: try the 📣 Island Group.`)}
     else p.st='porch'})}
 const hhPorch=()=>HH().pkgs.filter(p=>p.st==='porch');
 function hhBringIn(){const H=HH(),r=hhPorch();r.forEach(p=>HH_SHOP[p.k].get());H.pkgs=H.pkgs.filter(p=>!r.includes(p));return r}
