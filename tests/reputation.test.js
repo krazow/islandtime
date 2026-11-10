@@ -51,7 +51,7 @@ module.exports = [
     assert.strictEqual(r.mended, 0); assert.strictEqual(r.rep, -15);
     noErrors(errors);
   } },
-  { name: 'reputation: failing the same friend twice drops them and makes an enemy', fn: async ctx => {
+  { name: 'reputation: a missed favor costs friendship, not reputation, and makes no enemies', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => {
@@ -60,12 +60,12 @@ module.exports = [
       repFavorFailed('marta', n);
       return { once, rep: S.rep, friend: !!S.friends.marta, enemies: REP().enemies.map(e => e.who), notes: n.join(' ') };
     });
-    assert.deepStrictEqual(r.once, { rep: -2, friend: true });
-    assert.strictEqual(r.rep, -4); assert.strictEqual(r.friend, false);
-    assert.deepStrictEqual(r.enemies, ['Marta']);
+    assert.deepStrictEqual(r.once, { rep: 0, friend: true });
+    assert.strictEqual(r.rep, 0); assert.strictEqual(r.friend, true);
+    assert.deepStrictEqual(r.enemies, []);
     noErrors(errors);
   } },
-  { name: 'reputation: drift, healing, the house, gifts on the porch', fn: async ctx => {
+  { name: 'reputation: never drifts down; a bad name heals; the house doesn’t cost reputation; gifts on the porch', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => {
@@ -77,9 +77,9 @@ module.exports = [
       const g = []; repNight('home', g); Math.random = orig;
       return { drift, heal, house, gift: g.join(' '), changed: S.pantry !== p0 || UP().wood !== w0 || S.stress !== s0 };
     });
-    assert.strictEqual(r.drift, 35, 'fame fades without good deeds');
+    assert.strictEqual(r.drift, 40, 'no good deeds lately is not a bad deed');
     assert.strictEqual(r.heal, -25, 'a bad name fades slowly');
-    assert.strictEqual(r.house, -5, 'a week of a run-down house');
+    assert.strictEqual(r.house, 0, 'a run-down house is not on purpose');
     assert.ok(r.gift.length > 10 && r.changed, 'a gift: ' + r.gift);
     noErrors(errors);
   } },
@@ -131,8 +131,8 @@ module.exports = [
     assert.strictEqual(r.blocked, true);
     assert.ok(r.pay >= 68, 'regulars’ rate: ' + r.pay);
     assert.deepStrictEqual(r.job, { m: 73, sched: true });
-    assert.strictEqual(r.noshow.m, 58); assert.strictEqual(r.noshow.rep, 60); assert.match(r.noshow.note, /never showed/);
-    assert.deepStrictEqual(r.fired, { fired: true, list: true, rep: 45 });
+    assert.strictEqual(r.noshow.m, 58); assert.strictEqual(r.noshow.rep, 65, 'a no-show hurts the Riv job meter, not reputation'); assert.match(r.noshow.note, /never showed/);
+    assert.deepStrictEqual(r.fired, { fired: true, list: true, rep: 65 });
     noErrors(errors);
   } },
   { name: 'reputation: the Island Group app shows the meter, Known for and enemies', fn: async ctx => {

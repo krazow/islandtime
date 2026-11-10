@@ -92,7 +92,7 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => phoneApp('group').badge()), 1);
     noErrors(errors);
   } },
-  { name: 'help posts: not home at the scheduled time costs a little reputation (only if someone came)', fn: async ctx => {
+  { name: 'help posts: not home at the scheduled time: the helper leaves a comment (no reputation loss)', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => {
@@ -108,7 +108,7 @@ module.exports = [
       S.cur = 6; S.t = 6 * 1440 + 600; out.sunday = postSlots().map(at => at % 1440);
       return out;
     });
-    assert.strictEqual(r.came.rep, 7); assert.match(r.came.log, /Nobody home/);
+    assert.strictEqual(r.came.rep, 10, 'missing a helper is not on purpose'); assert.match(r.came.log, /Nobody home/);
     assert.strictEqual(r.nobody.rep, 10); assert.match(r.nobody.log, /Nobody answered/);
     assert.strictEqual(r.home.rep, 10); assert.match(r.home.log, /shows up|porch|replies/);
     assert.deepStrictEqual(r.sunday, [780, 1020]);

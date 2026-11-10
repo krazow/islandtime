@@ -1159,7 +1159,7 @@ function postModal(){
       .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
 }
 // ---- scheduled help: you pick the day and time; a helper comes then (if anyone answers) ----
-const POST_TIMES=[540,780,1020],POST_GRACE=30,POST_MISS=-3;   // 9 AM, 1 PM, 5 PM; they wait half an hour
+const POST_TIMES=[540,780,1020],POST_GRACE=30;   // 9 AM, 1 PM, 5 PM; they wait half an hour
 function postOdds(){const fr=Object.keys(S.friends).length;return Math.max(0.05,Math.min(0.75,0.25+0.08*(Math.max(0,S.rep||0)/7.5+fr)+Math.min(0,S.rep||0)/400-0.1*(typeof repEnemies==='function'?repEnemies().length:0)))}
 function postSlots(){const out=[],now=S.t,last=S.mode==='month'?day()+2:Math.min(6,day()+2);
   for(let d=day();d<=last;d++)for(const m of POST_TIMES){const at=d*1440+m;if(at>=now+120)out.push(at)}return out.slice(0,6)}
@@ -1181,9 +1181,8 @@ function postCancel(){const j=upJob('post');if(!j||!j.sched||!phoneCan())return;
 function postArrive(j){
   if(!j.sched||S.loc==='home')return postReplies(j);
   if(Math.random()<postOdds()){adj('stress',2);
-    if(typeof repAdd==='function')repAdd(POST_MISS,'stood up a neighbor who came to help');
     say(`📣 Someone from ${COMM_NAME} drove out at ${fmt((j.at||j.due)%1440)}, knocked, waited half an hour and left. The comment under your post: “Came by. Nobody home. 🤷”`);
-    try{showTile('📣','You weren’t home','A neighbor came to help · reputation −3','bad')}catch(e){}}
+    try{showTile('📣','You weren’t home','A neighbor came by to help','bad')}catch(e){}}
   else say(`📣 Nobody answered your help post for ${fmt((j.at||j.due)%1440)}. Just as well: you weren’t home.`)}
 function postReplies(j){
   const c=COMM(),p=postOdds(),gen=j.task==='general'||!UP_TASKS[j.task];
@@ -1774,7 +1773,7 @@ function endDay(where){
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
-  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);S.firedAt=Object.assign(S.firedAt||{},{[S.emp]:dayKey()});if(S.emp==='riv')repAdd(-10,'fired from the Riv: the whole island eats there',{notes});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
+  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);S.firedAt=Object.assign(S.firedAt||{},{[S.emp]:dayKey()});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
   S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}
@@ -3214,9 +3213,9 @@ const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
 const rivJob=()=>ECO().rivJob||null;
 function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
   if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');S.firedAt=Object.assign(S.firedAt||{},{riv:dayKey()});
-    notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');repAdd(-10,'fired from the Riv: the whole island eats there',{notes})}}
+    notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');}}
 function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
-  notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);repAdd(-5,'no-show at the Riv',{notes});rivMeter(-15,notes)}
+  notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);rivMeter(-15,notes)}
 function rivActions(a,d,m){
   if(S.loc!=='food'||S.emp==='riv')return;
   const E=ECO(),dk=dayKey(),J=rivJob();
@@ -3863,7 +3862,7 @@ Object.assign(TILE_META,{puppy_litter:['🐶','The neighbors’ dog had puppies'
 defEvent({id:'puppy_litter',hook:'wake',priority:2,max:1,cond:()=>S.loc==='home'&&!HH().dog&&HH().puppy<0&&!HH().once.puppy&&dayKey()>=3,chance:0.2,
   run(){const H=HH();H.once.puppy=1;H.puppy=dayKey()+3;say(`🐶 A hand-lettered sign at the end of the road: “FREE PUPPIES. Lab, mostly. Ask the kids.” The kids have already spotted you. (Adopt from 🏠 Inside the house, until ${DAYS[H.puppy%7]}. Or don’t: they’re very persuasive, but it’s a lot.)`)}});
 defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.5,0.15+0.05*(HH().trash-8)),
-  run(ctx){homeAdj(-6);adj('stress',5);{const R=typeof REP==='function'?REP():null;if(R&&R.racWk!==S.weekNo+'|'+(S.story?S.story.ch:'')){R.racWk=S.weekNo+'|'+(S.story?S.story.ch:'');repAdd(-3,'raccoons spread your trash down the road',{notes:ctx.notes})}}ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
+  run(ctx){homeAdj(-6);adj('stress',5);ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
 // ---- To-do ----
 function hhTodo(it){
   const H=HH(),dk=dayKey();
@@ -4947,6 +4946,8 @@ document.addEventListener('keydown',e=>{
   try{new MutationObserver(ms=>{if(q)return;if(ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&!n.classList.contains('kn'))||[...m.removedNodes].some(n=>n.nodeType===1&&n.id==='mbg'))){q=true;requestAnimationFrame(go)}})
     .observe(document.body,{childList:true,subtree:true})}catch(e){}}
 // ---- 🤲 island reputation: −100 to +100 ----
+// It only goes DOWN for things you do on purpose (an arrest, a gas-can bust, Dale runs,
+// cancelling on a helper at the last minute, gouging during the storm); neglect, bad luck and time never lower it.
 // S.rep is the score (0 = newcomer). S.repx holds the rest: the "Known for" list, enemies, drift clocks,
 // the Riv weekend-shift meter lives in ECO().rivJob (15-economy.js). Perks (15-economy REP_PERKS) unlock at +20/+35/+60.
 const REP_MIN=-100,REP_MAX=100;
@@ -4983,14 +4984,11 @@ const repEnemies=()=>(S&&S.repx&&S.repx.enemies)||[];
 // ---- nightly: drift, the house, enemies, friends drifting away, gifts on the porch ----
 function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
   // fame fades without good deeds; a bad name fades slowly on its own
-  if(dk-R.driftAt>=7){R.driftAt=dk;if(r>20&&dk-R.lastGood>=7)repAdd(-5,'out of sight, out of mind',{notes})}
   if(r<0){if(dk-R.healAt>=14){R.healAt=dk;repAdd(5,'people are starting to forget',{notes})}}else R.healAt=dk;
   // "that house"
-  if((S.home??70)<25){R.homeLow++;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
   // enemies bad-mouth you now and then
   // a grudge fades after about four weeks
   for(const e of R.enemies.slice())if(dk-e.since>=28){R.enemies=R.enemies.filter(x=>x!==e);notes.push(`🙂 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} nods at you in the ferry line. Whatever it was, they’ve let it go.`)}
-  for(const e of R.enemies)if(Math.random()<0.05)repAdd(-2,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
   // persona non grata: a casual friend stops answering (about once a week)
   if(repVal()<=-60&&Math.random()<0.15){const ids=Object.keys(S.friends).filter(id=>(S.friends[id].lvl||1)<=1);
     if(ids.length){const id=pick(ids),n=S.friends[id].name.split(',')[0];repDropFriend(id);notes.push(`💔 ${n.charAt(0).toUpperCase()+n.slice(1)} heard what people are saying about you and stops answering your texts.`)}}
@@ -5043,8 +5041,8 @@ function repHeaderHtml(){const r=repVal(),t=repTier(r),R=(S&&S.repx)||{known:[],
 function repCoop(){const R=REP(),k=Math.floor((S.coop.you||0)/100);if(k>R.coop){const n=k-R.coop;R.coop=k;repAdd(5*n,'pledging to the co-op')}}
 
 // ---- a favor you promised and didn't do: −5; twice for the same friend and they're done with you ----
-function repFavorFailed(id,notes){const R=REP(),f=S.friends[id];repAdd(-2,`never did ${f?f.name.split(",")[0]:"a friend"} that favor`,{notes});
-  R.fails[id]=(R.fails[id]||0)+1;if(R.fails[id]>=2&&f){const n=f.name.split(',')[0];repDropFriend(id);repEnemy(n,'you let them down twice',{notes,fid:id})}}
+// A favor you didn't get to costs the friendship a point (06-day.js), not your reputation: only things you do on purpose lower it.
+function repFavorFailed(id,notes){}
 
 // ---- the Riv weekend shift as a second job: its own meter in the to-do list and a small score bonus ----
 {const _todo=todoItems;todoItems=function(){const it=_todo();try{const J=typeof rivJob==='function'&&rivJob();

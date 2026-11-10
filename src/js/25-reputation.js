@@ -1,4 +1,6 @@
 // ---- 🤲 island reputation: −100 to +100 ----
+// It only goes DOWN for things you do on purpose (an arrest, a gas-can bust, Dale runs,
+// cancelling on a helper at the last minute, gouging during the storm); neglect, bad luck and time never lower it.
 // S.rep is the score (0 = newcomer). S.repx holds the rest: the "Known for" list, enemies, drift clocks,
 // the Riv weekend-shift meter lives in ECO().rivJob (15-economy.js). Perks (15-economy REP_PERKS) unlock at +20/+35/+60.
 const REP_MIN=-100,REP_MAX=100;
@@ -35,14 +37,11 @@ const repEnemies=()=>(S&&S.repx&&S.repx.enemies)||[];
 // ---- nightly: drift, the house, enemies, friends drifting away, gifts on the porch ----
 function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
   // fame fades without good deeds; a bad name fades slowly on its own
-  if(dk-R.driftAt>=7){R.driftAt=dk;if(r>20&&dk-R.lastGood>=7)repAdd(-5,'out of sight, out of mind',{notes})}
   if(r<0){if(dk-R.healAt>=14){R.healAt=dk;repAdd(5,'people are starting to forget',{notes})}}else R.healAt=dk;
   // "that house"
-  if((S.home??70)<25){R.homeLow++;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
   // enemies bad-mouth you now and then
   // a grudge fades after about four weeks
   for(const e of R.enemies.slice())if(dk-e.since>=28){R.enemies=R.enemies.filter(x=>x!==e);notes.push(`🙂 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} nods at you in the ferry line. Whatever it was, they’ve let it go.`)}
-  for(const e of R.enemies)if(Math.random()<0.05)repAdd(-2,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
   // persona non grata: a casual friend stops answering (about once a week)
   if(repVal()<=-60&&Math.random()<0.15){const ids=Object.keys(S.friends).filter(id=>(S.friends[id].lvl||1)<=1);
     if(ids.length){const id=pick(ids),n=S.friends[id].name.split(',')[0];repDropFriend(id);notes.push(`💔 ${n.charAt(0).toUpperCase()+n.slice(1)} heard what people are saying about you and stops answering your texts.`)}}
@@ -95,8 +94,8 @@ function repHeaderHtml(){const r=repVal(),t=repTier(r),R=(S&&S.repx)||{known:[],
 function repCoop(){const R=REP(),k=Math.floor((S.coop.you||0)/100);if(k>R.coop){const n=k-R.coop;R.coop=k;repAdd(5*n,'pledging to the co-op')}}
 
 // ---- a favor you promised and didn't do: −5; twice for the same friend and they're done with you ----
-function repFavorFailed(id,notes){const R=REP(),f=S.friends[id];repAdd(-2,`never did ${f?f.name.split(",")[0]:"a friend"} that favor`,{notes});
-  R.fails[id]=(R.fails[id]||0)+1;if(R.fails[id]>=2&&f){const n=f.name.split(',')[0];repDropFriend(id);repEnemy(n,'you let them down twice',{notes,fid:id})}}
+// A favor you didn't get to costs the friendship a point (06-day.js), not your reputation: only things you do on purpose lower it.
+function repFavorFailed(id,notes){}
 
 // ---- the Riv weekend shift as a second job: its own meter in the to-do list and a small score bonus ----
 {const _todo=todoItems;todoItems=function(){const it=_todo();try{const J=typeof rivJob==='function'&&rivJob();

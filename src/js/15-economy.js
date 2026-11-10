@@ -32,9 +32,9 @@ const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
 const rivJob=()=>ECO().rivJob||null;
 function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
   if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');S.firedAt=Object.assign(S.firedAt||{},{riv:dayKey()});
-    notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');repAdd(-10,'fired from the Riv: the whole island eats there',{notes})}}
+    notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');}}
 function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
-  notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);repAdd(-5,'no-show at the Riv',{notes});rivMeter(-15,notes)}
+  notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);rivMeter(-15,notes)}
 function rivActions(a,d,m){
   if(S.loc!=='food'||S.emp==='riv')return;
   const E=ECO(),dk=dayKey(),J=rivJob();

@@ -217,7 +217,7 @@ Object.assign(TILE_META,{puppy_litter:['🐶','The neighbors’ dog had puppies'
 defEvent({id:'puppy_litter',hook:'wake',priority:2,max:1,cond:()=>S.loc==='home'&&!HH().dog&&HH().puppy<0&&!HH().once.puppy&&dayKey()>=3,chance:0.2,
   run(){const H=HH();H.once.puppy=1;H.puppy=dayKey()+3;say(`🐶 A hand-lettered sign at the end of the road: “FREE PUPPIES. Lab, mostly. Ask the kids.” The kids have already spotted you. (Adopt from 🏠 Inside the house, until ${DAYS[H.puppy%7]}. Or don’t: they’re very persuasive, but it’s a lot.)`)}});
 defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.5,0.15+0.05*(HH().trash-8)),
-  run(ctx){homeAdj(-6);adj('stress',5);{const R=typeof REP==='function'?REP():null;if(R&&R.racWk!==S.weekNo+'|'+(S.story?S.story.ch:'')){R.racWk=S.weekNo+'|'+(S.story?S.story.ch:'');repAdd(-3,'raccoons spread your trash down the road',{notes:ctx.notes})}}ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
+  run(ctx){homeAdj(-6);adj('stress',5);ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
 // ---- To-do ----
 function hhTodo(it){
   const H=HH(),dk=dayKey();

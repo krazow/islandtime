@@ -154,7 +154,7 @@ function postModal(){
       .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
 }
 // ---- scheduled help: you pick the day and time; a helper comes then (if anyone answers) ----
-const POST_TIMES=[540,780,1020],POST_GRACE=30,POST_MISS=-3;   // 9 AM, 1 PM, 5 PM; they wait half an hour
+const POST_TIMES=[540,780,1020],POST_GRACE=30;   // 9 AM, 1 PM, 5 PM; they wait half an hour
 function postOdds(){const fr=Object.keys(S.friends).length;return Math.max(0.05,Math.min(0.75,0.25+0.08*(Math.max(0,S.rep||0)/7.5+fr)+Math.min(0,S.rep||0)/400-0.1*(typeof repEnemies==='function'?repEnemies().length:0)))}
 function postSlots(){const out=[],now=S.t,last=S.mode==='month'?day()+2:Math.min(6,day()+2);
   for(let d=day();d<=last;d++)for(const m of POST_TIMES){const at=d*1440+m;if(at>=now+120)out.push(at)}return out.slice(0,6)}
@@ -176,9 +176,8 @@ function postCancel(){const j=upJob('post');if(!j||!j.sched||!phoneCan())return;
 function postArrive(j){
   if(!j.sched||S.loc==='home')return postReplies(j);
   if(Math.random()<postOdds()){adj('stress',2);
-    if(typeof repAdd==='function')repAdd(POST_MISS,'stood up a neighbor who came to help');
     say(`📣 Someone from ${COMM_NAME} drove out at ${fmt((j.at||j.due)%1440)}, knocked, waited half an hour and left. The comment under your post: “Came by. Nobody home. 🤷”`);
-    try{showTile('📣','You weren’t home','A neighbor came to help · reputation −3','bad')}catch(e){}}
+    try{showTile('📣','You weren’t home','A neighbor came by to help','bad')}catch(e){}}
   else say(`📣 Nobody answered your help post for ${fmt((j.at||j.due)%1440)}. Just as well: you weren’t home.`)}
 function postReplies(j){
   const c=COMM(),p=postOdds(),gen=j.task==='general'||!UP_TASKS[j.task];
