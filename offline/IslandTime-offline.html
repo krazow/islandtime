@@ -409,14 +409,24 @@ const GOODS={
   med:{n:'Medical supplies',ic:'🩹',d:'First-aid kit, bandages, OTC cold & pain meds',base:{M:28,I:64},law:'ok'},
   gas:{n:'Gasoline, 5-gal can',ic:'🟥',d:'Legal to own. Banned on the ferry, full or empty',base:{M:30,I:68},law:'no-ferry'},
   diesel:{n:'Diesel, 5-gal DOT can',ic:'🟨',d:'Ferry allows 2 cans, in a vehicle only',base:{M:29,I:54},law:'lim'},
-  drugs:{n:'Illicit drugs',ic:'📦',d:'A package. Illegal everywhere. Felony territory',base:{M:280,I:460},law:'illegal'},
+  drugs:{n:'Illicit drugs',ic:'📦',d:'A package. Illegal everywhere. Felony territory',base:{M:280,I:460},law:'illegal',vol:0.15,w:1,pen:{bail:750,hrs:5,days:2}},
+  party:{n:'Party drugs',ic:'🎉',d:'Small bags. Cheap, and cheap is why people get careless',base:{M:60,I:110},law:'illegal',vol:0.25,w:0.7,pen:{bail:500,hrs:5,days:1}},
+  pills:{n:'Pills',ic:'💊',d:'Prescription-type pills with no prescription behind them',base:{M:90,I:160},law:'illegal',vol:0.2,w:0.85,pen:{bail:600,hrs:5,days:1}},
+  hard:{n:'Hard drugs',ic:'☠️',d:'The kind that fills the sheriff’s overdose reports. Heaviest charges',base:{M:400,I:700},law:'illegal',vol:0.3,w:1.4,pen:{bail:1000,hrs:9,days:3}},
+  weed:{n:'Cannabis, 1 oz',ic:'🌿',d:'Legal for adults to buy at a licensed shop, up to one ounce. Reselling it unlicensed is the crime',base:{M:48,I:85},law:'weed',vol:0.2,w:0.6,pen:{bail:400,hrs:5,days:1}},
 };
+const DRUG_G=['drugs','party','pills','hard','weed'], WEED_LIMIT=1, WEED_RETAIL=62;
 const MARKETS={
   wholesale:{goods:['food','med'],hours:[420,1260],who:'Wholesale counter'},
   gas:{goods:['gas','diesel'],hours:[300,1380],who:'Gas station'},
-  motel:{goods:['drugs'],hours:[1080,1440],who:'A guy in a parked sedan',sting:0.06},
+  motel:{goods:['drugs'],hours:[1080,1440],who:'A guy in a parked sedan',cop:0.5,res:0.03,crowd:0.6,spot:'a motel parking lot in Lakewood'},
+  marina:{goods:['party','pills','weed'],hours:[660,1260],who:'Someone who keeps their hood up',cop:0.25,res:0.65,spot:'the Riv marina'},
+  school:{goods:['drugs','pills','hard'],hours:[1080,1380],who:'A figure by a pickup, back lot',cop:0.35,res:0.6,spot:'the old schoolhouse back lot'},
+  ponders:{goods:['drugs','party','pills','weed'],hours:[1080,1440],who:'A guy leaning on a car',cop:0.55,res:0.03,spot:'the lot behind a closed tire shop off Pacific Highway'},
+  hilltop:{goods:['drugs','party','hard'],hours:[1080,1440],who:'Two people by a van',cop:0.5,res:0.02,spot:'an alley behind a shuttered storefront'},
+  dispensary:{goods:['weed'],hours:[480,1320],who:'Licensed shop counter',legal:true},
   store:{goods:['food','med','diesel'],hours:[480,1200],who:'Island swap board (neighbors)'},
-  dale:{goods:['gas','drugs'],hours:[420,1260],who:'Dale',sting:0.1},
+  dale:{goods:['gas','drugs'],hours:[420,1260],who:'Dale',cop:0.45,res:0.5,spot:'Dale’s place'},
 };
 const NEWS=[
   {t:'Island: the co-op potluck left everyone’s freezers full. Food is cheap on the swap board.',side:'I',g:'food',m:0.6},
@@ -457,6 +467,8 @@ const L={
   dale:{name:'Dale’s Place',side:'I',ic:'🛢️',desc:'End of a gravel road. Has gas. Don’t ask.',hours:()=>[420,1260]},
   food:{name:'The Riv',side:'I',ic:'🍔',desc:'Riviera restaurant. Takeout, and Bingo on Wednesday nights',hours:()=>[660,1260]},
   legion:{name:'American Legion Hall',side:'I',ic:'🇺🇸',desc:'The Legion post. Veterans, coffee, and the holiday bazaar'},
+  marina:{name:'The Riv marina',side:'I',ic:'⚓',desc:'Boats on the water, the Riv’s lot up the slope. Busy in summer, quiet otherwise',hours:()=>[660,1260]},
+  school:{name:'Old Schoolhouse',side:'I',ic:'🏫',desc:'Eckenstam-Johnson Road. The island’s fitness center by day. The back lot is dark at night',hours:()=>[1080,1380]},
   lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
   stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
   gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
@@ -464,6 +476,9 @@ const L={
   office:{name:'Hospital Records Office (Tacoma)',side:'M',ic:'🏥',desc:'Records clerk job, starts 8:30',hours:d=>d<5?[420,1080]:null},
   whse:{name:'Warehouse (DuPont)',side:'M',ic:'🏗️',desc:'Early-shift warehouse job, starts 6:30',hours:d=>d<5?[330,1020]:null},
   wholesale:{name:'Wholesale & Supply (Lakewood)',side:'M',ic:'🏭',desc:'Buy and sell food and medical supplies in bulk',hours:()=>[420,1260]},
+  ponders:{name:'Ponders Corner (Lakewood)',side:'M',ic:'🌃',desc:'A lot behind a closed tire shop off Pacific Highway. After dark',hours:()=>[1080,1440]},
+  hilltop:{name:'Hilltop (Tacoma)',side:'M',ic:'🌆',desc:'An alley behind a shuttered storefront. After dark',hours:()=>[1080,1440]},
+  dispensary:{name:'Licensed Cannabis Shop (Lakewood)',side:'M',ic:'🌿',desc:'Legal for adults: one ounce per sale',hours:()=>[480,1320]},
   motel:{name:'Motel Parking Lot (Lakewood)',side:'M',ic:'🅿️',desc:'After dark only. Deals that shouldn’t happen',hours:()=>[1080,1440]},
   work:{name:'Work (Lakewood)',side:'M',ic:'💼',desc:'Your 9-to-5. Clock in by 9:00',hours:d=>d<5?[420,1140]:null},
   market:{name:'Supermarket (Lakewood)',side:'M',ic:'🛒',desc:'Normal prices. Imagine that.',hours:()=>[360,1380]},
@@ -472,8 +487,9 @@ const L={
   clinic:{name:'Medical Clinic (Tacoma)',side:'M',ic:'🩺',desc:'Your doctor. Weekdays only',hours:d=>d<5?[480,1020]:null},
   urgent:{name:'Urgent Care (DuPont)',side:'M',ic:'🚑',desc:'Walk-in care, 8 AM–8 PM',hours:()=>[480,1200]},
 };
-const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2},legion:{home:8,aiDock:9,store:4,lake:6,food:6,dale:9}};
-const MP={office:[13,7.5],whse:[-3.5,-5],depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
+const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2,marina:2},legion:{home:8,aiDock:9,store:4,lake:6,food:6,dale:9,marina:7,school:5},
+  marina:{home:8,aiDock:10,store:7,lake:3,dale:9,school:7},school:{home:5,aiDock:9,store:4,lake:7,food:8,dale:8}};
+const MP={office:[13,7.5],whse:[-3.5,-5],depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],ponders:[7,0.5],hilltop:[10.5,4.5],dispensary:[5.5,3.2],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
 // 2026 fares, round trip, collected at Steilacoom; vehicle fares are higher in peak season (the game's summer)
 function fareCar(){return (typeof seasonId==='function'&&seasonId()==='summer')?FARE_CAR_PEAK:FARE_CAR_NONPEAK}
 function dist(a,b){
@@ -628,7 +644,7 @@ function confirmExit(inGame){
 function baseState(){
   return {name:profileName()||'Islander',diff:'normal',mode:'week',weekNo:0,emp:'lakewood',interview:null,firedFrom:[],coop:{you:0,town:0,open:false},quests:[],t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
-    cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
+    cargo:{food:0,med:0,gas:0,diesel:0,drugs:0,party:0,pills:0,hard:0,weed:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
     gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],home:70,homeLow:false,cleaned:-1,up:upInit(),rep:0,comm:{post:-1,help:-1,flakes:0},alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
@@ -660,7 +676,7 @@ function genWeek(diffKey,sea){
   for(let d=0;d<7;d++){ if(r()<D.minor){const start=d*1440+Math.floor((d===0?10:6)*60+r()*10*60);
       if(!b.some(x=>start<x.end+120&&start>x.start-240)) b.push({start,end:start+90+Math.floor(r()*150),cause:CAUSES[Math.floor(r()*CAUSES.length)]});}}
   const fog=[];for(let d=0;d<7;d++) fog.push(r()<D.fog*seasonMul('fog',sea)?10+Math.floor(r()*20):0);
-  const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]={M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
+  const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]=GOODS[g].vol&&g!=='drugs'?{M:1,I:1}:{M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
   let storm=null;
   if(r()<D.storm*seasonMul('storm',sea)){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)}; // season
     const ws=st+20;if(!b.some(x=>ws<x.end&&ws+200>x.start)) b.push({start:ws,end:ws+120+Math.floor(r()*120),cause:'high winds (gale warning)'});}
@@ -720,14 +736,16 @@ function fullProb(side,d,dep){
 function cargoN(){return Object.values(S.cargo).reduce((a,b)=>a+b,0)}
 function canWalkCarry(){return S.carried<=4&&S.carried+cargoN()<=CAP_FOOT}
 function capNow(){return carHere()?CAP_CAR:CAP_FOOT}
-function contraband(mode){const c=S.cargo;return c.gas>0||c.drugs>0||c.diesel>(mode==='drive'?2:0)}
+function illN(){const c=S.cargo;return (c.drugs||0)+(c.party||0)+(c.pills||0)+(c.hard||0)+Math.max(0,(c.weed||0)-WEED_LIMIT)}
+function contraband(mode){const c=S.cargo;return c.gas>0||illN()>0||c.diesel>(mode==='drive'?2:0)}
 function taskForce(){const n=S.week.news[day()];return n>=0&&NEWS[n].task}
-function price(g,side){
+function dHash(a){let h=7;for(const ch of a+':'+dayKey())h=(h*31+ch.charCodeAt(0))|0;const x=Math.sin(h*12.9898)*43758.5453;return (x-Math.floor(x))*2-1} // −1..1, steady within a day
+function price(g,side,loc){
   const d=day(),base=GOODS[g].base[side]*S.week.px[d][g][side];let m=1;
   const n=S.week.news[d];if(n>=0){const e=NEWS[n];if(!e.task&&e.side===side&&e.g===g)m*=e.m}
   if(side==='I'&&activeOutage()&&g!=='drugs') m*=1.5;
   if(side==='I'&&S.week.storm&&S.week.storm.day===d&&(g==='gas'||g==='med')) m*=1.4;
-  if(g==='drugs'&&taskForce()) m*=1.25;
+  if(DRUG_G.includes(g)){if(taskForce()) m*=1.25;if(loc)m*=1+GOODS[g].vol*dHash(loc+g);if(loc==='dispensary')return {buy:Math.round(WEED_RETAIL*(1+0.06*dHash('dispensary')))+0,sell:0}}
   const buy=Math.round(base*m);return {buy,sell:Math.round(buy*0.82)};
 }
 
@@ -782,22 +800,23 @@ function waitFerryFrom(side){ // after a bump, find next from current time ignor
   if(!n||n.d>day()){say('No more drive-on sailings tonight.');S.priority=false;return render()}
   S.stats.waited+=n.abs-S.t; adj('stress',6); S.t=n.abs+(n.delay||0); S.priority=false; board(side,n,'drive');
 }
-function arrest(where,missed){
+function arrest(where,missed,opt){
   showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
-  const lost=[];if(S.cargo.drugs)lost.push(S.cargo.drugs+' drug package'+(S.cargo.drugs>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
-  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;repAdd(-35,'arrested: it was in the sheriff’s blotter');
-  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $750 bail five hours later. Your boss heard.`);
+  const pen=(opt&&opt.pen)||GOODS.drugs.pen,nd=DRUG_G.reduce((a,g)=>a+(S.cargo[g]||0),0);
+  const lost=[];if(nd)lost.push(nd+' drug package'+(nd>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
+  DRUG_G.forEach(g=>{if(S.cargo[g])S.cargo[g]=0});S.cargo.gas=0;money(-pen.bail);adj('job',-20);adj('stress',30);S.t+=pen.hrs*60;repAdd(-35,'arrested: it was in the sheriff’s blotter');
+  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $${pen.bail} bail ${pen.hrs} hours later. Your boss heard.`);
   if(S.drugCharges>=2) return gameOver('convicted');
-  modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':'The buyer was an undercover deputy.'}</p><p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$750 bail</b> five hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
+  modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':(opt&&opt.txt)||'The buyer was an undercover deputy.'}</p>${opt&&opt.cp?`<p>${opt.cp}</p>`:''}<p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$${pen.bail} bail</b> ${pen.hrs} hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
   afterAction();
 }
 function board(side,s,mode){
   if(contraband(mode)){
     const c=S.cargo;
-    const p=Math.min(0.9,(mode==='drive'?0.22:0.32)+0.04*(c.gas+c.drugs)+(c.drugs?0.05*S.stats.drugRuns:0)+(taskForce()?0.3:0));
+    const p=Math.min(0.9,(mode==='drive'?0.22:0.32)+0.04*(c.gas+illN())+(illN()?0.05*S.stats.drugRuns:0)+(taskForce()?0.3:0));
     if(Math.random()<p){
-      if(c.drugs>0) return arrest('at the ferry',true);
+      if(illN()>0) return arrest('at the ferry',true);
       if(c.gas>0){
         showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
@@ -808,7 +827,7 @@ function board(side,s,mode){
       say(`🟨 The deckhand counts your diesel cans. ${mode==='drive'?'Two per vehicle is the limit':'Diesel cans have to ride in a vehicle'}, so ${extra} can${extra>1?'s':''} stay${extra>1?'':'s'} on the dock. Gone.`);
     } else {
       if(c.gas){S.stats.smuggled+=c.gas*5;adj('stress',10);say('Nobody looks in your trunk. You sweat through the whole crossing, smelling gas fumes and picturing a car-deck fire.');}
-      if(c.drugs){S.stats.drugRuns++;if(S.stats.drugRuns>2)repAdd(-5,'people have seen your car out at Dale’s');adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
+      if(illN()){S.stats.drugRuns++;if(S.stats.drugRuns>2)repAdd(-5,'people have seen your car out at Dale’s');adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
       if(c.diesel>(mode==='drive'?2:0)) say('Nobody counts your diesel cans this time.');
     }
   }
@@ -2076,32 +2095,33 @@ function cargoActions(a){
   if(c.diesel>0) a.push({ic:'🟨',l:`Store a diesel can in the shed (${c.diesel} in cargo)`,s:'+5 gal of diesel.',fn:()=>{c.diesel--;S.homeDiesel+=5;S.t+=5;say('5 gallons of diesel into the shed.');afterAction()}});
 }
 function trade(g,dir){
-  const side=L[S.loc].side,pr=price(g,side),mk=MARKETS[S.loc];
-  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell;if(side==='I'&&(g==='food'||g==='med'))achUnlock('supplier')}
-  S.t+=g==='drugs'?15:5;
-  if(g==='drugs'){
-    adj('stress',dir==='sell'?8:6);
-    if(Math.random()<(mk.sting||0)+0.03*S.stats.drugRuns+(taskForce()?0.1:0)) return arrest(S.loc==='dale'?'outside Dale’s place':'in a Lakewood motel parking lot',false);
-  }
+  const side=L[S.loc].side,pr=price(g,side,S.loc),mk=MARKETS[S.loc],drug=DRUG_G.includes(g)&&!mk.legal;
+  const p0=drug?noticeP(S.loc,g,dir):0; // the odds as shown on the button, before this deal adds heat
+  if(dir==='buy'){money(-pr.buy);S.cargo[g]=(S.cargo[g]||0)+1;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell;if(side==='I'&&(g==='food'||g==='med'))achUnlock('supplier')}
+  S.t+=DRUG_G.includes(g)?15:5;
+  if(drug){adj('stress',dir==='sell'?8:6);return drugDeal(g,dir,pr,p0)}
   const verb=dir==='buy'?'Bought':'Sold';
-  say(`${GOODS[g].ic} ${verb} 1 ${GOODS[g].n.toLowerCase()} for ${$(dir==='buy'?pr.buy:pr.sell)}.`);
+  say(`${GOODS[g].ic} ${verb} 1 ${GOODS[g].n.toLowerCase()} for ${$(dir==='buy'?pr.buy:pr.sell)}.${mk.legal?' You showed ID at the counter. Perfectly legal, up to an ounce.':''}`);
   afterAction();
 }
 window.TRADE=(g,dir)=>{uiNarr=[];trade(g,dir)};
 function marketView(){
   const mk=MARKETS[S.loc];if(!mk)return '';
   if(tradingLocked()) return `<div class="sect">Trade</div><div class="news">🔒 Trading opens on Tuesday, once you’ve learned the ropes. (Turn off tutorial tips in ⚙️ Settings to unlock everything now.)</div>`;
-  const side=L[S.loc].side,m=tod(),open=m>=mk.hours[0]&&m<mk.hours[1];
+  const side=L[S.loc].side,m=tod(),jail=S.loc==='dale'&&typeof npcJailed==='function'&&npcJailed('dale'),open=m>=mk.hours[0]&&m<mk.hours[1]&&!jail;
   let h=`<div class="sect">Trade: ${mk.who}</div>`;
   const n=S.week.news[day()];if(n>=0) h+=`<div class="news">📰 ${NEWS[n].t}</div>`;
   if(side==='I'&&activeOutage()) h+=`<div class="news">🚨 Ferry’s down: island prices for food, medicine and fuel are up 50%.</div>`;
+  if(jail) return h+`<div class="news">🔒 ${npcJailTxt('dale')} No trading here.</div>`;
   if(!open) return h+`<div class="news">🔒 Not trading right now. Hours: ${fmt(mk.hours[0])}–${fmt(mk.hours[1])}.</div>`;
   const cap=capNow(),load=cargoN()+S.carried;
+  if(mk.spot&&!mk.legal) h+=drugHeatLine(S.loc);
   h+=`<div class="mkt">`;
-  for(const g of mk.goods){const G=GOODS[g],pr=price(g,side),other=price(g,side==='I'?'M':'I');
-    const badge=G.law==='ok'?'<span class="badge ok">Legal</span>':G.law==='lim'?'<span class="badge lim">Ferry limit 2</span>':G.law==='no-ferry'?'<span class="badge no">Not on ferry</span>':'<span class="badge no">Illegal</span>';
-    h+=`<div class="mrow"><span class="ic">${G.ic}</span><div class="mi"><b>${G.n}${badge}</b><span>${G.d}</span><div class="px">Buy <b>${$(pr.buy)}</b> · Sell <b>${$(pr.sell)}</b> · ${side==='I'?'mainland':'island'} ~${$(other.buy)}</div></div>
-    <div class="mbtns"><button onclick="TRADE('${g}','sell')" ${S.cargo[g]<=0?'disabled':''}>Sell</button><span class="own">${S.cargo[g]}</span><button class="buy" onclick="TRADE('${g}','buy')" ${S.money<pr.buy||load>=cap?'disabled':''}>Buy</button></div></div>`}
+  for(const g of mk.goods){const G=GOODS[g],pr=price(g,side,S.loc),other=price(g,side==='I'?'M':'I');
+    const badge=G.law==='ok'?'<span class="badge ok">Legal</span>':G.law==='lim'?'<span class="badge lim">Ferry limit 2</span>':G.law==='no-ferry'?'<span class="badge no">Not on ferry</span>':G.law==='weed'?(mk.legal?'<span class="badge ok">Legal, 1 oz max</span>':'<span class="badge no">Unlicensed resale: illegal</span>'):'<span class="badge no">Illegal</span>';
+    const risk=DRUG_G.includes(g)&&!mk.legal?` · <b>${noticeHint(noticeP(S.loc,g,'buy'))}</b> chance someone notices`:'';
+    h+=`<div class="mrow"><span class="ic">${G.ic}</span><div class="mi"><b>${G.n}${badge}</b><span>${G.d}</span><div class="px">Buy <b>${$(pr.buy)}</b>${mk.legal?'':` · Sell <b>${$(pr.sell)}</b>`} · ${mk.legal?'':`${side==='I'?'mainland':'island'} ~${$(other.buy)}`}${risk}</div></div>
+    <div class="mbtns">${mk.legal?'':`<button onclick="TRADE('${g}','sell')" ${(S.cargo[g]||0)<=0?'disabled':''}>Sell</button>`}<span class="own">${S.cargo[g]||0}</span><button class="buy" onclick="TRADE('${g}','buy')" ${S.money<pr.buy||load>=cap||(mk.legal&&(S.cargo[g]||0)>=WEED_LIMIT)?'disabled':''}>Buy</button></div></div>`}
   h+=`</div><div style="font-size:12px;color:var(--mute);margin:-2px 2px 6px">Cargo: ${load}/${cap} ${carHere()?'(car)':'(on foot)'}. Groceries in hand count too.</div>`;
   return h;
 }
@@ -2547,7 +2567,7 @@ function ferryView(){
   <p>🥫🩹 <b>Food and medical supplies:</b> legal to buy, sell and carry.</p>
   <p>🟨 <b>Diesel:</b> two 5-gal DOT cans per vehicle. Extras, or diesel carried on foot, get left on the dock.</p>
   <p>🟥 <b>Gasoline cans:</b> legal to sell, banned on the ferry. Caught: $150 citation, can seized. Second time: barred from the ferry.</p>
-  <p>📦 <b>Illicit drugs:</b> illegal everywhere. Caught at the ferry or by an undercover buyer: arrest, $750 bail, five hours lost, and a big hit to your job. A second arrest ends the game.</p>
+  <p>📦 <b>Illicit drugs:</b> illegal everywhere (cannabis is legal to buy at a licensed shop, up to an ounce; reselling it is not). A deal costs nothing by itself. If a deputy or officer notices it, you and the other person are both arrested: bail, hours lost, a big hit to your job, and a second arrest ends the game. If an islander notices, you each lose 15 reputation. Busy places, heat and daylight make it likelier.</p>
   <p>Inspection odds go up with every contraband item you carry, and way up when the sheriff’s task force rides the boat. The neighbor’s sailboat isn’t inspected.</p></div>`;
   h+=`<div class="sect">How the ferry works</div><div class="rules">
   <p>🕐 <b>Be in line 20 minutes before departure</b>, cars and walk-ons alike, or you don’t board.</p>
@@ -5915,6 +5935,43 @@ function npcRebase(){if(!S.npc)return;const sh=storyShift;for(const r of Object.
 if(typeof storyHooks!=='undefined')storyHooks.push({id:'npcrep',chapterStart(){npcRebase()},
   ending(){const a=Object.values(NPC()).sort((x,y)=>y.rep-x.rep),b=a[0],w=a[a.length-1],l=[`${npcCap(b.name)} ended the year the best-liked person on the island (${npcTier(b.id).n}).`];
     if(w.rep<0)l[0]+=` ${npcCap(w.name)} ended it the least (${npcTier(w.id).n}); people still lower their voices about it at the Riv.`;return l}});
+// ---- 🕶️ drug trade: only what gets noticed counts ----
+// A deal itself costs no reputation. Each unlicensed deal (buy or sell) rolls "does anyone notice?":
+//   p = 0.07 · tier weight · (1 + 0.18·heat) · (1 + 0.12·(units in hand − 1)) · crowd at this hour · daylight   (max 0.6)
+// heat: per market, +1 per deal, halves every two days. If noticed, one witness is rolled from the market's mix:
+//   cop      → the player gets the drug arrest (tier bail/hours) and the other party (an NPC on the island) is npcArrest'd with the tier's days
+//   resident → ONLY the two people in the deal lose 15 reputation (player repAdd, NPC npcRepAdd public); the witness may post in the Island Group
+//   stranger → nothing.  Legal weed at the licensed shop (MARKETS.dispensary.legal) never rolls.
+const drugAbs=()=>dayKey()*1440+tod();
+function heatNow(loc){const H=S.heat&&S.heat[loc];return H?H.h*Math.pow(0.5,Math.max(0,drugAbs()-H.at)/2880):0}
+function heatAdd(loc,n){S.heat=S.heat||{};S.heat[loc]={h:heatNow(loc)+n,at:drugAbs()}}
+function crowdF(loc){const m=tod(),sea=seasonId(),eve=m>=1020&&m<1320;let c;
+  if(loc==='marina') c=0.7+(sea==='summer'?0.6:sea==='winter'?-0.2:0.15)+(eve?0.3:0)+(day()>=5?0.2:0);
+  else if(loc==='school') c=0.45;else if(loc==='dale') c=0.6;
+  else c=(MARKETS[loc].crowd||({ponders:0.9,hilltop:1}[loc]||0.8))*(m>=1320?0.8:1);
+  return Math.max(0.3,c)}
+function dayF(){const set={summer:1290,spring:1170,fall:1050,winter:990}[seasonId()]||1050;return tod()<set?1:0.6}
+function noticeP(loc,g,dir){const G=GOODS[g],q=Math.min(6,Math.max(1,(S.cargo[g]||0)+(dir==='buy'?1:0)));
+  return Math.min(0.6,0.07*G.w*(1+0.18*heatNow(loc))*(1+0.12*(q-1))*crowdF(loc)*dayF())}
+const noticeHint=p=>p<0.08?'low':p<0.16?'medium':'high';
+function drugHeatLine(loc){const h=heatNow(loc),mk=MARKETS[loc],c=crowdF(loc);
+  return `<div style="font-size:12px;color:var(--mute);margin:0 2px 6px">📍 ${mk.spot}. Heat here: <b>${h<0.5?'cold':h<2?'warm':h<4?'hot':'burning'}</b> (${h.toFixed(1)}) · ${c>=1.1?'busy':c>=0.65?'some people around':'quiet'} · ${dayF()===1?'daylight':'after dark'}. A deal costs nothing by itself; being seen does.</div>`}
+function drugDeal(g,dir,pr,p){
+  const loc=S.loc,mk=MARKETS[loc],G=GOODS[g],island=L[loc].side==='I',spot=mk.spot,tx=`${G.ic} ${dir==='buy'?'Bought':'Sold'} 1 ${G.n.toLowerCase()} for ${$(dir==='buy'?pr.buy:pr.sell)} at ${spot}.`;
+  heatAdd(loc,1);S.drugLast={loc,g,dir,p,kind:'none',cp:null};
+  if(!(Math.random()<p)){say(tx+' Nobody seems to notice.');return afterAction()}
+  const w=mk.cop+mk.res,r=Math.random()*(w+Math.max(0,1-w)),kind=r<mk.cop?'cop':r<w?'res':'str';S.drugLast.kind=kind;
+  if(kind==='str'){say(tx+' Somebody glances over, shrugs and walks on.');return afterAction()}
+  const cp=loc==='dale'?'dale':island?(npcPick({notJailed:true,not:['dale']})||{}).id||null:null;S.drugLast.cp=cp;
+  const who=cp?npcName(cp):'the other party';
+  if(kind==='res'){
+    const post=Math.random()<0.6;repAdd(-15,`an islander saw you making a deal at ${spot}`);
+    if(cp)npcRepAdd(cp,-15,`was seen making a deal at ${spot}`,{public:post});
+    else if(post){S.npcg=S.npcg||[];S.npcg.unshift({d:dayKey(),id:'you',n:-15,txt:`Someone says they saw a deal at ${spot}. No names. Everybody has a guess.`});S.npcg=S.npcg.slice(0,12)}
+    say(tx+` An islander you know by sight is standing right there. Nobody says anything. It will get around${post?', and somebody posts about it in the Island Group':''}.`);S.drugLast.post=post;return afterAction()}
+  const pen=G.pen;if(cp)npcArrest(cp,`was arrested after a drug deal at ${spot}`,pen.days);
+  return arrest(`at ${spot}`,false,{pen,txt:island?'A sheriff’s deputy on patrol turns into the lot with the lights already on.':'A patrol officer steps out of the dark and says the word everyone dreads: “Hands.”',cp:cp?`${npcCap(who)} is cuffed next to you and gets the same charge, the same bail and the same night in the same cell block.`:'The other party is cuffed next to you and gets the same charge.'});
+}
 </script>
 </body>
 </html>

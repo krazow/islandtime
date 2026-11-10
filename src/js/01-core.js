@@ -124,7 +124,7 @@ function confirmExit(inGame){
 function baseState(){
   return {name:profileName()||'Islander',diff:'normal',mode:'week',weekNo:0,emp:'lakewood',interview:null,firedFrom:[],coop:{you:0,town:0,open:false},quests:[],t:330,cur:0,loc:'home',money:850,pantry:2,carried:0,cooler:false,health:80,stress:20,job:70,
     cars:[{id:'isl',name:'Island car (old Subaru)',loc:'home',fuel:4.5,tank:14,diesel:false}],
-    cargo:{food:0,med:0,gas:0,diesel:0,drugs:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
+    cargo:{food:0,med:0,gas:0,diesel:0,drugs:0,party:0,pills:0,hard:0,weed:0},drugCharges:0,homeGas:0,homeDiesel:0,citations:0,delivery:null,ateOut:-1,daleStock:{},
     worked:{},late:{},appt:false,apptMissed:false,rx:false,injury:null,injuryRolled:false,priority:false,
     gossipDay:-1,eagleDay:-1,storeStock:{},log:[],prios:[],home:70,homeLow:false,cleaned:-1,up:upInit(),rep:0,comm:{post:-1,help:-1,flakes:0},alertsSeen:{},over:false,
     stats:{waited:0,bumps:0,stranded:0,missed:0,fares:0,crossings:0,food:0,daleGal:0,smuggled:0,outageNights:0,bought:0,sold:0,drugRuns:0,arrests:0},
@@ -156,7 +156,7 @@ function genWeek(diffKey,sea){
   for(let d=0;d<7;d++){ if(r()<D.minor){const start=d*1440+Math.floor((d===0?10:6)*60+r()*10*60);
       if(!b.some(x=>start<x.end+120&&start>x.start-240)) b.push({start,end:start+90+Math.floor(r()*150),cause:CAUSES[Math.floor(r()*CAUSES.length)]});}}
   const fog=[];for(let d=0;d<7;d++) fog.push(r()<D.fog*seasonMul('fog',sea)?10+Math.floor(r()*20):0);
-  const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]={M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
+  const px=[],news=[];for(let d=0;d<7;d++){const o={};for(const g in GOODS)o[g]=GOODS[g].vol&&g!=='drugs'?{M:1,I:1}:{M:0.85+r()*0.3,I:0.8+r()*0.4};px.push(o);news.push(r()<(d===0?0:0.55)?Math.floor(r()*NEWS.length):-1)}
   let storm=null;
   if(r()<D.storm*seasonMul('storm',sea)){const sd=1+Math.floor(r()*5);const st=sd*1440+Math.floor((15+r()*4)*60);storm={day:sd,start:st,end:st+(r()<0.5?960:2280)}; // season
     const ws=st+20;if(!b.some(x=>ws<x.end&&ws+200>x.start)) b.push({start:ws,end:ws+120+Math.floor(r()*120),cause:'high winds (gale warning)'});}

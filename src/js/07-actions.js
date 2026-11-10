@@ -251,32 +251,33 @@ function cargoActions(a){
   if(c.diesel>0) a.push({ic:'🟨',l:`Store a diesel can in the shed (${c.diesel} in cargo)`,s:'+5 gal of diesel.',fn:()=>{c.diesel--;S.homeDiesel+=5;S.t+=5;say('5 gallons of diesel into the shed.');afterAction()}});
 }
 function trade(g,dir){
-  const side=L[S.loc].side,pr=price(g,side),mk=MARKETS[S.loc];
-  if(dir==='buy'){money(-pr.buy);S.cargo[g]++;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell;if(side==='I'&&(g==='food'||g==='med'))achUnlock('supplier')}
-  S.t+=g==='drugs'?15:5;
-  if(g==='drugs'){
-    adj('stress',dir==='sell'?8:6);
-    if(Math.random()<(mk.sting||0)+0.03*S.stats.drugRuns+(taskForce()?0.1:0)) return arrest(S.loc==='dale'?'outside Dale’s place':'in a Lakewood motel parking lot',false);
-  }
+  const side=L[S.loc].side,pr=price(g,side,S.loc),mk=MARKETS[S.loc],drug=DRUG_G.includes(g)&&!mk.legal;
+  const p0=drug?noticeP(S.loc,g,dir):0; // the odds as shown on the button, before this deal adds heat
+  if(dir==='buy'){money(-pr.buy);S.cargo[g]=(S.cargo[g]||0)+1;S.stats.bought+=pr.buy}else{money(pr.sell);S.cargo[g]--;S.stats.sold+=pr.sell;if(side==='I'&&(g==='food'||g==='med'))achUnlock('supplier')}
+  S.t+=DRUG_G.includes(g)?15:5;
+  if(drug){adj('stress',dir==='sell'?8:6);return drugDeal(g,dir,pr,p0)}
   const verb=dir==='buy'?'Bought':'Sold';
-  say(`${GOODS[g].ic} ${verb} 1 ${GOODS[g].n.toLowerCase()} for ${$(dir==='buy'?pr.buy:pr.sell)}.`);
+  say(`${GOODS[g].ic} ${verb} 1 ${GOODS[g].n.toLowerCase()} for ${$(dir==='buy'?pr.buy:pr.sell)}.${mk.legal?' You showed ID at the counter. Perfectly legal, up to an ounce.':''}`);
   afterAction();
 }
 window.TRADE=(g,dir)=>{uiNarr=[];trade(g,dir)};
 function marketView(){
   const mk=MARKETS[S.loc];if(!mk)return '';
   if(tradingLocked()) return `<div class="sect">Trade</div><div class="news">🔒 Trading opens on Tuesday, once you’ve learned the ropes. (Turn off tutorial tips in ⚙️ Settings to unlock everything now.)</div>`;
-  const side=L[S.loc].side,m=tod(),open=m>=mk.hours[0]&&m<mk.hours[1];
+  const side=L[S.loc].side,m=tod(),jail=S.loc==='dale'&&typeof npcJailed==='function'&&npcJailed('dale'),open=m>=mk.hours[0]&&m<mk.hours[1]&&!jail;
   let h=`<div class="sect">Trade: ${mk.who}</div>`;
   const n=S.week.news[day()];if(n>=0) h+=`<div class="news">📰 ${NEWS[n].t}</div>`;
   if(side==='I'&&activeOutage()) h+=`<div class="news">🚨 Ferry’s down: island prices for food, medicine and fuel are up 50%.</div>`;
+  if(jail) return h+`<div class="news">🔒 ${npcJailTxt('dale')} No trading here.</div>`;
   if(!open) return h+`<div class="news">🔒 Not trading right now. Hours: ${fmt(mk.hours[0])}–${fmt(mk.hours[1])}.</div>`;
   const cap=capNow(),load=cargoN()+S.carried;
+  if(mk.spot&&!mk.legal) h+=drugHeatLine(S.loc);
   h+=`<div class="mkt">`;
-  for(const g of mk.goods){const G=GOODS[g],pr=price(g,side),other=price(g,side==='I'?'M':'I');
-    const badge=G.law==='ok'?'<span class="badge ok">Legal</span>':G.law==='lim'?'<span class="badge lim">Ferry limit 2</span>':G.law==='no-ferry'?'<span class="badge no">Not on ferry</span>':'<span class="badge no">Illegal</span>';
-    h+=`<div class="mrow"><span class="ic">${G.ic}</span><div class="mi"><b>${G.n}${badge}</b><span>${G.d}</span><div class="px">Buy <b>${$(pr.buy)}</b> · Sell <b>${$(pr.sell)}</b> · ${side==='I'?'mainland':'island'} ~${$(other.buy)}</div></div>
-    <div class="mbtns"><button onclick="TRADE('${g}','sell')" ${S.cargo[g]<=0?'disabled':''}>Sell</button><span class="own">${S.cargo[g]}</span><button class="buy" onclick="TRADE('${g}','buy')" ${S.money<pr.buy||load>=cap?'disabled':''}>Buy</button></div></div>`}
+  for(const g of mk.goods){const G=GOODS[g],pr=price(g,side,S.loc),other=price(g,side==='I'?'M':'I');
+    const badge=G.law==='ok'?'<span class="badge ok">Legal</span>':G.law==='lim'?'<span class="badge lim">Ferry limit 2</span>':G.law==='no-ferry'?'<span class="badge no">Not on ferry</span>':G.law==='weed'?(mk.legal?'<span class="badge ok">Legal, 1 oz max</span>':'<span class="badge no">Unlicensed resale: illegal</span>'):'<span class="badge no">Illegal</span>';
+    const risk=DRUG_G.includes(g)&&!mk.legal?` · <b>${noticeHint(noticeP(S.loc,g,'buy'))}</b> chance someone notices`:'';
+    h+=`<div class="mrow"><span class="ic">${G.ic}</span><div class="mi"><b>${G.n}${badge}</b><span>${G.d}</span><div class="px">Buy <b>${$(pr.buy)}</b>${mk.legal?'':` · Sell <b>${$(pr.sell)}</b>`} · ${mk.legal?'':`${side==='I'?'mainland':'island'} ~${$(other.buy)}`}${risk}</div></div>
+    <div class="mbtns">${mk.legal?'':`<button onclick="TRADE('${g}','sell')" ${(S.cargo[g]||0)<=0?'disabled':''}>Sell</button>`}<span class="own">${S.cargo[g]||0}</span><button class="buy" onclick="TRADE('${g}','buy')" ${S.money<pr.buy||load>=cap||(mk.legal&&(S.cargo[g]||0)>=WEED_LIMIT)?'disabled':''}>Buy</button></div></div>`}
   h+=`</div><div style="font-size:12px;color:var(--mute);margin:-2px 2px 6px">Cargo: ${load}/${cap} ${carHere()?'(car)':'(on foot)'}. Groceries in hand count too.</div>`;
   return h;
 }

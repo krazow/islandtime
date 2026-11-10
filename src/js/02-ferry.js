@@ -38,14 +38,16 @@ function fullProb(side,d,dep){
 function cargoN(){return Object.values(S.cargo).reduce((a,b)=>a+b,0)}
 function canWalkCarry(){return S.carried<=4&&S.carried+cargoN()<=CAP_FOOT}
 function capNow(){return carHere()?CAP_CAR:CAP_FOOT}
-function contraband(mode){const c=S.cargo;return c.gas>0||c.drugs>0||c.diesel>(mode==='drive'?2:0)}
+function illN(){const c=S.cargo;return (c.drugs||0)+(c.party||0)+(c.pills||0)+(c.hard||0)+Math.max(0,(c.weed||0)-WEED_LIMIT)}
+function contraband(mode){const c=S.cargo;return c.gas>0||illN()>0||c.diesel>(mode==='drive'?2:0)}
 function taskForce(){const n=S.week.news[day()];return n>=0&&NEWS[n].task}
-function price(g,side){
+function dHash(a){let h=7;for(const ch of a+':'+dayKey())h=(h*31+ch.charCodeAt(0))|0;const x=Math.sin(h*12.9898)*43758.5453;return (x-Math.floor(x))*2-1} // −1..1, steady within a day
+function price(g,side,loc){
   const d=day(),base=GOODS[g].base[side]*S.week.px[d][g][side];let m=1;
   const n=S.week.news[d];if(n>=0){const e=NEWS[n];if(!e.task&&e.side===side&&e.g===g)m*=e.m}
   if(side==='I'&&activeOutage()&&g!=='drugs') m*=1.5;
   if(side==='I'&&S.week.storm&&S.week.storm.day===d&&(g==='gas'||g==='med')) m*=1.4;
-  if(g==='drugs'&&taskForce()) m*=1.25;
+  if(DRUG_G.includes(g)){if(taskForce()) m*=1.25;if(loc)m*=1+GOODS[g].vol*dHash(loc+g);if(loc==='dispensary')return {buy:Math.round(WEED_RETAIL*(1+0.06*dHash('dispensary')))+0,sell:0}}
   const buy=Math.round(base*m);return {buy,sell:Math.round(buy*0.82)};
 }
 
@@ -100,22 +102,23 @@ function waitFerryFrom(side){ // after a bump, find next from current time ignor
   if(!n||n.d>day()){say('No more drive-on sailings tonight.');S.priority=false;return render()}
   S.stats.waited+=n.abs-S.t; adj('stress',6); S.t=n.abs+(n.delay||0); S.priority=false; board(side,n,'drive');
 }
-function arrest(where,missed){
+function arrest(where,missed,opt){
   showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
-  const lost=[];if(S.cargo.drugs)lost.push(S.cargo.drugs+' drug package'+(S.cargo.drugs>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
-  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;repAdd(-35,'arrested: it was in the sheriff’s blotter');
-  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $750 bail five hours later. Your boss heard.`);
+  const pen=(opt&&opt.pen)||GOODS.drugs.pen,nd=DRUG_G.reduce((a,g)=>a+(S.cargo[g]||0),0);
+  const lost=[];if(nd)lost.push(nd+' drug package'+(nd>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
+  DRUG_G.forEach(g=>{if(S.cargo[g])S.cargo[g]=0});S.cargo.gas=0;money(-pen.bail);adj('job',-20);adj('stress',30);S.t+=pen.hrs*60;repAdd(-35,'arrested: it was in the sheriff’s blotter');
+  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $${pen.bail} bail ${pen.hrs} hours later. Your boss heard.`);
   if(S.drugCharges>=2) return gameOver('convicted');
-  modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':'The buyer was an undercover deputy.'}</p><p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$750 bail</b> five hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
+  modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':(opt&&opt.txt)||'The buyer was an undercover deputy.'}</p>${opt&&opt.cp?`<p>${opt.cp}</p>`:''}<p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$${pen.bail} bail</b> ${pen.hrs} hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
   afterAction();
 }
 function board(side,s,mode){
   if(contraband(mode)){
     const c=S.cargo;
-    const p=Math.min(0.9,(mode==='drive'?0.22:0.32)+0.04*(c.gas+c.drugs)+(c.drugs?0.05*S.stats.drugRuns:0)+(taskForce()?0.3:0));
+    const p=Math.min(0.9,(mode==='drive'?0.22:0.32)+0.04*(c.gas+illN())+(illN()?0.05*S.stats.drugRuns:0)+(taskForce()?0.3:0));
     if(Math.random()<p){
-      if(c.drugs>0) return arrest('at the ferry',true);
+      if(illN()>0) return arrest('at the ferry',true);
       if(c.gas>0){
         showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
@@ -126,7 +129,7 @@ function board(side,s,mode){
       say(`🟨 The deckhand counts your diesel cans. ${mode==='drive'?'Two per vehicle is the limit':'Diesel cans have to ride in a vehicle'}, so ${extra} can${extra>1?'s':''} stay${extra>1?'':'s'} on the dock. Gone.`);
     } else {
       if(c.gas){S.stats.smuggled+=c.gas*5;adj('stress',10);say('Nobody looks in your trunk. You sweat through the whole crossing, smelling gas fumes and picturing a car-deck fire.');}
-      if(c.drugs){S.stats.drugRuns++;if(S.stats.drugRuns>2)repAdd(-5,'people have seen your car out at Dale’s');adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
+      if(illN()){S.stats.drugRuns++;if(S.stats.drugRuns>2)repAdd(-5,'people have seen your car out at Dale’s');adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
       if(c.diesel>(mode==='drive'?2:0)) say('Nobody counts your diesel cans this time.');
     }
   }

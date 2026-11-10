@@ -262,7 +262,7 @@ function ferryView(){
   <p>🥫🩹 <b>Food and medical supplies:</b> legal to buy, sell and carry.</p>
   <p>🟨 <b>Diesel:</b> two 5-gal DOT cans per vehicle. Extras, or diesel carried on foot, get left on the dock.</p>
   <p>🟥 <b>Gasoline cans:</b> legal to sell, banned on the ferry. Caught: $150 citation, can seized. Second time: barred from the ferry.</p>
-  <p>📦 <b>Illicit drugs:</b> illegal everywhere. Caught at the ferry or by an undercover buyer: arrest, $750 bail, five hours lost, and a big hit to your job. A second arrest ends the game.</p>
+  <p>📦 <b>Illicit drugs:</b> illegal everywhere (cannabis is legal to buy at a licensed shop, up to an ounce; reselling it is not). A deal costs nothing by itself. If a deputy or officer notices it, you and the other person are both arrested: bail, hours lost, a big hit to your job, and a second arrest ends the game. If an islander notices, you each lose 15 reputation. Busy places, heat and daylight make it likelier.</p>
   <p>Inspection odds go up with every contraband item you carry, and way up when the sheriff’s task force rides the boat. The neighbor’s sailboat isn’t inspected.</p></div>`;
   h+=`<div class="sect">How the ferry works</div><div class="rules">
   <p>🕐 <b>Be in line 20 minutes before departure</b>, cars and walk-ons alike, or you don’t board.</p>

@@ -24,14 +24,24 @@ const GOODS={
   med:{n:'Medical supplies',ic:'🩹',d:'First-aid kit, bandages, OTC cold & pain meds',base:{M:28,I:64},law:'ok'},
   gas:{n:'Gasoline, 5-gal can',ic:'🟥',d:'Legal to own. Banned on the ferry, full or empty',base:{M:30,I:68},law:'no-ferry'},
   diesel:{n:'Diesel, 5-gal DOT can',ic:'🟨',d:'Ferry allows 2 cans, in a vehicle only',base:{M:29,I:54},law:'lim'},
-  drugs:{n:'Illicit drugs',ic:'📦',d:'A package. Illegal everywhere. Felony territory',base:{M:280,I:460},law:'illegal'},
+  drugs:{n:'Illicit drugs',ic:'📦',d:'A package. Illegal everywhere. Felony territory',base:{M:280,I:460},law:'illegal',vol:0.15,w:1,pen:{bail:750,hrs:5,days:2}},
+  party:{n:'Party drugs',ic:'🎉',d:'Small bags. Cheap, and cheap is why people get careless',base:{M:60,I:110},law:'illegal',vol:0.25,w:0.7,pen:{bail:500,hrs:5,days:1}},
+  pills:{n:'Pills',ic:'💊',d:'Prescription-type pills with no prescription behind them',base:{M:90,I:160},law:'illegal',vol:0.2,w:0.85,pen:{bail:600,hrs:5,days:1}},
+  hard:{n:'Hard drugs',ic:'☠️',d:'The kind that fills the sheriff’s overdose reports. Heaviest charges',base:{M:400,I:700},law:'illegal',vol:0.3,w:1.4,pen:{bail:1000,hrs:9,days:3}},
+  weed:{n:'Cannabis, 1 oz',ic:'🌿',d:'Legal for adults to buy at a licensed shop, up to one ounce. Reselling it unlicensed is the crime',base:{M:48,I:85},law:'weed',vol:0.2,w:0.6,pen:{bail:400,hrs:5,days:1}},
 };
+const DRUG_G=['drugs','party','pills','hard','weed'], WEED_LIMIT=1, WEED_RETAIL=62;
 const MARKETS={
   wholesale:{goods:['food','med'],hours:[420,1260],who:'Wholesale counter'},
   gas:{goods:['gas','diesel'],hours:[300,1380],who:'Gas station'},
-  motel:{goods:['drugs'],hours:[1080,1440],who:'A guy in a parked sedan',sting:0.06},
+  motel:{goods:['drugs'],hours:[1080,1440],who:'A guy in a parked sedan',cop:0.5,res:0.03,crowd:0.6,spot:'a motel parking lot in Lakewood'},
+  marina:{goods:['party','pills','weed'],hours:[660,1260],who:'Someone who keeps their hood up',cop:0.25,res:0.65,spot:'the Riv marina'},
+  school:{goods:['drugs','pills','hard'],hours:[1080,1380],who:'A figure by a pickup, back lot',cop:0.35,res:0.6,spot:'the old schoolhouse back lot'},
+  ponders:{goods:['drugs','party','pills','weed'],hours:[1080,1440],who:'A guy leaning on a car',cop:0.55,res:0.03,spot:'the lot behind a closed tire shop off Pacific Highway'},
+  hilltop:{goods:['drugs','party','hard'],hours:[1080,1440],who:'Two people by a van',cop:0.5,res:0.02,spot:'an alley behind a shuttered storefront'},
+  dispensary:{goods:['weed'],hours:[480,1320],who:'Licensed shop counter',legal:true},
   store:{goods:['food','med','diesel'],hours:[480,1200],who:'Island swap board (neighbors)'},
-  dale:{goods:['gas','drugs'],hours:[420,1260],who:'Dale',sting:0.1},
+  dale:{goods:['gas','drugs'],hours:[420,1260],who:'Dale',cop:0.45,res:0.5,spot:'Dale’s place'},
 };
 const NEWS=[
   {t:'Island: the co-op potluck left everyone’s freezers full. Food is cheap on the swap board.',side:'I',g:'food',m:0.6},
@@ -72,6 +82,8 @@ const L={
   dale:{name:'Dale’s Place',side:'I',ic:'🛢️',desc:'End of a gravel road. Has gas. Don’t ask.',hours:()=>[420,1260]},
   food:{name:'The Riv',side:'I',ic:'🍔',desc:'Riviera restaurant. Takeout, and Bingo on Wednesday nights',hours:()=>[660,1260]},
   legion:{name:'American Legion Hall',side:'I',ic:'🇺🇸',desc:'The Legion post. Veterans, coffee, and the holiday bazaar'},
+  marina:{name:'The Riv marina',side:'I',ic:'⚓',desc:'Boats on the water, the Riv’s lot up the slope. Busy in summer, quiet otherwise',hours:()=>[660,1260]},
+  school:{name:'Old Schoolhouse',side:'I',ic:'🏫',desc:'Eckenstam-Johnson Road. The island’s fitness center by day. The back lot is dark at night',hours:()=>[1080,1380]},
   lake:{name:'Lake Josephine',side:'I',ic:'🦅',desc:'Quiet water, tall firs, eagles'},
   stDock:{name:'Steilacoom Ferry Terminal',side:'M',ic:'⛴️',desc:'Mainland terminal, Steilacoom'},
   gas:{name:'Gas Station (Steilacoom)',side:'M',ic:'⛽',desc:'Fill up, or buy fuel by the can',hours:()=>[300,1380]},
@@ -79,6 +91,9 @@ const L={
   office:{name:'Hospital Records Office (Tacoma)',side:'M',ic:'🏥',desc:'Records clerk job, starts 8:30',hours:d=>d<5?[420,1080]:null},
   whse:{name:'Warehouse (DuPont)',side:'M',ic:'🏗️',desc:'Early-shift warehouse job, starts 6:30',hours:d=>d<5?[330,1020]:null},
   wholesale:{name:'Wholesale & Supply (Lakewood)',side:'M',ic:'🏭',desc:'Buy and sell food and medical supplies in bulk',hours:()=>[420,1260]},
+  ponders:{name:'Ponders Corner (Lakewood)',side:'M',ic:'🌃',desc:'A lot behind a closed tire shop off Pacific Highway. After dark',hours:()=>[1080,1440]},
+  hilltop:{name:'Hilltop (Tacoma)',side:'M',ic:'🌆',desc:'An alley behind a shuttered storefront. After dark',hours:()=>[1080,1440]},
+  dispensary:{name:'Licensed Cannabis Shop (Lakewood)',side:'M',ic:'🌿',desc:'Legal for adults: one ounce per sale',hours:()=>[480,1320]},
   motel:{name:'Motel Parking Lot (Lakewood)',side:'M',ic:'🅿️',desc:'After dark only. Deals that shouldn’t happen',hours:()=>[1080,1440]},
   work:{name:'Work (Lakewood)',side:'M',ic:'💼',desc:'Your 9-to-5. Clock in by 9:00',hours:d=>d<5?[420,1140]:null},
   market:{name:'Supermarket (Lakewood)',side:'M',ic:'🛒',desc:'Normal prices. Imagine that.',hours:()=>[360,1380]},
@@ -87,8 +102,9 @@ const L={
   clinic:{name:'Medical Clinic (Tacoma)',side:'M',ic:'🩺',desc:'Your doctor. Weekdays only',hours:d=>d<5?[480,1020]:null},
   urgent:{name:'Urgent Care (DuPont)',side:'M',ic:'🚑',desc:'Walk-in care, 8 AM–8 PM',hours:()=>[480,1200]},
 };
-const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2},legion:{home:8,aiDock:9,store:4,lake:6,food:6,dale:9}};
-const MP={office:[13,7.5],whse:[-3.5,-5],depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
+const DI={home:{aiDock:12,store:7,lake:6},aiDock:{store:6,lake:11},store:{lake:5},dale:{home:9,aiDock:14,store:8,lake:10,food:8},food:{home:7,aiDock:11,store:6,lake:2,marina:2},legion:{home:8,aiDock:9,store:4,lake:6,food:6,dale:9,marina:7,school:5},
+  marina:{home:8,aiDock:10,store:7,lake:3,dale:9,school:7},school:{home:5,aiDock:9,store:4,lake:7,food:8,dale:8}};
+const MP={office:[13,7.5],whse:[-3.5,-5],depot:[6.5,2],wholesale:[7.5,3.5],motel:[4,2.5],ponders:[7,0.5],hilltop:[10.5,4.5],dispensary:[5.5,3.2],gas:[1.5,1.5],stDock:[0,0],work:[6,3],market:[5,4],pharmacy:[6,5.5],warehouse:[12,6],clinic:[14,8],urgent:[-4,-6]};
 // 2026 fares, round trip, collected at Steilacoom; vehicle fares are higher in peak season (the game's summer)
 function fareCar(){return (typeof seasonId==='function'&&seasonId()==='summer')?FARE_CAR_PEAK:FARE_CAR_NONPEAK}
 function dist(a,b){
