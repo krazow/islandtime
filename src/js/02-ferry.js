@@ -52,7 +52,7 @@ function price(g,side){
 // what boarding here will cost: the cash fare, or a ride from a ⛴️ Ferry Pass book when that's what board() will use
 function fareTxt(mode){const k=mode==='drive'?'car':'walk';
   if(typeof phoneInstalled==='function'&&phoneInstalled('ferrypass')&&phoneCan()){const n=(S.ph&&S.ph.fp&&S.ph.fp[k])||0;if(n>0)return `🎟️ ticket (${n} left)`}
-  return $(mode==='drive'?fareCar():FARE_WALK)}
+  return $(mode==='drive'?fareCar():(typeof fareWalk==='function'?fareWalk():FARE_WALK))}
 function waitFerry(mode){
   if(mode==='drive'){const c=carHere();if(!c||c.fuel<0.1){say('⛽ The tank is empty. The deckhands won’t load a car that can’t drive.');return render()}}
   const side=L[S.loc].side;
@@ -131,7 +131,7 @@ function board(side,s,mode){
     }
   }
   if(S.cargo.diesel>0&&S.cargo.diesel<=2&&mode==='drive') say('A deckhand checks the DOT labels on your diesel cans, sees they’re upright and strapped down, and waves you through. That one’s legal.');
-  if(side==='M'){const f=mode==='drive'?fareCar():FARE_WALK;if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
+  if(side==='M'){const f=mode==='drive'?fareCar():(typeof fareWalk==='function'?fareWalk():FARE_WALK);if(!(typeof fpUseRide==='function'&&fpUseRide(mode))){money(-f);S.stats.fares+=f;}} // apps: Ferry Pass ticket book
   const car=carHere();
   const dur=20+(s.ketron?10:0);
   const to=side==='I'?'stDock':'aiDock';
