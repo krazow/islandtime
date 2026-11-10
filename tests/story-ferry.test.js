@@ -236,4 +236,18 @@ module.exports = [
     await shut(page);
     noErrors(errors);
   } },
+  { name: 'story ferry: the trip planner adds the relief boat’s 5 minutes during dry dock', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page, 'normal', 'month');
+    const r = await page.evaluate(() => {
+      S.loc = 'aiDock'; S.cur = 1; S.t = 1440 + 300; S.week.b = [];
+      const arr = () => { const p = planTrip('work', 1440 + 1300, 0); return p.best ? p.best.arrive - p.best.abs : null; };
+      const before = arr();
+      S.mode = 'month'; S.story = { ch: 1, seasons: ['summer', 'fall', 'winter', 'spring'], flags: {}, recap: [] }; S.weekNo = 1;
+      const during = arr(); S.weekNo = 3; const after = arr();
+      return { before, during, after };
+    });
+    assert.strictEqual(r.during - r.before, 5); assert.strictEqual(r.after, r.before);
+    noErrors(errors);
+  } },
 ];

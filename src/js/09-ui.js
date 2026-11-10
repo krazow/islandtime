@@ -202,6 +202,8 @@ function defaultBy(to,off){
   if(to==='clinic') return 870;
   const now=off?480:tod()+90;return Math.min(1290,Math.ceil(now/30)*30);
 }
+// extra crossing minutes (the story's dry-dock relief boat adds 5); 27-story-ferry.js wraps it
+function crossExtra(side,d,dep){return 0}
 function planTrip(to,byAbs,off){
   const side=L[S.loc].side,dockFrom=side==='I'?'aiDock':'stDock',dockTo=side==='I'?'stDock':'aiDock';
   const startLoc=off&&side==='I'?'home':S.loc,toDock=startLoc===dockFrom?0:dist(startLoc,dockFrom);
@@ -210,8 +212,8 @@ function planTrip(to,byAbs,off){
   const opts=[];
   for(const dep of dl){const sl=sailing(side,d,dep,'drive',true);if(sl.cancel||sl.passenger)continue;
     const leave=sl.abs-20-toDock;if(leave<earliest)continue;
-    const arrive=sl.abs+(sl.delay||0)+20+(sl.ketron?10:0)+drive;
-    opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,why:sl.why,full:fullProb(side,d,dep)})} // season: why
+    const cx=crossExtra(side,d,dep),arrive=sl.abs+(sl.delay||0)+20+cx+(sl.ketron?10:0)+drive;
+    opts.push({dep,abs:sl.abs,leave,inLine:sl.abs-20,arrive,dock:sl.abs+(sl.delay||0)+20+cx+(sl.ketron?10:0),ketron:sl.ketron,delay:sl.delay||0,why:sl.why,full:fullProb(side,d,dep)})} // season: why
   const ok=opts.filter(o=>o.arrive<=byAbs);
   return {best:ok[ok.length-1],safer:ok[ok.length-2],first:opts[0],toDock,drive,dockTo,startLoc};
 }

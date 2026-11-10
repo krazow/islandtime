@@ -49,6 +49,7 @@ function sfWeek(w){if(!sfOn()||!w)return w;try{if(sfFlags().levy&&(sfCh()>=2||(s
 
 // ---- the relief boat: fuller car decks, slower crossings ----
 {const _fullProb=fullProb;fullProb=function(side,d,dep){const p=_fullProb.apply(this,arguments);return sfDock()?Math.min(0.95,p*1.8):p}}
+{const _cx=crossExtra;crossExtra=function(side,d,dep){return _cx.apply(this,arguments)+(sfDock()?5:0)}}
 {const _crossing=crossing;crossing=function(side,cap,cap2,done,sail){
   if(!sail&&sfDock()){const d0=done;cap=String(cap).replace(/^Crossing/,'Crossing on the relief boat');cap2=cap2+' · +5 min, she’s slower';done=()=>{S.t+=5;d0()}}
   return _crossing.call(this,side,cap,cap2,done,sail)}}
