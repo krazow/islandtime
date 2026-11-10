@@ -11,7 +11,7 @@ let SHARE_LAST=null;          // {blob,url,file,name,w,h} of the last card made
 // plain text from game HTML (with {{name}} filled in); DOMParser never runs scripts or handlers
 function plainText(t){try{return (new DOMParser().parseFromString(withName(String(t==null?'':t)),'text/html').body.textContent||'').replace(/\s+/g,' ').trim()}catch(e){return String(t||'')}}
 function cardSlug(n){return String(n||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-+|-+$/g,'')||'islander'}
-const SEASON_TXT={fall:'🍂 Fall',winter:'❄️ Winter',summer:'☀️ Summer'};
+const SEASON_TXT={fall:'🍂 Fall',winter:'❄️ Winter',spring:'🌱 Spring',summer:'☀️ Summer'};
 // everything the card shows, gathered from the finished game
 function cardData(){
   const info=END_INFO||{lost:false},lost=!!info.lost,sc=scoreOf(),g=lost?['F',plainText(info.h1),plainText(info.sub)]:gradeOf(sc);

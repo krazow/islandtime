@@ -12,8 +12,8 @@ function gusFirstCall(){return ecoPerk(20)}
 // ---- prices ----
 const OT_HOURS=2, RIV_PAY=48, EGG_DOZEN=6, COOP_PRICE=120, FEED_PRICE=18, FEED_DAYS=20, HEN_NAMES='Christine, Steilacoom and Li’l Ketron';
 function otPay(J){return Math.round(J.pay/((J.end-J.start)/60)*1.5*OT_HOURS)}
-function woodPrice(){const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:24,summer:15})[s]??19}
-const henLay=()=>{const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:0.5,summer:0.9})[s]??0.7};
+function woodPrice(){const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:24,spring:17,summer:15})[s]??19}
+const henLay=()=>{const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:0.5,spring:0.95,summer:0.9})[s]??0.7};
 // ---- ⏱️ overtime ----
 function otActions(a,d,m){
   const J=curJob(),E=ECO(),dk=dayKey();if(!J||S.emp==='riv'||L[J.loc].side!=='M'||S.loc!==J.loc||!J.days.includes(d)||!S.worked[d])return;

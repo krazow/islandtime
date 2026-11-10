@@ -4,10 +4,10 @@ function meter(v,good){const c=good?(v>60?'#8fd19e':v>30?'#f4d27a':'#ff8a70'):(v
 function sceneSVG(){
   const m=tod(),side=L[S.loc].side,loc=S.loc;
   const sea=seasonId(),SR=SEA().sun,night=m<SR[0]||m>SR[1], dusk=(m>=SR[1]-90&&m<=SR[1]+30)||(m>=SR[0]-30&&m<=SR[0]+60); // season
-  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:sea==='summer'?['#7fb6d8','#dcedf0']:sea==='winter'?['#b7c6cf','#e9edef']:['#a9c3cc','#dfe6e1']; // season
+  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:sea==='summer'?['#7fb6d8','#dcedf0']:sea==='winter'?['#b7c6cf','#e9edef']:sea==='spring'?['#9fc3d4','#e4ecdf']:['#a9c3cc','#dfe6e1']; // season
   const foggy=S.week.fog[day()]&&m<660&&m>=360;
   const water=night?'#132d38':sea==='summer'?'#2b6f84':'#2c5f6e'; // season
-  const tree=night?'#13261f':sea==='summer'?'#3b7a50':'#2f5d4a',snow=sea==='winter'; // season
+  const tree=night?'#13261f':sea==='summer'?'#3b7a50':sea==='spring'?'#3a6f4c':'#2f5d4a',snow=sea==='winter'; // season
   const out=activeOutage();
   let fg='';
   if(side==='I'){
