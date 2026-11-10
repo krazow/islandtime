@@ -60,8 +60,8 @@ module.exports = [
       repFavorFailed('marta', n);
       return { once, rep: S.rep, friend: !!S.friends.marta, enemies: REP().enemies.map(e => e.who), notes: n.join(' ') };
     });
-    assert.deepStrictEqual(r.once, { rep: -5, friend: true });
-    assert.strictEqual(r.rep, -10); assert.strictEqual(r.friend, false);
+    assert.deepStrictEqual(r.once, { rep: -2, friend: true });
+    assert.strictEqual(r.rep, -4); assert.strictEqual(r.friend, false);
     assert.deepStrictEqual(r.enemies, ['Marta']);
     noErrors(errors);
   } },

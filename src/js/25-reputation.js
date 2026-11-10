@@ -95,7 +95,7 @@ function repHeaderHtml(){const r=repVal(),t=repTier(r),R=(S&&S.repx)||{known:[],
 function repCoop(){const R=REP(),k=Math.floor((S.coop.you||0)/100);if(k>R.coop){const n=k-R.coop;R.coop=k;repAdd(5*n,'pledging to the co-op')}}
 
 // ---- a favor you promised and didn't do: −5; twice for the same friend and they're done with you ----
-function repFavorFailed(id,notes){const R=REP(),f=S.friends[id];repAdd(-5,`never did ${f?f.name.split(',')[0]:'a friend'} that favor`,{notes});
+function repFavorFailed(id,notes){const R=REP(),f=S.friends[id];repAdd(-2,`never did ${f?f.name.split(",")[0]:"a friend"} that favor`,{notes});
   R.fails[id]=(R.fails[id]||0)+1;if(R.fails[id]>=2&&f){const n=f.name.split(',')[0];repDropFriend(id);repEnemy(n,'you let them down twice',{notes,fid:id})}}
 
 // ---- the Riv weekend shift as a second job: its own meter in the to-do list and a small score bonus ----
