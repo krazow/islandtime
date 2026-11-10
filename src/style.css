@@ -198,6 +198,16 @@ html.hc .nextup{border-width:2px;border-left-width:5px;border-color:var(--ink);b
 /* end */
 .end{padding:22px 18px 40px}
 .end h1{font-size:30px;margin:6px 0 4px}
+/* 📖 story mode */
+.story-end{margin:14px 0 6px;padding:12px 14px;border-radius:12px;background:#fff;border:1.5px solid var(--line)}
+.story-end p{margin:6px 0;font-size:14.5px}
+.story-badge{font-weight:700;font-size:13px;letter-spacing:.02em;margin-bottom:6px;opacity:.9}
+.story-recap{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--mute)}
+.story-when{font-weight:700;font-size:13px;color:var(--mute);margin-bottom:2px}
+.story-skip{font-family:Fraunces,serif;font-size:18px;margin:14px 0 4px}
+.story-night{font-size:13.5px;border-left:3px solid var(--line);padding-left:10px;margin-bottom:10px}
+.story-night p{margin:4px 0}
+.story-sum{margin:8px 0}
 .grade{font-family:"Fraunces";font-size:58px;font-weight:800;color:var(--buoy);line-height:1}
 .kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
 .kv b{font-variant-numeric:tabular-nums}

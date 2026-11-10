@@ -69,9 +69,10 @@ function diffModal(then){
 function lengthModal(then){
   modal('📅 How long do you want to stay?','<p>One week is a quick game. A month carries everything over (money, friends, your car, your generator) and gives the island time to reopen its store.</p>',[
     {l:'⛴️ One week',s:'Monday to Sunday, about 20–30 minutes.',fn:()=>then('week')},
-    {l:'🗓️ A whole month (4 weeks)',s:'Help the islanders raise $2,500 to reopen the store as a co-op, with groceries and gas pumps.',fn:()=>then('month')}]);
+    {l:'🗓️ A whole month (4 weeks)',s:'Help the islanders raise $2,500 to reopen the store as a co-op, with groceries and gas pumps.',fn:()=>then('month')},
+    {l:'📖 Story: a year on the island',s:'Four chapters, summer to spring: a month in each season, with the months between skipped. About 3 hours.',fn:()=>then('story')}]);
 }
-window.startNewWeek=()=>{const go=k=>lengthModal(mode=>seasonModal(sea=>{newGame(k,mode,sea);tab='act';render()}));const pickDiff=()=>diffModal(go);if(!profileName())nameModal({first:true,then:pickDiff});else pickDiff()}; // season
+window.startNewWeek=()=>{const go=k=>lengthModal(mode=>mode==='story'?(storyNew(k),tab='act',render()):seasonModal(sea=>{newGame(k,mode,sea);tab='act';render()}));const pickDiff=()=>diffModal(go);if(!profileName())nameModal({first:true,then:pickDiff});else pickDiff()}; // season
 
 // ---------------- settings ----------------
 let exitNotice='';
