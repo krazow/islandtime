@@ -506,7 +506,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.16.0', SAVE_SCHEMA=7;
+const APP_VERSION='1.16.1', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -2045,6 +2045,17 @@ function fuelHelp(a){
     return;
   }
   if(S.loc==='home') return;
+  // 📞 Dale delivers from his own stock, 50% over his shop price; 7 AM–9 PM, gas only
+  if(!car.diesel){const d=day(),m=tod(),stock=S.daleStock[d]??(S.daleStock[d]=Math.random()<0.25?0:3+Math.floor(Math.random()*8)),
+      g=Math.min(5,stock),per=Math.round(DALE_PRICE*1.5*100)/100,cost=Math.round(g*per),open=m>=420&&m<1260;
+    a.push({ic:'🛢️',l:`Call Dale to bring gas${g?`: ${g} gal for $${cost}`:''}`,s:S.phone<=0?'Your phone is dead.':!open?'Dale doesn’t pick up before 7 AM or after 9 PM.':!g?'Dale’s out of gas today. “Try me tomorrow.”':`$${per}/gal, half again his shop price ($${DALE_PRICE}). He comes to you. About 40 minutes. Cash.`,
+      dis:S.phone<=0||!open||!g||S.money<cost,fn:()=>{money(-cost);S.daleStock[d]-=g;S.stats.daleGal=(S.stats.daleGal||0)+g;S.t+=40;phoneTick();adj('stress',2);
+        addFuel(g,`🛢️ Forty minutes later Dale’s truck crunches to a stop beside you. He fills you up from a jerry can without a word, counts the cash twice and says “Delivery’s extra.” $${cost} for ${g} gallons.`,'Dale brought gas')}});}
+  // 📣 post in the Island Group for immediate help: someone brings a can within half an hour, but asking the whole island costs a little reputation
+  {const app=typeof phoneInstalled==='function'&&phoneInstalled('group'),fuel=car.diesel?'diesel':'gas';
+    a.push({ic:'📣',l:'Post in the Island Group for immediate help',s:S.phone<=0?'Your phone is dead.':!app?'Get the 📣 Island Group app from the App Store first.':`Someone brings 3 gal of ${fuel} in about 25 minutes. Asking the whole island costs you 5 reputation.`,
+      dis:S.phone<=0||!app,fn:()=>{S.t+=25;phoneTick();phoneUse(2);if(typeof repAdd==='function')repAdd(-5,'posted an emergency gas request to the whole island');
+        addFuel(3,`📣 “Out of ${fuel} at ${L[S.loc].name}. Anyone?” Eleven comments, two jokes about ferry math, and one neighbor who actually shows up with a red can. “Happens to everybody. Once.”`,'A neighbor brought gas')}});}
   if(S.friends.sam) a.push({ic:'📞',l:'Text Sam to bring gas',s:S.phone<=0?'Your phone is dead.':S.homeGas>=5?`Sam grabs a can from your shed (${S.homeGas} gal stashed). About 30 minutes.`:'Your shed is empty, so Sam brings some of their own. $30. About 30 minutes.',dis:S.phone<=0||(S.homeGas<5&&S.money<30)||car.diesel&&S.homeDiesel<5,fn:()=>{
     S.t+=30;phoneTick();adj('stress',-2);
     if(car.diesel){S.homeDiesel-=5;return addFuel(5,'📞 Sam shows up with a diesel can from your shed. “You owe me a coffee.”','Sam brought diesel')}
@@ -2052,7 +2063,6 @@ function fuelHelp(a){
     else{money(-30);addFuel(5,'📞 Sam pulls up with a can from their own garage. You pay them back $30.','Sam brought gas')}}});
   if(S.friends.fred&&!car.diesel) a.push({ic:'🩴',l:'Ask Pajama Fred for help',s:S.phone>0?'He knows a guy. $65 for 5 gallons. About 50 minutes.':'Your phone is dead.',dis:S.phone<=0||S.money<65,fn:()=>{
     money(-65);S.t+=50;phoneTick();addFuel(5,'🩴 Fred shuffles up in his slippers carrying a red can. “From a friend. Don’t ask.” (It smells like Dale’s.)','Pajama Fred brought gas')}});
-  if(!S.friends.sam&&!S.friends.fred) a.push({ic:'⛽',l:'No one to call yet',s:'Walk to Dale’s for a can, or home to fill one from your shed. Island friends can help with this.',dis:true});
 }
 function cargoActions(a){
   const c=S.cargo,car=carHere(),home=S.loc==='home';

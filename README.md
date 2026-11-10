@@ -39,6 +39,12 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### 1.16.1: help when you run out of gas on the island
+
+- 🛢️ **Call Dale to bring gas** wherever you ran dry on the island (the Riv, the lake, the landing): up to 5 gallons from his stock at half again his shop price ($18/gal instead of $12), about 40 minutes, cash. He answers 7 AM–9 PM, and not when he's out of gas. Gas only, not diesel.
+- 📣 **Post in the Island Group for immediate help:** a neighbor brings 3 gallons of gas or diesel in about 25 minutes, but asking the whole island costs 5 reputation. Needs the Island Group app.
+- Texting Sam and asking Pajama Fred still work as before.
+
 ### New in 1.16: Story mode, spring, and job listings that change
 
 - 📖 **Story mode: a year on the island.** Pick "📖 Story" when you start a game. Four chapters, each a 4-week month, with the months in between skipped:
