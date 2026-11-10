@@ -40,7 +40,9 @@ function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
   // "that house"
   if((S.home??70)<25){R.homeLow++;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
   // enemies bad-mouth you now and then
-  for(const e of R.enemies)if(Math.random()<0.15)repAdd(-3,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
+  // a grudge fades after about four weeks
+  for(const e of R.enemies.slice())if(dk-e.since>=28){R.enemies=R.enemies.filter(x=>x!==e);notes.push(`🙂 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} nods at you in the ferry line. Whatever it was, they’ve let it go.`)}
+  for(const e of R.enemies)if(Math.random()<0.05)repAdd(-2,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
   // persona non grata: a casual friend stops answering (about once a week)
   if(repVal()<=-60&&Math.random()<0.15){const ids=Object.keys(S.friends).filter(id=>(S.friends[id].lvl||1)<=1);
     if(ids.length){const id=pick(ids),n=S.friends[id].name.split(',')[0];repDropFriend(id);notes.push(`💔 ${n.charAt(0).toUpperCase()+n.slice(1)} heard what people are saying about you and stops answering your texts.`)}}

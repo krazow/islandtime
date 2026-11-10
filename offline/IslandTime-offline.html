@@ -3863,7 +3863,7 @@ Object.assign(TILE_META,{puppy_litter:['🐶','The neighbors’ dog had puppies'
 defEvent({id:'puppy_litter',hook:'wake',priority:2,max:1,cond:()=>S.loc==='home'&&!HH().dog&&HH().puppy<0&&!HH().once.puppy&&dayKey()>=3,chance:0.2,
   run(){const H=HH();H.once.puppy=1;H.puppy=dayKey()+3;say(`🐶 A hand-lettered sign at the end of the road: “FREE PUPPIES. Lab, mostly. Ask the kids.” The kids have already spotted you. (Adopt from 🏠 Inside the house, until ${DAYS[H.puppy%7]}. Or don’t: they’re very persuasive, but it’s a lot.)`)}});
 defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.5,0.15+0.05*(HH().trash-8)),
-  run(ctx){homeAdj(-6);adj('stress',5);repAdd(-5,'raccoons spread your trash down the road',{notes:ctx.notes});ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
+  run(ctx){homeAdj(-6);adj('stress',5);{const R=typeof REP==='function'?REP():null;if(R&&R.racWk!==S.weekNo+'|'+(S.story?S.story.ch:'')){R.racWk=S.weekNo+'|'+(S.story?S.story.ch:'');repAdd(-3,'raccoons spread your trash down the road',{notes:ctx.notes})}}ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
 // ---- To-do ----
 function hhTodo(it){
   const H=HH(),dk=dayKey();
@@ -4988,7 +4988,9 @@ function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
   // "that house"
   if((S.home??70)<25){R.homeLow++;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
   // enemies bad-mouth you now and then
-  for(const e of R.enemies)if(Math.random()<0.15)repAdd(-3,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
+  // a grudge fades after about four weeks
+  for(const e of R.enemies.slice())if(dk-e.since>=28){R.enemies=R.enemies.filter(x=>x!==e);notes.push(`🙂 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} nods at you in the ferry line. Whatever it was, they’ve let it go.`)}
+  for(const e of R.enemies)if(Math.random()<0.05)repAdd(-2,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
   // persona non grata: a casual friend stops answering (about once a week)
   if(repVal()<=-60&&Math.random()<0.15){const ids=Object.keys(S.friends).filter(id=>(S.friends[id].lvl||1)<=1);
     if(ids.length){const id=pick(ids),n=S.friends[id].name.split(',')[0];repDropFriend(id);notes.push(`💔 ${n.charAt(0).toUpperCase()+n.slice(1)} heard what people are saying about you and stops answering your texts.`)}}
