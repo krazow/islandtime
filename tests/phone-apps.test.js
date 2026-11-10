@@ -81,13 +81,49 @@ module.exports = [
     await page.evaluate(() => { phoneInstall('group'); phoneOpen('group'); });
     await tap(page, 'Post asking for help');
     await page.locator('#mbg button.act', { hasText: 'General help around the house' }).click();
-    const r = await page.evaluate(() => ({ post: S.comm.post === dayKey(), job: !!upJob('post') }));
-    assert.ok(r.post && r.job, 'posted');
-    assert.match(await phoneText(page), /Waiting for replies/);
+    assert.match(await page.textContent('#mbg h2'), /When should they come/);
+    await page.locator('#mbg button.act', { hasText: 'Today 1:00 PM' }).click();
+    const r = await page.evaluate(() => ({ post: S.comm.post === dayKey(), job: upJob('post') }));
+    assert.ok(r.post && r.job && r.job.sched && r.job.at === 780, 'posted for today 1 PM');
+    assert.match(await phoneText(page), /Help is coming Today 1:00 PM/);
     assert.ok(await page.locator('#phoneUI button[disabled]', { hasText: 'Post asking for help' }).count(), 'once a day');
     // replies light the badge (when you're not looking at the app)
     await page.evaluate(() => { phoneHome(); S.t = upJob('post').due + 1; afterAction(); });
     assert.strictEqual(await page.evaluate(() => phoneApp('group').badge()), 1);
+    noErrors(errors);
+  } },
+  { name: 'help posts: not home at the scheduled time costs a little reputation (only if someone came)', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(() => {
+      const out = {}; const orig = Math.random;
+      S.rep = 10; S.loc = 'work'; S.log = []; Math.random = () => 0.01; postArrive({ k: 'post', task: 'general', at: 780, due: 810, sched: true }); Math.random = orig;
+      out.came = { rep: S.rep, log: S.log.map(l => l.s).join(' ') };
+      S.rep = 10; S.log = []; Math.random = () => 0.99; postArrive({ k: 'post', task: 'general', at: 780, due: 810, sched: true }); Math.random = orig;
+      out.nobody = { rep: S.rep, log: S.log.map(l => l.s).join(' ') };
+      // home: the usual replies
+      S.loc = 'home'; S.rep = 10; S.log = []; Math.random = () => 0.01; postArrive({ k: 'post', task: 'general', at: 780, due: 810, sched: true }); Math.random = orig;
+      out.home = { rep: S.rep, log: S.log.map(l => l.s).join(' ') };
+      // slots: 9 AM, 1 PM, 5 PM, at least 2 hours out, never past Sunday in a one-week game
+      S.cur = 6; S.t = 6 * 1440 + 600; out.sunday = postSlots().map(at => at % 1440);
+      return out;
+    });
+    assert.strictEqual(r.came.rep, 7); assert.match(r.came.log, /Nobody home/);
+    assert.strictEqual(r.nobody.rep, 10); assert.match(r.nobody.log, /Nobody answered/);
+    assert.strictEqual(r.home.rep, 10); assert.match(r.home.log, /shows up|porch|replies/);
+    assert.deepStrictEqual(r.sunday, [780, 1020]);
+    noErrors(errors);
+  } },
+  { name: 'friends text back faster when you are Known', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(() => {
+      meet('marta', 'Marta, from up the road', 'test'); S.t = 1440 + 720; S.cur = 1;
+      const avg = rep => { S.rep = rep; let n = 0; for (let i = 0; i < 300; i++) n += msgDelay('marta', 'how'); return n / 300; };
+      return { base: avg(0), known: avg(30), regular: avg(70) };
+    });
+    assert.ok(r.known < r.base * 0.75, JSON.stringify(r));
+    assert.ok(r.regular < r.known, JSON.stringify(r));
     noErrors(errors);
   } },
   { name: 'Clock shows alarms and opens the alarm modal above the phone', fn: async ctx => {

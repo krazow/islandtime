@@ -58,8 +58,8 @@ definePhoneApp({id:'group',name:'Island Group',ic:'📣',order:60,size:'38 MB',d
     if(P.grpNew){h+=phCard('📣 New replies to your post.','ok');P.grpNew=false}
     h+=`<div class="ph-rep"><span>🤲</span><div><b>Island reputation: ${r}</b><small>${r>=8?'Half the island owes you a casserole.':r>=3?'People know your car. In a good way.':'Mostly known as “the one who moved into that house.”'}</small></div></div>`;
     h+=phNote('Lost dogs, ferry complaints, free firewood, and neighbors who show up.');
-    h+=phCard(pj?`⏳ <b>Waiting for replies.</b> They should trickle in around ${fmt(pj.due)}.`:c.post===dk?'✅ <b>You posted today.</b> One post a day, or people start muting you.':'Nothing posted today.');
-    h+=phBtn('📣 Post asking for help',()=>postModal(),{cls:'primary',dis:!!pj||c.post===dk||!phoneCan(),sub:pj||c.post===dk?'Once a day.':'10 min. Answers come in a few hours.'});
+    h+=phCard(pj?(pj.sched?`📅 <b>Help is coming ${postWhen(pj.at)}</b>, if anyone answers. Be home: they wait half an hour.`:`⏳ <b>Waiting for replies.</b> They should trickle in around ${fmt(pj.due)}.`):c.post===dk?'✅ <b>You posted today.</b> One post a day, or people start muting you.':'Nothing posted today.');
+    h+=phBtn('📣 Post asking for help',()=>postModal(),{cls:'primary',dis:!!pj||c.post===dk||!phoneCan(),sub:pj?'One at a time.':c.post===dk?'Once a day.':'10 min. Pick the day and time they come by.'});
     const lg=P.grpLog||[];
     if(lg.length)h+=`<div class="ph-sub">Recent replies</div>`+lg.slice().reverse().map(e=>`<div class="ph-grp"><small>${DAYS[e.d]||''}</small>${e.s}</div>`).join('');
     h+=phNote('The more you help others, the better your odds.');

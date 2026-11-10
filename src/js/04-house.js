@@ -123,7 +123,7 @@ const gusRate=()=>flv('gus')>=2?60:90;
 Object.assign(PERKS,{gus:{2:'Gus gives you the friends rate: $60 cash instead of $90.',3:'Gus does the dishes and the laundry while he’s there. Don’t ask why. Just let him.'}});
 Object.assign(UP_JOBS,{
   gus:{who:'Gus',island:true,done:j=>gusArrive(j)},
-  post:{who:'community group',island:true,done:j=>postReplies(j)}});
+  post:{who:'community group',island:true,done:j=>postArrive(j)}});
 function gusArrive(j){
   if(!j.flaked&&!j.sure&&Math.random()<0.25){const c=COMM();const line=GUS_FLAKE[c.flakes%GUS_FLAKE.length];c.flakes++;
     UP().jobs.push(Object.assign({},j,{flaked:true,due:j.due+1440}));say(line);showTile('🧰','Gus didn’t show','Island time. He says tomorrow.','info');return}
@@ -148,14 +148,35 @@ function gusModal(){
 }
 function postModal(){
   const ks=upPressing(4);
-  const go=k=>{S.t+=10;phoneTick();COMM().post=dayKey();UP().jobs.push({k:'post',due:S.t+170+Math.floor(Math.random()*30),task:k});
-    say(`📣 You post in ${COMM_NAME}: “${k==='general'?'Anyone have a couple of hours to help around the house? Will pay in cookies.':`Anyone able to help? ${UP_TASKS[k].d}. I can’t get to it.`}” Now you wait.`);afterAction()};
-  modal('📣 Post asking for help',`<p>${COMM_NAME[0].toUpperCase()+COMM_NAME.slice(1)}: lost dogs, ferry complaints, free firewood, and neighbors who show up. Replies usually come in a few hours.</p><p style="font-size:13px;color:var(--mute)">The better known you are for helping others, the better your odds.</p>`,
+  const go=k=>postWhenModal(k);
+  modal('📣 Post asking for help',`<p>${COMM_NAME[0].toUpperCase()+COMM_NAME.slice(1)}: lost dogs, ferry complaints, free firewood, and neighbors who show up. Replies usually come in a few hours.</p><p style="font-size:13px;color:var(--mute)">Next you pick a day and time for someone to come by. Be home then: standing up a neighbor costs a little reputation. The better known you are for helping others, the better your odds.</p>`,
     ks.map(k=>({l:`${UP_TASKS[k].ic} ${UP_TASKS[k].d}`,s:UP_TASKS[k].sc(UP())>=1?'Due now.':'Coming due.',fn:()=>go(k)}))
       .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
 }
+// ---- scheduled help: you pick the day and time; a helper comes then (if anyone answers) ----
+const POST_TIMES=[540,780,1020],POST_GRACE=30,POST_MISS=-3;   // 9 AM, 1 PM, 5 PM; they wait half an hour
+function postOdds(){const fr=Object.keys(S.friends).length;return Math.max(0.05,Math.min(0.75,0.25+0.08*(Math.max(0,S.rep||0)/7.5+fr)+Math.min(0,S.rep||0)/400-0.1*(typeof repEnemies==='function'?repEnemies().length:0)))}
+function postSlots(){const out=[],now=S.t,last=S.mode==='month'?day()+2:Math.min(6,day()+2);
+  for(let d=day();d<=last;d++)for(const m of POST_TIMES){const at=d*1440+m;if(at>=now+120)out.push(at)}return out.slice(0,6)}
+const postWhen=at=>{const d=Math.floor(at/1440);return `${d===day()?'Today':d===day()+1?'Tomorrow':DAYS[d%7]} ${fmt(at%1440)}`};
+function postWhenModal(k){const sl=postSlots(),what=k==='general'?'help around the house':UP_TASKS[k].d.toLowerCase();
+  if(!sl.length)return modal('📣 No good times left','<p>There’s no time left this week for someone to come by. Post again tomorrow, or next week.</p>',[{l:'OK',fn:()=>{}}]);
+  modal('📣 When should they come?',`<p>Pick a time for someone to come by for ${what}. You need to be home: they’ll wait half an hour.</p>`,
+    sl.map(at=>({l:postWhen(at),s:at%1440<720?'Morning':at%1440<960?'Afternoon':'Late afternoon',fn:()=>{S.t+=10;phoneTick();COMM().post=dayKey();
+      UP().jobs.push({k:'post',due:at+POST_GRACE,at,task:k,sched:true});
+      say(`📣 You post in ${COMM_NAME}: “${k==='general'?'Anyone have a couple of hours to help around the house? Will pay in cookies.':`Anyone able to help? ${UP_TASKS[k].d}. I can’t get to it.`} ${postWhen(at)} works for me.” Be home then.`);
+      try{showTile('📣','Help scheduled',`${postWhen(at)} at your place. Be home.`,'info')}catch(e){}afterAction()}})).concat([{l:'Never mind',fn:()=>{}}]));
+}
+// at the time: home → the usual replies; out → whoever came finds an empty house (if anybody came)
+function postArrive(j){
+  if(!j.sched||S.loc==='home')return postReplies(j);
+  if(Math.random()<postOdds()){adj('stress',2);
+    if(typeof repAdd==='function')repAdd(POST_MISS,'stood up a neighbor who came to help');
+    say(`📣 Someone from ${COMM_NAME} drove out at ${fmt((j.at||j.due)%1440)}, knocked, waited half an hour and left. The comment under your post: “Came by. Nobody home. 🤷”`);
+    try{showTile('📣','You weren’t home','A neighbor came to help · reputation −3','bad')}catch(e){}}
+  else say(`📣 Nobody answered your help post for ${fmt((j.at||j.due)%1440)}. Just as well: you weren’t home.`)}
 function postReplies(j){
-  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.max(0.05,Math.min(0.75,0.25+0.08*(Math.max(0,S.rep||0)/7.5+fr)+Math.min(0,S.rep||0)/400-0.1*repEnemies().length)),gen=j.task==='general'||!UP_TASKS[j.task];
+  const c=COMM(),p=postOdds(),gen=j.task==='general'||!UP_TASKS[j.task];
   const what=gen?'the chores':'the '+UP_TASKS[j.task].o,home=S.loc==='home';
   const fix=()=>{if(gen){upChoresDone();homeAdj(10)}else upFix([j.task])};
   const tile=(t,s,k)=>showTile('📣',t,s,k);

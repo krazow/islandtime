@@ -67,6 +67,8 @@ The island post office was inside the old store building, so it closed with the 
   - **Gig Work** shows your star rating: 4 tasks a day normally, 3 when Talked about, 2 at lower pay as Persona non grata. In good standing (0 or higher) you also get **island gigs** from neighbors: walk a dog ($15), a prescription run from Steilacoom ($12), a ferry-line errand ($10).
   - **The Riv:** line cook interview odds +0.3% per point above 0 (−0.75% per point below); no interview at −30 or lower. Weekend shifts need −10 or better, and Island regulars get $10 more a shift.
   - **The Riv weekend shift is now a second job with its own meter.** Working it puts you on the Friday/Saturday schedule (tell the kitchen to take you off). On time +3, late −4, a no-show −15 and reputation −5; at 0 you're fired from the Riv. A healthy second job adds a little to your score.
+  - 📅 **Help posts are scheduled.** After picking what you need help with, pick when: 9 AM, 1 PM or 5 PM, today (at least 2 hours out) or the next two days. Be home: the helper waits half an hour. If someone came and you weren't there, reputation −3. If nobody answered anyway, no harm done.
+  - 💬 **Friends text back faster when you're Known** (about 40% faster), and faster still as an Island regular (about 60%).
   - Old saves: reputation converts ×7.5, so every perk you had stays unlocked.
 - ⌨️ **Keyboard shortcuts** on a computer: **1–9** press the numbered buttons (a small number shows on each), **H F T L** switch tabs, **P** opens or puts away the phone, **Backspace** goes back in the phone, **Esc** closes a pop-up, **?** shows the list. Also in ⚙️ Settings. They never fire while you're typing.
 

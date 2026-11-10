@@ -76,7 +76,9 @@ function msgNextOutage(){const lim=(day()+2)*1440;return S.week.b.filter(b=>b.en
 function msgDelay(id,k){const av=phoneFriendAvail(id),m=tod();
   if(av==='asleep'){const wake=msgRnd(390,480);return (m>=1350?1440-m+wake:wake-m)}
   let d=k==='ride'?msgRnd(2,8):flv(id)>=3?msgRnd(2,10):msgRnd(3,25);
-  if(av==='busy'&&k!=='ride')d+=msgRnd(30,90);return d}
+  if(av==='busy'&&k!=='ride')d+=msgRnd(30,90);
+  if(typeof repVal==='function'&&repVal()>=20)d=Math.max(1,Math.round(d*(repVal()>=60?0.4:0.6)));   // 🤲 Known: friends answer sooner
+  return d}
 
 // ---- sending ----
 function msgSend(id,k,text){if(!phoneCan()||!S.friends[id])return;const M=MSG();phoneUse(1);msgPush(id,1,text);
