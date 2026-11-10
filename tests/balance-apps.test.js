@@ -76,14 +76,14 @@ module.exports = [
     for (const c of ['.ph-flash', '.ph-todo', '.ph-add', '.ph-ck']) assert.ok(!r.css.includes(c), c + ' removed');
     noErrors(errors);
   } },
-  { name: 'achievements: 20 in all; Commuter pro and Gig economy count real use', fn: async ctx => {
+  { name: 'achievements: 23 in all; Commuter pro and Gig economy count real use', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await fresh(page);
     const n = await page.evaluate(() => ({ len: ACH.length, ids: ['commuter_pro', 'autopay', 'gig_economy', 'weather_wise'].every(id => ACH.some(a => a.id === id)) }));
-    assert.deepStrictEqual(n, { len: 20, ids: true });
+    assert.deepStrictEqual(n, { len: 23, ids: true });
     await page.evaluate(() => achModal());
-    assert.match(await page.locator('#mbg h2').textContent(), /\(0\/20\)/);
+    assert.match(await page.locator('#mbg h2').textContent(), /\(0\/23\)/);
     await page.evaluate(() => { document.querySelectorAll('.modal-bg').forEach(e => e.remove()); });
     await at(page, 'stDock', 0, 600);
     await install(page, 'ferrypass', 'gigs');
