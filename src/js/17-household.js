@@ -12,7 +12,7 @@ const HH_BILLS={
   ins:{ic:'🛡️',n:'Home insurance',who:'Fir & Tide Mutual',amt:84,fee:12,coll:25,w:3,d:2,wk:2,late7:'Fir & Tide Mutual writes, very politely, that your policy will lapse. Given the trees around your roof, that’s a scary letter.'}};
 const hhDue=k=>S.mode==='month'?HH_BILLS[k].w*7+HH_BILLS[k].d:HH_BILLS[k].wk;
 const HB=k=>{const b=HH().bills;return b[k]||(b[k]={paid:false,late:0,fees:0,check:-1,how:''})};
-function hhAmt(k){const B=HH_BILLS[k];if(k!=='elec')return B.amt;const s=seasonId();return B.amt+(s==='winter'?40:s==='summer'?-35:0)}
+function hhAmt(k){const B=HH_BILLS[k];if(k!=='elec')return B.amt;const s=seasonId();return B.amt+(s==='winter'?40:s==='summer'?-35:s==='spring'?-15:0)}
 const hhOwed=k=>hhAmt(k)+HB(k).fees;
 const hhDueTxt=k=>{const dd=hhDue(k)-dayKey();return dd<0?`${-dd} day${dd===-1?'':'s'} late`:dd===0?'due today':dd===1?'due tomorrow':`due ${DAYS[hhDue(k)%7]}`};
 // a bill shows up a week before it's due and stays until it's settled

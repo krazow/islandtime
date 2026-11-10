@@ -492,7 +492,7 @@ const GOSSIP=[
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
 const APP_VERSION='1.15.0', SAVE_SCHEMA=7;
-// Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
+// Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
 const CARD_LIMIT=1500;
@@ -2234,10 +2234,10 @@ function meter(v,good){const c=good?(v>60?'#8fd19e':v>30?'#f4d27a':'#ff8a70'):(v
 function sceneSVG(){
   const m=tod(),side=L[S.loc].side,loc=S.loc;
   const sea=seasonId(),SR=SEA().sun,night=m<SR[0]||m>SR[1], dusk=(m>=SR[1]-90&&m<=SR[1]+30)||(m>=SR[0]-30&&m<=SR[0]+60); // season
-  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:sea==='summer'?['#7fb6d8','#dcedf0']:sea==='winter'?['#b7c6cf','#e9edef']:['#a9c3cc','#dfe6e1']; // season
+  const sky=night?['#0e1d2b','#22384a']:dusk?['#6b7f95','#e6b48a']:sea==='summer'?['#7fb6d8','#dcedf0']:sea==='winter'?['#b7c6cf','#e9edef']:sea==='spring'?['#9fc3d4','#e4ecdf']:['#a9c3cc','#dfe6e1']; // season
   const foggy=S.week.fog[day()]&&m<660&&m>=360;
   const water=night?'#132d38':sea==='summer'?'#2b6f84':'#2c5f6e'; // season
-  const tree=night?'#13261f':sea==='summer'?'#3b7a50':'#2f5d4a',snow=sea==='winter'; // season
+  const tree=night?'#13261f':sea==='summer'?'#3b7a50':sea==='spring'?'#3a6f4c':'#2f5d4a',snow=sea==='winter'; // season
   const out=activeOutage();
   let fg='';
   if(side==='I'){
@@ -3175,8 +3175,8 @@ function gusFirstCall(){return ecoPerk(20)}
 // ---- prices ----
 const OT_HOURS=2, RIV_PAY=48, EGG_DOZEN=6, COOP_PRICE=120, FEED_PRICE=18, FEED_DAYS=20, HEN_NAMES='Christine, Steilacoom and Li’l Ketron';
 function otPay(J){return Math.round(J.pay/((J.end-J.start)/60)*1.5*OT_HOURS)}
-function woodPrice(){const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:24,summer:15})[s]??19}
-const henLay=()=>{const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:0.5,summer:0.9})[s]??0.7};
+function woodPrice(){const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:24,spring:17,summer:15})[s]??19}
+const henLay=()=>{const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:0.5,spring:0.95,summer:0.9})[s]??0.7};
 // ---- ⏱️ overtime ----
 function otActions(a,d,m){
   const J=curJob(),E=ECO(),dk=dayKey();if(!J||S.emp==='riv'||S.loc!==J.loc||!J.days.includes(d)||!S.worked[d])return;
@@ -3327,7 +3327,7 @@ function repTodoView(){const {r,nx,rows}=repPerksHtml();if(r===0&&!S.friends.gus
 {const g=phoneApp('group');if(g){const v=g.view;g.view=function(arg){const {r,nx,rows}=repPerksHtml();
   return v.call(this,arg)+`<div class="ph-sub">What your reputation gets you</div>`+phCard(rows.join('<br>'),'eco-perks')+(nx?phNote(`${nx.n-r} more good deed${nx.n-r===1?'':'s'} to unlock ${nx.t.toLowerCase()}.`):'')}}}
 // ---------------- seasons ----------------
-// S.season: 'fall' (November, the original game), 'winter' (January) or 'summer' (July). seasonId() lives in 01-core.
+// S.season: 'fall' (November, the original game), 'winter' (January), 'spring' (April) or 'summer' (July). seasonId() lives in 01-core.
 // Everything here is a function declaration (hoisted), because titleScreen() runs at load, before this file executes.
 // Fall must stay exactly the original game: every helper returns the old value for fall and makes no Math.random() calls.
 function seasonTable(){return seasonTable.t||(seasonTable.t={
@@ -3335,6 +3335,8 @@ function seasonTable(){return seasonTable.t||(seasonTable.t={
     d:'November: rain, wind, woodsmoke and short days. The game as it’s always been.'},
   winter:{n:'Winter',ic:'❄️',month:'January',start:[2027,0,4],lite:[480,960],sun:[470,990],liteTxt:'8 AM–4 PM in January',
     d:'January: ice on the ferry ramp, frozen pipes, king tides, more storms and outages. Daylight 8 to 4.'},
+  spring:{n:'Spring',ic:'🌱',month:'April',start:[2027,3,5],lite:[390,1170],sun:[375,1185],liteTxt:'6:30 AM–7:30 PM in April',
+    d:'April: showers and sun breaks, mud season on the back roads, pollen on everything, frogs at the lake, and a garden to plant.'},
   summer:{n:'Summer',ic:'☀️',month:'July',start:[2026,5,29],lite:[360,1260],sun:[330,1290],liteTxt:'6 AM–9 PM in July',
     d:'July: tourists with kayaks pack the boats, the Fourth of July, a garden to water, a burn ban and wildfire smoke. No woodstove.'},
 })}
@@ -3344,7 +3346,7 @@ function seasonBadge(x){const s=SEA(x&&x.season||'fall');return `${s.ic} ${s.n}`
 function seasonYear(k){const s=SEA(k);return `${s.month} ${s.start[0]}`}
 // multipliers against fall (fall = 1 for everything)
 function seasonMul(k,sea){
-  const M={winter:{fog:1,storm:1.45,outage:1.7,rain:1.2,gut:0.5,moss:0.5},summer:{fog:0,storm:0,outage:0.35,rain:0.15,gut:0.4,moss:0.3}};
+  const M={winter:{fog:1,storm:1.45,outage:1.7,rain:1.2,gut:0.5,moss:0.5},spring:{fog:0.7,storm:0.3,outage:0.5,rain:1.1,gut:0.8,moss:1.3},summer:{fog:0,storm:0,outage:0.35,rain:0.15,gut:0.4,moss:0.3}};
   const s=M[sea||seasonId()];return s&&s[k]!=null?s[k]:1}
 // ---- daylight: outdoor work window ----
 function seasonLite(m){const w=SEA().lite;if(seasonId()==='summer'&&smokeDay())return false;return m>=w[0]&&m<w[1]}
@@ -3353,6 +3355,7 @@ function seasonDark(){if(seasonId()==='summer'&&smokeDay())return 'Wildfire smok
 function seasonUp(){const s=seasonId();
   if(s==='summer') return {rain:seasonMul('rain'),gut:seasonMul('gut'),moss:seasonMul('moss'),stove:false,wood:0,prop:[1,1,1]};
   if(s==='winter') return {rain:seasonMul('rain'),gut:seasonMul('gut'),moss:seasonMul('moss'),stove:true,wood:1+(Math.random()<0.3?1:0),prop:[3,8,3]};
+  if(s==='spring') return {rain:seasonMul('rain'),gut:seasonMul('gut'),moss:seasonMul('moss'),stove:true,wood:Math.random()<0.5?1:0,prop:[1,3,1]}; // a small fire on cool nights
   return {rain:1,gut:1,moss:1,stove:true,wood:1,prop:[2,6,2]}}
 function seasonStove(){return seasonId()!=='summer'}
 // ---- the week: extra weather per season (called from genWeek; fall adds nothing) ----
@@ -3368,6 +3371,10 @@ function seasonWeek(w,sea,wk){
   } else if(sea==='summer'){const r=Math.random,X={fourth:wk===0?5:-1,smoke:-1};
     if(r()<0.45){const days=[1,2,3,4,6].filter(d=>d!==X.fourth);X.smoke=days[Math.floor(r()*days.length)]}
     w.sea=X;
+  } else if(sea==='spring'){const r=Math.random,X={pollen:[],mud:wk<2},days=[0,1,2,3,4,5,6];   // 0–2 pollen days; mud season the first two weeks
+    for(let n=Math.floor(r()*3);n>0;n--) X.pollen.push(days.splice(Math.floor(r()*days.length),1)[0]);
+    X.pollen.sort((a,b)=>a-b);
+    w.sea=X;
   }
   return w;
 }
@@ -3375,6 +3382,8 @@ function seaX(){return (S&&S.week&&S.week.sea)||{}}
 function smokeDay(d){return seaX().smoke===(d==null?day():d)}
 function fourthDay(d){return seaX().fourth===(d==null?day():d)}
 function fourthWeekend(d){const f=seaX().fourth;return f!=null&&f>=0&&d>=f-1&&d<=f+1}
+function pollenDay(d){return seasonId()==='spring'&&(seaX().pollen||[]).includes(d==null?day():d)}
+function mudSeason(){return seasonId()==='spring'&&!!seaX().mud}
 function kingTide(t){const T=seaX().tide;t=t==null?S.t:t;return !!T&&t>=T.start&&t<T.end}
 function coldNight(d){const X=seaX();return seasonId()==='winter'&&(!!(X.cold&&X.cold[d])||stormNight(d))}
 // Bosses go easy on island commuters when snow or ice shuts down the ramp (winter only).
@@ -3396,6 +3405,7 @@ function seasonFull(p,side,d,dep){
   const s=seasonId();
   if(s==='summer'){p=Math.max(p,0.12);if(d>=4)p+=0.22;if(dep>=960)p+=0.12;if(fourthWeekend(d))p+=twoBoatDay(d)?0.1:0.25}
   else if(s==='winter') p*=0.8;
+  else if(s==='spring'&&(d===4||d===5)) p+=0.08;   // spring break: visiting families on Friday and Saturday
   return p;
 }
 function seasonFerryNote(){const s=seasonId(),d=day();
@@ -3404,12 +3414,14 @@ function seasonFerryNote(){const s=seasonId(),d=day();
     if(X.ice&&X.ice[d]) t+=`<p>🧊 <b>Ice on the ramp this morning:</b> sailings before 10 AM run about ${X.ice[d]} minutes late while the crew sands the transfer span.</p>`;
     if(X.tide&&X.tide.day===d) t+=`<p>🌊 <b>King tide</b> around ${fmt(X.tide.start+75)}: slow loading at the landing, and the Oro Bay road floods.</p>`;
     return t}
+  if(s==='spring'&&(d===4||d===5)) return '<p>🌱 <b>Spring break:</b> Friday and Saturday boats run a little fuller with visiting grandkids and bikes.</p>';
   return '';
 }
 function seasonAlert(){const s=seasonId(),d=day(),m=tod(),X=seaX();
   if(s==='winter'){if(X.ice&&X.ice[d]&&m<600) return `🧊 Ice on the ferry ramp: morning sailings running ${X.ice[d]}+ min late.`;
     if(X.tide&&X.tide.day===d&&S.t<X.tide.end&&S.t>=X.tide.start-120) return `🌊 King tide around ${fmt(X.tide.start+75)}: the Oro Bay road floods, ferry loading is slow.`}
   if(s==='summer'&&smokeDay()) return '🔥 Wildfire smoke: air quality unhealthy. Stay inside if you can.';
+  if(s==='spring'&&pollenDay()&&SEAST().pill!==dayKey()) return '🌼 Pollen count very high today: alder, fir and grass. Allergy pills at the Lakewood pharmacy.';
   return '';
 }
 // ---- text ----
@@ -3418,6 +3430,10 @@ function seasonFlavor(cozy){const s=seasonId();
     'The sun’s been up for an hour. Somewhere a boat motor buzzes across the water.','A family of quail runs across the driveway in single file.',
     'Blackberries are coming in along the road. So are the tourists.','Mt. Rainier floats over the Sound, the snow on it pink at sunrise.',
     'A neighbor is mowing at 6:45 AM. Of course they are.','Your phone shows one bar. It is always one bar, even in summer.'];
+  if(s==='spring') return cozy?['🏡 The windows are open for the first time since October. The house smells like rain, cut daffodils and coffee. Perfect.','🏡 Everything’s in its place, and a sun break is pouring through the kitchen window.']:[
+    'The frogs at Lake Josephine sang all night. You can still hear a few of them, hoarse.','A robin is on the lawn, pulling up a worm like it owes him money.',
+    'Somebody down the road lit the first barbecue of the year last night. You can still smell it.','It rained overnight, and now Mt. Rainier is out, scrubbed clean and enormous.',
+    'The rhubarb by the shed is up, red and crinkled, a foot tall since last week.','Your phone shows one bar. It is always one bar, even in spring.'];
   if(s==='winter') return cozy?['🏡 You wake up in a warm, clean house with frost on the windows. The woodstove ticks. Perfect.','🏡 Everything’s in its place, the kettle’s on, and it’s 28° outside. You’re not going anywhere yet.']:[
     'Frost on the windshield and on every fir needle. It’s still dark.','The ferry horn sounds muffled through the cold air.',
     'Your breath hangs in the porch light. January.','Ice skins the puddles in the driveway.',
@@ -3425,14 +3441,17 @@ function seasonFlavor(cozy){const s=seasonId();
   return cozy?FLAVOR_COZY:FLAVOR_MORNING}
 function seasonInjury(){const s=seasonId();
   if(s==='summer') return '🤕 Dragging the hose across the garden, you step in a gopher hole and go down hard. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.';
+  if(s==='spring') return '🤕 Stepping out onto the deck with your coffee, you hit a slick of wet moss and your feet go right out from under you. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.';
   if(s==='winter') return '🤕 Hauling firewood in the dark, you hit a patch of black ice on the porch step. Your ankle swells up like a grapefruit. There’s no clinic on the island. You need Urgent Care on the mainland.';
   return null}
 function seasonIntro(){const s=seasonId();
   if(s==='summer') say('☀️ <b>Summer on the island.</b> Long days, tourists with kayaks in every ferry line, a garden to water, and a burn ban in effect. No woodstove needed.');
+  if(s==='spring') say('🌱 <b>Spring on the island.</b> Showers and sun breaks, mud on the back roads, pollen on everything and frogs singing at Lake Josephine. The ground is finally soft enough to plant a garden.');
   if(s==='winter') say('❄️ <b>Winter on the island.</b> Eight hours of daylight, ice on the ferry ramp, king tides and storms. Keep the woodstove fed and the pipes from freezing.');
 }
 // forecast lines each morning (startDay)
 function seasonMorning(d){const s=seasonId(),X=seaX();if(s==='fall')return;
+  if(s==='spring') springMorning(d);
   if(s==='winter'){
     if(X.snow===d){say('❄️ Snow overnight: three inches on the island and ice underneath. Roads are slick all day and the ferry ramp is a skating rink.');showTile('❄️','Snow day','Icy roads and a slow ferry ramp','warn')}
     else if(X.ice&&X.ice[d]) say(`🧊 Ice on the ferry ramp: sailings before 10 AM will run about ${X.ice[d]} minutes late. The roads are icy until late morning.`);
@@ -3446,6 +3465,22 @@ function seasonMorning(d){const s=seasonId(),X=seaX();if(s==='fall')return;
     if(d===0&&S.weekNo===0) say('🚫 <b>Burn ban</b> in effect for Pierce County: no yard-debris burning, no campfires. Fire District #27 is watching for smoke.');
   }
 }
+const SPRING_FC=['🌦️ Forecast: showers and sun breaks, 56°. Keep a jacket in the car.','🌧️ Forecast: steady rain this morning, clearing by afternoon. 53°.',
+  '⛅ Forecast: cloudy, a few sprinkles, 55°. Classic April.','☀️ Forecast: a real sun break, 62° by afternoon. The whole island will be outside.',
+  '🌦️ Forecast: a shower every hour on the hour, rainbows in between. 54°.'];
+function springMorning(d){const X=seaX(),Y=SEAST(),dk=dayKey();
+  say(SPRING_FC[((dk%5)+5)%5]);
+  if(d===0&&S.weekNo===0) say('🌷 The ground is soft enough to dig. Plant the garden this week or next (🏡 Yard) and it feeds you by the end of the month.');
+  if(d===0&&X.mud) say('🟫 <b>Mud season:</b> the gravel roads on the south end are soup. Island drives can take a few extra minutes.');
+  if(pollenDay(d)){
+    if(Y.pill!==dk&&(Y.pills||0)>0){Y.pills--;Y.pill=dk;say('🌼 Pollen count is sky-high today, so you take an allergy pill with your coffee. Your car is yellow-green, but your eyes are fine.')}
+    else if(Y.pill!==dk){say('🌼 <b>Pollen day:</b> the alders and firs are going off and your car is coated yellow-green. Lots of time outdoors will wear on you. (Allergy pills: Lakewood pharmacy, $9.)');showTile('🌼','Pollen day','Allergy pills at the Lakewood pharmacy','info')}
+  }
+}
+// outdoors on a pollen day without a pill: a sneeze now, stress tonight if it adds up
+function pollenOut(){if(!pollenDay())return;const X=SEAST(),dk=dayKey();if(X.pill===dk)return;
+  const P=X.pol&&X.pol.k===dk?X.pol:(X.pol={k:dk,n:0});P.n++;
+  if(P.n===1) say('🤧 Ten minutes outside and your eyes are streaming. Everything is dusted yellow-green, including you.')}
 // ---- night: frozen pipes, the garden, brush, fireworks (called from endDay after the night hook) ----
 function SEAST(){return S.sea||(S.sea={})}
 function heatOutTonight(where,d){const U=UP();if(seasonId()!=='winter')return false;
@@ -3475,6 +3510,18 @@ function seasonNight(where,notes,d){const s=seasonId();if(s==='fall')return;cons
     X.brush=Math.min(10,(X.brush||0)+(Math.random()<0.5?1:0));
     if(fourthDay(d)&&where==='home'){adj('stress',2);notes.push('🎇 Someone on the beach sets off illegal fireworks until 1 AM. Every dog on the island has opinions.')}
   }
+  if(s==='spring'){const dk=dayKey(),G=X.garden;
+    if(G&&!G.dead){const age=dk-G.planted;
+      if(U.rain===dk&&G.w!==dk){G.w=dk;notes.push('🌧️ It rains in the night. The garden gets its water without you.')}
+      const since=dk-G.w;
+      if(since>=4){G.dead=true;homeAdj(-3);adj('stress',3);notes.push('🥀 Four days without water and the seedlings give up. The slugs finish what’s left. Maybe next year.');showTile('🥀','The garden died','Four days without water','bad')}
+      else if(since>=3) notes.push('🌱 The garden beds are dry and the lettuce is flopping. Water it tomorrow or lose it.');
+      else if(age>=10&&(G.last==null||dk-G.last>=3)){G.last=dk;S.pantry++;S.stats.veg=(S.stats.veg||0)+1;notes.push('🥬 The garden comes through: a colander of lettuce, radishes, pea shoots and chard. +1 day of food.');showTile('🥬','Early greens from the garden','+1 day of food','good')}
+      else if(age===4) notes.push('🌱 The first rows are up in the garden: lettuce, peas and radishes in neat green lines.');
+    }
+    if(pollenDay(d)&&X.pill!==dk&&X.pol&&X.pol.k===dk&&X.pol.n>=2){adj('stress',2);notes.push('🤧 A whole day outside in the pollen: itchy eyes, a scratchy throat and a box of tissues by the bed. Stress +2.')}
+    if(where==='home'&&dk%3===1) notes.push('🐸 The frog chorus at Lake Josephine carries all the way to your bedroom window. You fall asleep to it.');
+  }
 }
 // ---- actions ----
 function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=day(),m=tod(),X=SEAST(),dk=dayKey();
@@ -3500,6 +3547,7 @@ function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=da
           afterAction()}});
     }
   }
+  if(s==='spring') springActions(a,loc,d,m,X,dk);
   if(s==='summer'&&fourthDay(d)){const fw=X.fw===dk,bbq=X.bbq===dk;
     if(loc==='food'){
       if(bbq) a.push({ic:'🍔',l:'Legion Fourth of July BBQ ✓',s:'You were there. You smell like charcoal.',cat:'here',dis:true});
@@ -3521,9 +3569,34 @@ function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=da
     }
   }
 }
+function springActions(a,loc,d,m,X,dk){
+  if(loc==='home'){const lite=seasonLite(m),G=X.garden;
+    if(!G&&S.weekNo<2) a.push({cat:'yard',ic:'🌱',l:'Plant the garden',due:false,dis:!lite,
+      s:!lite?seasonDark():'1 hour: turn the beds, then lettuce, peas, radishes and chard. Water every 2–3 days (rain counts). Early greens in about ten days.',
+      fn:()=>{X.garden={planted:dk,w:dk,last:null,dead:false};S.t+=60;adj('stress',-2);say('🌱 An hour on your knees in the wet dirt with a robin supervising. Four neat rows, watered in. Now don’t forget them.');afterAction()}});
+    else if(G&&G.dead) a.push({cat:'yard',ic:'🥀',l:'The garden is done for this spring',s:'It dried out. The slugs are eating what’s left.',dis:true});
+    else if(G){const wet=G.w===dk,dry=dk-G.w;
+      a.push({cat:'yard',ic:'💧',l:wet?'Garden watered today ✓':'Water the garden',due:!wet&&dry>=2,dis:wet,
+        s:wet?(UP().rain===dk?'The rain took care of it.':'Soaked. The seedlings are happy.'):`15 min with the watering can. ${dry>=3?'The beds are dry: water today or lose it.':'Every 2–3 days, unless it rains.'} Stress −1.`,
+        fn:()=>{G.w=dk;S.t+=15;adj('stress',-1);say('💧 Fifteen quiet minutes with the watering can. A frog is sitting in the pea row like he planted it.');afterAction()}});
+    }
+    if(X.cleaned==null) a.push({cat:'home',ic:'🧽',l:'Spring cleaning',due:false,s:'2 hours: windows, baseboards, the closet you’ve ignored since fall, and the winter’s worth of mud by the door. Home +8, stress −3. Once a year.',
+      fn:()=>{X.cleaned=dk;S.t+=120;homeAdj(8);adj('stress',-3);say('🧽 Two hours of windows, baseboards and the hall closet. You find a glove you lost in November and a $5 bill. The house feels twice as big.');afterAction()}});
+    else if(X.cleaned===dk) a.push({cat:'home',ic:'🧽',l:'Spring cleaning ✓',s:'The windows squeak. Done for the year.',dis:true});
+    // yard work on a pollen day counts as time in the pollen
+    if(pollenDay(d)&&X.pill!==dk) a.forEach(x=>{if(x.cat==='yard'&&x.fn&&!x.dis&&!x._pol){const f=x.fn;x._pol=1;x.fn=function(){pollenOut();return f.apply(this,arguments)}}});
+  }
+  if(loc==='pharmacy'&&isOpen('pharmacy')){const today=pollenDay(d),took=X.pill===dk,held=X.pills||0;
+    if(today) a.push({ic:'🤧',l:took?'Allergy pill taken ✓':'Allergy pill — $9',s:took?'Non-drowsy. Your eyes thank you.':'Non-drowsy, 24 hours. Takes the pollen off the table for today.',dis:took||S.money<9,
+      fn:()=>{money(-9);X.pill=dk;S.t+=5;say('🤧 You buy a box of non-drowsy allergy pills and dry-swallow one in the parking lot. Twenty minutes later you can see again.');afterAction()}});
+    else a.push({ic:'🤧',l:held?'Allergy pills: you have one ready':'Allergy pills for the next pollen day — $9',s:held?'You’ll take it the morning the pollen count spikes.':'The alders and firs are getting ready. You’ll take one the morning the count spikes.',dis:held>0||S.money<9,
+      fn:()=>{money(-9);X.pills=1;S.t+=5;say('🤧 A box of non-drowsy allergy pills goes in the glovebox for the next yellow-green morning.');afterAction()}});
+  }
+}
 // ---- events ----
 Object.assign(TILE_META,{frozen_pipes:['🧊','A frozen pipe burst','bad'],drip_saved:['🚰','Dripping faucets saved the pipes','good'],icy_road:['🧊','Icy road','bad'],car_slide:['🚗','You slid into the ditch','bad'],
-  king_tide:['🌊','King tide over the Oro Bay road','bad'],ramp_ice:['🧊','Ice on the ferry ramp','info'],kayak_line:['🛶','Tourists with kayaks','info'],fourth_ferry:['🎆','Fourth of July ferry line','bad'],smoke_walk:['🔥','Walking in the smoke','bad']});
+  king_tide:['🌊','King tide over the Oro Bay road','bad'],ramp_ice:['🧊','Ice on the ferry ramp','info'],kayak_line:['🛶','Tourists with kayaks','info'],fourth_ferry:['🎆','Fourth of July ferry line','bad'],smoke_walk:['🔥','Walking in the smoke','bad'],
+  mud_road:['🟫','Mud season on the back road','bad'],car_push:['🚗','Stuck in the mud','bad'],pollen_walk:['🌼','Walking in the pollen','info'],frog_chorus:['🐸','The frog chorus','good']});
 defEvent({id:'icy_road',hook:'tripMid',priority:6,max:4,cond:ctx=>islandCar(ctx)&&icyRoads(day(),tod()),chance:0.5,
   run(ctx){if(Math.random()<0.18){ctx.add(45);adj('stress',10);S.ev.history.push({id:'car_slide',t:S.t});
       say('🚗 The back end steps out on the hill by the lake and you slide, slowly, into the ditch. A neighbor on a tractor tows you out with a chain and a grin. +45 minutes.');}
@@ -3538,10 +3611,18 @@ defEvent({id:'fourth_ferry',hook:'arrive',priority:2,max:2,cond:ctx=>(ctx.at==='
   run(){adj('stress',4);say('🎆 The Fourth of July ferry line backs up past the gas station: coolers, flags, kayaks and one guy with a full-size inflatable flamingo.')}});
 defEvent({id:'smoke_walk',hook:'tripMid',priority:2,max:3,cond:ctx=>(ctx.mode==='walk'||ctx.mode==='hitch')&&L[ctx.from].side==='I'&&seasonId()==='summer'&&smokeDay(),chance:1,
   run(){adj('health',-3);say('🔥 Walking in the smoke makes your eyes burn and your throat scratchy. Health −3.')}});
+defEvent({id:'mud_road',hook:'tripMid',priority:4,max:6,cond:ctx=>islandCar(ctx)&&mudSeason(),chance:0.25,
+  run(ctx){if(Math.random()<0.2){ctx.add(20);adj('stress',5);S.ev.history.push({id:'car_push',t:S.t});
+      say('🚗 The back wheels sink into the soft shoulder and spin. A neighbor in rubber boots helps you push it out, and now you’re both brown to the knees. +20 minutes.')}
+    else{const n=5+Math.floor(Math.random()*6);ctx.add(n);adj('stress',1);say(`🟫 Mud season: the gravel road is soup and the potholes are ponds. You creep along in first gear. +${n} minutes.`)}}});
+defEvent({id:'pollen_walk',hook:'tripMid',priority:1,max:7,cooldown:1,cond:ctx=>(ctx.mode==='walk'||ctx.mode==='hitch')&&L[ctx.from].side==='I'&&pollenDay()&&SEAST().pill!==dayKey(),chance:1,
+  run(){pollenOut();pollenOut()}});   // a walk is a lot of pollen
+defEvent({id:'frog_chorus',hook:'arrive',priority:1,max:2,cooldown:1,cond:ctx=>ctx.at==='lake'&&seasonId()==='spring'&&tod()>=1110,chance:0.7,
+  run(){adj('stress',-3);say('🐸 At dusk the frogs at Lake Josephine start up, thousands of them, so loud you can feel it in your chest. Stress −3.')}});
 // ---- choosing a season (new-game flow: difficulty → length → season) ----
 function seasonModal(then){
   const cur=prefs().season;
-  modal('🗓️ What time of year?','<p>Each season plays differently. Fall is the original game.</p>',['fall','winter','summer'].map(k=>{const s=SEA(k);
+  modal('🗓️ What time of year?','<p>Each season plays differently. Fall is the original game.</p>',['fall','winter','spring','summer'].map(k=>{const s=SEA(k);
     return {l:`${s.ic} ${s.n} (${s.month})${k===cur?' (last time)':''}`,s:s.d,fn:()=>{setPref('season',k);then(k)}}}));
 }
 // ---- 🧾 household: bills, mail & packages, dump runs, a dog, cooking at home, storm prep. All state lives in S.hh ----
@@ -3558,7 +3639,7 @@ const HH_BILLS={
   ins:{ic:'🛡️',n:'Home insurance',who:'Fir & Tide Mutual',amt:84,fee:12,coll:25,w:3,d:2,wk:2,late7:'Fir & Tide Mutual writes, very politely, that your policy will lapse. Given the trees around your roof, that’s a scary letter.'}};
 const hhDue=k=>S.mode==='month'?HH_BILLS[k].w*7+HH_BILLS[k].d:HH_BILLS[k].wk;
 const HB=k=>{const b=HH().bills;return b[k]||(b[k]={paid:false,late:0,fees:0,check:-1,how:''})};
-function hhAmt(k){const B=HH_BILLS[k];if(k!=='elec')return B.amt;const s=seasonId();return B.amt+(s==='winter'?40:s==='summer'?-35:0)}
+function hhAmt(k){const B=HH_BILLS[k];if(k!=='elec')return B.amt;const s=seasonId();return B.amt+(s==='winter'?40:s==='summer'?-35:s==='spring'?-15:0)}
 const hhOwed=k=>hhAmt(k)+HB(k).fees;
 const hhDueTxt=k=>{const dd=hhDue(k)-dayKey();return dd<0?`${-dd} day${dd===-1?'':'s'} late`:dd===0?'due today':dd===1?'due tomorrow':`due ${DAYS[hhDue(k)%7]}`};
 // a bill shows up a week before it's due and stays until it's settled
@@ -3794,7 +3875,7 @@ let SHARE_LAST=null;          // {blob,url,file,name,w,h} of the last card made
 // plain text from game HTML (with {{name}} filled in); DOMParser never runs scripts or handlers
 function plainText(t){try{return (new DOMParser().parseFromString(withName(String(t==null?'':t)),'text/html').body.textContent||'').replace(/\s+/g,' ').trim()}catch(e){return String(t||'')}}
 function cardSlug(n){return String(n||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-+|-+$/g,'')||'islander'}
-const SEASON_TXT={fall:'🍂 Fall',winter:'❄️ Winter',summer:'☀️ Summer'};
+const SEASON_TXT={fall:'🍂 Fall',winter:'❄️ Winter',spring:'🌱 Spring',summer:'☀️ Summer'};
 // everything the card shows, gathered from the finished game
 function cardData(){
   const info=END_INFO||{lost:false},lost=!!info.lost,sc=scoreOf(),g=lost?['F',plainText(info.h1),plainText(info.sub)]:gradeOf(sc);
@@ -4265,8 +4346,9 @@ function wxDay(d){const s=seasonId(),X=seaX(),rel=d-day(),sure=rel<=1,w=[];
   let hi,lo,rain,ic,sum;
   if(s==='winter'){hi=wxN(d,'hi',36,44);lo=wxN(d,'lo',28,34);rain=10*wxN(d,'rain',3,8)}
   else if(s==='summer'){hi=wxN(d,'hi',71,82);lo=wxN(d,'lo',52,58);rain=10*wxN(d,'rain',0,1)}
+  else if(s==='spring'){hi=wxN(d,'hi',53,63);lo=wxN(d,'lo',38,45);rain=10*wxN(d,'rain',3,8)}
   else{hi=wxN(d,'hi',45,53);lo=wxN(d,'lo',36,43);rain=10*wxN(d,'rain',4,9)}
-  ic=rain>=70?'🌧️':rain>=40?'🌦️':s==='summer'?'☀️':'⛅';sum=rain>=70?'Rain':rain>=40?'Showers':s==='summer'?'Sunny':'Cloudy';
+  ic=rain>=70?'🌧️':rain>=40?'🌦️':s==='summer'?'☀️':'⛅';sum=rain>=70?'Rain':rain>=40?(s==='spring'?'Showers and sun breaks':'Showers'):s==='summer'?'Sunny':s==='spring'?'Sun breaks':'Cloudy';
   const g=wxStorm(d);
   if(g){rain=100;ic='🌬️';sum=sure?'Gale':'Windy, maybe a gale';
     w.push(sure?(g.first?`🌬️ <b>Gale warning</b> from about ${fmt(g.start)}: gusts to 55 mph. Expect the ferry to stop and the power to go out.`:`🌬️ <b>Gale continues</b> until about ${fmtAbs(g.end)}.`)
@@ -4282,6 +4364,10 @@ function wxDay(d){const s=seasonId(),X=seaX(),rel=d-day(),sure=rel<=1,w=[];
       w.push(sure?`🔥 <b>Wildfire smoke and heat</b>, ${hi}°: air quality unhealthy. Outdoor work can wait.`:'🌫️ Smoke possible, depending on the wind east of the mountains.')}
     else if(hi>=80)w.push(`🥵 Warm one: ${hi}°. Water the garden early.`);
     if(X.fourth===d)w.push('🎆 Fourth of July: clear for fireworks at 10 PM.');
+  }
+  if(s==='spring'){
+    if((X.pollen||[]).includes(d))w.push(sure?'🌼 <b>Pollen count very high</b>: alder, fir and grass. Allergy pills at the Lakewood pharmacy.':'🌼 Pollen likely to spike. Low confidence.');
+    if(X.mud&&sure&&rain>=40)w.push('🟫 Mud season: soft gravel roads after the rain. Allow a few extra minutes.');
   }
   if(sure&&S.week.fog[d])w.push(`🌫️ <b>Fog</b> in the morning: boats before 11 AM ~${S.week.fog[d]} min late.`);
   return {d,rel,sure,hi,lo,rain,ic,sum,w}}
@@ -4305,6 +4391,7 @@ function wxTomorrowWarn(){const d=day();const out=[];
       else if(X.ice&&X.ice[d+1])out.push(['🧊','Ice on the ramp tomorrow',`Early boats ~${X.ice[d+1]} min late.`]);
       if(X.tide&&X.tide.day===d+1)out.push(['🌊','King tide tomorrow',`Around ${fmt(X.tide.start+75)}. The Oro Bay road floods.`]);}
     if(seasonId()==='summer'&&X.smoke===d+1)out.push(['🔥','Smoke tomorrow','Unhealthy air. Plan indoor things.']);
+    if(seasonId()==='spring'&&(X.pollen||[]).includes(d+1))out.push(['🌼','High pollen tomorrow','Grab allergy pills if you’re on the mainland.']);
   }
   const X=seaX();if(seasonId()==='winter'&&X.cold&&X.cold[d])out.push(['🥶','Hard freeze tonight','Drip the faucets if the heat might go out.']);
   return out}
@@ -4328,7 +4415,7 @@ definePhoneApp({id:'weather',name:'Tides & Weather',ic:'🌦️',order:67,size:'
     else h+=apNote('Next week’s forecast isn’t out yet. The models are still arguing.');
     if(d+2<=6){h+=`<div class="ph-sub">Later this week · lower confidence</div>`;
       for(let i=d+2;i<=6;i++){const x=wxDay(i);h+=apLi(`${x.ic} ${DAYS[i].slice(0,3)}`,`${x.sum} · ${x.hi}°/${x.lo}°${x.w.some(t=>/King tide/.test(t))?' · 🌊 king tide':''}`,x.w.length?'wx-low warn':'wx-low')}}
-    h+=apNote('🔔 You’ll get a buzz the evening before a gale, snow, ice, a king tide or smoke. Tides are math, so those are exact. The rest is the Pacific Northwest.');
+    h+=apNote('🔔 You’ll get a buzz the evening before a gale, snow, ice, a king tide, smoke or high pollen. Tides are math, so those are exact. The rest is the Pacific Northwest.');
     return h}});
 // ---------------- 📱 apps: money (Island Credit Union, Gig Work, Mainland Market) ----------------
 // Three installable phone apps (see the plug-in pattern at the top of 14-phone-apps.js).
@@ -4564,7 +4651,7 @@ function tutSea(o){const s=seasonId();return o[s]?' '+o[s]:''}
 const GUIDE=[
   // ---- Monday: the commute, work, groceries and gas, getting home ----
   {id:'goal',g:0,when:()=>day()===0&&S.loc==='home'&&tod()<600,
-    t:()=>`👋 Welcome to the island, {{name}}. Work is on the mainland at <b>${fmt(tutJob()?tutJob().start:540)}</b>, and the island is on the wrong side of the water: open <b>🧭 Go somewhere</b> and drive to the <b>Ferry Landing</b>.`+tutSea({winter:'Ice on the ramp makes early boats late, so leave early.'})},
+    t:()=>`👋 Welcome to the island, {{name}}. Work is on the mainland at <b>${fmt(tutJob()?tutJob().start:540)}</b>, and the island is on the wrong side of the water: open <b>🧭 Go somewhere</b> and drive to the <b>Ferry Landing</b>.`+tutSea({winter:'Ice on the ramp makes early boats late, so leave early.',spring:'In mud season the back roads are slow, so give yourself a few extra minutes.'})},
   {id:'dock',g:0,when:()=>S.loc==='aiDock',
     t:()=>'⛴️ Be <b>in line 20 minutes before</b> your boat leaves or you don’t board (the commuter boat is the <b>7:35</b>, so 7:15). The ⛴️ Ferry tab has the schedule and a trip planner that does the math.'+tutSea({winter:'🧊 On icy mornings the crew sands the ramp first; nobody hurries.',summer:'☀️ In summer, tourists with kayaks fill the car deck: walk on if the line looks long.'})},
   {id:'mainland',g:0,when:()=>S.loc==='stDock'&&!S.worked[day()]&&tod()<720,
@@ -4607,7 +4694,7 @@ const GUIDE=[
   {id:'gus',g:4,when:()=>S.loc==='home'&&(day()>=4||(S.home??70)<35),
     t:'🧰 Too much to fix? <b>Call Gus</b> (📱 Phone → Island numbers), or ask the island community group from your phone. Help arrives on island time.'},
   {id:'dayoff',g:5,when:()=>day()>=5&&tod()<720&&!(tutJob()&&tutJob().days.includes(day())),
-    t:()=>'☕ A day off: no boat to catch. Rest, deep clean, see friends or pick up a weekend shift; just remember the Sunday evening boats are packed.'+tutSea({winter:'Keep the woodstove fed.',summer:'Water the garden first.'})},
+    t:()=>'☕ A day off: no boat to catch. Rest, deep clean, see friends or pick up a weekend shift; just remember the Sunday evening boats are packed.'+tutSea({winter:'Keep the woodstove fed.',spring:'A good day to plant the garden, if you haven’t.',summer:'Water the garden first.'})},
   // ---- any day, when it happens ----
   {id:'storm',g:-1,when:()=>!!S.week.storm&&S.week.storm.day===day(),
     t:'🌬️ A storm means power outages. A <b>generator</b> (Home Depot, Lakewood) plus gas stashed in your shed keeps the fridge, heat and phone going.'},

@@ -137,8 +137,9 @@ function wxDay(d){const s=seasonId(),X=seaX(),rel=d-day(),sure=rel<=1,w=[];
   let hi,lo,rain,ic,sum;
   if(s==='winter'){hi=wxN(d,'hi',36,44);lo=wxN(d,'lo',28,34);rain=10*wxN(d,'rain',3,8)}
   else if(s==='summer'){hi=wxN(d,'hi',71,82);lo=wxN(d,'lo',52,58);rain=10*wxN(d,'rain',0,1)}
+  else if(s==='spring'){hi=wxN(d,'hi',53,63);lo=wxN(d,'lo',38,45);rain=10*wxN(d,'rain',3,8)}
   else{hi=wxN(d,'hi',45,53);lo=wxN(d,'lo',36,43);rain=10*wxN(d,'rain',4,9)}
-  ic=rain>=70?'🌧️':rain>=40?'🌦️':s==='summer'?'☀️':'⛅';sum=rain>=70?'Rain':rain>=40?'Showers':s==='summer'?'Sunny':'Cloudy';
+  ic=rain>=70?'🌧️':rain>=40?'🌦️':s==='summer'?'☀️':'⛅';sum=rain>=70?'Rain':rain>=40?(s==='spring'?'Showers and sun breaks':'Showers'):s==='summer'?'Sunny':s==='spring'?'Sun breaks':'Cloudy';
   const g=wxStorm(d);
   if(g){rain=100;ic='🌬️';sum=sure?'Gale':'Windy, maybe a gale';
     w.push(sure?(g.first?`🌬️ <b>Gale warning</b> from about ${fmt(g.start)}: gusts to 55 mph. Expect the ferry to stop and the power to go out.`:`🌬️ <b>Gale continues</b> until about ${fmtAbs(g.end)}.`)
@@ -154,6 +155,10 @@ function wxDay(d){const s=seasonId(),X=seaX(),rel=d-day(),sure=rel<=1,w=[];
       w.push(sure?`🔥 <b>Wildfire smoke and heat</b>, ${hi}°: air quality unhealthy. Outdoor work can wait.`:'🌫️ Smoke possible, depending on the wind east of the mountains.')}
     else if(hi>=80)w.push(`🥵 Warm one: ${hi}°. Water the garden early.`);
     if(X.fourth===d)w.push('🎆 Fourth of July: clear for fireworks at 10 PM.');
+  }
+  if(s==='spring'){
+    if((X.pollen||[]).includes(d))w.push(sure?'🌼 <b>Pollen count very high</b>: alder, fir and grass. Allergy pills at the Lakewood pharmacy.':'🌼 Pollen likely to spike. Low confidence.');
+    if(X.mud&&sure&&rain>=40)w.push('🟫 Mud season: soft gravel roads after the rain. Allow a few extra minutes.');
   }
   if(sure&&S.week.fog[d])w.push(`🌫️ <b>Fog</b> in the morning: boats before 11 AM ~${S.week.fog[d]} min late.`);
   return {d,rel,sure,hi,lo,rain,ic,sum,w}}
@@ -177,6 +182,7 @@ function wxTomorrowWarn(){const d=day();const out=[];
       else if(X.ice&&X.ice[d+1])out.push(['🧊','Ice on the ramp tomorrow',`Early boats ~${X.ice[d+1]} min late.`]);
       if(X.tide&&X.tide.day===d+1)out.push(['🌊','King tide tomorrow',`Around ${fmt(X.tide.start+75)}. The Oro Bay road floods.`]);}
     if(seasonId()==='summer'&&X.smoke===d+1)out.push(['🔥','Smoke tomorrow','Unhealthy air. Plan indoor things.']);
+    if(seasonId()==='spring'&&(X.pollen||[]).includes(d+1))out.push(['🌼','High pollen tomorrow','Grab allergy pills if you’re on the mainland.']);
   }
   const X=seaX();if(seasonId()==='winter'&&X.cold&&X.cold[d])out.push(['🥶','Hard freeze tonight','Drip the faucets if the heat might go out.']);
   return out}
@@ -200,5 +206,5 @@ definePhoneApp({id:'weather',name:'Tides & Weather',ic:'🌦️',order:67,size:'
     else h+=apNote('Next week’s forecast isn’t out yet. The models are still arguing.');
     if(d+2<=6){h+=`<div class="ph-sub">Later this week · lower confidence</div>`;
       for(let i=d+2;i<=6;i++){const x=wxDay(i);h+=apLi(`${x.ic} ${DAYS[i].slice(0,3)}`,`${x.sum} · ${x.hi}°/${x.lo}°${x.w.some(t=>/King tide/.test(t))?' · 🌊 king tide':''}`,x.w.length?'wx-low warn':'wx-low')}}
-    h+=apNote('🔔 You’ll get a buzz the evening before a gale, snow, ice, a king tide or smoke. Tides are math, so those are exact. The rest is the Pacific Northwest.');
+    h+=apNote('🔔 You’ll get a buzz the evening before a gale, snow, ice, a king tide, smoke or high pollen. Tides are math, so those are exact. The rest is the Pacific Northwest.');
     return h}});

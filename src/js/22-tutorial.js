@@ -15,7 +15,7 @@ function tutSea(o){const s=seasonId();return o[s]?' '+o[s]:''}
 const GUIDE=[
   // ---- Monday: the commute, work, groceries and gas, getting home ----
   {id:'goal',g:0,when:()=>day()===0&&S.loc==='home'&&tod()<600,
-    t:()=>`👋 Welcome to the island, {{name}}. Work is on the mainland at <b>${fmt(tutJob()?tutJob().start:540)}</b>, and the island is on the wrong side of the water: open <b>🧭 Go somewhere</b> and drive to the <b>Ferry Landing</b>.`+tutSea({winter:'Ice on the ramp makes early boats late, so leave early.'})},
+    t:()=>`👋 Welcome to the island, {{name}}. Work is on the mainland at <b>${fmt(tutJob()?tutJob().start:540)}</b>, and the island is on the wrong side of the water: open <b>🧭 Go somewhere</b> and drive to the <b>Ferry Landing</b>.`+tutSea({winter:'Ice on the ramp makes early boats late, so leave early.',spring:'In mud season the back roads are slow, so give yourself a few extra minutes.'})},
   {id:'dock',g:0,when:()=>S.loc==='aiDock',
     t:()=>'⛴️ Be <b>in line 20 minutes before</b> your boat leaves or you don’t board (the commuter boat is the <b>7:35</b>, so 7:15). The ⛴️ Ferry tab has the schedule and a trip planner that does the math.'+tutSea({winter:'🧊 On icy mornings the crew sands the ramp first; nobody hurries.',summer:'☀️ In summer, tourists with kayaks fill the car deck: walk on if the line looks long.'})},
   {id:'mainland',g:0,when:()=>S.loc==='stDock'&&!S.worked[day()]&&tod()<720,
@@ -58,7 +58,7 @@ const GUIDE=[
   {id:'gus',g:4,when:()=>S.loc==='home'&&(day()>=4||(S.home??70)<35),
     t:'🧰 Too much to fix? <b>Call Gus</b> (📱 Phone → Island numbers), or ask the island community group from your phone. Help arrives on island time.'},
   {id:'dayoff',g:5,when:()=>day()>=5&&tod()<720&&!(tutJob()&&tutJob().days.includes(day())),
-    t:()=>'☕ A day off: no boat to catch. Rest, deep clean, see friends or pick up a weekend shift; just remember the Sunday evening boats are packed.'+tutSea({winter:'Keep the woodstove fed.',summer:'Water the garden first.'})},
+    t:()=>'☕ A day off: no boat to catch. Rest, deep clean, see friends or pick up a weekend shift; just remember the Sunday evening boats are packed.'+tutSea({winter:'Keep the woodstove fed.',spring:'A good day to plant the garden, if you haven’t.',summer:'Water the garden first.'})},
   // ---- any day, when it happens ----
   {id:'storm',g:-1,when:()=>!!S.week.storm&&S.week.storm.day===day(),
     t:'🌬️ A storm means power outages. A <b>generator</b> (Home Depot, Lakewood) plus gas stashed in your shed keeps the fridge, heat and phone going.'},
