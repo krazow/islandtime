@@ -15,7 +15,7 @@ function coopGoal(){return siOn()?STORY_COOP_GOAL:COOP_GOAL}
 function SI(){const st=S.story;if(!st.flags)st.flags={};if(!st.recap)st.recap=[];
   if(!st.island)st.island={storm:{helped:0,did:{}},coop:{}};const I=st.island;if(!I.storm)I.storm={helped:0,did:{}};if(!I.storm.did)I.storm.did={};if(!I.coop)I.coop={};return I}
 const siFund=()=>(S.coop.you||0)+(S.coop.town||0);
-const siRecap=s=>{try{S.story.recap.push(s)}catch(e){}};
+const siRecap=s=>{try{const I=SI();(I.notes||(I.notes=[])).push(s)}catch(e){}};
 // note for tonight's summary when we have one, else the log
 const siSay=(s,notes)=>{if(notes)notes.push(s);else say(s)};
 

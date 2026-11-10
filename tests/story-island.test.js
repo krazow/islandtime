@@ -66,7 +66,7 @@ module.exports = [
     assert.deepStrictEqual(fri, { cur: 4, out: true });
     assert.match(await log(page), /Second night without power/);
     await clearModals(page);
-    const sat = await page.evaluate(() => { S.cur = 5; S.t = 5 * 1440 + 725; S.loc = 'home'; processTimed(); return { out: !!powerOut(), flags: S.story.flags.storm, recap: S.story.recap.join(' ') }; });
+    const sat = await page.evaluate(() => { S.cur = 5; S.t = 5 * 1440 + 725; S.loc = 'home'; processTimed(); return { out: !!powerOut(), flags: S.story.flags.storm, recap: ((S.story.island && S.story.island.notes) || []).join(' ') }; });
     assert.strictEqual(sat.out, false);
     assert.deepStrictEqual(sat.flags, { helped: 0 });
     assert.match(sat.recap, /storm of the decade/);

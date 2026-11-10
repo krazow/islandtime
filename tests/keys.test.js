@@ -14,7 +14,7 @@ module.exports = [
     await page.keyboard.press('h');
     assert.strictEqual(await page.evaluate(() => tab), 'act');
     // 1 presses the first visible action button
-    const first = await page.evaluate(() => { const b = [...document.querySelectorAll('#app .content button.act')].find(b => !b.disabled && b.offsetParent); window.__clicked = null; b.addEventListener('click', () => { window.__clicked = b.textContent; }, { once: true }); return b.textContent; });
+    const first = await page.evaluate(() => { const b = [...document.querySelectorAll('#app .content button.act')].find(b => !b.disabled && b.offsetParent); window.__clicked = null; document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('button.act'); if (t && window.__clicked == null) window.__clicked = t.textContent; }, { capture: true, once: true }); return b.textContent; });
     await page.keyboard.press('1');
     assert.strictEqual(await page.evaluate(() => window.__clicked), first);
     await page.evaluate(() => { document.querySelectorAll('#mbg').forEach(e => e.remove()); MQ.length = 0; tab = 'act'; render(); });

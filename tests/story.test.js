@@ -112,7 +112,7 @@ module.exports = [
   { name: 'unemployed at a chapter end: −$300, never below −$1,500; hooks run in order', fn: async ctx => {
     const { page, errors } = await open(ctx);
     const calls = await page.evaluate(() => {
-      window.CALLS = []; storyHooks.push({ id: 'test', chapterStart(ch, notes) { CALLS.push('start' + ch); notes.push('📣 Test beat starts ' + ch); S.story.island = { n: (S.story.island ? S.story.island.n : 0) + 1 }; },
+      window.CALLS = []; storyHooks.push({ id: 'test', chapterStart(ch, notes) { CALLS.push('start' + ch); notes.push('📣 Test beat starts ' + ch); S.story.testbeat = { n: (S.story.testbeat ? S.story.testbeat.n : 0) + 1 }; },
         chapterEnd(ch, notes) { CALLS.push('end' + ch); S.story.flags.levy = 'fail'; } });
       window.jobSeasonEnd = (notes, a, b) => { CALLS.push(`season ${a}>${b}`); notes.push('🧺 Your seasonal job ended.'); };
       storyNew('normal'); return CALLS.slice();
@@ -122,7 +122,7 @@ module.exports = [
     await endChapter(page);
     const txt = await page.textContent('#mbg');
     assert.match(txt, /Months of odd jobs and bills: −\$300/); assert.match(txt, /ferry levy failed/); assert.match(txt, /Your seasonal job ended/); assert.match(txt, /Test beat starts 1/);
-    const r = await page.evaluate(() => ({ calls: CALLS, m: S.money, rec: S.story.recap[0].money, island: S.story.island, levy: S.story.flags.levy }));
+    const r = await page.evaluate(() => ({ calls: CALLS, m: S.money, rec: S.story.recap[0].money, island: S.story.testbeat, levy: S.story.flags.levy }));
     assert.deepStrictEqual(r.calls, ['start0', 'end0', 'season summer>fall', 'start1']);
     assert.strictEqual(r.m, r.rec - 300); assert.deepStrictEqual(r.island, { n: 2 }, 'beat state carries across'); assert.strictEqual(r.levy, 'fail');
     await page.evaluate(() => { S.money = -1400; S.emp = null; });
@@ -202,8 +202,8 @@ module.exports = [
     assert.match(await page.textContent('.title'), /Continue as T: .*Chapter 2 of 4 · Wednesday/);
     assert.match(await page.evaluate(() => slotLine(slotInfo(1))), /Chapter 2 of 4 · Week 1 of 4 · Wednesday/);
     await page.click('text=Continue as T');
-    const r = await page.evaluate(() => ({ ch: S.story.ch, levy: S.story.flags.levy, ferry: S.story.ferry, season: S.season, mode: S.mode, cur: S.cur }));
-    assert.deepStrictEqual(r, { ch: 1, levy: 'pass', ferry: { x: 1 }, season: 'fall', mode: 'month', cur: 2 });
+    const r = await page.evaluate(() => ({ ch: S.story.ch, levy: S.story.flags.levy, ferry: S.story.ferry.x, season: S.season, mode: S.mode, cur: S.cur }));
+    assert.deepStrictEqual(r, { ch: 1, levy: 'pass', ferry: 1, season: 'fall', mode: 'month', cur: 2 });
     assert.match(await page.textContent('.hud-sub'), /Ch\. 2\/4 · Week 1\/4/);
     // a broken story object is repaired on load
     const fixed = await page.evaluate(() => { const d = JSON.parse(JSON.stringify(packSave())); d.S.story = { ch: 9, flags: null }; const m = migrate(d); return m.S.story; });

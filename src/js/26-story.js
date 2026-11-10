@@ -214,7 +214,7 @@ function storyEpilogue(){const F=(S.story&&S.story.flags)||{},out=[];
   return r}}
 function storyEndBlock(X,lost){const end=document.querySelector('.end');if(!end)return;
   const lab=end.querySelector('.small-note');if(lab)lab.innerHTML=lab.innerHTML.replace('WEEK COMPLETE','YEAR COMPLETE');
-  const rec=(X.recap||[]).map(r=>`<li>${storyTitle(r.ch)}: ${r.money<0?'−':''}$${Math.abs(r.money)} · ${r.job?esc(r.job):'out of work'} · ${r.tierIc} ${r.tier}${r.friends.length?` · met ${esc(r.friends.join(', '))}`:''}</li>`).join('');
+  const rec=(X.recap||[]).filter(r=>r&&typeof r==="object").map(r=>`<li>${storyTitle(r.ch)}: ${r.money<0?'−':''}$${Math.abs(r.money)} · ${r.job?esc(r.job):'out of work'} · ${r.tierIc} ${r.tier}${r.friends.length?` · met ${esc(r.friends.join(', '))}`:''}</li>`).join('');
   const epi=lost?'':(X.epilogue||[]).map(l=>`<p>${l}</p>`).join('');
   const div=document.createElement('div');div.className='story-end';
   div.innerHTML=withName(`<div class="story-badge">📖 A year on the island · ${lost?`Chapter ${X.ch+1} of 4 · game over`:'Chapter 4 of 4'}</div>${epi}${rec?`<ul class="story-recap">${rec}</ul>`:''}`);

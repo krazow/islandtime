@@ -39,6 +39,27 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.16: Story mode, spring, and job listings that change
+
+- 📖 **Story mode: a year on the island.** Pick "📖 Story" when you start a game. Four chapters, each a 4-week month, with the months in between skipped:
+  1. **Summer: Moving in** (July 2026). You've just moved to the island. A ferry levy campaign is gathering signatures, and the co-op starts a year-long drive to reopen the store ($6,000 this time).
+  2. **Fall: The vote** (November 2026). The levy goes to a vote on Tuesday, November 3. Then the ferry goes to dry dock for two weeks and a smaller relief boat fills in.
+  3. **Winter: The storm** (January 2027). The storm of the decade: the ferry stops for over a day and the power is out from Wednesday night to Saturday.
+  4. **Spring: The store** (April 2027). The co-op members meet at the Legion. If the fund made it, the store reopens.
+  - **Between chapters:** a summary of the month and a "months later…" jump. Your money (+$400 if you had a job, −$300 if not), job, friends, reputation, house, phone and pets carry over; health and stress get a breather.
+  - **Several endings**, decided by your reputation, money, job and the store: from 💚 *The heart of the island* (the co-op asks you onto its board) through *An islander now* and *Ferry commuter for life* to moving back to the mainland. The end screen adds an epilogue for the levy, the dry dock, the storm and the store, and a line for each chapter.
+  - **The levy:** campaign in summer (signatures in the ferry line, the Island Group, flyers at the Fourth of July BBQ, talking with the Riv regulars, or arguing against it), then vote in November. Both sides get a fair say. If it passes, fares drop 10% and crew-shortage cancellations get rare; if it fails, fares rise 10% and cancellations get a little more common.
+  - **The dry dock:** two weeks of a smaller relief boat: cars fill up, crossings are 5 minutes longer, a midday run sometimes cancels. Walk on.
+  - **The storm:** check on the Hendersons, open your house as a warming spot, help the chainsaw crew clear the road, share gas or firewood, or sell your spare gas at storm prices (people remember). Neighbors look in on you if you're well known.
+  - **The co-op:** a pie social at the Legion in summer, a $25 membership in fall (members get a discount once it opens), and the spring meeting. Short of the goal? There's a last push before the store's fate is decided. Cut the ribbon yourself if your reputation is +60 or more.
+  - New achievements: 📖 A year on the island, 💚 The heart of the island, 🌉 No bridge to burn.
+- 🌱 **Spring** (April 2027), a fourth season for any game: plant a garden in the first two weeks and eat early greens later, spring cleaning, pollen days (an allergy pill at the Lakewood pharmacy helps), mud season on the island roads, frogs at Lake Josephine, and spring-break crowds on Friday and Saturday boats.
+- 💼 **Job listings change every week.** Openings come and go; one can fill mid-week, another can open. Friends (or a good reputation) can tip you off about an opening, with a word in for better interview odds. New jobs:
+  - **Holiday stocker, Lakewood supermarket** (fall only, Wed–Sun, $140/day)
+  - **Ferry deckhand** (summer only, Thu–Mon from 5:30 AM at the island landing, $195/day)
+  - **Clerk at the co-op store** (once the store reopens, $125/day)
+  - Seasonal jobs end with their season: a layoff, not a firing.
+
 ### New in 1.15: island delivery
 
 The island post office was inside the old store building, so it closed with the store. Now the carriers come to you.
