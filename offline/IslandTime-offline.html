@@ -5370,13 +5370,14 @@ function storyEnding(){const F=(S.story&&S.story.flags)||{},r=repVal(),m=S.money
   const coop=F.coopOpen===true||(F.coopOpen==null&&!!(S.coop&&S.coop.open));
   const id=r<=-60?'pariah':(m<-500||(!emp&&m<0))?'broke':(coop&&r>=60)?'heart':r>=60?'regular':(r>=20&&emp)?'islander':emp?'commuter':'scraping';
   return Object.assign({id},STORY_ENDINGS[id])}
-function storyEpilogue(){const F=(S.story&&S.story.flags)||{},out=[];
-  if(F.levy==='pass')out.push('🗳️ The ferry levy passed in November. The boats run later now, the fare went up a dollar, and nobody minds as much as they said they would.');
+// the beat modules (27 'ferry', 28 'island') write their own epilogue lines; these built-in ones are only a fallback
+function storyEpilogue(){const F=(S.story&&S.story.flags)||{},out=[],has=id=>storyHooks.some(h=>h&&h.id===id&&typeof h.ending==='function'),fer=!has('ferry'),isl=!has('island');
+  if(!fer){}else if(F.levy==='pass')out.push('🗳️ The ferry levy passed in November. Fares came down a little, the relief captain showed up, and nobody minds the tax as much as they said they would.');
   else if(F.levy==='fail')out.push('🗳️ The ferry levy failed. The last boat still leaves at 10:50, and the island still argues about it at the Riv.');
-  if(F.drydock)out.push('🛠️ The ferry came back from dry dock in a fresh coat of white paint. For a few weeks the island had a smaller boat and a lot of patience.');
-  if(F.storm){const n=(F.storm.helped)|0;out.push(n>=3?`🌪️ When the storm of the decade knocked the island flat, you checked on ${n} neighbors. Some of them still bring it up.`:n>0?`🌪️ When the storm of the decade knocked the island flat, you checked on ${n===1?'a neighbor':'two neighbors'}. They haven’t forgotten.`:'🌪️ The storm of the decade took the power for days. You got through it on your own.')}
-  if(F.coopOpen===true)out.push('🏪 The Anderson Island Food Co-op opened in the old General Store: groceries and gas on the island again, and a volunteer at the register who knows your name.');
-  else if(F.coopOpen===false)out.push('🏪 The co-op didn’t open this year. The pumps are still bagged, and the sign on the door still says 2027.');
+  if(fer&&F.drydock)out.push('🛠️ The ferry came back from dry dock in a fresh coat of white paint. For a few weeks the island had a smaller boat and a lot of patience.');
+  if(isl&&F.storm){const n=(F.storm.helped)|0;out.push(n>=3?`🌪️ When the storm of the decade knocked the island flat, you checked on ${n} neighbors. Some of them still bring it up.`:n>0?`🌪️ When the storm of the decade knocked the island flat, you checked on ${n===1?'a neighbor':'two neighbors'}. They haven’t forgotten.`:'🌪️ The storm of the decade took the power for days. You got through it on your own.')}
+  if(isl&&F.coopOpen===true)out.push('🏪 The Anderson Island Food Co-op opened in the old General Store: groceries and gas on the island again, and a volunteer at the register who knows your name.');
+  else if(isl&&F.coopOpen===false)out.push('🏪 The co-op didn’t open this year. The pumps are still bagged, and the sign on the door still says 2027.');
   out.push(...storyHook('ending',F).filter(x=>typeof x==='string'));
   return out}
 {const _fin=finish;finish=function(){

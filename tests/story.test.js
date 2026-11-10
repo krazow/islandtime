@@ -171,7 +171,8 @@ module.exports = [
     const end = await page.textContent('.end');
     assert.match(end, /The heart of the island/); assert.match(end, /cut the ribbon/);
     assert.match(end, /A year on the island · Chapter 4 of 4/);
-    assert.match(end, /ferry levy passed/); assert.match(end, /dry dock/); assert.match(end, /checked on 3 neighbors/); assert.match(end, /Food Co-op opened/);
+    assert.match(end, /ferry levy passed/); assert.match(end, /back from the shipyard/); assert.match(end, /3 times you showed up/); assert.match(end, /co-op reopened/);
+    assert.strictEqual((end.match(/ferry levy/g) || []).length, 1, 'one levy line, not two');
     assert.match(end, /A line from a beat: pass/);
     assert.match(end, /YEAR COMPLETE/);
     const a = await page.evaluate(() => ({ got: Object.keys(achGot()), game: S.achGame, over: S.over, recap: S.story.recap.length, ending: S.story.ending.id }));
