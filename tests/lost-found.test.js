@@ -44,7 +44,7 @@ module.exports = [
     assert.deepStrictEqual(await page.evaluate(() => hhPorch().map(p => p.k)), ['bank']);
     noErrors(errors);
   } },
-  { name: 'lost & found: someone else’s package on your porch; post it and they pick it up (reputation +1)', fn: async ctx => {
+  { name: 'lost & found: someone else’s package on your porch; post it and they pick it up (reputation +10 the same day)', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await setup(page);
@@ -59,7 +59,7 @@ module.exports = [
     await page.evaluate(d => { S.t = d + 1; processTimed(); render(); }, due);
     assert.match(await log(page), /That’s mine! Thank you!!/);
     assert.strictEqual(await page.evaluate(() => LF().foreign.length), 0);
-    assert.strictEqual(await page.evaluate(() => S.rep || 0), rep0 + 1);
+    assert.strictEqual(await page.evaluate(() => S.rep || 0), rep0 + 10, 'returned the same day: +10');
     // no more than one roll a day, never on Sunday
     const sun = await page.evaluate(() => { S.cur = 6; S.t = 6 * 1440 + 950; LF().roll = -1; const r = Math.random; Math.random = () => 0.01; processTimed(); Math.random = r; return LF().foreign.length; });
     assert.strictEqual(sun, 0, 'no deliveries on Sunday');

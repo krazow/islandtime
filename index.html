@@ -363,6 +363,13 @@ html.hc .fb-text,html.hc .fb-rep,html.hc .fb-type{border-color:#000}
 .keys{display:grid;gap:6px;margin:4px 0 10px}
 .keys-row{display:flex;gap:12px;align-items:baseline}
 .keys-row kbd{min-width:84px;font:600 12px ui-monospace,Menlo,Consolas,monospace;background:var(--card,#f4f1ea);border:1px solid var(--line,#ccc);border-bottom-width:2px;border-radius:5px;padding:2px 6px;text-align:center}
+
+/* 🤲 reputation meter (−100..+100, centered) */
+.rep2 .repbar{position:relative;height:6px;border-radius:3px;background:var(--line,#ddd);margin-top:6px;overflow:hidden}
+.rep2 .repbar i{position:absolute;top:0;bottom:0}
+.rep2 .repbar i.pos{background:var(--good,#2e7d4f)}
+.rep2 .repbar i.neg{background:var(--bad,#b3412e)}
+.rep2 .repbar em{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--ink,#333);opacity:.4}
 </style>
 </head>
 <body>
@@ -484,7 +491,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.15.0', SAVE_SCHEMA=6;
+const APP_VERSION='1.15.0', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -765,7 +772,7 @@ function arrest(where,missed){
   showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
   const lost=[];if(S.cargo.drugs)lost.push(S.cargo.drugs+' drug package'+(S.cargo.drugs>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
-  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;
+  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;repAdd(-35,'arrested: it was in the sheriff’s blotter');
   say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $750 bail five hours later. Your boss heard.`);
   if(S.drugCharges>=2) return gameOver('convicted');
   modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':'The buyer was an undercover deputy.'}</p><p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$750 bail</b> five hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
@@ -778,7 +785,7 @@ function board(side,s,mode){
     if(Math.random()<p){
       if(c.drugs>0) return arrest('at the ferry',true);
       if(c.gas>0){
-        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);
+        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
         if(S.citations>=2) return gameOver('banned');
         return modal('Busted at the ferry',`<p>Gasoline is allowed aboard only in a vehicle’s own tank. Spare cans, <b>full or empty</b>, are prohibited.</p><p>Your ${g>1?g+' cans are':'can is'} confiscated, you get a citation, and the boat leaves without you. The citation will cost you about $150.</p><p><b>Repeat violations can get you banned from riding the ferry.</b> Next time, that’s the game.</p>`,[{l:'Lesson learned. Probably.',fn:()=>{}}]);
@@ -787,7 +794,7 @@ function board(side,s,mode){
       say(`🟨 The deckhand counts your diesel cans. ${mode==='drive'?'Two per vehicle is the limit':'Diesel cans have to ride in a vehicle'}, so ${extra} can${extra>1?'s':''} stay${extra>1?'':'s'} on the dock. Gone.`);
     } else {
       if(c.gas){S.stats.smuggled+=c.gas*5;adj('stress',10);say('Nobody looks in your trunk. You sweat through the whole crossing, smelling gas fumes and picturing a car-deck fire.');}
-      if(c.drugs){S.stats.drugRuns++;adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
+      if(c.drugs){S.stats.drugRuns++;if(S.stats.drugRuns>2)repAdd(-5,'people have seen your car out at Dale’s');adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
       if(c.diesel>(mode==='drive'?2:0)) say('Nobody counts your diesel cans this time.');
     }
   }
@@ -1139,7 +1146,7 @@ function postModal(){
       .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
 }
 function postReplies(j){
-  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.min(0.75,0.25+0.08*((S.rep||0)+fr)),gen=j.task==='general'||!UP_TASKS[j.task];
+  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.max(0.05,Math.min(0.75,0.25+0.08*(Math.max(0,S.rep||0)/7.5+fr)+Math.min(0,S.rep||0)/400-0.1*repEnemies().length)),gen=j.task==='general'||!UP_TASKS[j.task];
   const what=gen?'the chores':'the '+UP_TASKS[j.task].o,home=S.loc==='home';
   const fix=()=>{if(gen){upChoresDone();homeAdj(10)}else upFix([j.task])};
   const tile=(t,s,k)=>showTile('📣',t,s,k);
@@ -1162,12 +1169,12 @@ function helpActions(a,d,m){
     dis:true,fn:gusModal});
   const ok=m>=480&&m<1140;
   a.push({cat:'here',ic:'🤲',l:c.help===dk?'Helped a neighbor today ✓':'Help a neighbor from the community group',s:c.help===dk?`Island reputation: ${S.rep||0}.`:!ok?'People ask for help between 8 AM and 7 PM.':`1 hour. Someone always needs a hand. Island reputation: ${S.rep||0}. Stress −2.`,
-    dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;S.rep=(S.rep||0)+1;adj('stress',-2);
+    dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;repAdd(5,'helped a neighbor from the community group');adj('stress',-2);
       say(pick(['🤲 You help a guy from the group haul a chest freezer up his porch steps. He thanks you three times.','🤲 You spend an hour helping someone near Lake Josephine find their escaped chickens. You find four of five.','🤲 You hold a ladder while a neighbor clears her gutters, and hear the whole history of her septic system.','🤲 You drive a bag of groceries to an older neighbor who can’t make the ferry this week. She sends you home with jam.']));
       if(Math.random()<0.15)newNeighbor('you helped them out');afterAction()}});
 }
 TILE_META.work_party=['🛠️','A community work party','good'];
-defEvent({id:'work_party',hook:'wake',priority:3,max:1,cond:()=>S.loc==='home'&&day()>=5&&(S.rep||0)>=3,chance:0.5,
+defEvent({id:'work_party',hook:'wake',priority:3,max:1,cond:()=>S.loc==='home'&&day()>=5&&(S.rep||0)>=20,chance:0.5,
   run(){const ks=upPressing(2),did=upFix(ks);if(!did.length)upChoresDone();adj('stress',-6);homeAdj(6);
     say(`🛠️ Three trucks pull into your driveway at 9 AM: neighbors from ${COMM_NAME}, with ladders, a thermos and a pie. “You’ve helped half of us. Our turn.” ${did.length?`By lunch they’ve ${andList(did)}.`:'By lunch the whole house is spotless.'}`)}});
 defEvent({id:'leaky_roof',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home',
@@ -1360,8 +1367,8 @@ defEvent({id:'favor_ask',hook:'wake',priority:2,max:2,cond:ctx=>atHomeWake(ctx)&
 function favorActions(a,loc){
   (S.quests||[]).filter(q=>!q.done).forEach(q=>{const F=FAVORS[q.who],who=S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'a friend';
     if(q.step==='buy'&&loc===F.at) a.push({ic:'🛍️',l:`Buy ${F.item} for ${who}: $${F.buy}`,s:`Favor for ${who}. Due ${DAYS[q.due]}.`,cat:'here',dis:S.money<F.buy,fn:()=>{money(-F.buy);q.step='deliver';S.t+=10;say(`🛍️ Got the ${F.item}. Now get it to ${who}.`);afterAction()}});
-    else if(q.step==='deliver'&&loc===F.back) a.push({ic:'🎁',l:F.label,s:`They’ll pay you back $${F.reward}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;money(F.reward);S.t+=10;adj('stress',-3);friendPts(q.who,2);say(`🎁 ${who} is thrilled. “You’re the best.”`);afterAction()}});
-    else if(q.step==='go'&&loc===F.at) a.push({ic:'🎁',l:F.label,s:`Favor for ${who}. Due ${DAYS[q.due]}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;S.t+=10;adj('stress',-3);friendPts(q.who,2);say(`🎁 Done. ${who} will be happy.`);afterAction()}});
+    else if(q.step==='deliver'&&loc===F.back) a.push({ic:'🎁',l:F.label,s:`They’ll pay you back $${F.reward}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;money(F.reward);S.t+=10;adj('stress',-3);friendPts(q.who,2);repAdd(5,`did ${who} a favor`);say(`🎁 ${who} is thrilled. “You’re the best.”`);afterAction()}});
+    else if(q.step==='go'&&loc===F.at) a.push({ic:'🎁',l:F.label,s:`Favor for ${who}. Due ${DAYS[q.due]}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;S.t+=10;adj('stress',-3);friendPts(q.who,2);repAdd(5,`did ${who} a favor`);say(`🎁 Done. ${who} will be happy.`);afterAction()}});
   });
 }
 
@@ -1401,7 +1408,7 @@ function lifeBuddy(ids){return ids.filter(id=>S.friends[id])}
 function lifeActions(a,loc){
   const k=dayKey(),C=S.cal;
   if(loc==='food') lifeSlot(a,'vet','🇺🇸','Veterans Day ceremony',660,700,[{ic:'🇺🇸',l:'Attend the Veterans Day ceremony',s:'About an hour at the flagpole with the Legion. Stress −6.',cls:'primary',fn:()=>{
-    C.vet=k;S.t+=60;phoneTick();adj('stress',-6);
+    C.vet=k;S.t+=60;phoneTick();adj('stress',-6);repAdd(5,'showed up for the Veterans Day ceremony');
     if(S.friends.walt){friendPts('walt',2);say('🇺🇸 Walt reads the names in his Legion cap, without his glasses, from memory. Afterward he pours you a coffee and doesn’t say much. He doesn’t have to.')}
     else{meet('walt','Walt from the American Legion','you stood together at the Veterans Day ceremony');say('🇺🇸 Thirty islanders, one flag, one bugler who nails it. The old guy next to you in the Legion cap introduces himself as Walt and hands you a coffee.')}
     afterAction()}}]);
@@ -1409,13 +1416,13 @@ function lifeActions(a,loc){
     const off=flv('bev')>=2?5:0,price=25-off;
     lifeSlot(a,'bazaar','🎄','Holiday craft bazaar',600,900,[
       {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the Legion hall. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
-        C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);
+        C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);repAdd(5,'bought a wreath at the holiday bazaar');
         say('🎄 A cedar wreath with a pinecone the size of your fist. The cabin smells like a Christmas tree lot that also has a woodstove.');lifeBev();afterAction()}},
-      {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
+      {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);repAdd(5,'came out for the holiday bazaar');say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
   }
   if(loc==='lake'){
     lifeSlot(a,'cleanup','🗑️','Lake cleanup',480,660,[{ic:'🗑️',l:'Volunteer at the lake cleanup',s:'2 hours with a grabber and a bag. Stress −4.',cls:'primary',fn:()=>{
-      C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);if(typeof S.rep==='number')S.rep+=1;
+      C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);repAdd(5,'the lake cleanup');
       say('🗑️ Two tires, a lawn chair, nine golf balls and a 1987 Rainier can come out of the shallows. The eagles supervise.');
       const b=lifeBuddy(['hendersons','sam','rusty','bev']);
       if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way around Lake Josephine.`)}
@@ -1423,7 +1430,7 @@ function lifeActions(a,loc){
       afterAction()}}]);
   }
   if(loc==='store') lifeSlot(a,'drill','🚒','Fire District drill',1050,1110,[{ic:'🚒',l:'Join the volunteer fire drill',s:'90 min at the Fire District #27 station. Hoses, ladders, cocoa. Stress −3, health +2.',cls:'primary',fn:()=>{
-    C.drill=k;S.t+=90;phoneTick();adj('stress',-3);adj('health',2);
+    C.drill=k;S.t+=90;phoneTick();adj('stress',-3);adj('health',2);repAdd(5,'the volunteer fire drill');
     if(S.friends.rusty){friendPts('rusty',2);say('🚒 Rusty, stone sober in turnout gear, shows you how to roll a hose. Who knew.')}
     else{meet('rusty','Rusty from the bar','he showed you how to roll a fire hose at the drill');say('🚒 A guy you’ve only ever seen at the Riv’s bar turns out to be a volunteer firefighter. Rusty. He shows you how to roll a hose.')}
     if(S.up&&!C.chim){C.chim=true;S.up.chimney=0;say('🏚️ On the way out, the captain says “you’re the cedar cabin back in the woods, right?” and two volunteers follow you home to check your chimney. They sweep it while they’re up there. No charge, just don’t burn wet wood.')}
@@ -1566,7 +1573,7 @@ function playBingo(cards,price){
       S.bingo.won+=won;S.bingo.playing=-1;S.ev.history.push({id:'bingo',t:S.t});
       const raised=crowd+Math.round(Math.random()*120);
       say(`🎱 Bingo night ${won?`paid off: you won <b>${$(won)}</b>`:'was a bust, but a fun one'}. The Legion raised about ${$(raised)} for the ${BINGO_FOR[S.week.bingo]}.`);
-      return modal('🎱 That’s a wrap',`<p>${won?`You walk out <b>${$(won)}</b> richer.`:'No wins tonight.'} The American Legion announces tonight raised about <b>${$(raised)}</b> for the <b>${BINGO_FOR[S.week.bingo]}</b>.</p><p>${S.friends.walt?'Walt':'Someone'} is already stacking chairs. ${S.friends.sam?'Sam drives you home.':'You know half the room by name now.'}</p>`,[{l:'Head home',fn:()=>{afterAction()}}]);
+      return modal('🎱 That’s a wrap',`<p>${won?`You walk out <b>${$(won)}</b> richer.`:'No wins tonight.'} The American Legion announces tonight raised about <b>${$(raised)}</b> for the <b>${BINGO_FOR[S.week.bingo]}</b>.</p><p>${S.friends.walt?'Walt':'Someone'} is already stacking chairs. ${S.friends.sam?'Sam drives you home.':'You know half the room by name now.'}</p>`,(won?[{l:`Donate your ${$(won)} to the ${BINGO_FOR[S.week.bingo]}`,s:'The room cheers. Island reputation +5.',fn:()=>{money(-won);S.bingo.won-=won;S.bingo.donated+=won;say(`🎱 You hand your ${$(won)} back to the Legion for the ${BINGO_FOR[S.week.bingo]}. Walt salutes.`);repAdd(5,'donated your bingo winnings');afterAction()}}]:[]).concat([{l:won?'Keep it and head home':'Head home',fn:()=>{afterAction()}}]));
     }
     const g=BINGO_GAMES[gi++],res=bingoGame(mine,others);sfx(res.winners.length?'win':'ball');const n=res.winners.length+res.others;
     let prize=0,msg;
@@ -1700,7 +1707,7 @@ function endDay(where){
   if(where==='home') S.phone=(!nightOut||S.ev.flags.genRan===d)?100:Math.max(0,S.phone-6);
   else if(where==='motel') S.phone=100; else S.phone=Math.min(100,S.phone+35);
   // eat
-  (S.quests||[]).filter(q=>!q.done&&q.due<d+1&&q.due===d).forEach(q=>{q.done=true;q.failed=true;friendPts(q.who,-1);notes.push(`🙁 You never got to ${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'your friend'}’s favor.`)});
+  (S.quests||[]).filter(q=>!q.done&&q.due<d+1&&q.due===d).forEach(q=>{q.done=true;q.failed=true;friendPts(q.who,-1);repFavorFailed(q.who,notes);notes.push(`🙁 You never got to ${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'your friend'}’s favor.`)});
   if(S.ateOut===d){notes.push('🍔 Dinner was from the Riv. The pantry gets a night off.')}
   else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
   else if(S.pantry>0){S.pantry--;}
@@ -1727,7 +1734,7 @@ function endDay(where){
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
-  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
+  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);if(S.emp==='riv')repAdd(-10,'fired from the Riv: the whole island eats there',{notes});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
   S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}
@@ -1924,14 +1931,14 @@ function interviewSlot(k){const J=JOBS[k];for(let d=day()+1;d<=6;d++){if(J.days.
 function jobModal(){
   const open=jobOpenings();
   modal('🔎 Job listings',`<p>${S.emp?`You work as: <b>${curJob().n}</b>. Switching means quitting.`:'You’re out of work. Rent doesn’t care.'}</p>${S.interview?`<p class="warn">You already have an interview: ${JOBS[S.interview.job].n}, ${DAYS[S.interview.day]} ${fmt(S.interview.time)}.</p>`:''}`,
-    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch} Interview: ${DAYS[slot.day]} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
+    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);const shut=k==='riv'&&repVal()<=-30;if(shut)return {l:`${J.n}: ${$(J.pay)}/day`,s:'“The Riv’s not hiring. For you.” Word gets around on an island.',dis:true,fn:()=>{}};return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch} Interview: ${DAYS[slot.day]} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
       dis:!slot||!!S.interview,fn:()=>{S.interview={job:k,day:slot.day,time:slot.time,loc:J.loc};S.t+=15;say(`📝 You applied. Interview for <b>${J.n}</b>: ${DAYS[slot.day]} at ${fmt(slot.time)}, ${L[J.loc].name}.`);showTile('📝','Interview scheduled',`${DAYS[slot.day]} ${fmt(slot.time)} · ${L[J.loc].name}`,'info');afterAction()}}}).concat([{l:'Close',fn:()=>{}}]));
 }
 function jobActions(a,loc){
   const iv=S.interview,m=tod();
   if(iv&&iv.loc===loc&&iv.day===day()){
     if(m>=iv.time-45&&m<=iv.time+20) a.push({ic:'🤝',l:`Interview: ${JOBS[iv.job].n}`,s:'About 45 minutes. Be yourself. Or a calmer version.',cls:'primary',fn:()=>{
-      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1);
+      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1)+(iv.job==='riv'?(S.rep>=0?S.rep*0.003:S.rep*0.0075):0);
       if(Math.random()<odds){const old=S.emp;S.emp=iv.job;S.job=60;S.interview=null;adj('stress',-8);say(`🎉 You got the job: <b>${JOBS[S.emp].n}</b>! ${old?'You give notice at your old job. ':''}You start on your next shift day.`);showTile('🎉','You’re hired!',JOBS[S.emp].n,'good')}
       else{S.interview=null;adj('stress',8);say('😞 “We went with someone with more experience.” Back to the listings.');showTile('😞','Didn’t get the job',JOBS[iv.job].n,'bad')}
       afterAction()}});
@@ -1965,7 +1972,7 @@ function coopActions(a){
   if(!S.coop.open){
     a.push({ic:'🏪',l:`Pledge to the co-op fund (${$(total)} of ${$(COOP_GOAL)})`,s:`You’ve pledged ${$(S.coop.you)}. Neighbors chip in every night. Reopening brings groceries and gas back to the island.`,cat:'trade',dis:S.money<25,fn:()=>{
       const opts=[25,100,250].filter(v=>S.money>=v);
-      modal('🏪 Anderson Island Food Co-op',`<p>The fund is at <b>${$(total)}</b> of <b>${$(COOP_GOAL)}</b>. Every dollar gets the store and its pumps closer to reopening.</p>`,opts.map(v=>({l:`Pledge ${$(v)}`,fn:()=>{money(-v);S.coop.you+=v;adj('stress',-2);say(`🏪 You pledge ${$(v)} to the co-op. Someone adds a star next to your name on the board.`);coopCheck();afterAction()}})).concat([{l:'Not now',fn:()=>{}}]))}});
+      modal('🏪 Anderson Island Food Co-op',`<p>The fund is at <b>${$(total)}</b> of <b>${$(COOP_GOAL)}</b>. Every dollar gets the store and its pumps closer to reopening.</p>`,opts.map(v=>({l:`Pledge ${$(v)}`,fn:()=>{money(-v);S.coop.you+=v;adj('stress',-2);repCoop();say(`🏪 You pledge ${$(v)} to the co-op. Someone adds a star next to your name on the board.`);coopCheck();afterAction()}})).concat([{l:'Not now',fn:()=>{}}]))}});
   } else {
     const car=carHere();
     a.push({ic:'🥫',l:'Buy groceries: 3 days for $60',s:'Co-op prices: not mainland cheap, but no ferry.',cat:'trade',dis:!canEssential(60)||(!car&&S.carried+3>4),fn:()=>{money(-60);S.carried+=3;S.stats.food+=3;S.t+=15;say('🥫 Three days of groceries from the co-op. A volunteer bags them and asks about your week.');afterAction()}});
@@ -2087,6 +2094,9 @@ function migrate(d){
     delete x.canGal;delete x.dieselCans;
   }
   fillDefaults(x,baseState());
+  // 1.15: reputation went from 0..~10 to −100..+100
+  if(from<7&&typeof x.rep==='number'&&x.rep>0){x.rep=Math.min(100,Math.round(x.rep*7.5));notes.push('island reputation moved to the new −100 to +100 scale')}
+  if(from<7&&x.eco&&x.eco.perks){const P=x.eco.perks,M={3:20,5:35,8:60};for(const k in M)if(P[k]){P[M[k]]=true;delete P[k]}}
   // 1.4.2 -> 1.4.3: Pajama Mike was renamed Pajama Fred
   if(x.friends&&x.friends.mike){x.friends.fred=Object.assign(x.friends.mike,{name:'Pajama Fred'});delete x.friends.mike}
   if(x.ev){for(const k of ['count','last'])if(x.ev[k]&&x.ev[k].pajama_mike!=null){x.ev[k].pajama_fred=x.ev[k].pajama_mike;delete x.ev[k].pajama_mike}
@@ -3114,7 +3124,7 @@ function phoneRetire(st){const P=st&&st.ph;if(!P||!Array.isArray(P.apps))return 
   return _adopt.apply(this,arguments)}}
 // ---------------- 💵 economy: more ways to earn, and what a good reputation gets you ----------------
 // Overtime at your job, weekend evening shifts at the Riv (as a second job), firewood and eggs for the neighbors,
-// and reputation unlocks (S.rep): 3 = first call on Gus, 5 = the co-op board, 8 = Island regular.
+// and reputation unlocks (S.rep, −100..+100, see 25-reputation.js): +20 = first call on Gus, +35 = the co-op board, +60 = Island regular.
 // All state lives in S.eco (created lazily, so older saves just work). Hooks wrap existing functions:
 // actions(), upkeepNight(), afterAction(), todoView() and the Island Group phone app.
 const ECO_DEF={ot:-1,full:-1,riv:-1,rivWk:-1,rivN:0,wood:-1,hens:0,nest:0,eggs:0,feed:0,eggSold:-1,noFeed:false,coopBooked:false,board:-1,perks:{},coffee:-1};
@@ -3122,7 +3132,7 @@ function ECO(){if(!S.eco||typeof S.eco!=='object')S.eco={};const e=S.eco;
   for(const k in ECO_DEF)if(e[k]===undefined||e[k]===null)e[k]=typeof ECO_DEF[k]==='object'?{}:ECO_DEF[k];return e}
 const ecoRep=()=>typeof S.rep==='number'?S.rep:0;
 const ecoPerk=n=>typeof S.rep==='number'&&S.rep>=n;
-function gusFirstCall(){return ecoPerk(3)}
+function gusFirstCall(){return ecoPerk(20)}
 // ---- prices ----
 const OT_HOURS=2, RIV_PAY=48, EGG_DOZEN=6, COOP_PRICE=120, FEED_PRICE=18, FEED_DAYS=20, HEN_NAMES='Christine, Steilacoom and Li’l Ketron';
 function otPay(J){return Math.round(J.pay/((J.end-J.start)/60)*1.5*OT_HOURS)}
@@ -3141,23 +3151,39 @@ function otActions(a,d,m){
 }
 // ---- 🍳 weekend evening shift at the Riv (a second job; not when the Riv is your main job) ----
 const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
+// The weekend shift is a second job with its own meter (E.rivJob): working it puts you on the Fri/Sat schedule.
+// On time +3, late −4; a scheduled shift you skip −15 and reputation −5; at 0 you're fired (reputation −10).
+const rivJob=()=>ECO().rivJob||null;
+function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
+  if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');
+    notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');repAdd(-10,'fired from the Riv: the whole island eats there',{notes})}}
+function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
+  notes.push(`🍳 You were on the Riv’s schedule tonight and never showed. The kitchen manager texts: “???” (Riv weekend job −15)`);repAdd(-5,'no-show at the Riv',{notes});rivMeter(-15,notes)}
 function rivActions(a,d,m){
-  if(S.loc!=='food'||S.emp==='riv'||!RIV_DAYS.includes(d))return;
-  const E=ECO(),dk=dayKey();
+  if(S.loc!=='food'||S.emp==='riv')return;
+  const E=ECO(),dk=dayKey(),J=rivJob();
+  if(J&&J.sched)a.push({cat:'work',ic:'📅',l:'Take yourself off the weekend schedule',s:`You’re on for Fri and Sat, 4–10 PM. Riv weekend job: ${J.m}. No hard feelings if you tell them.`,fn:()=>{J.sched=false;S.t+=5;say('📅 You tell the kitchen manager you need your weekends back. “Fair. Door’s open.”');afterAction()}});
+  if(!RIV_DAYS.includes(d))return;
+  if(E.rivFired){a.push({cat:'work',ic:'🍳',l:'The Riv isn’t calling you for weekend shifts',s:'You were taken off the schedule.',dis:true});return}
+  if(typeof repVal==='function'&&repVal()<-10){a.push({cat:'work',ic:'🍳',l:'No weekend shift for you',s:'The kitchen manager has heard things. Reputation −10 or better to get back on.',dis:true});return}
   if(E.riv===dk){a.push({cat:'work',ic:'🍳',l:'Weekend shift done ✓',s:'Your feet would like a word.',dis:true});return}
   if(m<900){a.push({cat:'work',ic:'🍳',l:'Weekend evening shift at the Riv: 4–10 PM',s:'They’re always a cook short on Fridays and Saturdays. Come by after 3.',dis:true});return}
   if(m>RIV_START+30){a.push({cat:'work',ic:'🍳',l:'Too late for tonight’s shift',s:'The weekend shift starts at 4:00 PM.',dis:true});return}
-  a.push({cat:'work',ic:'🍳',l:'Work the weekend evening shift (4–10 PM)',s:`Second job, line cook. ${$(RIV_PAY)} plus tips, a staff meal counts as dinner. Stress +8.`,
-    fn:()=>rivShift(d)});
+  a.push({cat:'work',ic:'🍳',l:'Work the weekend evening shift (4–10 PM)',s:`Second job, line cook${rivJob()?` (Riv weekend job: ${rivJob().m})`:''}. ${$(RIV_PAY+(typeof repVal==='function'&&repVal()>=60?10:0))} plus tips, a staff meal counts as dinner. Stress +8.`,
+    fn:()=>rivShift(d,m)});
 }
-function rivShift(d){
+function rivShift(d,m){
   const E=ECO(),first=E.rivN===0;E.riv=dayKey();E.rivN++;
-  S.t=d*1440+RIV_END;phoneTick();const tips=10+Math.floor(Math.random()*41),pay=RIV_PAY+tips;money(pay);adj('stress',8);S.ateOut=d;
+  const late=(m!=null?m:tod())>RIV_START;if(!E.rivJob)E.rivJob={m:70,sched:true};const J=E.rivJob,wasOn=J.sched;J.sched=true;
+  const nts=[];rivMeter(late?-4:3,nts);nts.forEach(x=>say(x));
+  const reg=typeof repVal==='function'&&repVal()>=60?10:0;
+  S.t=d*1440+RIV_END;phoneTick();const tips=10+Math.floor(Math.random()*41),pay=RIV_PAY+reg+tips;money(pay);adj('stress',8);S.ateOut=d;
   S.stats.rivShifts=(S.stats.rivShifts||0)+1;
   say(first?'🍳 The kitchen manager hands you an apron before you finish asking. “Grill’s yours. Tickets on the rail. Don’t touch the fryer, it bites.”':
     pick(['🍳 Six hours of burgers, fish and chips, and one guy who wants his fries “medium rare.”','🍳 Friday-night rush: half the island and two tables of kayakers who missed the last boat.','🍳 The fryer bites. You knew it would.','🍳 A birthday party of eleven orders separately. You survive it.']));
-  say(`💵 ${$(RIV_PAY)} for the shift plus ${$(tips)} in tips${tips>=40?' (someone left a twenty under a ketchup bottle)':tips<=15?' (mostly quarters and one ferry token)':''}. The staff meal counts as dinner.`);
-  if(typeof S.rep==='number'&&E.rivWk!==S.weekNo){E.rivWk=S.weekNo;S.rep++;say('🤲 Half the island watched you work the grill. People remember that. Island reputation +1.')}
+  if(!wasOn)say('📅 You’re on the Riv’s weekend schedule now: Friday and Saturday, 4–10 PM. Tell the kitchen if you want off.');
+  say(`💵 ${$(RIV_PAY+reg)} for the shift${reg?' (regulars’ rate)':''} plus ${$(tips)} in tips${tips>=40?' (someone left a twenty under a ketchup bottle)':tips<=15?' (mostly quarters and one ferry token)':''}. The staff meal counts as dinner.`);
+  if(E.rivWk!==S.weekNo){E.rivWk=S.weekNo;repAdd(5,'half the island watched you work the grill at the Riv')}
   if(Math.random()<0.35){
     if(!S.friends.rusty)meet('rusty','Rusty from the bar','he talked your ear off through the kitchen window on a weekend shift');
     else if(!S.friends.walt)meet('walt','Walt from the American Legion','he sent his fish back twice, then tipped you ten dollars');
@@ -3207,7 +3233,7 @@ function ecoNight(where,notes){
 // ---- 📌 rep 5: the co-op board ----
 Object.assign(UP_JOBS,{board:{who:'co-op board',island:true,done:j=>boardReply(j)}});
 function boardActions(a){
-  if(S.loc!=='store'||!S.coop||!ecoPerk(5))return;const E=ECO(),pend=upJob('board');
+  if(S.loc!=='store'||!S.coop||!ecoPerk(35))return;const E=ECO(),pend=upJob('board');
   a.push({cat:'here',ic:'📌',l:E.board===S.weekNo?(pend?'Your board post is up':'Posted on the board this week ✓'):'Post on the co-op board',
     s:E.board===S.weekNo?(pend?'Somebody always reads it eventually. Usually by dinner.':'One post a week, or the volunteers start taking your pushpins.'):'10 min. Firewood, eggs, or “anyone have one of these?” A buyer or a free find, usually within a few hours.',
     dis:E.board===S.weekNo,fn:()=>{E.board=S.weekNo;S.t+=10;UP().jobs.push({k:'board',due:S.t+150+Math.floor(Math.random()*60)});
@@ -3227,7 +3253,7 @@ function boardReply(){
 }
 // ---- ☕ rep 8: Island regular ----
 function regularActions(a,d){
-  if(!ecoPerk(8))return;const E=ECO(),dk=dayKey();
+  if(!ecoPerk(60))return;const E=ECO(),dk=dayKey();
   if(S.loc==='aiDock'&&tod()>=300&&tod()<1200) a.push({cat:'ferry',ic:'☕',l:E.coffee===dk?'Already had your ferry-line coffee':'Free coffee in the ferry line',s:E.coffee===dk?'Don’t push it.':'Island regular perk. 5 min. Stress −4.',dis:E.coffee===dk,
     fn:()=>{E.coffee=dk;S.t+=5;adj('stress',-4);say(`☕ ${pick(['The guy two cars up knocks on your window with a spare thermos cup. “You’re the one who helped my mom with her freezer.”','Somebody in the ferry line always has an extra coffee for you now. Today it’s hazelnut. You don’t ask.'])}`);afterAction()}});
   if(S.loc==='food'){const i=a.findIndex(x=>/^Takeout dinner/.test(x.l||''));
@@ -3236,9 +3262,9 @@ function regularActions(a,d){
 }
 // ---- 🤲 reputation unlocks ----
 const REP_PERKS=[
-  {n:3,ic:'🧰',t:'First call on Gus',d:'Gus comes the next day and always shows up.',say:'🧰 Word gets around. Gus heard you’ve been helping half the island: from now on you get <b>first call</b>. He comes the next day, and he actually shows up.'},
-  {n:5,ic:'📌',t:'The co-op board',d:'Once a week, post at the old store: a buyer for firewood or eggs, or a free find.',say:'📌 A co-op volunteer hands you a fistful of pushpins: “You’re one of us now. Use the board.” Once a week you can post on the <b>co-op board</b> at the old store.'},
-  {n:8,ic:'☕',t:'Island regular',d:'$20 takeout at the Riv and a free coffee in the ferry line every day.',say:'☕ <b>Island regular.</b> The Riv knows your order (takeout at the $20 regulars’ price), and somebody in the ferry line always has a spare coffee for you.'}];
+  {n:20,ic:'🧰',t:'First call on Gus',d:'Gus comes the next day and always shows up.',say:'🧰 Word gets around. Gus heard you’ve been helping half the island: from now on you get <b>first call</b>. He comes the next day, and he actually shows up.'},
+  {n:35,ic:'📌',t:'The co-op board',d:'Once a week, post at the old store: a buyer for firewood or eggs, or a free find.',say:'📌 A co-op volunteer hands you a fistful of pushpins: “You’re one of us now. Use the board.” Once a week you can post on the <b>co-op board</b> at the old store.'},
+  {n:60,ic:'☕',t:'Island regular',d:'$20 takeout at the Riv and a free coffee in the ferry line every day.',say:'☕ <b>Island regular.</b> The Riv knows your order (takeout at the $20 regulars’ price), and somebody in the ferry line always has a spare coffee for you.'}];
 function repCheck(){
   if(!S||S.over||typeof S.rep!=='number')return;const E=ECO();
   for(const p of REP_PERKS)if(S.rep>=p.n&&!E.perks[p.n]){E.perks[p.n]=true;say(p.say);showTile(p.ic,`Reputation ${p.n}: ${p.t}`,p.d,'good')}
@@ -3248,15 +3274,15 @@ function repPerksHtml(card){
   const rows=REP_PERKS.map(p=>`${r>=p.n?'✅':'🔒'} <b>${p.ic} ${p.t}</b> (rep ${p.n}): ${p.d}`);
   return {r,nx,rows};
 }
-function repTodoView(){const {r,nx,rows}=repPerksHtml();if(r<=0&&!S.friends.gus)return '';
-  return `<div class="sect">Island reputation: ${r}</div>`+REP_PERKS.map((p,i)=>`<div class="todo eco-perk ${r>=p.n?'on':''}"><span class="ck">${r>=p.n?'✅':'🔒'}</span><div><b>${p.ic} ${p.t} · rep ${p.n}</b><span>${p.d}</span></div></div>`).join('')+
-    (nx?`<p class="eco-next">${nx.n-r} more to unlock ${nx.t.toLowerCase()}. Help neighbors from the community group.</p>`:'');
+function repTodoView(){const {r,nx,rows}=repPerksHtml();if(r===0&&!S.friends.gus&&!repEnemies().length)return '';const T=repTier(r);
+  return `<div class="sect">Island reputation: ${T.ic} ${T.n} · ${r>0?'+':''}${r}</div>`+REP_PERKS.map((p,i)=>`<div class="todo eco-perk ${r>=p.n?'on':''}"><span class="ck">${r>=p.n?'✅':'🔒'}</span><div><b>${p.ic} ${p.t} · rep ${p.n}</b><span>${p.d}</span></div></div>`).join('')+
+    (nx?`<p class="eco-next">${nx.n-r} more to unlock ${nx.t.toLowerCase()}. Help neighbors, show up for island events, return lost packages.</p>`:'');
 }
 // ---- hooks ----
 {const _actions=actions;actions=function(){const a=_actions(),d=day(),m=tod(),dk=dayKey();
   const fs=a.find(x=>/^Work a full shift/.test(x.l||''));if(fs&&fs.fn){const f=fs.fn;fs.fn=()=>{ECO().full=dk;return f()}}
   otActions(a,d,m);rivActions(a,d,m);woodActions(a,d,m);eggActions(a,d,m);boardActions(a);regularActions(a,d);return a}}
-{const _up=upkeepNight;upkeepNight=function(where,notes,d){const r=_up(where,notes,d);ecoNight(where,notes,d);return r}}
+{const _up=upkeepNight;upkeepNight=function(where,notes,d){const r=_up(where,notes,d);ecoNight(where,notes,d);try{rivNight(where,notes,d)}catch(e){console.error(e)}return r}}
 {const _aa=afterAction;afterAction=function(){repCheck();return _aa.apply(this,arguments)}}
 {const _tv=todoView;todoView=function(){const h=_tv(),x=repTodoView(),k=h.indexOf('<div class="sect">Survive');return k<0?h+x:h.slice(0,k)+x+h.slice(k)}}
 {const g=phoneApp('group');if(g){const v=g.view;g.view=function(arg){const {r,nx,rows}=repPerksHtml();
@@ -3698,7 +3724,7 @@ Object.assign(TILE_META,{puppy_litter:['🐶','The neighbors’ dog had puppies'
 defEvent({id:'puppy_litter',hook:'wake',priority:2,max:1,cond:()=>S.loc==='home'&&!HH().dog&&HH().puppy<0&&!HH().once.puppy&&dayKey()>=3,chance:0.2,
   run(){const H=HH();H.once.puppy=1;H.puppy=dayKey()+3;say(`🐶 A hand-lettered sign at the end of the road: “FREE PUPPIES. Lab, mostly. Ask the kids.” The kids have already spotted you. (Adopt from 🏠 Inside the house, until ${DAYS[H.puppy%7]}. Or don’t: they’re very persuasive, but it’s a lot.)`)}});
 defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.5,0.15+0.05*(HH().trash-8)),
-  run(ctx){homeAdj(-6);adj('stress',5);ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
+  run(ctx){homeAdj(-6);adj('stress',5);repAdd(-5,'raccoons spread your trash down the road',{notes:ctx.notes});ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
 // ---- To-do ----
 function hhTodo(it){
   const H=HH(),dk=dayKey();
@@ -4326,27 +4352,39 @@ definePhoneApp({id:'bank',name:'Island Credit Union',ic:'💳',order:65,size:'48
     return h}});
 
 // ---- 💼 Gig Work ----
-const GIG_MAX=4,GIG_SLOW=10;   // tasks a day; extra upload minutes on the island’s one bar
+const GIG_SLOW=10;   // extra upload minutes on the island’s one bar
+// tasks a day and pay follow your 🤲 reputation (your star rating): 4 normally, 3 when you're talked about, 2 (and 75% pay) as persona non grata
+const gigRep=()=>typeof repVal==='function'?repVal():0;
+function gigMax(){const r=gigRep();return r<=-60?2:r<=-20?3:4}
+const gigPay=G=>Math.round(G.pay*(gigRep()<=-60?0.75:1));
+const gigStars=()=>{const r=gigRep();return r>=60?'★★★★★':r>=20?'★★★★☆':r>-20?'★★★☆☆':r>-60?'★★☆☆☆':'★☆☆☆☆'};
+// island gigs: neighbors post small paid errands, only for people in good standing (rep 0 or higher)
+const GIG_ISLAND=[
+  {id:'dogwalk',island:true,ic:'🐕',n:'Walk a neighbor’s dog',min:45,pay:15,bat:1,st:-2,at:()=>L[S.loc].side==='I',where:'on the island',t:['🐕 A shepherd mix named Pickles walks you more than you walk her. She’s thrilled. You’re damp.','🐕 Two corgis, one leash tangle, zero regrets.']},
+  {id:'rxrun',island:true,ic:'💊',n:'Pick up a neighbor’s prescription',min:20,pay:12,bat:1,st:0,at:()=>S.loc==='stDock',where:'at the Steilacoom landing',t:['💊 You grab a white paper bag for Mrs. Henderson’s cousin from the pharmacy run. They Venmo you before you’re back on the boat.']},
+  {id:'errand',island:true,ic:'📦',n:'Ferry-line errand',min:15,pay:10,bat:1,st:0,at:()=>S.loc==='aiDock'||S.loc==='stDock',where:'in the ferry line',t:['📦 You pass a casserole dish across three cars to its rightful owner. Paid in cash and gossip.','📦 Somebody’s forgotten lunch makes it onto the 4:35. You are a hero to one hungry deckhand.']}];
+const gigList=()=>gigRep()>=0?GIGS.concat(GIG_ISLAND):GIGS;
 const GIGS=[
   {id:'survey',ic:'📋',n:'Take a survey',min:10,pay:3,bat:2,st:1,t:['📋 Forty questions about your feelings toward a yogurt brand. You have strong feelings now.','📋 A survey about “your commute.” There is no box for “ferry.” You pick “Other” and type for a while.']},
   {id:'vm',ic:'🎧',n:'Transcribe a voicemail',min:20,pay:6,bat:4,st:2,t:['🎧 A man leaving his dentist a four-minute voicemail about a crown. You type “[unintelligible]” six times.','🎧 Somebody’s aunt, on speakerphone, in a car wash. You do your best.']},
   {id:'tag',ic:'🏷️',n:'Tag photos',min:30,pay:8,bat:6,st:2,t:['🏷️ Two hundred photos: is this a crosswalk? Is this a bus? Is this a crosswalk with a bus? You’re a robot’s teacher now.','🏷️ “Tag every photo with a dog.” Every photo has a dog. You’ve never been happier at work.']}];
 function gigWhere(){const l=S.loc;return l==='stDock'?'Waiting at the terminal is the gig economy’s natural habitat.':l==='aiDock'?'Waiting at the landing on one bar. Uploads crawl.':L[l].side==='I'?'One bar on the island: uploads take an extra 10 minutes.':'Good signal over here. Uploads are quick.'}
-function gigDo(id){const G=GIGS.find(x=>x.id===id),g=GIG();if(!G||!phoneCan()||g.n>=GIG_MAX||S.phone<=G.bat)return false;
-  const slow=phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(G.pay);adj('stress',G.st);g.n++;g.earned+=G.pay;S.stats.gigs=(S.stats.gigs||0)+1;S.stats.gigPay=(S.stats.gigPay||0)+G.pay;
-  say(`${pick(G.t)} +${$(G.pay)}.${slow?' The upload on one bar takes another ten minutes.':''}`);
-  apmMsg('gigs',`${G.ic} Done: +${$(G.pay)} in ${G.min+slow} min.${g.n>=GIG_MAX?' That’s all the work the app has for you today.':''}`);
+function gigDo(id){const G=gigList().find(x=>x.id===id),g=GIG();if(!G||!phoneCan()||g.n>=gigMax()||S.phone<=G.bat||(G.at&&!G.at()))return false;const pay=gigPay(G);
+  const slow=!G.island&&phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(pay);adj('stress',G.st);g.n++;g.earned+=pay;S.stats.gigs=(S.stats.gigs||0)+1;S.stats.gigPay=(S.stats.gigPay||0)+pay;
+  say(`${pick(G.t)} +${$(pay)}.${slow?' The upload on one bar takes another ten minutes.':''}`);
+  apmMsg('gigs',`${G.ic} Done: +${$(pay)} in ${G.min+slow} min.${g.n>=gigMax()?' That’s all the work the app has for you today.':''}`);
   afterAction();return true}
 definePhoneApp({id:'gigs',name:'Gig Work',ic:'💼',order:66,size:'61 MB',desc:'Small remote tasks for stuck moments, and the job listings.',
   badge:()=>!S.emp&&!S.interview?1:0,
-  view(){const J=curJob(),I=S.interview,g=GIG(),left=GIG_MAX-g.n,slow=phoneSignal()===1?GIG_SLOW:0;let h=apmShow('gigs');
+  view(){const J=curJob(),I=S.interview,g=GIG(),left=gigMax()-g.n,slow=phoneSignal()===1?GIG_SLOW:0;let h=apmShow('gigs');
     h+=phCard(J?`💼 You work as <b>${J.n}</b>.`:'💼 You’re out of work. Rent doesn’t care.',J?'':'warn');
     if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${DAYS[I.day]} ${fmt(I.time)} at ${L[I.loc].name}.`);
     h+=phBtn('🔎 Browse job listings',()=>jobModal(),{cls:J?'':'primary',sub:J?'Switching jobs means quitting.':'Find something and set up an interview.'});
-    h+=`<div class="ph-sub">Quick gigs · ${left} of ${GIG_MAX} left today</div>`;
+    h+=`<div class="ph-sub">Quick gigs · ${left} of ${gigMax()} left today · ${gigStars()}</div>`;if(gigRep()<=-20)h+=phNote(gigRep()<=-60?'Your rating tanked: fewer tasks, lower pay. Word travels, even online.':'Your rating slipped: one less task a day, and no island gigs.');
     h+=phNote(`Pocket change for dead time: in line, at the terminal, at a motel. ${gigWhere()}`);
-    for(const G of GIGS){const dis=left<=0||S.phone<=G.bat;
-      h+=phBtn(`${G.ic} ${G.n} — ${$(G.pay)}`,()=>gigDo(G.id),{dis,sub:left<=0?'No more tasks today. Come back tomorrow.':S.phone<=G.bat?'Not enough battery.':`${G.min+slow} min${slow?' (slow upload)':''} · ${G.bat}% battery · a little stress.`})}
+    for(const G of gigList()){const here=!G.at||G.at(),dis=left<=0||S.phone<=G.bat||!here;
+      if(G.island&&G===GIG_ISLAND[0])h+=`<div class="ph-sub">🏝️ Island gigs, posted by neighbors</div>`;
+      h+=phBtn(`${G.ic} ${G.n} — ${$(gigPay(G))}`,()=>gigDo(G.id),{dis,sub:left<=0?'No more tasks today. Come back tomorrow.':!here?`Only ${G.where}.`:S.phone<=G.bat?'Not enough battery.':G.island?`${G.min} min · for a neighbor${G.st<0?' · relaxing':''}.`:`${G.min+slow} min${slow?' (slow upload)':''} · ${G.bat}% battery · a little stress.`})}
     if(g.earned)h+=phNote(`Earned today: ${$(g.earned)}. It’s not a job, but it’s not nothing.`);
     return h}});
 
@@ -4667,7 +4705,7 @@ phoneOnTime(function lfTimed(){
       L2.foreign.push({id:L2.n,who:w.who,fid:w.fid,item:pick(LF_ITEMS),since:dk,posted:false,due:-1});
       if(S.loc==='home')say(`📦 The ${pick(['UPS','FedEx','USPS'])} truck stops, and leaves ${L2.foreign[L2.foreign.length-1].item} on your porch. It’s addressed to ${L2.foreign[L2.foreign.length-1].who}.`)}}
   for(const f of L2.foreign.slice()){if(f.posted&&S.t>=f.due){L2.foreign=L2.foreign.filter(x=>x!==f);
-    if(typeof S.rep==='number')S.rep+=1;adj('stress',-2);
+    repAdd(dayKey()-f.since<=1?10:5,`returned ${f.who}’s package`);adj('stress',-2);
     lfPost(`${lfName(f)} saw your post: “That’s mine! Thank you!!” ${S.loc==='home'?'They pull into the driveway twenty minutes later and grab it off your porch.':'By the time you’re home, it’s gone from the porch. There’s a sticky note on the door: THANK YOU.'}`);
     if(f.fid)friendPts(f.fid,2);else if(Math.random()<0.4)newNeighbor('you found their package and posted about it')}}
   // B/C) your packages that went to the wrong house
@@ -4763,6 +4801,108 @@ document.addEventListener('keydown',e=>{
 {let q=false;const go=()=>{q=false;keyHints()};
   try{new MutationObserver(ms=>{if(q)return;if(ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&!n.classList.contains('kn'))||[...m.removedNodes].some(n=>n.nodeType===1&&n.id==='mbg'))){q=true;requestAnimationFrame(go)}})
     .observe(document.body,{childList:true,subtree:true})}catch(e){}}
+// ---- 🤲 island reputation: −100 to +100 ----
+// S.rep is the score (0 = newcomer). S.repx holds the rest: the "Known for" list, enemies, drift clocks,
+// the Riv weekend-shift meter lives in ECO().rivJob (15-economy.js). Perks (15-economy REP_PERKS) unlock at +20/+35/+60.
+const REP_MIN=-100,REP_MAX=100;
+const REP_TIERS=[
+  {min:60,id:'regular',ic:'⭐',n:'Island regular',d:'Gifts on the porch, the Riv asks you first.'},
+  {min:20,id:'known',ic:'🤝',n:'Known',d:'People know your car. In a good way.'},
+  {min:-19,id:'new',ic:'🙂',n:'Newcomer',d:'Mostly known as “the one who moved into that house.”'},
+  {min:-59,id:'talked',ic:'🗣️',n:'Talked about',d:'Conversations stop when you walk into the Riv.'},
+  {min:-100,id:'pariah',ic:'🚫',n:'Persona non grata',d:'People cross the road. Even Fred.'}];
+const repVal=()=>(typeof S!=='undefined'&&S&&typeof S.rep==='number')?S.rep:0;
+const repTier=r=>{r=r==null?repVal():r;return REP_TIERS.find(t=>r>=t.min)||REP_TIERS[REP_TIERS.length-1]};
+function REP(){if(!S.repx)S.repx={known:[],enemies:[],lastGood:dayKey(),driftAt:dayKey(),healAt:dayKey(),homeLow:0,gift:-1,coop:Math.floor(((S.coop&&S.coop.you)||0)/100),fails:{},cold:'',n:0};return S.repx}
+// change reputation. opt.notes = push to tonight's notes instead of say(); opt.quiet = no message
+function repAdd(n,why,opt){if(typeof S==='undefined'||!S||S.over||!n)return 0;opt=opt||{};const R=REP(),r0=repVal(),t0=repTier(r0);
+  S.rep=Math.max(REP_MIN,Math.min(REP_MAX,r0+n));const d=S.rep-r0;if(!d)return 0;
+  if(n>0)R.lastGood=dayKey();
+  if(why){R.known.unshift({d:dayKey(),n:d,why});R.known=R.known.slice(0,6)}
+  const t1=repTier(),msg=`${d>0?'🤲':'🗣️'} Island reputation ${d>0?'+':''}${d}${why?`: ${why}`:''}.${t1!==t0?` You’re now <b>${t1.ic} ${t1.n}</b>.`:''}`;
+  if(!opt.quiet){if(opt.notes)opt.notes.push(msg);else say(msg)}
+  if(t1!==t0)try{showTile(t1.ic,`Reputation: ${t1.n}`,t1.d,d>0?'good':'bad')}catch(e){}
+  try{repCheck()}catch(e){}
+  return d}
+window.repAdd=repAdd;
+
+// ---- enemies: named islanders with a grudge (max 3), each with a way to make up ----
+const REP_MEND=['help them stack two cords of firewood','help them clear blackberry vines off their fence','help them haul a busted water heater to the transfer station','help them move a piano. An actual piano.'];
+function repEnemy(who,why,opt){const R=REP();if(R.enemies.length>=3||R.enemies.some(e=>e.who===who))return null;R.n++;
+  const e={id:R.n,who,why,since:dayKey(),mend:pick(REP_MEND),fid:opt&&opt.fid};R.enemies.push(e);
+  const m=`😠 <b>${who.charAt(0).toUpperCase()+who.slice(1)}</b> won’t forget this (${why}).`;if(opt&&opt.notes)opt.notes.push(m);else say(m);
+  try{showTile('😠','You made an enemy',who,'bad')}catch(e){}return e}
+function repDropFriend(id){if(!S.friends[id])return;delete S.friends[id];(S.quests||[]).forEach(q=>{if(q.who===id&&!q.done){q.done=true;q.failed=true}})}
+const repEnemies=()=>(S&&S.repx&&S.repx.enemies)||[];
+
+// ---- nightly: drift, the house, enemies, friends drifting away, gifts on the porch ----
+function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
+  // fame fades without good deeds; a bad name fades slowly on its own
+  if(dk-R.driftAt>=7){R.driftAt=dk;if(r>20&&dk-R.lastGood>=7)repAdd(-5,'out of sight, out of mind',{notes})}
+  if(r<0){if(dk-R.healAt>=14){R.healAt=dk;repAdd(5,'people are starting to forget',{notes})}}else R.healAt=dk;
+  // "that house"
+  if((S.home??70)<25){R.homeLow++;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
+  // enemies bad-mouth you now and then
+  for(const e of R.enemies)if(Math.random()<0.15)repAdd(-3,`${e.who} has been bad-mouthing you in the Island Group`,{notes});
+  // persona non grata: a casual friend stops answering (about once a week)
+  if(repVal()<=-60&&Math.random()<0.15){const ids=Object.keys(S.friends).filter(id=>(S.friends[id].lvl||1)<=1);
+    if(ids.length){const id=pick(ids),n=S.friends[id].name.split(',')[0];repDropFriend(id);notes.push(`💔 ${n.charAt(0).toUpperCase()+n.slice(1)} heard what people are saying about you and stops answering your texts.`)}}
+  // gifts, if you slept at home
+  if(where==='home'&&R.gift!==dk){const t=repTier().id,c=t==='regular'?0.35:t==='known'?0.14:0;
+    if(c&&Math.random()<c){R.gift=dk;notes.push(repGift(t==='regular'))}}
+}
+function repGiver(){const ids=Object.keys(S.friends||{});if(ids.length&&Math.random()<0.5){const id=pick(ids);return S.friends[id].name.split(',')[0]}
+  return pick(typeof LF_PEOPLE!=='undefined'?LF_PEOPLE:['a neighbor'])}
+function repGift(big){const who=repGiver(),W=who.charAt(0).toUpperCase()+who.slice(1);
+  const G=[
+    {w:3,f:()=>{S.pantry+=1;return `🥚 A carton of eggs on the porch, still warm, from ${who}. (+1 day of food)`}},
+    {w:2,f:()=>{adj('stress',-3);return `🍓 A jar of blackberry jam on your porch with a note from ${who}: “From the vines you didn’t cut.” (Stress −3)`}},
+    {w:2,f:()=>{UP().wood+=2;return `🪵 ${W} dropped two nights’ worth of firewood by your shed. (+2 nights of wood)`}}];
+  if(big)G.push(
+    {w:2,f:()=>{S.pantry+=2;return `🍲 A casserole dish on the porch, foil on top, a name taped to the lid: ${who}. Return the dish. (+2 days of food)`}},
+    {w:1,f:()=>{UP().wood+=3;homeAdj(2);return `🪓 You wake to the sound of ${who} splitting and stacking your woodpile. They wave and won’t take coffee. (+3 nights of wood)`}});
+  if(big&&typeof phoneInstalled==='function'&&phoneInstalled('ferrypass')&&typeof FP==='function')G.push({w:1,f:()=>{FP().walk+=1;return `🎟️ ${W} texts you a spare walk-on ride from their Ferry Pass. “I’ll never use it.” (+1 walk-on ride)`}});
+  let tot=G.reduce((a,g)=>a+g.w,0),x=Math.random()*tot;for(const g of G){x-=g.w;if(x<0)return g.f()}return G[0].f()}
+{const _up=upkeepNight;upkeepNight=function(where,notes,d){const r=_up(where,notes,d);try{repNight(where,notes)}catch(e){console.error(e)}return r}}
+
+// ---- friendship: a good name makes friends faster; a bad one, slower ----
+{const _fp=friendPts;friendPts=function(id,n){if(n>0){const r=repVal();if(r>=20)n+=1;else if(r<=-20)n=Math.random()<0.5?Math.ceil(n/2):Math.floor(n/2)}return _fp(id,n)}}
+
+// ---- the main screen: the cold shoulder in the ferry line, making up with an enemy ----
+{const _actions=actions;actions=function(){const a=_actions();try{const R=S&&S.repx;if(!R||!R.enemies.length)return a;const dk=dayKey(),d=day(),m=tod();
+  if((S.loc==='aiDock'||S.loc==='stDock')&&R.cold!==dk+S.loc){R.cold=dk+S.loc;if(Math.random()<0.25){const e=pick(R.enemies);adj('stress',4);
+    say(`😠 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} is two cars ahead in the ferry line and makes a point of not seeing you. Stress +4.`)}}
+  if(S.loc==='home')for(const e of R.enemies){const ok=(d===5||d===6)&&m>=480&&m<=960;
+    a.push({cat:'here',ic:'🤝',l:`Make up with ${e.who}`,s:ok?`Offer to ${e.mend}. 2 hours, stress +3. Reputation +5.`:`They’re around on weekends, 8 AM–4 PM. Offer to ${e.mend}.`,dis:!ok,fn:()=>{
+      S.t+=120;phoneTick();adj('stress',3);R.enemies=R.enemies.filter(x=>x!==e);
+      say(`🤝 You show up at ${e.who}’s place and ${e.mend.replace(/^help them /,'help ')}. Neither of you mentions ${e.why}. At the end they hand you a beer. That’s that.`);
+      repAdd(5,`made up with ${e.who}`);if(e.fid&&!S.friends[e.fid]&&Math.random()<0.5&&typeof NEIGHBORS!=='undefined'){const nb=NEIGHBORS.find(x=>x[0]===e.fid);if(nb)meet(nb[0],nb[1],'you made up after a falling-out')}
+      afterAction()}})}
+}catch(e){console.error(e)}return a}}
+
+// ---- the 📣 Island Group app: the meter, Known for, and the people who aren't fans ----
+function repHeaderHtml(){const r=repVal(),t=repTier(r),R=(S&&S.repx)||{known:[],enemies:[]},pct=Math.abs(r)/2;
+  let h=`<div class="ph-rep rep2"><span>${t.ic}</span><div><b>${t.n} · ${r>0?'+':''}${r}</b><small>${t.d}</small>
+    <div class="repbar" role="img" aria-label="Reputation ${r} of −100 to +100"><i class="${r<0?'neg':'pos'}" style="${r<0?`right:50%;width:${pct}%`:`left:50%;width:${pct}%`}"></i><em></em></div></div></div>`;
+  if(R.known.length)h+=`<div class="ph-sub">Known for</div>`+R.known.slice(0,4).map(k=>`<div class="ph-grp"><small>${k.n>0?'+':''}${k.n}</small>${k.why}</div>`).join('');
+  if(R.enemies.length)h+=`<div class="ph-sub">Not fans of yours</div>`+R.enemies.map(e=>`<div class="ph-grp"><small>😠</small><b>${e.who}</b>: ${e.why}. Make up at home on a weekend.</div>`).join('');
+  return h}
+{const g=phoneApp('group');if(g){const v=g.view;g.view=function(arg){return v.call(this,arg).replace(/<div class="ph-rep">[\s\S]*?<\/small><\/div><\/div>/,repHeaderHtml())}}}
+
+// ---- to-do ----
+{const _todo=todoItems;todoItems=function(){const it=_todo();try{for(const e of repEnemies())it.push({ok:false,fail:false,l:`Make up with ${e.who}`,s:`😠 ${e.why}. Weekends at home: offer to ${e.mend}.`,urgent:false})}catch(e){}return it}}
+
+// ---- co-op pledges: +5 for every $100 you've put in ----
+function repCoop(){const R=REP(),k=Math.floor((S.coop.you||0)/100);if(k>R.coop){const n=k-R.coop;R.coop=k;repAdd(5*n,'pledging to the co-op')}}
+
+// ---- a favor you promised and didn't do: −5; twice for the same friend and they're done with you ----
+function repFavorFailed(id,notes){const R=REP(),f=S.friends[id];repAdd(-5,`never did ${f?f.name.split(',')[0]:'a friend'} that favor`,{notes});
+  R.fails[id]=(R.fails[id]||0)+1;if(R.fails[id]>=2&&f){const n=f.name.split(',')[0];repDropFriend(id);repEnemy(n,'you let them down twice',{notes,fid:id})}}
+
+// ---- the Riv weekend shift as a second job: its own meter in the to-do list and a small score bonus ----
+{const _todo=todoItems;todoItems=function(){const it=_todo();try{const J=typeof rivJob==='function'&&rivJob();
+  if(J&&J.sched&&S.emp!=='riv')it.push({ok:false,fail:false,l:'Weekend shifts at the Riv',s:`🍳 Fri & Sat, 4–10 PM. Riv weekend job: ${J.m}. A no-show costs −15${J.m<=30?': one more and you’re off the schedule':''}.`,urgent:RIV_DAYS.includes(day())&&ECO().riv!==dayKey()&&tod()>=900})}catch(e){}return it}}
+{const _sc=scoreOf;scoreOf=function(){const b=_sc();try{const J=ECO().rivJob;if(J&&J.sched&&J.m>50)return b+Math.round((J.m-50)*2*DF().score)}catch(e){}return b}}
 </script>
 </body>
 </html>

@@ -59,8 +59,8 @@ module.exports = [
     assert.ok(r.pay >= 58 && r.pay <= 98, 'pay + tips: ' + r.pay);
     assert.strictEqual(r.t, 1320, 'ends at 10 PM');
     assert.ok(r.ate, 'staff meal counts as dinner');
-    assert.strictEqual(r.rep, 1);
-    assert.strictEqual(r.rep2, 1, 'reputation once a week');
+    assert.strictEqual(r.rep, 5);
+    assert.strictEqual(r.rep2, 5, 'reputation once a week');
     assert.strictEqual(r.emp, 'lakewood', 'main job unchanged');
     assert.ok(r.worked, 'main-job attendance untouched');
     assert.strictEqual(r.again, false);
@@ -145,15 +145,15 @@ module.exports = [
     assert.deepStrictEqual(r, { none: true, cost: 40, hens: 3 });
     noErrors(errors);
   } },
-  { name: 'reputation unlocks at 3, 5 and 8 (narrated once)', fn: async ctx => {
+  { name: 'reputation unlocks at +20, +35 and +60 (narrated once)', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => {
       const A = re => actions().find(a => re.test(a.l || ''));
       const res = {};
-      S.rep = 2; afterAction(); res.r2 = Object.keys(S.eco.perks).length;
+      S.rep = 15; afterAction(); res.r2 = Object.keys(S.eco.perks).length;
       // rep 3: Gus first call, next day, never a no-show
-      S.rep = 3; afterAction(); afterAction();
+      S.rep = 20; afterAction(); afterAction();
       res.r3msgs = S.log.filter(e => /first call/.test(e.s)).length;
       S.loc = 'home'; S.t = 600; S.money = 500;
       gusModal(); const body = document.querySelector('#mbg').textContent; res.gusModal = /First call/.test(body);
@@ -164,14 +164,14 @@ module.exports = [
       res.gusCame = !!S.friends.gus && !UP().jobs.some(j => j.k === 'gus');
       // rep 5: the co-op board, once a week
       S.loc = 'store'; S.t = S.cur * 1440 + 700; res.board4 = !!A(/co-op board/);
-      S.rep = 5; afterAction(); res.r5 = !!S.eco.perks[5];
+      S.rep = 35; afterAction(); res.r5 = !!S.eco.perks[35];
       UP().wood = 8; A(/^Post on the co-op board/).fn();
       res.boardAgain = A(/board post|Posted on the board/).dis;
       const bj = UP().jobs.find(j => j.k === 'board'); const m0 = S.money; S.t = bj.due; processTimed();
       res.boardSold = S.money - m0; res.woodLeft = UP().wood;
       // rep 8: island regular
       S.loc = 'food'; S.t = S.cur * 1440 + 720; res.take27 = /\$27/.test(A(/^Takeout/).l);
-      S.rep = 8; afterAction(); res.r8 = !!S.eco.perks[8];
+      S.rep = 60; afterAction(); res.r8 = !!S.eco.perks[60];
       res.take20 = A(/^Takeout/).l; const m1 = S.money; A(/^Takeout/).fn(); res.takePaid = m1 - S.money;
       S.loc = 'aiDock'; S.t = S.cur * 1440 + 800; const s0 = S.stress = 50; A(/^Free coffee/).fn(); res.coffee = s0 - S.stress; res.coffeeAgain = A(/coffee/).dis;
       // shown in the To-do tab and the Island Group app
@@ -186,7 +186,7 @@ module.exports = [
     assert.ok(r.gusSure);
     assert.strictEqual(r.gusDay, 1, 'next day');
     assert.ok(r.gusCame, 'never a no-show');
-    assert.strictEqual(r.board4, false, 'board locked below 5');
+    assert.strictEqual(r.board4, false, 'board locked below +35');
     assert.ok(r.r5);
     assert.strictEqual(r.boardAgain, true, 'once a week');
     assert.strictEqual(r.boardSold, 3 * (woodPriceFor('fall') + 5));
@@ -197,7 +197,7 @@ module.exports = [
     assert.strictEqual(r.takePaid, 20);
     assert.strictEqual(r.coffee, 4);
     assert.strictEqual(r.coffeeAgain, true);
-    assert.ok(/Island reputation: 8/.test(r.todo) && /First call on Gus/.test(r.todo) && /Island regular/.test(r.todo), 'to-do tab');
+    assert.ok(/Island reputation: .*Island regular · \+60/.test(r.todo) && /First call on Gus/.test(r.todo) && /Island regular/.test(r.todo), 'to-do tab');
     assert.ok(/What your reputation gets you/.test(r.app) && /✅/.test(r.app), 'Island Group app');
     assert.strictEqual(r.unlockMsgs, 1);
     noErrors(errors);

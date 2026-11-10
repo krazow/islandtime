@@ -1,6 +1,6 @@
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.15.0', SAVE_SCHEMA=6;
+const APP_VERSION='1.15.0', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.

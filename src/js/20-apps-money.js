@@ -59,27 +59,39 @@ definePhoneApp({id:'bank',name:'Island Credit Union',ic:'💳',order:65,size:'48
     return h}});
 
 // ---- 💼 Gig Work ----
-const GIG_MAX=4,GIG_SLOW=10;   // tasks a day; extra upload minutes on the island’s one bar
+const GIG_SLOW=10;   // extra upload minutes on the island’s one bar
+// tasks a day and pay follow your 🤲 reputation (your star rating): 4 normally, 3 when you're talked about, 2 (and 75% pay) as persona non grata
+const gigRep=()=>typeof repVal==='function'?repVal():0;
+function gigMax(){const r=gigRep();return r<=-60?2:r<=-20?3:4}
+const gigPay=G=>Math.round(G.pay*(gigRep()<=-60?0.75:1));
+const gigStars=()=>{const r=gigRep();return r>=60?'★★★★★':r>=20?'★★★★☆':r>-20?'★★★☆☆':r>-60?'★★☆☆☆':'★☆☆☆☆'};
+// island gigs: neighbors post small paid errands, only for people in good standing (rep 0 or higher)
+const GIG_ISLAND=[
+  {id:'dogwalk',island:true,ic:'🐕',n:'Walk a neighbor’s dog',min:45,pay:15,bat:1,st:-2,at:()=>L[S.loc].side==='I',where:'on the island',t:['🐕 A shepherd mix named Pickles walks you more than you walk her. She’s thrilled. You’re damp.','🐕 Two corgis, one leash tangle, zero regrets.']},
+  {id:'rxrun',island:true,ic:'💊',n:'Pick up a neighbor’s prescription',min:20,pay:12,bat:1,st:0,at:()=>S.loc==='stDock',where:'at the Steilacoom landing',t:['💊 You grab a white paper bag for Mrs. Henderson’s cousin from the pharmacy run. They Venmo you before you’re back on the boat.']},
+  {id:'errand',island:true,ic:'📦',n:'Ferry-line errand',min:15,pay:10,bat:1,st:0,at:()=>S.loc==='aiDock'||S.loc==='stDock',where:'in the ferry line',t:['📦 You pass a casserole dish across three cars to its rightful owner. Paid in cash and gossip.','📦 Somebody’s forgotten lunch makes it onto the 4:35. You are a hero to one hungry deckhand.']}];
+const gigList=()=>gigRep()>=0?GIGS.concat(GIG_ISLAND):GIGS;
 const GIGS=[
   {id:'survey',ic:'📋',n:'Take a survey',min:10,pay:3,bat:2,st:1,t:['📋 Forty questions about your feelings toward a yogurt brand. You have strong feelings now.','📋 A survey about “your commute.” There is no box for “ferry.” You pick “Other” and type for a while.']},
   {id:'vm',ic:'🎧',n:'Transcribe a voicemail',min:20,pay:6,bat:4,st:2,t:['🎧 A man leaving his dentist a four-minute voicemail about a crown. You type “[unintelligible]” six times.','🎧 Somebody’s aunt, on speakerphone, in a car wash. You do your best.']},
   {id:'tag',ic:'🏷️',n:'Tag photos',min:30,pay:8,bat:6,st:2,t:['🏷️ Two hundred photos: is this a crosswalk? Is this a bus? Is this a crosswalk with a bus? You’re a robot’s teacher now.','🏷️ “Tag every photo with a dog.” Every photo has a dog. You’ve never been happier at work.']}];
 function gigWhere(){const l=S.loc;return l==='stDock'?'Waiting at the terminal is the gig economy’s natural habitat.':l==='aiDock'?'Waiting at the landing on one bar. Uploads crawl.':L[l].side==='I'?'One bar on the island: uploads take an extra 10 minutes.':'Good signal over here. Uploads are quick.'}
-function gigDo(id){const G=GIGS.find(x=>x.id===id),g=GIG();if(!G||!phoneCan()||g.n>=GIG_MAX||S.phone<=G.bat)return false;
-  const slow=phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(G.pay);adj('stress',G.st);g.n++;g.earned+=G.pay;S.stats.gigs=(S.stats.gigs||0)+1;S.stats.gigPay=(S.stats.gigPay||0)+G.pay;
-  say(`${pick(G.t)} +${$(G.pay)}.${slow?' The upload on one bar takes another ten minutes.':''}`);
-  apmMsg('gigs',`${G.ic} Done: +${$(G.pay)} in ${G.min+slow} min.${g.n>=GIG_MAX?' That’s all the work the app has for you today.':''}`);
+function gigDo(id){const G=gigList().find(x=>x.id===id),g=GIG();if(!G||!phoneCan()||g.n>=gigMax()||S.phone<=G.bat||(G.at&&!G.at()))return false;const pay=gigPay(G);
+  const slow=!G.island&&phoneSignal()===1?GIG_SLOW:0;S.t+=G.min+slow;phoneUse(G.bat);money(pay);adj('stress',G.st);g.n++;g.earned+=pay;S.stats.gigs=(S.stats.gigs||0)+1;S.stats.gigPay=(S.stats.gigPay||0)+pay;
+  say(`${pick(G.t)} +${$(pay)}.${slow?' The upload on one bar takes another ten minutes.':''}`);
+  apmMsg('gigs',`${G.ic} Done: +${$(pay)} in ${G.min+slow} min.${g.n>=gigMax()?' That’s all the work the app has for you today.':''}`);
   afterAction();return true}
 definePhoneApp({id:'gigs',name:'Gig Work',ic:'💼',order:66,size:'61 MB',desc:'Small remote tasks for stuck moments, and the job listings.',
   badge:()=>!S.emp&&!S.interview?1:0,
-  view(){const J=curJob(),I=S.interview,g=GIG(),left=GIG_MAX-g.n,slow=phoneSignal()===1?GIG_SLOW:0;let h=apmShow('gigs');
+  view(){const J=curJob(),I=S.interview,g=GIG(),left=gigMax()-g.n,slow=phoneSignal()===1?GIG_SLOW:0;let h=apmShow('gigs');
     h+=phCard(J?`💼 You work as <b>${J.n}</b>.`:'💼 You’re out of work. Rent doesn’t care.',J?'':'warn');
     if(I)h+=phCard(`📝 <b>Interview:</b> ${JOBS[I.job].n}, ${DAYS[I.day]} ${fmt(I.time)} at ${L[I.loc].name}.`);
     h+=phBtn('🔎 Browse job listings',()=>jobModal(),{cls:J?'':'primary',sub:J?'Switching jobs means quitting.':'Find something and set up an interview.'});
-    h+=`<div class="ph-sub">Quick gigs · ${left} of ${GIG_MAX} left today</div>`;
+    h+=`<div class="ph-sub">Quick gigs · ${left} of ${gigMax()} left today · ${gigStars()}</div>`;if(gigRep()<=-20)h+=phNote(gigRep()<=-60?'Your rating tanked: fewer tasks, lower pay. Word travels, even online.':'Your rating slipped: one less task a day, and no island gigs.');
     h+=phNote(`Pocket change for dead time: in line, at the terminal, at a motel. ${gigWhere()}`);
-    for(const G of GIGS){const dis=left<=0||S.phone<=G.bat;
-      h+=phBtn(`${G.ic} ${G.n} — ${$(G.pay)}`,()=>gigDo(G.id),{dis,sub:left<=0?'No more tasks today. Come back tomorrow.':S.phone<=G.bat?'Not enough battery.':`${G.min+slow} min${slow?' (slow upload)':''} · ${G.bat}% battery · a little stress.`})}
+    for(const G of gigList()){const here=!G.at||G.at(),dis=left<=0||S.phone<=G.bat||!here;
+      if(G.island&&G===GIG_ISLAND[0])h+=`<div class="ph-sub">🏝️ Island gigs, posted by neighbors</div>`;
+      h+=phBtn(`${G.ic} ${G.n} — ${$(gigPay(G))}`,()=>gigDo(G.id),{dis,sub:left<=0?'No more tasks today. Come back tomorrow.':!here?`Only ${G.where}.`:S.phone<=G.bat?'Not enough battery.':G.island?`${G.min} min · for a neighbor${G.st<0?' · relaxing':''}.`:`${G.min+slow} min${slow?' (slow upload)':''} · ${G.bat}% battery · a little stress.`})}
     if(g.earned)h+=phNote(`Earned today: ${$(g.earned)}. It’s not a job, but it’s not nothing.`);
     return h}});
 

@@ -344,3 +344,10 @@ html.hc .fb-text,html.hc .fb-rep,html.hc .fb-type{border-color:#000}
 .keys{display:grid;gap:6px;margin:4px 0 10px}
 .keys-row{display:flex;gap:12px;align-items:baseline}
 .keys-row kbd{min-width:84px;font:600 12px ui-monospace,Menlo,Consolas,monospace;background:var(--card,#f4f1ea);border:1px solid var(--line,#ccc);border-bottom-width:2px;border-radius:5px;padding:2px 6px;text-align:center}
+
+/* 🤲 reputation meter (−100..+100, centered) */
+.rep2 .repbar{position:relative;height:6px;border-radius:3px;background:var(--line,#ddd);margin-top:6px;overflow:hidden}
+.rep2 .repbar i{position:absolute;top:0;bottom:0}
+.rep2 .repbar i.pos{background:var(--good,#2e7d4f)}
+.rep2 .repbar i.neg{background:var(--bad,#b3412e)}
+.rep2 .repbar em{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--ink,#333);opacity:.4}

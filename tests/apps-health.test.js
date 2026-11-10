@@ -79,9 +79,9 @@ module.exports = [
   { name: 'Island Group shows your reputation and the last few replies', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
-    await page.evaluate(() => { S.rep = 4; S.loc = 'stDock'; phoneInstall('group'); phoneOpen('group'); });
+    await page.evaluate(() => { S.rep = 25; S.loc = 'stDock'; phoneInstall('group'); phoneOpen('group'); });
     let t = await phoneText(page);
-    assert.match(t, /Island reputation: 4/); assert.match(t, /What your reputation gets you/);
+    assert.match(t, /Known · \+25/); assert.match(t, /What your reputation gets you/);
     assert.ok(!/Recent replies/.test(t));
     await page.evaluate(() => { for (let i = 0; i < 4; i++) postReplies({ task: 'general' }); render(); });
     t = await phoneText(page);

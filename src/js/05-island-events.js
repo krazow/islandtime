@@ -156,8 +156,8 @@ defEvent({id:'favor_ask',hook:'wake',priority:2,max:2,cond:ctx=>atHomeWake(ctx)&
 function favorActions(a,loc){
   (S.quests||[]).filter(q=>!q.done).forEach(q=>{const F=FAVORS[q.who],who=S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'a friend';
     if(q.step==='buy'&&loc===F.at) a.push({ic:'🛍️',l:`Buy ${F.item} for ${who}: $${F.buy}`,s:`Favor for ${who}. Due ${DAYS[q.due]}.`,cat:'here',dis:S.money<F.buy,fn:()=>{money(-F.buy);q.step='deliver';S.t+=10;say(`🛍️ Got the ${F.item}. Now get it to ${who}.`);afterAction()}});
-    else if(q.step==='deliver'&&loc===F.back) a.push({ic:'🎁',l:F.label,s:`They’ll pay you back $${F.reward}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;money(F.reward);S.t+=10;adj('stress',-3);friendPts(q.who,2);say(`🎁 ${who} is thrilled. “You’re the best.”`);afterAction()}});
-    else if(q.step==='go'&&loc===F.at) a.push({ic:'🎁',l:F.label,s:`Favor for ${who}. Due ${DAYS[q.due]}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;S.t+=10;adj('stress',-3);friendPts(q.who,2);say(`🎁 Done. ${who} will be happy.`);afterAction()}});
+    else if(q.step==='deliver'&&loc===F.back) a.push({ic:'🎁',l:F.label,s:`They’ll pay you back $${F.reward}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;money(F.reward);S.t+=10;adj('stress',-3);friendPts(q.who,2);repAdd(5,`did ${who} a favor`);say(`🎁 ${who} is thrilled. “You’re the best.”`);afterAction()}});
+    else if(q.step==='go'&&loc===F.at) a.push({ic:'🎁',l:F.label,s:`Favor for ${who}. Due ${DAYS[q.due]}.`,cat:'here',cls:'primary',fn:()=>{q.done=true;S.t+=10;adj('stress',-3);friendPts(q.who,2);repAdd(5,`did ${who} a favor`);say(`🎁 Done. ${who} will be happy.`);afterAction()}});
   });
 }
 
@@ -197,7 +197,7 @@ function lifeBuddy(ids){return ids.filter(id=>S.friends[id])}
 function lifeActions(a,loc){
   const k=dayKey(),C=S.cal;
   if(loc==='food') lifeSlot(a,'vet','🇺🇸','Veterans Day ceremony',660,700,[{ic:'🇺🇸',l:'Attend the Veterans Day ceremony',s:'About an hour at the flagpole with the Legion. Stress −6.',cls:'primary',fn:()=>{
-    C.vet=k;S.t+=60;phoneTick();adj('stress',-6);
+    C.vet=k;S.t+=60;phoneTick();adj('stress',-6);repAdd(5,'showed up for the Veterans Day ceremony');
     if(S.friends.walt){friendPts('walt',2);say('🇺🇸 Walt reads the names in his Legion cap, without his glasses, from memory. Afterward he pours you a coffee and doesn’t say much. He doesn’t have to.')}
     else{meet('walt','Walt from the American Legion','you stood together at the Veterans Day ceremony');say('🇺🇸 Thirty islanders, one flag, one bugler who nails it. The old guy next to you in the Legion cap introduces himself as Walt and hands you a coffee.')}
     afterAction()}}]);
@@ -205,13 +205,13 @@ function lifeActions(a,loc){
     const off=flv('bev')>=2?5:0,price=25-off;
     lifeSlot(a,'bazaar','🎄','Holiday craft bazaar',600,900,[
       {ic:'🎄',l:`Buy a cedar wreath at the bazaar: $${price}`,s:`An hour at the Legion hall. A gift to your own front door. Home +3, stress −4.${off?' Bev’s discount.':''}`,cls:'primary',dis:S.money<price,fn:()=>{
-        C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);
+        C.bazaar=k;money(-price);S.t+=60;phoneTick();homeAdj(3);adj('stress',-4);repAdd(5,'bought a wreath at the holiday bazaar');
         say('🎄 A cedar wreath with a pinecone the size of your fist. The cabin smells like a Christmas tree lot that also has a woodstove.');lifeBev();afterAction()}},
-      {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
+      {ic:'🧶',l:'Just browse the bazaar',s:'30 min. Free samples of fudge. Stress −2.',fn:()=>{C.bazaar=k;S.t+=30;adj('stress',-2);repAdd(5,'came out for the holiday bazaar');say('🧶 You admire a hat knitted to look like a geoduck and leave with fudge on your fingers.');if(Math.random()<0.5)lifeBev();afterAction()}}]);
   }
   if(loc==='lake'){
     lifeSlot(a,'cleanup','🗑️','Lake cleanup',480,660,[{ic:'🗑️',l:'Volunteer at the lake cleanup',s:'2 hours with a grabber and a bag. Stress −4.',cls:'primary',fn:()=>{
-      C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);if(typeof S.rep==='number')S.rep+=1;
+      C.cleanup=k;S.t+=120;phoneTick();adj('stress',-4);repAdd(5,'the lake cleanup');
       say('🗑️ Two tires, a lawn chair, nine golf balls and a 1987 Rainier can come out of the shallows. The eagles supervise.');
       const b=lifeBuddy(['hendersons','sam','rusty','bev']);
       if(b.length){const id=pick(b);friendPts(id,2);say(`🗑️ ${S.friends[id].name.split(',')[0].replace(/^the /,'The ')} works the bag next to you the whole way around Lake Josephine.`)}
@@ -219,7 +219,7 @@ function lifeActions(a,loc){
       afterAction()}}]);
   }
   if(loc==='store') lifeSlot(a,'drill','🚒','Fire District drill',1050,1110,[{ic:'🚒',l:'Join the volunteer fire drill',s:'90 min at the Fire District #27 station. Hoses, ladders, cocoa. Stress −3, health +2.',cls:'primary',fn:()=>{
-    C.drill=k;S.t+=90;phoneTick();adj('stress',-3);adj('health',2);
+    C.drill=k;S.t+=90;phoneTick();adj('stress',-3);adj('health',2);repAdd(5,'the volunteer fire drill');
     if(S.friends.rusty){friendPts('rusty',2);say('🚒 Rusty, stone sober in turnout gear, shows you how to roll a hose. Who knew.')}
     else{meet('rusty','Rusty from the bar','he showed you how to roll a fire hose at the drill');say('🚒 A guy you’ve only ever seen at the Riv’s bar turns out to be a volunteer firefighter. Rusty. He shows you how to roll a hose.')}
     if(S.up&&!C.chim){C.chim=true;S.up.chimney=0;say('🏚️ On the way out, the captain says “you’re the cedar cabin back in the woods, right?” and two volunteers follow you home to check your chimney. They sweep it while they’re up there. No charge, just don’t burn wet wood.')}
@@ -362,7 +362,7 @@ function playBingo(cards,price){
       S.bingo.won+=won;S.bingo.playing=-1;S.ev.history.push({id:'bingo',t:S.t});
       const raised=crowd+Math.round(Math.random()*120);
       say(`🎱 Bingo night ${won?`paid off: you won <b>${$(won)}</b>`:'was a bust, but a fun one'}. The Legion raised about ${$(raised)} for the ${BINGO_FOR[S.week.bingo]}.`);
-      return modal('🎱 That’s a wrap',`<p>${won?`You walk out <b>${$(won)}</b> richer.`:'No wins tonight.'} The American Legion announces tonight raised about <b>${$(raised)}</b> for the <b>${BINGO_FOR[S.week.bingo]}</b>.</p><p>${S.friends.walt?'Walt':'Someone'} is already stacking chairs. ${S.friends.sam?'Sam drives you home.':'You know half the room by name now.'}</p>`,[{l:'Head home',fn:()=>{afterAction()}}]);
+      return modal('🎱 That’s a wrap',`<p>${won?`You walk out <b>${$(won)}</b> richer.`:'No wins tonight.'} The American Legion announces tonight raised about <b>${$(raised)}</b> for the <b>${BINGO_FOR[S.week.bingo]}</b>.</p><p>${S.friends.walt?'Walt':'Someone'} is already stacking chairs. ${S.friends.sam?'Sam drives you home.':'You know half the room by name now.'}</p>`,(won?[{l:`Donate your ${$(won)} to the ${BINGO_FOR[S.week.bingo]}`,s:'The room cheers. Island reputation +5.',fn:()=>{money(-won);S.bingo.won-=won;S.bingo.donated+=won;say(`🎱 You hand your ${$(won)} back to the Legion for the ${BINGO_FOR[S.week.bingo]}. Walt salutes.`);repAdd(5,'donated your bingo winnings');afterAction()}}]:[]).concat([{l:won?'Keep it and head home':'Head home',fn:()=>{afterAction()}}]));
     }
     const g=BINGO_GAMES[gi++],res=bingoGame(mine,others);sfx(res.winners.length?'win':'ball');const n=res.winners.length+res.others;
     let prize=0,msg;

@@ -70,7 +70,7 @@ function endDay(where){
   if(where==='home') S.phone=(!nightOut||S.ev.flags.genRan===d)?100:Math.max(0,S.phone-6);
   else if(where==='motel') S.phone=100; else S.phone=Math.min(100,S.phone+35);
   // eat
-  (S.quests||[]).filter(q=>!q.done&&q.due<d+1&&q.due===d).forEach(q=>{q.done=true;q.failed=true;friendPts(q.who,-1);notes.push(`🙁 You never got to ${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'your friend'}’s favor.`)});
+  (S.quests||[]).filter(q=>!q.done&&q.due<d+1&&q.due===d).forEach(q=>{q.done=true;q.failed=true;friendPts(q.who,-1);repFavorFailed(q.who,notes);notes.push(`🙁 You never got to ${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'your friend'}’s favor.`)});
   if(S.ateOut===d){notes.push('🍔 Dinner was from the Riv. The pantry gets a night off.')}
   else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
   else if(S.pantry>0){S.pantry--;}
@@ -97,7 +97,7 @@ function endDay(where){
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
-  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
+  if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);if(S.emp==='riv')repAdd(-10,'fired from the Riv: the whole island eats there',{notes});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
   S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}

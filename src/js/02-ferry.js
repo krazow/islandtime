@@ -104,7 +104,7 @@ function arrest(where,missed){
   showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
   const lost=[];if(S.cargo.drugs)lost.push(S.cargo.drugs+' drug package'+(S.cargo.drugs>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
-  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;
+  S.cargo.drugs=0;S.cargo.gas=0;money(-750);adj('job',-20);adj('stress',30);S.t+=300;repAdd(-35,'arrested: it was in the sheriff’s blotter');
   say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $750 bail five hours later. Your boss heard.`);
   if(S.drugCharges>=2) return gameOver('convicted');
   modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':'The buyer was an undercover deputy.'}</p><p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$750 bail</b> five hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
@@ -117,7 +117,7 @@ function board(side,s,mode){
     if(Math.random()<p){
       if(c.drugs>0) return arrest('at the ferry',true);
       if(c.gas>0){
-        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);
+        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
         if(S.citations>=2) return gameOver('banned');
         return modal('Busted at the ferry',`<p>Gasoline is allowed aboard only in a vehicle’s own tank. Spare cans, <b>full or empty</b>, are prohibited.</p><p>Your ${g>1?g+' cans are':'can is'} confiscated, you get a citation, and the boat leaves without you. The citation will cost you about $150.</p><p><b>Repeat violations can get you banned from riding the ferry.</b> Next time, that’s the game.</p>`,[{l:'Lesson learned. Probably.',fn:()=>{}}]);
@@ -126,7 +126,7 @@ function board(side,s,mode){
       say(`🟨 The deckhand counts your diesel cans. ${mode==='drive'?'Two per vehicle is the limit':'Diesel cans have to ride in a vehicle'}, so ${extra} can${extra>1?'s':''} stay${extra>1?'':'s'} on the dock. Gone.`);
     } else {
       if(c.gas){S.stats.smuggled+=c.gas*5;adj('stress',10);say('Nobody looks in your trunk. You sweat through the whole crossing, smelling gas fumes and picturing a car-deck fire.');}
-      if(c.drugs){S.stats.drugRuns++;adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
+      if(c.drugs){S.stats.drugRuns++;if(S.stats.drugRuns>2)repAdd(-5,'people have seen your car out at Dale’s');adj('stress',15);say('You stare at the water the whole crossing and don’t breathe right until the ramp comes down.');}
       if(c.diesel>(mode==='drive'?2:0)) say('Nobody counts your diesel cans this time.');
     }
   }

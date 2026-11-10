@@ -155,7 +155,7 @@ function postModal(){
       .concat([{l:'🏠 General help around the house',s:'Chores, a tidy-up, a second pair of hands.',fn:()=>go('general')},{l:'Never mind',fn:()=>{}}]));
 }
 function postReplies(j){
-  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.min(0.75,0.25+0.08*((S.rep||0)+fr)),gen=j.task==='general'||!UP_TASKS[j.task];
+  const c=COMM(),fr=Object.keys(S.friends).length,p=Math.max(0.05,Math.min(0.75,0.25+0.08*(Math.max(0,S.rep||0)/7.5+fr)+Math.min(0,S.rep||0)/400-0.1*repEnemies().length)),gen=j.task==='general'||!UP_TASKS[j.task];
   const what=gen?'the chores':'the '+UP_TASKS[j.task].o,home=S.loc==='home';
   const fix=()=>{if(gen){upChoresDone();homeAdj(10)}else upFix([j.task])};
   const tile=(t,s,k)=>showTile('📣',t,s,k);
@@ -178,12 +178,12 @@ function helpActions(a,d,m){
     dis:true,fn:gusModal});
   const ok=m>=480&&m<1140;
   a.push({cat:'here',ic:'🤲',l:c.help===dk?'Helped a neighbor today ✓':'Help a neighbor from the community group',s:c.help===dk?`Island reputation: ${S.rep||0}.`:!ok?'People ask for help between 8 AM and 7 PM.':`1 hour. Someone always needs a hand. Island reputation: ${S.rep||0}. Stress −2.`,
-    dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;S.rep=(S.rep||0)+1;adj('stress',-2);
+    dis:c.help===dk||!ok,fn:()=>{S.t+=60;c.help=dk;repAdd(5,'helped a neighbor from the community group');adj('stress',-2);
       say(pick(['🤲 You help a guy from the group haul a chest freezer up his porch steps. He thanks you three times.','🤲 You spend an hour helping someone near Lake Josephine find their escaped chickens. You find four of five.','🤲 You hold a ladder while a neighbor clears her gutters, and hear the whole history of her septic system.','🤲 You drive a bag of groceries to an older neighbor who can’t make the ferry this week. She sends you home with jam.']));
       if(Math.random()<0.15)newNeighbor('you helped them out');afterAction()}});
 }
 TILE_META.work_party=['🛠️','A community work party','good'];
-defEvent({id:'work_party',hook:'wake',priority:3,max:1,cond:()=>S.loc==='home'&&day()>=5&&(S.rep||0)>=3,chance:0.5,
+defEvent({id:'work_party',hook:'wake',priority:3,max:1,cond:()=>S.loc==='home'&&day()>=5&&(S.rep||0)>=20,chance:0.5,
   run(){const ks=upPressing(2),did=upFix(ks);if(!did.length)upChoresDone();adj('stress',-6);homeAdj(6);
     say(`🛠️ Three trucks pull into your driveway at 9 AM: neighbors from ${COMM_NAME}, with ladders, a thermos and a pie. “You’ve helped half of us. Our turn.” ${did.length?`By lunch they’ve ${andList(did)}.`:'By lunch the whole house is spotless.'}`)}});
 defEvent({id:'leaky_roof',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home',

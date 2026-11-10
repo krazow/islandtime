@@ -28,7 +28,7 @@ phoneOnTime(function lfTimed(){
       L2.foreign.push({id:L2.n,who:w.who,fid:w.fid,item:pick(LF_ITEMS),since:dk,posted:false,due:-1});
       if(S.loc==='home')say(`📦 The ${pick(['UPS','FedEx','USPS'])} truck stops, and leaves ${L2.foreign[L2.foreign.length-1].item} on your porch. It’s addressed to ${L2.foreign[L2.foreign.length-1].who}.`)}}
   for(const f of L2.foreign.slice()){if(f.posted&&S.t>=f.due){L2.foreign=L2.foreign.filter(x=>x!==f);
-    if(typeof S.rep==='number')S.rep+=1;adj('stress',-2);
+    repAdd(dayKey()-f.since<=1?10:5,`returned ${f.who}’s package`);adj('stress',-2);
     lfPost(`${lfName(f)} saw your post: “That’s mine! Thank you!!” ${S.loc==='home'?'They pull into the driveway twenty minutes later and grab it off your porch.':'By the time you’re home, it’s gone from the porch. There’s a sticky note on the door: THANK YOU.'}`);
     if(f.fid)friendPts(f.fid,2);else if(Math.random()<0.4)newNeighbor('you found their package and posted about it')}}
   // B/C) your packages that went to the wrong house

@@ -34,6 +34,9 @@ function migrate(d){
     delete x.canGal;delete x.dieselCans;
   }
   fillDefaults(x,baseState());
+  // 1.15: reputation went from 0..~10 to −100..+100
+  if(from<7&&typeof x.rep==='number'&&x.rep>0){x.rep=Math.min(100,Math.round(x.rep*7.5));notes.push('island reputation moved to the new −100 to +100 scale')}
+  if(from<7&&x.eco&&x.eco.perks){const P=x.eco.perks,M={3:20,5:35,8:60};for(const k in M)if(P[k]){P[M[k]]=true;delete P[k]}}
   // 1.4.2 -> 1.4.3: Pajama Mike was renamed Pajama Fred
   if(x.friends&&x.friends.mike){x.friends.fred=Object.assign(x.friends.mike,{name:'Pajama Fred'});delete x.friends.mike}
   if(x.ev){for(const k of ['count','last'])if(x.ev[k]&&x.ev[k].pajama_mike!=null){x.ev[k].pajama_fred=x.ev[k].pajama_mike;delete x.ev[k].pajama_mike}

@@ -145,14 +145,14 @@ function interviewSlot(k){const J=JOBS[k];for(let d=day()+1;d<=6;d++){if(J.days.
 function jobModal(){
   const open=jobOpenings();
   modal('🔎 Job listings',`<p>${S.emp?`You work as: <b>${curJob().n}</b>. Switching means quitting.`:'You’re out of work. Rent doesn’t care.'}</p>${S.interview?`<p class="warn">You already have an interview: ${JOBS[S.interview.job].n}, ${DAYS[S.interview.day]} ${fmt(S.interview.time)}.</p>`:''}`,
-    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch} Interview: ${DAYS[slot.day]} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
+    open.map(k=>{const J=JOBS[k],slot=interviewSlot(k);const shut=k==='riv'&&repVal()<=-30;if(shut)return {l:`${J.n}: ${$(J.pay)}/day`,s:'“The Riv’s not hiring. For you.” Word gets around on an island.',dis:true,fn:()=>{}};return {l:`${J.n}: ${$(J.pay)}/day`,s:slot?`${J.pitch} Interview: ${DAYS[slot.day]} ${fmt(slot.time)} at ${L[J.loc].name}.`:`${J.pitch} No interview slots left this week.`,
       dis:!slot||!!S.interview,fn:()=>{S.interview={job:k,day:slot.day,time:slot.time,loc:J.loc};S.t+=15;say(`📝 You applied. Interview for <b>${J.n}</b>: ${DAYS[slot.day]} at ${fmt(slot.time)}, ${L[J.loc].name}.`);showTile('📝','Interview scheduled',`${DAYS[slot.day]} ${fmt(slot.time)} · ${L[J.loc].name}`,'info');afterAction()}}}).concat([{l:'Close',fn:()=>{}}]));
 }
 function jobActions(a,loc){
   const iv=S.interview,m=tod();
   if(iv&&iv.loc===loc&&iv.day===day()){
     if(m>=iv.time-45&&m<=iv.time+20) a.push({ic:'🤝',l:`Interview: ${JOBS[iv.job].n}`,s:'About 45 minutes. Be yourself. Or a calmer version.',cls:'primary',fn:()=>{
-      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1);
+      S.t+=45;const odds=0.68+(S.friends.walt&&S.friends.walt.lvl>=2?0.15:0)-Math.max(0,S.stress-50)/200+(m<=iv.time?0.05:-0.1)+(iv.job==='riv'?(S.rep>=0?S.rep*0.003:S.rep*0.0075):0);
       if(Math.random()<odds){const old=S.emp;S.emp=iv.job;S.job=60;S.interview=null;adj('stress',-8);say(`🎉 You got the job: <b>${JOBS[S.emp].n}</b>! ${old?'You give notice at your old job. ':''}You start on your next shift day.`);showTile('🎉','You’re hired!',JOBS[S.emp].n,'good')}
       else{S.interview=null;adj('stress',8);say('😞 “We went with someone with more experience.” Back to the listings.');showTile('😞','Didn’t get the job',JOBS[iv.job].n,'bad')}
       afterAction()}});
@@ -186,7 +186,7 @@ function coopActions(a){
   if(!S.coop.open){
     a.push({ic:'🏪',l:`Pledge to the co-op fund (${$(total)} of ${$(COOP_GOAL)})`,s:`You’ve pledged ${$(S.coop.you)}. Neighbors chip in every night. Reopening brings groceries and gas back to the island.`,cat:'trade',dis:S.money<25,fn:()=>{
       const opts=[25,100,250].filter(v=>S.money>=v);
-      modal('🏪 Anderson Island Food Co-op',`<p>The fund is at <b>${$(total)}</b> of <b>${$(COOP_GOAL)}</b>. Every dollar gets the store and its pumps closer to reopening.</p>`,opts.map(v=>({l:`Pledge ${$(v)}`,fn:()=>{money(-v);S.coop.you+=v;adj('stress',-2);say(`🏪 You pledge ${$(v)} to the co-op. Someone adds a star next to your name on the board.`);coopCheck();afterAction()}})).concat([{l:'Not now',fn:()=>{}}]))}});
+      modal('🏪 Anderson Island Food Co-op',`<p>The fund is at <b>${$(total)}</b> of <b>${$(COOP_GOAL)}</b>. Every dollar gets the store and its pumps closer to reopening.</p>`,opts.map(v=>({l:`Pledge ${$(v)}`,fn:()=>{money(-v);S.coop.you+=v;adj('stress',-2);repCoop();say(`🏪 You pledge ${$(v)} to the co-op. Someone adds a star next to your name on the board.`);coopCheck();afterAction()}})).concat([{l:'Not now',fn:()=>{}}]))}});
   } else {
     const car=carHere();
     a.push({ic:'🥫',l:'Buy groceries: 3 days for $60',s:'Co-op prices: not mainland cheap, but no ferry.',cat:'trade',dis:!canEssential(60)||(!car&&S.carried+3>4),fn:()=>{money(-60);S.carried+=3;S.stats.food+=3;S.t+=15;say('🥫 Three days of groceries from the co-op. A volunteer bags them and asks about your week.');afterAction()}});

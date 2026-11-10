@@ -56,6 +56,18 @@ The island post office was inside the old store building, so it closed with the 
   - A letter that goes to the wrong mailbox just never arrives.
   - No Island Group app? The to-do list reminds you to get it from the App Store.
 
+- 🤲 **Island reputation, −100 to +100.** You start at 0. The 📣 Island Group app shows a meter, your tier, what you're **known for**, and who isn't a fan.
+  - **Tiers:** 🚫 Persona non grata (−100 to −60) · 🗣️ Talked about (−59 to −20) · 🙂 Newcomer (−19 to +19) · 🤝 Known (+20 to +59) · ⭐ Island regular (+60 and up). Perks move to +20 (first call on Gus), +35 (the co-op board) and +60 (Island regular).
+  - **Up (+5 each):** helping a neighbor, the lake cleanup, Veterans Day, the fire drill, the holiday bazaar, your first Riv weekend shift each week, donating bingo winnings, finishing a friend's favor, every $100 to the co-op, returning someone's package (+10 the same day), making up with an enemy.
+  - **Down:** a favor you never did, raccoons in your trash, a run-down house for a week, a scheduled Riv shift you skip (−5 each); Dale runs after the second (−5 each); fired from the Riv (−10); busted with a gas can (−20); arrested (−35).
+  - **Drift:** above +20 you lose 5 a week without good deeds; below 0 you recover 5 every two weeks.
+  - **Friends:** +1 extra friendship point when you're Known; gains halved when you're Talked about; as Persona non grata, casual friends stop answering.
+  - **Enemies (up to 3):** the deckhand who cited you, a friend you let down twice. They bad-mouth you in the group, make help posts less likely, and give you the cold shoulder in the ferry line. Make up with them at home on a weekend.
+  - **Gifts:** Known players find a gift on the porch about once a week (eggs, jam, firewood); Island regulars two or three times a week (casseroles, a split woodpile, a spare ferry ride).
+  - **Gig Work** shows your star rating: 4 tasks a day normally, 3 when Talked about, 2 at lower pay as Persona non grata. In good standing (0 or higher) you also get **island gigs** from neighbors: walk a dog ($15), a prescription run from Steilacoom ($12), a ferry-line errand ($10).
+  - **The Riv:** line cook interview odds +0.3% per point above 0 (−0.75% per point below); no interview at −30 or lower. Weekend shifts need −10 or better, and Island regulars get $10 more a shift.
+  - **The Riv weekend shift is now a second job with its own meter.** Working it puts you on the Friday/Saturday schedule (tell the kitchen to take you off). On time +3, late −4, a no-show −15 and reputation −5; at 0 you're fired from the Riv. A healthy second job adds a little to your score.
+  - Old saves: reputation converts ×7.5, so every perk you had stays unlocked.
 - ⌨️ **Keyboard shortcuts** on a computer: **1–9** press the numbered buttons (a small number shows on each), **H F T L** switch tabs, **P** opens or puts away the phone, **Backspace** goes back in the phone, **Esc** closes a pop-up, **?** shows the list. Also in ⚙️ Settings. They never fire while you're typing.
 
 ### 1.14.1: the real ferry and local fixes
