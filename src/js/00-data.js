@@ -47,9 +47,14 @@ const NEWS=[
 const CAP_CAR=20, CAP_FOOT=6, APPT_DAY=3; // doctor's appointment is Thursday (bingo is Wednesday)
 const JOBS={
   lakewood:{n:'Office job, Lakewood',loc:'work',start:540,end:1020,pay:170,days:[0,1,2,3,4],pitch:'9:00–5:00 weekdays. The 7:35 boat gets you there.'},
-  riv:{n:'Line cook at the Riv',loc:'food',start:600,end:1080,pay:115,days:[1,2,3,4,5],pitch:'10:00–6:00, Tuesday–Saturday. On the island: no ferry, no gas money. Lower pay.'},
+  riv:{n:'Line cook at the Riv',loc:'food',local:true,start:600,end:1080,pay:115,days:[1,2,3,4,5],pitch:'10:00–6:00, Tuesday–Saturday. On the island: no ferry, no gas money. Lower pay.'},
   tacoma:{n:'Records clerk, Tacoma hospital',loc:'office',start:510,end:990,pay:215,days:[0,1,2,3,4],pitch:'8:30–4:30 weekdays. Best pay, longest commute.'},
   dupont:{n:'Warehouse, DuPont (early shift)',loc:'whse',start:390,end:870,pay:185,days:[0,1,2,3,4],pitch:'6:30–2:30 weekdays. You need the 5:15 AM boat, but you’re home early.'},
+  // listings change weekly (26-listings.js). season: only listed in those seasons; temp: laid off when the season ends;
+  // coop: only once the co-op store is open; local: an island employer, so your island reputation matters; boat: you work on the ferry
+  stocker:{n:'Holiday stocker, Lakewood supermarket',loc:'market',start:600,end:1080,pay:140,days:[2,3,4,5,6],season:['fall'],temp:true,pitch:'10:00–6:00, Wednesday–Sunday, through the holidays. Pallets, price guns and a lot of canned pumpkin. Temporary.'},
+  deckhand:{n:'Ferry deckhand (summer)',loc:'aiDock',start:330,end:870,pay:195,days:[3,4,5,6,0],season:['summer'],temp:true,boat:true,pitch:'5:30 AM–2:30 PM, Thursday–Monday. You start at the island landing and work on the boat: no commute, no fares. Summer only.'},
+  clerk:{n:'Clerk at the co-op store',loc:'store',start:540,end:960,pay:125,days:[0,1,3,4,5],coop:true,local:true,pitch:'9:00–4:00, Mon, Tue and Thu–Sat. On the island, at the store everyone chipped in to reopen. Lower pay, no ferry.'},
 };
 const COOP_GOAL=2500;
 const DIFFS={

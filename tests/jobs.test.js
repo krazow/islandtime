@@ -29,6 +29,7 @@ module.exports = [
     await newGame(page, 'normal', 'month');
     const r = await page.evaluate(() => {
       S.firedFrom = ['tacoma']; S.firedAt = { tacoma: dayKey() };
+      S.jobsx = { key: jobListKey(), open: ['riv', 'tacoma', 'dupont'], tip: {} }; // listings change weekly: pin this week's
       const now = jobOpenings().includes('tacoma');
       S.firedAt.tacoma = dayKey() - 7; const later = jobOpenings().includes('tacoma');
       S.loc = 'home'; jobModal(); const sub = [...document.querySelectorAll('#mbg button.act')].find(b => /Records clerk/.test(b.textContent)).textContent;

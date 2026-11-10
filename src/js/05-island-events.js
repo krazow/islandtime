@@ -5,7 +5,7 @@ defEvent({id:'alarm_fail',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=55+Math.floor(Math.random()*60);S.t+=late;adj('stress',10);buzz([100,60,100]);
   say(`⏰ Your alarm clock never went off. The power blinked out overnight and reset it. It’s already <b>${fmt(S.t)}</b>.`);
   S.phoneT=S.t;
-  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${day()<5?'Work starts at 9:00 and the last boat that gets you there leaves at 7:35.':'At least it’s the weekend.'}</p>`,[{l:'Go go go',fn:()=>{}}]);
+  modal('⏰ You overslept',`<p>The power went out overnight, and your plug-in alarm clock reset to blinking 12:00.${!S.alarm.phone.on?' A phone alarm as a backup would have saved you.':''}</p><p>It’s <b>${fmt(S.t)}</b>. ${(J=>J&&J.days.includes(day())?(S.emp==='lakewood'?'Work starts at 9:00 and the last boat that gets you there leaves at 7:35.':`Your shift starts at ${fmt(J.start)}.`):!J&&day()<5?'At least you don’t have a shift to make.':day()<5?'At least it’s your day off.':'At least it’s the weekend.')(curJob())}</p>`,[{l:'Go go go',fn:()=>{}}]);
 }});
 defEvent({id:'phone_died',hook:'wake',priority:10,cond:atHomeWake,run(){
   const late=60+Math.floor(Math.random()*50);S.t+=late;S.phoneT=S.t;adj('stress',10);buzz([100,60,100]);

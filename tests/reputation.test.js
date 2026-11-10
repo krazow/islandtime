@@ -117,7 +117,7 @@ module.exports = [
     await newGame(page, 'normal', 'month');
     const r = await page.evaluate(() => {
       const out = {};
-      S.rep = -30; S.cur = 1; S.t = 1440 + 600; S.loc = 'home'; jobModal();
+      S.rep = -30; S.cur = 1; S.t = 1440 + 600; S.loc = 'home'; S.jobsx = { key: jobListKey(), open: ['riv', 'tacoma'], tip: {} }; jobModal();
       out.riv = [...document.querySelectorAll('#mbg button.act')].find(b => /Line cook/.test(b.textContent)).disabled;
       MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove());
       S.rep = -15; S.loc = 'food'; S.cur = 4; S.t = 4 * 1440 + 930; out.blocked = actions().some(a => /^No weekend shift for you/.test(a.l));

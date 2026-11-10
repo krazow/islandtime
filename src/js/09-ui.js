@@ -154,13 +154,13 @@ window.NEXT_GO=()=>{sfx('tap');NEXT_FN&&NEXT_FN()};
 window.NEXT_HIDE=()=>{S.nextHide=dayKey();render()};
 const ACT_CATS={work:'💼 Work & errands',ferry:'⛴️ Ferry & travel',trade:'🛒 Food & shopping',home:'🏠 Inside the house',yard:'🌲 Outside & property',fuel:'⛽ Fuel, car & power',phone:'📱 Phone & alarms',here:'🏡 Around here'};
 function curJob(){return S&&S.emp?JOBS[S.emp]||null:null}
-const dayList=ds=>ds.length===5&&ds[0]===0?'weekdays':ds.map(i=>DAYS[i].slice(0,3)).join(', ');
+const dayList=ds=>ds.join()==='0,1,2,3,4'?'weekdays':ds.slice().sort((a,b)=>a-b).map(i=>DAYS[i].slice(0,3)).join(', ');
 // ---- guided first day: one tip at a time, each shown once per game ----
 const TIPS=[
   {id:'goal',when:()=>day()===0&&S.loc==='home'&&tod()<600,t:'👋 Welcome to the island, {{name}}! Today’s goal: get to work in Lakewood by <b>9:00</b>. Your car is here. Open <b>🧭 Go somewhere</b> below and drive to the <b>Anderson Island Ferry Landing</b>.'},
   {id:'dock',when:()=>S.loc==='aiDock',t:'⛴️ You have to be <b>in line 20 minutes before</b> a boat leaves, or you don’t board. Tap <b>Drive on the next sailing</b>. The ⛴️ Ferry tab has the schedule and a <b>trip planner</b>.'},
   {id:'mainland',when:()=>S.loc==='stDock'&&day()===0&&tod()<720,t:'🌆 Welcome to Steilacoom. Drive to <b>Work (Lakewood)</b>. After work, pick up groceries: your pantry only has a couple of days of food.'},
-  {id:'work',when:()=>S.loc===(curJob()?curJob().loc:'work')&&day()<5&&!S.worked[day()],t:'💼 Tap <b>Work a full shift</b>. The clock jumps to the end of your shift and you get paid.'},
+  {id:'work',when:()=>S.loc===(curJob()?curJob().loc:'work')&&(curJob()?curJob().days.includes(day()):day()<5)&&!S.worked[day()],t:'💼 Tap <b>Work a full shift</b>. The clock jumps to the end of your shift and you get paid.'},
   {id:'groceries',when:()=>L[S.loc].side==='M'&&S.worked[day()]&&S.pantry<=2&&!S.carried,t:'🛒 Groceries are cheaper over here: try the <b>Supermarket (Lakewood)</b>. Then head back to the Steilacoom terminal. Evening boats fill up with cars, so leave time.'},
   {id:'fuel',when:()=>L[S.loc].side==='M'&&carHere()&&carHere().fuel<6,t:'⛽ There’s <b>no gas on the island</b>, and gas cans are banned on the ferry. Fill up at the <b>Gas Station (Steilacoom)</b> while you’re over here.'},
   {id:'bed',when:()=>S.loc==='home'&&tod()>=1080,t:'🛏️ Before bed, set your <b>⏰ alarms</b>: the plug-in clock, your phone, or both as backups. Each night you eat a day of food from the pantry.'},
@@ -273,7 +273,7 @@ function ferryView(){
 function todoItems(){
   const d=day(),m=tod(),it=[];
   const J=curJob();
-  if(J) J.days.filter(i=>jobStarted(i)).forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
+  if(J) J.days.slice().sort((a,b)=>a-b).filter(i=>jobStarted(i)).forEach(i=>it.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${L[J.loc].name}`,urgent:i===d&&!S.worked[i]&&m<J.start+240}));
   else it.push({ok:false,fail:false,l:'Find a job',s:'🔎 Look for a job in the 💼 Gig Work app or on the bulletin board at the old store, then make the interview.',urgent:!S.interview});
   if(S.interview) it.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${ivDay(S.interview)} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
   if(apptActive()) it.push({ok:S.appt,fail:S.apptMissed||(d>APPT_DAY)||(d===APPT_DAY&&m>885&&!S.appt),l:'Doctor’s appointment',s:`${DAYS[APPT_DAY]} 2:30 PM, Medical Clinic (Tacoma). Arrive 2:00–2:45.`,urgent:d===2&&!S.appt&&m<=885});

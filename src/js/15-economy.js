@@ -16,7 +16,7 @@ function woodPrice(){const s=typeof seasonId==='function'?seasonId():'fall';retu
 const henLay=()=>{const s=typeof seasonId==='function'?seasonId():'fall';return ({winter:0.5,summer:0.9})[s]??0.7};
 // ---- ⏱️ overtime ----
 function otActions(a,d,m){
-  const J=curJob(),E=ECO(),dk=dayKey();if(!J||S.emp==='riv'||S.loc!==J.loc||!J.days.includes(d)||!S.worked[d])return;
+  const J=curJob(),E=ECO(),dk=dayKey();if(!J||S.emp==='riv'||L[J.loc].side!=='M'||S.loc!==J.loc||!J.days.includes(d)||!S.worked[d])return;
   if(E.ot===dk){a.push({cat:'work',ic:'⏱️',l:'Overtime done for today',s:'Once a day is plenty.',dis:true});return}
   if(E.full!==dk||m<J.end||m>J.end+30)return;
   const pay=otPay(J),end=S.t+OT_HOURS*60,arr=end+dist(J.loc,'stDock');

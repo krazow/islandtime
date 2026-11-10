@@ -46,7 +46,7 @@ function dailyCard(d){
   const dm=Math.round(S.money-D.money),w=S.stats.waited-D.waited,c=S.stats.crossings-D.cross;
   const evs=S.ev.history.slice(D.ev).map(h=>(TILE_META[h.id]||['📍'])[0]);
   const parts=[`🏠 ${S.home}`,`💵 ${dm>=0?'+':'−'}$${Math.abs(dm)}`,`⛴️ ${c} crossing${c===1?'':'s'}`,`⏳ ${w} min waiting for boats`];
-  if(d<5) parts.push(S.worked[d]?(S.late[d]?`💼 worked (${S.late[d]} min late)`:'💼 worked, on time'):'💼 missed work');
+  {const J=curJob();if(J?J.days.includes(d)&&jobStarted(d):d<5) parts.push(S.worked[d]?(S.late[d]?`💼 worked (${S.late[d]} min late)`:'💼 worked, on time'):'💼 missed work');}
   return `<div class="today"><b>${DAYS[d]} in review</b>${parts.join(' · ')}${evs.length?`<br>Island events: ${evs.join(' ')}`:''}</div>`;
 }
 function endDay(where){
