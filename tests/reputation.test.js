@@ -65,7 +65,7 @@ module.exports = [
     assert.deepStrictEqual(r.enemies, []);
     noErrors(errors);
   } },
-  { name: 'reputation: never drifts down; a bad name heals; the house doesn’t cost reputation; gifts on the porch', fn: async ctx => {
+  { name: 'reputation: never drifts down; a bad name heals; a neglected house still costs reputation; gifts on the porch', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => {
@@ -79,7 +79,7 @@ module.exports = [
     });
     assert.strictEqual(r.drift, 40, 'no good deeds lately is not a bad deed');
     assert.strictEqual(r.heal, -25, 'a bad name fades slowly');
-    assert.strictEqual(r.house, 0, 'a run-down house is not on purpose');
+    assert.strictEqual(r.house, -5, 'a week of a neglected house still costs reputation');
     assert.ok(r.gift.length > 10 && r.changed, 'a gift: ' + r.gift);
     noErrors(errors);
   } },

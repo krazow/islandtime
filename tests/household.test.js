@@ -164,6 +164,13 @@ module.exports = [
     const rc = await page.evaluate(() => { HH().trash = 12; S.home = 60; S.stress = 20; S.ev.force = ['raccoons']; const notes = []; fireHook('night', { where: 'home', notes }); return { home: S.home, stress: S.stress, notes: notes.join(' ') }; });
     assert.match(rc.notes, /Raccoons/);
     assert.ok(rc.home <= 54 && rc.stress >= 25, JSON.stringify(rc));
+    // no reputation loss, but an hour of cleanup first thing next morning (and only at home)
+    const mc = await page.evaluate(() => { const r0 = S.rep; S.cur = day() + 1; S.t = S.cur * 1440 + 360; S.loc = 'home'; S.log = []; startDay();
+      return { rep: S.rep - r0, t: tod(), log: S.log.map(l => l.s).join(' '), again: (() => { const t = S.t; startDay(); return S.t - t; })() }; });
+    assert.strictEqual(mc.rep, 0, 'raccoons are not your fault');
+    assert.strictEqual(mc.t, 420, 'an hour of cleanup: 6:00 → 7:00');
+    assert.match(mc.log, /an hour in rubber gloves/);
+    assert.strictEqual(mc.again, 0, 'only once');
     // trash builds up overnight at home and costs a little Home when it piles up
     const n = await page.evaluate(() => { HH().trash = 8; S.home = 60; const notes = []; hhNight('home', notes, 2); return { trash: HH().trash, home: S.home }; });
     assert.deepStrictEqual(n, { trash: 9, home: 59 });

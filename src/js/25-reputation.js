@@ -1,6 +1,7 @@
 // ---- 🤲 island reputation: −100 to +100 ----
 // It only goes DOWN for things you do on purpose (an arrest, a gas-can bust, Dale runs,
-// cancelling on a helper at the last minute, gouging during the storm); neglect, bad luck and time never lower it.
+// cancelling on a helper at the last minute, gouging during the storm) and for a house left to fall apart (Home under 25 for a week);
+// bad luck and time never lower it.
 // S.rep is the score (0 = newcomer). S.repx holds the rest: the "Known for" list, enemies, drift clocks,
 // the Riv weekend-shift meter lives in ECO().rivJob (15-economy.js). Perks (15-economy REP_PERKS) unlock at +20/+35/+60.
 const REP_MIN=-100,REP_MAX=100;
@@ -40,6 +41,8 @@ function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
   if(r<0){if(dk-R.healAt>=14){R.healAt=dk;repAdd(5,'people are starting to forget',{notes})}}else R.healAt=dk;
   // "that house"
   // enemies bad-mouth you now and then
+  // a neglected house (Home under 25 for a week) gets talked about: neglect you can see from the road
+  if((S.home??70)<25){R.homeLow=(R.homeLow||0)+1;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
   // a grudge fades after about four weeks
   for(const e of R.enemies.slice())if(dk-e.since>=28){R.enemies=R.enemies.filter(x=>x!==e);notes.push(`🙂 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} nods at you in the ferry line. Whatever it was, they’ve let it go.`)}
   // persona non grata: a casual friend stops answering (about once a week)

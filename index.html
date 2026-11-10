@@ -3864,7 +3864,10 @@ Object.assign(TILE_META,{puppy_litter:['🐶','The neighbors’ dog had puppies'
 defEvent({id:'puppy_litter',hook:'wake',priority:2,max:1,cond:()=>S.loc==='home'&&!HH().dog&&HH().puppy<0&&!HH().once.puppy&&dayKey()>=3,chance:0.2,
   run(){const H=HH();H.once.puppy=1;H.puppy=dayKey()+3;say(`🐶 A hand-lettered sign at the end of the road: “FREE PUPPIES. Lab, mostly. Ask the kids.” The kids have already spotted you. (Adopt from 🏠 Inside the house, until ${DAYS[H.puppy%7]}. Or don’t: they’re very persuasive, but it’s a lot.)`)}});
 defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.5,0.15+0.05*(HH().trash-8)),
-  run(ctx){homeAdj(-6);adj('stress',5);ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. (Dump run: ${hhDumpTxt()}.)`)}});
+  run(ctx){homeAdj(-6);adj('stress',5);HH().racMess=dayKey()+1;ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. It’ll take an hour to clean up in the morning. (Dump run: ${hhDumpTxt()}.)`)}});
+// the morning after the raccoons: an hour of cleanup before anything else, which can cost you a boat
+{const _sd=startDay;startDay=function(){const r=_sd.apply(this,arguments);try{const H=HH();if(H.racMess!=null&&H.racMess>=0&&H.racMess<=dayKey()){H.racMess=-1;if(S.loc==='home'){S.t+=60;try{phoneTick()}catch(e){}adj('stress',3);
+  say(`🦝 First thing this morning: an hour in rubber gloves, picking coffee grounds and yogurt cups out of the salal before the crows finish the job. It’s ${fmt(tod())} by the time you’re done.`);showTile('🦝','An hour of raccoon cleanup',`It’s ${fmt(tod())} now`,'bad')}}}catch(e){console.error(e)}return r}}
 // ---- To-do ----
 function hhTodo(it){
   const H=HH(),dk=dayKey();
@@ -4949,7 +4952,8 @@ document.addEventListener('keydown',e=>{
     .observe(document.body,{childList:true,subtree:true})}catch(e){}}
 // ---- 🤲 island reputation: −100 to +100 ----
 // It only goes DOWN for things you do on purpose (an arrest, a gas-can bust, Dale runs,
-// cancelling on a helper at the last minute, gouging during the storm); neglect, bad luck and time never lower it.
+// cancelling on a helper at the last minute, gouging during the storm) and for a house left to fall apart (Home under 25 for a week);
+// bad luck and time never lower it.
 // S.rep is the score (0 = newcomer). S.repx holds the rest: the "Known for" list, enemies, drift clocks,
 // the Riv weekend-shift meter lives in ECO().rivJob (15-economy.js). Perks (15-economy REP_PERKS) unlock at +20/+35/+60.
 const REP_MIN=-100,REP_MAX=100;
@@ -4989,6 +4993,8 @@ function repNight(where,notes){const R=REP(),dk=dayKey(),r=repVal();
   if(r<0){if(dk-R.healAt>=14){R.healAt=dk;repAdd(5,'people are starting to forget',{notes})}}else R.healAt=dk;
   // "that house"
   // enemies bad-mouth you now and then
+  // a neglected house (Home under 25 for a week) gets talked about: neglect you can see from the road
+  if((S.home??70)<25){R.homeLow=(R.homeLow||0)+1;if(R.homeLow>=7){R.homeLow=0;repAdd(-5,'the neighbors are talking about your house',{notes})}}else R.homeLow=0;
   // a grudge fades after about four weeks
   for(const e of R.enemies.slice())if(dk-e.since>=28){R.enemies=R.enemies.filter(x=>x!==e);notes.push(`🙂 ${e.who.charAt(0).toUpperCase()+e.who.slice(1)} nods at you in the ferry line. Whatever it was, they’ve let it go.`)}
   // persona non grata: a casual friend stops answering (about once a week)
