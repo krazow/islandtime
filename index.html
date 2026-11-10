@@ -2215,6 +2215,33 @@ function loadSave(n){
   catch(e){try{const ls=store(),sn=n||curSlot();ls.setItem('islandtime.save.broken'+(sn>1?'.slot'+sn:''),r.v);slotKeys(sn).forEach(k=>ls.removeItem(k))}catch(_){}
     saveNotice='Your saved game couldn’t be read, so it was set aside. Start a new week.';return null}
 }
+// ---- update notice: shown on the title screen once per app version
+const SEEN_KEY='islandtime.seenVersion';
+let updateShown=false;
+// Rewrite every older saved game (slots 1-3) in the current format. Returns {up:[{n,was}], bad:[n]}.
+function upgradeSaves(){const ls=store(),up=[],bad=[];if(!ls)return {up,bad};
+  for(let n=1;n<=SLOT_N;n++){const r=rawSave(n);if(!r)continue;
+    try{const d=JSON.parse(r.v),from=d.schema||(d&&d.S&&d.S.cargo?2:1);
+      const old=verCmp(d.app||'0',APP_VERSION)<0||from<SAVE_SCHEMA;
+      if(!old||from>SAVE_SCHEMA||verCmp(d.app||'0',APP_VERSION)>0)continue;
+      const m=migrate(d),v=JSON.stringify({schema:SAVE_SCHEMA,app:APP_VERSION,S:m.S,uiNarr:m.uiNarr,tab:m.tab,at:d.at||r.at||Date.now()});
+      JSON.parse(v);slotKeys(n).forEach(k=>ls.setItem(k,v));up.push({n,was:d.app||'an older version'})}
+    catch(e){bad.push(n)}}
+  return {up,bad}}
+// Called by titleScreen(): returns a function that shows the pop-up (or null when there is nothing to say).
+function updateNotice(){if(updateShown)return null;const ls=store();if(!ls)return null;
+  let seen=null;try{seen=ls.getItem(SEEN_KEY)}catch(e){}
+  if(seen===APP_VERSION)return null;
+  const has=[1,2,3].some(n=>rawSave(n));
+  const mark=()=>{try{ls.setItem(SEEN_KEY,APP_VERSION)}catch(e){}};
+  if(!seen&&!has){mark();return null}
+  updateShown=true;
+  const {up,bad}=upgradeSaves();
+  return ()=>{
+    let h=`<p>You’re now on version ${esc(APP_VERSION)}${seen?` (from version ${esc(seen)})`:''}.</p>`;
+    if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`slot ${u.n} (was ${esc(u.was)})`).join(', ')}.</p>`;
+    if(bad.length)h+=`<p>${bad.map(n=>`Slot ${n} couldn’t be updated`).join('; ')}.</p>`;
+    modal('🎉 Island Time updated',h,[{l:'Got it',fn:mark}],true)}}
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;
   render();
@@ -2595,7 +2622,7 @@ let MQ=[];
 function modal(title,body,btns,noClose){
   if(document.getElementById('mbg')){MQ.push([title,body,btns,noClose]);return}
   MB=btns;
-  const el=document.createElement('div');el.className='modal-bg';el.id='mbg';
+  const el=document.createElement('div');el.className='modal-bg';el.id='mbg';if(noClose)el.dataset.lock='1';
   el.innerHTML=withName(`<div class="modal"><h2>${title}</h2><div class="mb">${body}</div>${btns.map((b,i)=>`<button class="act ${i===0&&!b.dis?'primary':''}" ${b.dis?'disabled':''} onclick="MBTN(${i})"><span class="tx"><b>${b.l}</b>${b.s?'<span>'+b.s+'</span>':''}</span></button>`).join('')}</div>`);
   document.body.appendChild(el);
 }
@@ -2742,7 +2769,7 @@ function slotSwitchModal(){const cur=curSlot();
 
 // ---------------- title ----------------
 function clearTiles(){tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove())}
-function titleScreen(){clearTiles();
+function titleScreen(){clearTiles();const showUpdate=updateNotice();
   app.innerHTML=withName(`<div class="title"><button class="tgear" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="art"><svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbcc4"/><stop offset="1" stop-color="#e2e6dc"/></linearGradient></defs><rect width="480" height="250" fill="url(#ts)"/><rect y="96" width="480" height="154" fill="#1d4b5a"/>
    <polygon points="250,95 330,25 345,36 356,28 440,95" fill="#e9eef0"/><polygon points="310,43 330,25 345,36 356,28 375,45 355,42 342,48 328,40" fill="#fff"/>
    ${Array.from({length:16},(_,i)=>{const x=i*32-10,h=50+((i*29)%45);return `<polygon points="${x},96 ${x+16},${96-h} ${x+32},96" fill="#2f5d4a"/>`}).join('')}
@@ -2759,6 +2786,7 @@ function titleScreen(){clearTiles();
   ${!isStandalone()&&isIOS()?'<div class="hint">📲 <b>Play it like an app:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It works offline, too.</div>':''}
   <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun. The schedule, prices and people are made up. The store closure and the fuel rules are real as of mid-2026.</div></div></div>`);
   exitNotice='';
+  if(showUpdate)showUpdate();
 }
 titleScreen();
 // ---------------- 📱 phone: core (screen, app system, timers) ----------------
@@ -4952,7 +4980,7 @@ document.addEventListener('keydown',e=>{
   const {where,list}=keyTargets();
   if(/^[1-9]$/.test(k)){const b=list[+k-1];if(b){e.preventDefault();b.click()}return}
   if(where==='modal'){
-    if(k==='Escape'){const b=[...list].reverse().find(x=>KEY_CLOSE.test(((x.querySelector('.tx b')||x).textContent||'').trim()));if(b){e.preventDefault();b.click()}}
+    if(k==='Escape'&&!document.getElementById('mbg').dataset.lock){const b=[...list].reverse().find(x=>KEY_CLOSE.test(((x.querySelector('.tx b')||x).textContent||'').trim()));if(b){e.preventDefault();b.click()}}
     return}
   if(where!=='main')return;
   if(KEY_TABS[lk]){e.preventDefault();setTab(KEY_TABS[lk]);return}

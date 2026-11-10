@@ -335,7 +335,7 @@ let MQ=[];
 function modal(title,body,btns,noClose){
   if(document.getElementById('mbg')){MQ.push([title,body,btns,noClose]);return}
   MB=btns;
-  const el=document.createElement('div');el.className='modal-bg';el.id='mbg';
+  const el=document.createElement('div');el.className='modal-bg';el.id='mbg';if(noClose)el.dataset.lock='1';
   el.innerHTML=withName(`<div class="modal"><h2>${title}</h2><div class="mb">${body}</div>${btns.map((b,i)=>`<button class="act ${i===0&&!b.dis?'primary':''}" ${b.dis?'disabled':''} onclick="MBTN(${i})"><span class="tx"><b>${b.l}</b>${b.s?'<span>'+b.s+'</span>':''}</span></button>`).join('')}</div>`);
   document.body.appendChild(el);
 }

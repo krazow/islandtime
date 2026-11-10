@@ -89,6 +89,33 @@ function loadSave(n){
   catch(e){try{const ls=store(),sn=n||curSlot();ls.setItem('islandtime.save.broken'+(sn>1?'.slot'+sn:''),r.v);slotKeys(sn).forEach(k=>ls.removeItem(k))}catch(_){}
     saveNotice='Your saved game couldn’t be read, so it was set aside. Start a new week.';return null}
 }
+// ---- update notice: shown on the title screen once per app version
+const SEEN_KEY='islandtime.seenVersion';
+let updateShown=false;
+// Rewrite every older saved game (slots 1-3) in the current format. Returns {up:[{n,was}], bad:[n]}.
+function upgradeSaves(){const ls=store(),up=[],bad=[];if(!ls)return {up,bad};
+  for(let n=1;n<=SLOT_N;n++){const r=rawSave(n);if(!r)continue;
+    try{const d=JSON.parse(r.v),from=d.schema||(d&&d.S&&d.S.cargo?2:1);
+      const old=verCmp(d.app||'0',APP_VERSION)<0||from<SAVE_SCHEMA;
+      if(!old||from>SAVE_SCHEMA||verCmp(d.app||'0',APP_VERSION)>0)continue;
+      const m=migrate(d),v=JSON.stringify({schema:SAVE_SCHEMA,app:APP_VERSION,S:m.S,uiNarr:m.uiNarr,tab:m.tab,at:d.at||r.at||Date.now()});
+      JSON.parse(v);slotKeys(n).forEach(k=>ls.setItem(k,v));up.push({n,was:d.app||'an older version'})}
+    catch(e){bad.push(n)}}
+  return {up,bad}}
+// Called by titleScreen(): returns a function that shows the pop-up (or null when there is nothing to say).
+function updateNotice(){if(updateShown)return null;const ls=store();if(!ls)return null;
+  let seen=null;try{seen=ls.getItem(SEEN_KEY)}catch(e){}
+  if(seen===APP_VERSION)return null;
+  const has=[1,2,3].some(n=>rawSave(n));
+  const mark=()=>{try{ls.setItem(SEEN_KEY,APP_VERSION)}catch(e){}};
+  if(!seen&&!has){mark();return null}
+  updateShown=true;
+  const {up,bad}=upgradeSaves();
+  return ()=>{
+    let h=`<p>You’re now on version ${esc(APP_VERSION)}${seen?` (from version ${esc(seen)})`:''}.</p>`;
+    if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`slot ${u.n} (was ${esc(u.was)})`).join(', ')}.</p>`;
+    if(bad.length)h+=`<p>${bad.map(n=>`Slot ${n} couldn’t be updated`).join('; ')}.</p>`;
+    modal('🎉 Island Time updated',h,[{l:'Got it',fn:mark}],true)}}
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;
   render();

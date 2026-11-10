@@ -122,7 +122,7 @@ function slotSwitchModal(){const cur=curSlot();
 
 // ---------------- title ----------------
 function clearTiles(){tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove())}
-function titleScreen(){clearTiles();
+function titleScreen(){clearTiles();const showUpdate=updateNotice();
   app.innerHTML=withName(`<div class="title"><button class="tgear" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="art"><svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbcc4"/><stop offset="1" stop-color="#e2e6dc"/></linearGradient></defs><rect width="480" height="250" fill="url(#ts)"/><rect y="96" width="480" height="154" fill="#1d4b5a"/>
    <polygon points="250,95 330,25 345,36 356,28 440,95" fill="#e9eef0"/><polygon points="310,43 330,25 345,36 356,28 375,45 355,42 342,48 328,40" fill="#fff"/>
    ${Array.from({length:16},(_,i)=>{const x=i*32-10,h=50+((i*29)%45);return `<polygon points="${x},96 ${x+16},${96-h} ${x+32},96" fill="#2f5d4a"/>`}).join('')}
@@ -139,5 +139,6 @@ function titleScreen(){clearTiles();
   ${!isStandalone()&&isIOS()?'<div class="hint">📲 <b>Play it like an app:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It works offline, too.</div>':''}
   <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun. The schedule, prices and people are made up. The store closure and the fuel rules are real as of mid-2026.</div></div></div>`);
   exitNotice='';
+  if(showUpdate)showUpdate();
 }
 titleScreen();

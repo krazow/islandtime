@@ -6,7 +6,8 @@ const TARGETS = [{ name: 'index.html', file: path.resolve(__dirname, '..', 'inde
 const offline = path.resolve(__dirname, '..', 'offline', 'IslandTime-offline.html');
 if (fs.existsSync(offline)) TARGETS.push({ name: 'offline', file: offline });
 
-const PREFS = { 'islandtime.name': 'T', 'islandtime.popups': 'off', 'islandtime.prefs': JSON.stringify({ tips: false, sound: false }) };
+const APP_VERSION_NOW = (/APP_VERSION='([^']+)'/.exec(fs.readFileSync(path.resolve(__dirname, '..', 'src', 'js', '01-core.js'), 'utf8')) || [])[1];
+const PREFS = { 'islandtime.seenVersion': APP_VERSION_NOW, 'islandtime.name': 'T', 'islandtime.popups': 'off', 'islandtime.prefs': JSON.stringify({ tips: false, sound: false }) };
 
 // Runs before any page script: an optional seeded Math.random (mulberry32). It must not touch localStorage:
 // in Chromium, storage read at document creation during a file:// reload can be a stale snapshot that
