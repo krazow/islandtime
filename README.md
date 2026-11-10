@@ -39,6 +39,18 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.15: island delivery
+
+The island post office was inside the old store building, so it closed with the store. Now the carriers come to you.
+- 📬 **Mail comes to your mailbox at home.** USPS delivers Monday to Saturday; today's mail is there after about 1 PM. "Check the mailbox" is in the 🏠 list at home. There's no more P.O. box.
+- 📦 **USPS, UPS and FedEx deliver packages to your porch.** When you order online, pick how it ships:
+  - 📮 USPS Ground Advantage: free, 3 days, no Sunday delivery, arrives by 1 PM.
+  - 🟫 UPS Ground: $6, 2 days, weekdays only, arrives by 4 PM.
+  - 🟪 FedEx overnight: $14, next day, no Sunday delivery, arrives by 11 AM.
+  - 🏪 Hold at the Steilacoom pickup counter: free, 2 days, as before.
+- Deliveries that land on a Sunday (or a Saturday, for UPS) slide to the next delivery day. Packages wait on the porch until you bring them in, and you bring them in automatically when you sleep at home. The to-do list tracks what's on the way.
+- ❓ **1 in 10 deliveries goes to the wrong address.** A letter just never shows up. For a package, tracking says "delivered", and it isn't on your porch. For now these are recorded as missing; a way to track them down is coming.
+
 ### 1.14.1: the real ferry and local fixes
 
 - ⛴️ **The real 2026 ferry schedule.** Departures, the 7:35 commute boat, the midday gap, the first and last boats, Ketron stops and the Monday fuel run (skipped on holidays) now match Pierce County's published 2026 timetable. Summer adds the extra peak runs, and July 2–5 runs two boats.
@@ -46,7 +58,7 @@
 - 🌙 **The Steilacoom terminal isn't open all night.** Stranded after the last boat, you sleep in your car in the ferry lot or on the covered bench outside. Same cost to your stress and health.
 - 📦 **No parcel lockers.** Packages and Mainland Market groceries wait at a pickup counter by the Steilacoom ferry landing.
 - 🎄 **The holiday craft bazaar** is at the new **American Legion Hall** location on the island.
-- 📬 The post office is on Eckenstam-Johnson Road. The lake cleanup stays at Lake Josephine (the lakes aren't connected).
+- The lake cleanup stays at Lake Josephine (the lakes aren't connected).
 
 ### New in 1.14: eight real phone apps, a guided first week, feedback
 **Phone apps** (5 slots, 8 to choose from; the old placeholder apps are retired and their slots freed)
@@ -148,8 +160,8 @@ So every setup comes out ahead, and none is more than about 30% better than the 
 **Household life**
 
 - 🧾 **Bills.** Electric (Island Power & Light Co-op), internet (OneBar Wireless), phone and home insurance (Fir & Tide Mutual), each due on its own day. In a one-week game they’re all due that week; in a month they’re spread out. Pay at home (🏠 Inside the house → 🧾 Pay bills): online in 5 minutes, or mail a check that takes 2 days to get there. Late means a late fee and a little stress. After a week you get a stern letter (the co-op’s is pink). After two weeks it goes to collections and lands on your card with a fee on top; for electric, that fee is the reconnect. Anything still unpaid when the game ends gets settled then. Electric runs higher in winter and lower in summer.
-- 📬 **Mail.** Letters arrive Monday to Saturday in your P.O. box at the island post office on Eckenstam-Johnson Road: bill statements, a seed catalog, a jury summons you get out of by living on an island, the co-op newsletter, and now and then a check for $12.40.
-- 📦 **Packages.** Order online at home: mouse traps, a power bank, a well-pump pressure switch, dog food. Nobody delivers to the island, so orders wait 2 days at a pack-and-ship counter by the Steilacoom ferry landing. Pick them up on your way through. After a week the lockers send them back (refund, minus $5).
+- 📬 **Mail.** USPS brings letters to your mailbox at home, Monday to Saturday after about 1 PM: bill statements, a seed catalog, a jury summons you get out of by living on an island, the co-op newsletter, and now and then a check for $12.40.
+- 📦 **Packages.** Order online at home: mouse traps, a power bank, a well-pump pressure switch, dog food. Pick a carrier (see 1.15) or have it held at the pickup counter by the Steilacoom ferry landing.
 - 🗑️ **Trash and dump runs.** A bag a night piles up by the shed. The island transfer station is open Wed, Sat and Sun, 9 AM–3 PM (also Fridays in summer, from 10 AM in winter). The dump run is in 🌲 Outside & property: load the car, 50 minutes, about a gallon of gas, $8–24. At 8+ bags the house slips a little each night, and raccoons may spread it across the yard.
 - 🐶 **A dog (optional).** A neighbor’s litter may turn up at the end of the road, or the county shelter van parks in the Steilacoom terminal lot on Saturdays ($85). A dog needs food (a bag lasts 30 days: Lakewood supermarket, Warehouse Club or online) and a walk every day. Walking at Lake Josephine counts and you might meet someone. A fed, walked dog lowers your stress at night. A hungry or unwalked one costs Home and stress, and so does leaving it alone overnight. If you never adopt, none of this costs you anything.
 - 🍳 **Cooking at home.** Cook a real dinner (4–10 PM, 45 min): health +2, stress −4, no extra food, and cheaper than the Riv. On a day off, batch-cook (2 hours): +1 day of food and 5 nights of good leftovers.

@@ -75,29 +75,45 @@ module.exports = [
     assert.strictEqual(r.d, 118 + 15 + 69 + 55 + 84);
     noErrors(errors);
   } },
-  { name: 'mail: statements and letters land in the P.O. box at the old store', fn: async ctx => {
+  { name: 'mail: USPS brings statements and letters to your mailbox at home after 1 PM', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
-    await page.evaluate(() => { const H = HH(); H.box = []; for (let d = 0; d < 4; d++) hhMailNight(d, d); H.box.push({ k: 'seeds', at: 0 }, { k: 'jury', at: 0 }); });
+    await page.evaluate(() => { DELIVERY_WRONG = 0; const H = HH(); H.box = []; for (let d = 0; d < 4; d++) hhMailNight(d, d); H.box.push({ k: 'seeds', at: 4 }, { k: 'jury', at: 4 }); });
     const box = await page.evaluate(() => HH().box.map(x => x.k));
     assert.ok(box.includes('bill'), 'bill statements: ' + box);
-    await page.evaluate(() => { S.cur = 4; S.t = 4 * 1440 + 700; S.loc = 'store'; tab = 'act'; render(); });
+    await page.evaluate(() => { S.cur = 4; S.t = 4 * 1440 + 700; S.loc = 'home'; tab = 'act'; render(); });
+    assert.ok(!(await page.evaluate(() => hhMailHere().some(x => x.k === 'seeds'))), 'today’s mail isn’t here before 1 PM');
+    await page.evaluate(() => { S.t = 4 * 1440 + 800; render(); });
     const n = await page.evaluate(() => hhMailHere().length);
-    await page.locator('.content button.act', { hasText: `Check your P.O. box (${n})` }).click();
+    await page.evaluate(() => { const a = actions().find(a => /^Check the mailbox/.test(a.l)); a.fn(); });
     const m = await page.textContent('#mbg');
+    assert.ok(n >= 3);
     assert.match(m, /seed catalog/);
     assert.match(m, /jury summons/);
     assert.match(m, /A statement from/);
     assert.strictEqual(await page.evaluate(() => hhMailHere().length), 0, 'box emptied');
+    assert.strictEqual(await page.evaluate(() => actions().some(a => /P\.O\. box/.test(a.l))), false, 'no P.O. box anywhere');
     noErrors(errors);
   } },
-  { name: 'packages: order traps online, pick them up at the Steilacoom shipping counter', fn: async ctx => {
+  { name: 'mail: 1 in 10 pieces goes to the wrong mailbox', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(() => { const H = HH(); H.box = []; H.missing = [];
+      DELIVERY_WRONG = 1; for (let d = 0; d < 4; d++) hhMailNight(d, d); const all = { box: H.box.length, miss: H.missing.filter(x => x.kind === 'mail').length };
+      DELIVERY_WRONG = 0.1; H.box = []; H.missing = []; let n = 0; for (let i = 0; i < 400; i++) { H.box.push({ k: 'flyer', at: 100 + i }); hhMailNight(99 + i, 0); n++; }
+      return { all, rate: H.missing.length / n }; });
+    assert.strictEqual(r.all.box, 0); assert.ok(r.all.miss >= 1);
+    assert.ok(r.rate > 0.04 && r.rate < 0.17, 'about 10%: ' + r.rate);
+    noErrors(errors);
+  } },
+  { name: 'packages: hold at the Steilacoom pickup counter', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     await atHome(page, 1, 1100);
     await page.evaluate(() => { UP().trapsOwned = false; hhShopModal(); });
     await page.locator('#mbg button.act', { hasText: 'Mouse traps' }).click();
-    assert.deepStrictEqual(await page.evaluate(() => HH().pkgs.map(p => p.k)), ['traps']);
+    await page.locator('#mbg button.act', { hasText: 'Steilacoom pickup counter' }).click();
+    assert.deepStrictEqual(await page.evaluate(() => HH().pkgs.map(p => [p.k, p.via])), [['traps', 'counter']]);
     // not there yet the next day
     await page.evaluate(() => { S.cur = 2; S.t = 2 * 1440 + 900; S.loc = 'stDock'; render(); });
     assert.strictEqual(await page.locator('.content button.act', { hasText: 'shipping counter' }).count(), 0);
@@ -105,6 +121,30 @@ module.exports = [
     assert.ok(await page.evaluate(() => todoItems().some(x => x.l === 'Pick up your packages')));
     await page.locator('.content button.act', { hasText: 'Pick up 1 package' }).click();
     assert.deepStrictEqual(await page.evaluate(() => [UP().trapsOwned, HH().pkgs.length]), [true, 0]);
+    noErrors(errors);
+  } },
+  { name: 'packages: UPS to the porch on a weekday; FedEx skips Sunday; wrong address goes missing', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    await atHome(page, 1, 1100);
+    await page.evaluate(() => { DELIVERY_WRONG = 0; UP().trapsOwned = false; S.money = 500; hhShopModal(); });
+    await page.locator('#mbg button.act', { hasText: 'Mouse traps' }).click();
+    await page.locator('#mbg button.act', { hasText: 'UPS Ground' }).click();
+    const p = await page.evaluate(() => HH().pkgs[0]);
+    assert.strictEqual(p.via, 'ups'); assert.strictEqual(p.at % 7, 3, 'Tuesday + 2 days = Thursday');
+    assert.ok(await page.evaluate(() => todoItems().some(x => x.l === 'Packages on the way')));
+    await page.evaluate(() => { S.cur = 3; S.t = 3 * 1440 + 900; render(); });
+    assert.strictEqual(await page.evaluate(() => hhPorch().length), 0, 'not before 4 PM');
+    await page.evaluate(() => { S.t = 3 * 1440 + 970; render(); });
+    await page.evaluate(() => actions().find(a => a.l === 'Bring in 1 package from the porch').fn());
+    assert.deepStrictEqual(await page.evaluate(() => [UP().trapsOwned, HH().pkgs.length]), [true, 0]);
+    // ordered Fri/Sat: nobody delivers Sunday, UPS not Saturday either, so all three land Monday
+    const at = await page.evaluate(() => [hhArrive('fedex', 5), hhArrive('ups', 4), hhArrive('usps', 4)].map(x => x % 7));
+    assert.deepStrictEqual(at, [0, 0, 0]); assert.strictEqual(await page.evaluate(() => hhArrive('usps', 2) % 7), 5, 'USPS does Saturdays');
+    // wrong address
+    const w = await page.evaluate(() => { const H = HH(); H.missing = []; H.pkgs = [{ k: 'bank', at: 3, via: 'fedex', w: true, st: 'transit' }]; S.log = []; render();
+      return { pk: H.pkgs.length, miss: H.missing.map(x => [x.kind, x.k, x.via]), log: S.log.map(l => l.s).join(' '), bank: H.bank }; });
+    assert.strictEqual(w.pk, 0); assert.deepStrictEqual(w.miss, [['pkg', 'bank', 'fedex']]); assert.match(w.log, /wrong house/); assert.strictEqual(w.bank, false);
     noErrors(errors);
   } },
   { name: 'trash: dump run on an open day; too much trash brings raccoons', fn: async ctx => {

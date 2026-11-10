@@ -26,7 +26,7 @@ const { TARGETS } = require('./helpers');
           await t.fn({ context, target });
           pass++; console.log(`  ok   ${name} (${Date.now() - s} ms)`);
         } catch (e) {
-          fail++; console.log(`  FAIL ${name}\n       ${String(e && e.stack || e).split('\n').slice(0, 4).join('\n       ')}`);
+          fail++; console.log(`  FAIL ${name}\n       ${String(e && e.stack || e).split('\n').slice(0, +(process.env.LINES_ERR||4)).join('\n       ')}`);
         } finally { await context.close(); }
       }
     }

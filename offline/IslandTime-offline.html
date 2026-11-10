@@ -471,7 +471,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.14.1', SAVE_SCHEMA=6;
+const APP_VERSION='1.15.0', SAVE_SCHEMA=6;
 // Season of the current game: 'fall' (default, November), 'winter' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -3514,7 +3514,19 @@ function hhBillsNight(notes,dk){
 }
 // settle what's still owed when the game ends, so ignoring bills doesn't pay
 {const _fin=finish;finish=function(){try{if(S&&S.hh)for(const k in HH_BILLS){const b=HB(k);if(!b.paid){money(-(b.check>=0?0:hhOwed(k)));b.paid=true;b.how='end'}}}catch(e){}return _fin.apply(this,arguments)}}
-// ---- mail: letters land in your P.O. box at the island post office (on Eckenstam-Johnson Road) ----
+// ---- deliveries: USPS, UPS and FedEx all come to the island now ----
+// The island post office closed with the old store (it was inside the store building), so USPS brings mail
+// to your roadside mailbox, and every carrier leaves packages on your porch. 10% of deliveries go to the
+// wrong address: they land in H.missing (kind 'mail' or 'pkg') for a later "find your package" feature.
+let DELIVERY_WRONG=0.10; const MAIL_TIME=780;   // the USPS carrier reaches your road around 1 PM
+const CARRIERS={
+  usps:{ic:'📮',n:'USPS Ground Advantage',sh:'USPS',fee:0,days:3,dow:[0,1,2,3,4,5],time:780},
+  ups:{ic:'🟫',n:'UPS Ground',sh:'UPS',fee:6,days:2,dow:[0,1,2,3,4],time:960},
+  fedex:{ic:'🟪',n:'FedEx overnight',sh:'FedEx',fee:14,days:1,dow:[0,1,2,3,4,5],time:660},
+  counter:{ic:'🏪',n:'Hold at the Steilacoom pickup counter',sh:'the pickup counter',fee:0,days:2,dow:[0,1,2,3,4,5,6],time:0}};
+function hhArrive(via,dk){const C=CARRIERS[via];let at=dk+C.days;while(!C.dow.includes(at%7))at++;return at}
+const hhWrong=()=>Math.random()<DELIVERY_WRONG;
+function hhMissing(){const H=HH();if(!H.missing)H.missing=[];return H.missing}
 const HH_LETTERS={
   jury:{once:true,min:3,t:'⚖️ A jury summons from Pierce County Superior Court: report to Tacoma at 8:00 AM on a Monday. Fuel-run Monday. You check “undue hardship,” write “I live on an island,” and mail it back. You’re excused before the envelope dries.',fx:()=>adj('stress',-2)},
   seeds:{once:true,t:'🌱 A seed catalog thick as a phone book. You dog-ear thirty-one pages of heirloom tomatoes for a yard that gets four hours of sun, in July.',fx:()=>adj('stress',-3)},
@@ -3529,31 +3541,50 @@ function hhMailNight(dk,d){
   for(const k in HH_BILLS){const due=hhDue(k);if(!H.once['stmt_'+k]&&dk+1>=due-5&&dk+1<=due&&!HB(k).paid){H.once['stmt_'+k]=1;H.box.push({k:'bill',b:k,at:dk+1})}}
   if(Math.random()<0.35){const pool=Object.keys(HH_LETTERS).filter(k=>{const L2=HH_LETTERS[k];return !(L2.once&&H.once[k])&&!(L2.dog&&!H.dog)&&dk>=(L2.min||0)});
     if(pool.length){const k=pick(pool);if(HH_LETTERS[k].once)H.once[k]=1;H.box.push({k,at:dk+1})}}
+  // 1 in 10 pieces ends up in someone else's mailbox
+  H.box.forEach(x=>{if(x.at===dk+1&&x.w==null){x.w=hhWrong();if(x.w)hhMissing().push({kind:'mail',k:x.k,b:x.b,at:x.at})}});
+  H.box=H.box.filter(x=>!x.w);
   if(H.box.length>12)H.box=H.box.slice(-12);
 }
-const hhMailHere=()=>HH().box.filter(x=>x.at<=dayKey());
+const hhMailHere=()=>HH().box.filter(x=>x.at<dayKey()||(x.at===dayKey()&&tod()>=MAIL_TIME));
 function hhReadMail(){
   const H=HH(),here=hhMailHere();S.t+=10;
   const lines=here.map(x=>{if(x.k==='bill'){const B=HH_BILLS[x.b];return `${B.ic} A statement from ${B.who}: <b>${$(hhOwed(x.b))}</b>, ${HB(x.b).paid?'already paid. Nice.':hhDueTxt(x.b)+'.'}`}
     const L2=HH_LETTERS[x.k];if(!L2)return '📄 Something soggy and unreadable.';try{L2.fx&&L2.fx()}catch(e){}return L2.t});
   H.box=H.box.filter(x=>x.at>dayKey());
-  say(`📬 You check your P.O. box: ${here.length} piece${here.length===1?'':'s'} of mail.`);
-  modal('📬 Your P.O. box',lines.map(l=>`<p class="hh-letter">${l}</p>`).join('')+'<p style="font-size:12px;color:var(--mute)">The postmaster says hi. The postmaster always says hi.</p>',[{l:'OK',fn:()=>{}}]);
+  say(`📬 You walk out to the mailbox: ${here.length} piece${here.length===1?'':'s'} of mail.`);
+  modal('📬 Your mailbox',lines.map(l=>`<p class="hh-letter">${l}</p>`).join('')+'<p style="font-size:12px;color:var(--mute)">The mail carrier rides the 10:05 boat over and works the island roads in a right-hand-drive Jeep.</p>',[{l:'OK',fn:()=>{}}]);
   afterAction();
 }
-// ---- packages: order online, they wait at the pack-and-ship counter by the Steilacoom ferry landing ----
+// ---- packages: order online; USPS, UPS or FedEx bring it to your porch, or hold it at the Steilacoom counter ----
 const HH_SHOP={
   traps:{ic:'🪤',n:'Mouse traps (6-pack)',c:15,ok:()=>!UP().trapsOwned,get:()=>{UP().trapsOwned=true},t:'Six snap traps. Set them at home.'},
   bank:{ic:'🔋',n:'Power bank, 20,000 mAh',c:32,ok:()=>!HH().bank,get:()=>{HH().bank=true},t:'Keeps your phone alive through an outage, if you charge it before the storm.'},
   part:{ic:'🔧',n:'Well-pump pressure switch',c:26,ok:()=>!HH().part,get:()=>{HH().part=true},t:'The part that usually fails. Swap it in at home and the pump is good as new.'},
-  kibble:{ic:'🦴',n:'Dog food, 30-day bag',c:36,ok:()=>!!HH().dog,get:()=>{HH().dog.kibble+=30},t:'Heavy. Glad it’s the shipping counter’s problem until you pick it up.'}};
+  kibble:{ic:'🦴',n:'Dog food, 30-day bag',c:36,ok:()=>!!HH().dog,get:()=>{HH().dog.kibble+=30},t:'Forty pounds. Let the driver carry it to the porch.'}};
 function hhShopModal(){
   const H=HH(),opts=Object.keys(HH_SHOP).filter(k=>HH_SHOP[k].ok()&&!H.pkgs.some(p=>p.k===k)).map(k=>{const I=HH_SHOP[k];
-    return {l:`${I.ic} ${I.n} — $${I.c}`,s:`${I.t} Ships to the pack-and-ship counter by the Steilacoom ferry landing in 2 days.`,dis:S.money<I.c,fn:()=>{money(-I.c);S.t+=5;phoneTick();H.pkgs.push({k,at:dayKey()+2});
-      say(`📦 Ordered: ${I.n.toLowerCase()}. “Delivery to Anderson Island is not available,” says the checkout page, so it’s going to the pack-and-ship counter by the Steilacoom ferry landing.`);afterAction()}}});
-  modal('📦 Order online',`<p>Nobody delivers to the island. Packages go to the pack-and-ship counter by the Steilacoom ferry landing: grab them on your way through.</p>${opts.length?'':'<p><i>Nothing you need right now.</i></p>'}`,opts.concat([{l:'Never mind',fn:()=>{}}]));
+    return {l:`${I.ic} ${I.n} — $${I.c}`,s:I.t,dis:S.money<I.c,fn:()=>hhShipModal(k)}});
+  modal('📦 Order online',`<p>USPS, UPS and FedEx all deliver to Anderson Island: the trucks ride the ferry like everyone else. Or have it held at the pickup counter by the Steilacoom ferry landing.</p>${opts.length?'':'<p><i>Nothing you need right now.</i></p>'}`,opts.concat([{l:'Never mind',fn:()=>{}}]));
 }
-const hhPkgsReady=()=>HH().pkgs.filter(p=>p.at<=dayKey());
+function hhShipModal(k){
+  const H=HH(),I=HH_SHOP[k],dk=dayKey();
+  const opts=Object.keys(CARRIERS).map(via=>{const C=CARRIERS[via],at=hhArrive(via,dk),cost=I.c+C.fee;
+    return {l:`${C.ic} ${C.n}${C.fee?` +$${C.fee}`:', free'}`,s:via==='counter'?`Ready ${DAYS[at%7]}. Pick it up on your way through Steilacoom.`:`Arrives ${DAYS[at%7]}${at-dk===1?' (tomorrow)':''}, on your porch by ${fmt(C.time)}. ${C.dow.length===5?'Weekdays only.':'No Sunday delivery.'}`,dis:S.money<cost,
+      fn:()=>{money(-cost);S.t+=5;phoneTick();H.pkgs.push({k,at,via,w:via==='counter'?false:hhWrong(),st:'transit'});
+        say(`📦 Ordered: ${I.n.toLowerCase()}, ${via==='counter'?'held at the pickup counter by the Steilacoom ferry landing':'via '+C.sh}. Tracking says ${DAYS[at%7]}.`);afterAction()}}});
+  modal(`📦 Ship the ${I.n.toLowerCase()}`,'<p>How should it get here?</p>',opts.concat([{l:'Never mind',fn:()=>{}}]));
+}
+// delivered = the carrier has been by. Right address → it waits on the porch; wrong address → H.missing.
+const hhDelivered=p=>p.via&&p.via!=='counter'&&p.st==='transit'&&(dayKey()>p.at||(dayKey()===p.at&&tod()>=CARRIERS[p.via].time));
+function hhDeliver(say2){const H=HH();
+  H.pkgs.filter(hhDelivered).forEach(p=>{
+    if(p.w){hhMissing().push({kind:'pkg',k:p.k,via:p.via,at:p.at});H.pkgs=H.pkgs.filter(x=>x!==p);
+      say2(`📦 ${CARRIERS[p.via].sh} tracking: your ${HH_SHOP[p.k].n} was “delivered, left at front door” at ${fmt(CARRIERS[p.via].time+Math.floor(Math.random()*50))}. It’s not on your porch. It’s not behind the planter. It went to the wrong house.`)}
+    else p.st='porch'})}
+const hhPorch=()=>HH().pkgs.filter(p=>p.st==='porch');
+function hhBringIn(){const H=HH(),r=hhPorch();r.forEach(p=>HH_SHOP[p.k].get());H.pkgs=H.pkgs.filter(p=>!r.includes(p));return r}
+const hhPkgsReady=()=>HH().pkgs.filter(p=>(!p.via||p.via==='counter')&&p.at<=dayKey());
 // ---- trash and dump runs: the transfer station keeps island hours ----
 function hhDumpDays(){return seasonId()==='summer'?[2,4,5,6]:[2,5,6]}
 const hhDumpHours=()=>seasonId()==='winter'?[600,900]:[540,900];
@@ -3573,7 +3604,13 @@ function hhActions(a,loc){
     const ob=hhOpenBills(),urgent=ob.filter(k=>hhDue(k)-dk<=1),inMail=Object.keys(HH_BILLS).filter(k=>!HB(k).paid&&HB(k).check>=0);
     if(ob.length) a.push({cat:'home',ic:'🧾',l:`Pay bills (${ob.length})`,due:urgent.length>0,s:ob.map(k=>`${HH_BILLS[k].ic} ${HH_BILLS[k].n} ${$(hhOwed(k))}, ${hhDueTxt(k)}`).join(' · '),fn:hhBillsModal});
     else if(inMail.length) a.push({cat:'home',ic:'✉️',l:'Checks in the mail',s:inMail.map(k=>`${HH_BILLS[k].n}: gets there ${DAYS[HB(k).check%7]}`).join(' · '),dis:true});
-    a.push({cat:'home',ic:'📦',l:'Order something online',s:S.phone>0?'Mouse traps, a power bank, a pump part. It ships to the pack-and-ship counter by the Steilacoom ferry landing: nobody delivers to the island.':'Your phone is dead.',dis:S.phone<=0,fn:hhShopModal});
+    hhDeliver(say);
+    const mn=hhMailHere().length;
+    a.push({cat:'home',ic:'📬',l:mn?`Check the mailbox (${mn})`:'The mailbox is empty',s:mn?'Out at the end of the driveway. 10 min.':`USPS comes Monday to Saturday, around ${fmt(MAIL_TIME)}.`,dis:!mn,fn:hhReadMail});
+    const po=hhPorch();
+    if(po.length) a.push({cat:'home',ic:'📦',l:`Bring in ${po.length} package${po.length>1?'s':''} from the porch`,due:true,s:po.map(p=>`${HH_SHOP[p.k].n} (${CARRIERS[p.via].sh})`).join(', ')+'. 5 min.',cls:'primary',fn:()=>{S.t+=5;const r=hhBringIn();
+      say(`📦 On the porch, a little damp: ${andList(r.map(p=>HH_SHOP[p.k].n.toLowerCase()))}.${r.some(p=>p.k==='traps')?' (Set the traps.)':''}`);afterAction()}});
+    a.push({cat:'home',ic:'📦',l:'Order something online',s:S.phone>0?'Mouse traps, a power bank, a pump part. USPS, UPS and FedEx deliver to your porch, or it can wait at the Steilacoom pickup counter.':'Your phone is dead.',dis:S.phone<=0,fn:hhShopModal});
     if(H.part) a.push({cat:'yard',ic:'🔧',l:'Install the new pressure switch',due:UP().well>30,s:'30 min in the pump house with the power off. The well pump is good as new.',fn:()=>{S.t+=30;H.part=false;UP().well=0;homeAdj(1);say('🔧 Two wires, one fitting, a lot of muttering. The pump kicks on at 40 psi and off at 60, like the label says.');afterAction()}});
     // cooking
     const cookOK=m>=960&&m<1350,ateOut=S.ateOut===d;
@@ -3599,14 +3636,12 @@ function hhActions(a,loc){
     if(stormKnown()){const sk=S.weekNo*7+st.day,soon=st.day-d<=1;
       a.push({cat:'home',ic:'💧',l:H.water?'Water jugs filled ✓':'Fill water jugs and the bathtub',due:soon&&!H.water,s:H.water?'For when the power takes the well pump with it.':'15 min. No power means no well pump: this is your water for coffee and a sponge bath.',dis:H.water,
         fn:()=>{S.t+=15;H.water=true;say('💧 Four jugs, two stockpots and a bathtub full of water. The house looks ready for a siege.');afterAction()}});
-      a.push({cat:'home',ic:'🔋',l:H.bankFull?'Power bank charged ✓':'Charge the power bank',due:soon&&H.bank&&!H.bankFull,s:!H.bank?'You don’t own one. Order one online (📦), two days to the shipping counter in Steilacoom.':H.bankFull?'Your phone will make it through the outage.':'10 min to plug it in. Keeps your phone (and its alarm) alive through the outage.',dis:!H.bank||H.bankFull,
+      a.push({cat:'home',ic:'🔋',l:H.bankFull?'Power bank charged ✓':'Charge the power bank',due:soon&&H.bank&&!H.bankFull,s:!H.bank?'You don’t own one. Order one online (📦), next-day with FedEx.':H.bankFull?'Your phone will make it through the outage.':'10 min to plug it in. Keeps your phone (and its alarm) alive through the outage.',dis:!H.bank||H.bankFull,
         fn:()=>{S.t+=10;H.bankFull=true;say('🔋 The power bank’s four little lights go solid. Your phone has a lifeboat.');afterAction()}});
       if(S.gen==='home') a.push({cat:'yard',ic:'⛽',l:H.genTop===sk?'Generator topped off ✓':'Top off and test the generator',due:soon&&H.genTop!==sk,s:H.genTop===sk?'It’ll start tonight.':S.homeGas<3?`Needs 3 gal in the shed (${S.homeGas} now).`:'20 min: fill it, a test run in the driveway. It starts on the first pull when it matters.',dis:H.genTop===sk||S.homeGas<3,
         fn:()=>{S.t+=20;H.genTop=sk;say('⛽ Topped off, choke, pull. It catches on the second try and settles into a rumble. Ready.');afterAction()}});
     }
   }
-  if(loc==='store'){const n=hhMailHere().length;
-    a.push({cat:'here',ic:'📬',l:n?`Check your P.O. box (${n})`:'Your P.O. box is empty',s:n?'The little island post office on Eckenstam-Johnson Road. 10 min.':'Just a key and a cobweb. Mail comes Monday to Saturday.',dis:!n,fn:hhReadMail});}
   if(loc==='stDock'){const r=hhPkgsReady();
     if(r.length) a.push({cat:'trade',ic:'📦',l:`Pick up ${r.length} package${r.length>1?'s':''} from the shipping counter`,s:r.map(p=>HH_SHOP[p.k].n).join(', ')+'. 5 min.',cls:'primary',fn:()=>{S.t+=5;r.forEach(p=>{HH_SHOP[p.k].get()});H.pkgs=H.pkgs.filter(p=>!r.includes(p));
       say(`📦 The clerk at the pack-and-ship counter checks your name, and there ${r.length>1?'they are':'it is'}: ${andList(r.map(p=>HH_SHOP[p.k].n.toLowerCase()))}.${r.some(p=>p.k==='traps')?' (Set the traps at home.)':''}`);afterAction()}});
@@ -3621,8 +3656,9 @@ function hhActions(a,loc){
 function hhNight(where,notes,d){
   const H=HH(),dk=dayKey(),home=where==='home';
   hhBillsNight(notes,dk);hhMailNight(dk,d);
+  hhDeliver(t=>notes.push(t));if(home){const r=hhBringIn();if(r.length)notes.push(`📦 You bring ${andList(r.map(p=>HH_SHOP[p.k].n.toLowerCase()))} in off the porch before bed.`)}
   // packages nobody picked up go back after a week (refund, minus a restocking fee)
-  const old=H.pkgs.filter(p=>dk-p.at>=7);if(old.length){old.forEach(p=>money(HH_SHOP[p.k].c-5));H.pkgs=H.pkgs.filter(p=>!old.includes(p));notes.push(`📦 The shipping counter sent back ${andList(old.map(p=>HH_SHOP[p.k].n.toLowerCase()))}. Refunded, minus a $5 restocking fee.`)}
+  const old=hhPkgsReady().filter(p=>dk-p.at>=7);if(old.length){old.forEach(p=>money(HH_SHOP[p.k].c-5));H.pkgs=H.pkgs.filter(p=>!old.includes(p));notes.push(`📦 The shipping counter sent back ${andList(old.map(p=>HH_SHOP[p.k].n.toLowerCase()))}. Refunded, minus a $5 restocking fee.`)}
   // trash
   if(home){H.trash=Math.min(16,H.trash+1);
     if(H.trash>=8){homeAdj(-1);if(!H.trashWarn){H.trashWarn=true;notes.push(`🗑️ ${H.trash} bags of trash by the shed. It’s starting to smell like a decision. (Dump run: ${hhDumpTxt()}.)`)}}}
@@ -3659,8 +3695,10 @@ function hhTodo(it){
     it.push({ok:b.paid||b.check>=0,fail:false,l:`Pay the ${B.n.toLowerCase()} bill`,s:b.paid?`${B.ic} Paid${b.how==='collections'?', via collections. Ouch':b.how==='end'?'':''}.`:b.check>=0?`✉️ Check in the mail to ${B.who}.`:`${B.ic} ${$(hhOwed(k))} to ${B.who}, ${hhDueTxt(k)}. Pay at home: 🏠 Inside the house → 🧾 Pay bills.`,urgent:!b.paid&&b.check<0&&due-dk<=1});}
   if(H.trash>=5) it.push({ok:false,fail:false,l:'Take a dump run',s:`🗑️ ${H.trash} bags by the shed. Transfer station: ${hhDumpTxt()}.${H.trash>=8?' Raccoons are circling.':''}`,urgent:H.trash>=10});
   if(H.dog){const g=H.dog;it.push({ok:g.fed===dk&&g.walked===dk,fail:false,l:`Take care of ${g.n}`,s:`🐕 Fed ${g.fed===dk?'✓':'—'} · walked ${g.walked===dk?'✓':'—'} · ${g.kibble} day${g.kibble===1?'':'s'} of dog food.`,urgent:false})}
+  const tr=H.pkgs.filter(p=>p.via&&p.via!=='counter'&&p.st==='transit');if(tr.length) it.push({ok:true,fail:false,l:'Packages on the way',s:tr.map(p=>`📦 ${HH_SHOP[p.k].n}: ${CARRIERS[p.via].sh}, ${p.at===dk?'today':DAYS[p.at%7]}`).join(' · '),urgent:false});
+  const po=hhPorch();if(po.length) it.push({ok:false,fail:false,l:'Bring in your packages',s:`📦 ${andList(po.map(p=>HH_SHOP[p.k].n.toLowerCase()))}, on your porch at home.`,urgent:false});
   const pk=hhPkgsReady();if(pk.length) it.push({ok:false,fail:false,l:'Pick up your packages',s:`📦 ${andList(pk.map(p=>HH_SHOP[p.k].n.toLowerCase()))}, at the pack-and-ship counter by the Steilacoom ferry landing.`,urgent:false});
-  const mail=hhMailHere().length;if(mail>=3) it.push({ok:false,fail:false,l:'Check your mail',s:`📬 ${mail} pieces in your P.O. box at the island post office on Eckenstam-Johnson Road.`,urgent:false});
+  const mail=hhMailHere().length;if(mail>=3) it.push({ok:false,fail:false,l:'Check your mail',s:`📬 ${mail} pieces in your mailbox at home.`,urgent:false});
   const st=it.find(x=>x.l==='Be ready for the storm');
   if(st){const sk=S.weekNo*7+S.week.storm.day;st.s+=` Storm prep: 💧 water ${H.water?'✓':'—'} · 🔋 power bank ${H.bankFull?'✓':H.bank?'—':'(none)'}${S.gen==='home'?` · ⛽ generator ${H.genTop===sk?'✓':'—'}`:''}.`}
 }
