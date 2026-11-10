@@ -39,6 +39,10 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### 1.16.2: an update notice
+
+- 🎉 **When the game updates,** the title screen tells you which version you're now on (and which you came from), and upgrades all your saved games at once, listing which slots it updated. Click **Got it** to close it.
+
 ### 1.16.1: help when you run out of gas on the island
 
 - 🛢️ **Call Dale to bring gas** wherever you ran dry on the island (the Riv, the lake, the landing): up to 5 gallons from his stock at half again his shop price ($18/gal instead of $12), about 40 minutes, cash. He answers 7 AM–9 PM, and not when he's out of gas. Gas only, not diesel.
