@@ -63,7 +63,7 @@ function endDay(where){
   if(stormNight(d)){
     S.stats.outageNights++;S.power={start:d*1440+1380,end:(d+1)*1440+330+240,cause:'the gale'};
     if(runGenerator(where,3)){notes.push('⚡ The wind knocks out the island’s power. Your generator burns 3 gallons from the shed keeping the fridge, the heat and the well pump going.');chain('gen_saves','storm')}
-    else {if(S.pantry>0){S.pantry--;UP().fridge=true;}if(S.ev.flags.genFail===d)notes.push('🔌 The generator coughs, sputters and dies. It hasn’t been serviced in weeks.');adj('health',-6);adj('stress',8);notes.push(where!=='home'?'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.':!genReady()?'⚡ The power goes out and you don’t own a generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The power goes out and there isn’t enough gas in the shed for the generator. The house gets cold and a day of food spoils in the fridge.')}
+    else {if(S.pantry>0){S.pantry--;UP().fridge=true;}if(S.ev.flags.genFail===d)notes.push('🔌 The generator coughs, sputters and dies. It hasn’t been serviced in weeks.');adj('health',shelterNow()?0:-6);adj('stress',shelterNow()?0:8);notes.push(shelterNow()?'⚡ The island’s power went out. A day of food spoiled in your dead fridge, but you’re not here to feel the cold.':where!=='home'?'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.':!genReady()?'⚡ The power goes out and you don’t own a generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The power goes out and there isn’t enough gas in the shed for the generator. The house gets cold and a day of food spoils in the fridge.')}
   }
   if(stormNight(d)&&Math.random()<0.8){EV_RUNNING='storm';outageChain(where);EV_RUNNING=null}
   // phone overnight
@@ -91,8 +91,8 @@ function endDay(where){
    if(S.home>=50)S.homeLow=false;}
   if(where==='home'&&homeTier()==='low'){rest=Math.round(rest*0.6);notes.push('🏠 Hard to unwind in a messy house. You don’t sleep as well.')}
   if(where==='home'&&homeTier()==='high'){rest+=4;adj('health',1)}
-  if(where==='home'){adj('stress',-rest);adj('health',3);
-    const offDay=!curJob()||!curJob().days.includes(d);if(offDay){adj('stress',-10);adj('health',3);notes.push('🛋️ A day off. You actually feel rested.')}}
+  if(where==='home'){adj('stress',-nightRec(rest));adj('health',nightRec(3));
+    const offDay=!curJob()||!curJob().days.includes(d);if(offDay){adj('stress',-nightRec(10));adj('health',nightRec(3));notes.push('🛋️ A day off. You actually feel rested.')}}
   else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push(carHere()?'🚗 The terminal locks up after the last boat, so you sleep in your car in the ferry lot, seat reclined, coat for a blanket. The ferry horn wakes you at 4:30.':'🪑 The terminal locks up after the last boat. You spend the night on the bench under the overhang outside, coat zipped to your chin.')}
   else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
