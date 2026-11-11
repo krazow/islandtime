@@ -67,6 +67,7 @@ function waitFerry(mode){
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
       return modal('🌙 No more boats tonight',`<p>The next sailing you could make is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You’re stuck on the mainland for the night. Sleep in the terminal, get a motel in Lakewood, or ask a friend for a couch.</p>`,[{l:'OK',fn:()=>render()}]);}
+    if(typeof visitorOn==='function'&&visitorOn()&&vFinalDay()){visitMissed('boat');return}   // a visit's last boat home is gone
     if(first) say(`No more sailings you can make tonight. Next: ${DAYS[known.d]} ${fmt(known.dep)}. Might as well go home.`);
     return modal('🌙 No more boats tonight',`<p>The next sailing is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>. Might as well go home.</p>`,[{l:'OK',fn:()=>render()}]);
   }

@@ -50,7 +50,7 @@ module.exports = [
     assert.match(t, /Weekend/); assert.match(t, /Seattle/); assert.match(t, /Last boat home today/);
     assert.match(t, /Check-in/); assert.match(t, /0\/6/);
     assert.ok(!t.includes('✓ 🦅')); assert.ok(t.includes('📸 Photos'));
-    await page.evaluate(() => { VS().seen.lake = 1; VS().seen.farm = 1; VS().photos.lake = 1; phoneOpen('visit'); });
+    await page.evaluate(() => { VS().seen.lake = 0; VS().seen.farm = 1; VS().photos.lake = 0; /* 0 = seen on a Monday */ phoneOpen('visit'); });
     t = await text(page);
     assert.match(t, /2\/6/); assert.match(t, /✓ 🦅 Lake Josephine 📸/); assert.match(t, /✓ 🚜 Johnson Farm museum(?! 📸)/); assert.match(t, /☐ 🌳/);
     await page.evaluate(() => { window.visitScore = () => 42; phoneOpen('visit'); });

@@ -774,6 +774,7 @@ function waitFerry(mode){
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
       return modal('🌙 No more boats tonight',`<p>The next sailing you could make is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You’re stuck on the mainland for the night. Sleep in the terminal, get a motel in Lakewood, or ask a friend for a couch.</p>`,[{l:'OK',fn:()=>render()}]);}
+    if(typeof visitorOn==='function'&&visitorOn()&&vFinalDay()){visitMissed('boat');return}   // a visit's last boat home is gone
     if(first) say(`No more sailings you can make tonight. Next: ${DAYS[known.d]} ${fmt(known.dep)}. Might as well go home.`);
     return modal('🌙 No more boats tonight',`<p>The next sailing is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>. Might as well go home.</p>`,[{l:'OK',fn:()=>render()}]);
   }
@@ -6467,6 +6468,8 @@ const VISIT_END_ROWS=[];
 function visitBudget(len,diff){return Math.round((VISIT_BUDGET[len]||500)*(VISIT_DIFF_MUL[diff]||1))}
 function vFinalDay(){const V=VS();return !!V&&day()>=V.last}
 function vLastBoatAbs(){const V=VS();if(!V)return 0;const ds=deps('I',V.last);return V.last*1440+Math.max(...ds)}
+// no sailing you could still make today from the island (boarding closes 20 min before departure)
+function vNoBoatLeft(){try{const k=findNext('I','walk',true);return !k||k.d>day()}catch(e){return false}}
 function vHostText(x){const V=VS();if(!V)return;V.texts.push({t:S.t,x});if(V.texts.length>30)V.texts.splice(0,V.texts.length-30);
   say(`📱 Text from ${VHOST}: “${x}”`);try{showTile('📱','Text from your host',x.length>70?x.slice(0,68)+'…':x,'info')}catch(e){}}
 function vRule(id,txt){const V=VS(),R=VRULES[id];if(!V||!R)return;V.rules[id]=(V.rules[id]||0)+1;V.rep-=R.rep;vHostText(txt||R.host)}
@@ -6608,7 +6611,7 @@ function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),s
     vHostText(`Hi! Check-out was ${fmt(VCHECK_OUT)} and the cleaner is waiting in the driveway. I’ve charged the ${$(VLATE_FEE)} late check-out fee.`)}
   if(d>=V.last){
     if(side==='M'&&V.islandAt!=null){visitEnd('home');return true}
-    if(side==='I'&&S.t>vLastBoatAbs()){visitMissed('boat');return true}}
+    if(side==='I'&&(S.t>vLastBoatAbs()||vNoBoatLeft())){visitMissed('boat');return true}}
   return false}
 {const _aa=afterAction;afterAction=function(){if(visitorOn()&&!S.over){try{if(vTick())return}catch(e){console.error(e)}}return _aa.apply(this,arguments)}}
 {const _ed=endDay;endDay=function(where){
@@ -6958,14 +6961,14 @@ function vphonePlan(){
   if(len.nights>0||ri||ro)h+=`<div class="ph-card">🛏️ Rental cabin · ${len.nights} night${len.nights===1?'':'s'}<br>Check-in: <b>${ri||'3:00 PM'}</b> ${r.checkedIn?'✓':''}<br>Check-out: <b>${ro||'11:00 AM'}</b> ${r.checkedOut?'✓':''}</div>`;
   let boat='';try{const d=deps('I',day()),last=d[d.length-1],gone=last<S.t;boat=`⛴️ Last boat home today: <b>${fmt(last)}</b> from the island${gone?' (already gone)':''}.`}catch(e){}
   if(boat)h+=`<div class="ph-card ${'warn'}">${boat}</div>`;
-  const n=VSIGHTS.filter(s=>v.seen[s.id]).length;
+  const n=VSIGHTS.filter(s=>v.seen[s.id]!=null).length;
   h+=`<div class="ph-sect">Things to see · ${n}/${VSIGHTS.length}</div>`;
-  for(const s of VSIGHTS)h+=`<div class="ph-card">${v.seen[s.id]?'✓':'☐'} ${s.ic} ${s.n}${v.photos[s.id]?' 📸':''}</div>`;
+  for(const s of VSIGHTS)h+=`<div class="ph-card">${v.seen[s.id]!=null?'✓':'☐'} ${s.ic} ${s.n}${v.photos[s.id]!=null?' 📸':''}</div>`;
   if(typeof visitScore==='function'){let sc='';try{const x=visitScore();sc=(x&&typeof x==='object')?(x.total??x.score??x.pts??JSON.stringify(x)):x}catch(e){}if(sc!=='')h+=`<div class="ph-card"><b>Score so far: ${sc}</b></div>`}
   h+=phBtn('📸 Photos',()=>phoneGo('visit','photos'),{cls:'primary'});
   return h}
 function vphonePhotos(){
-  const v=VS(),got=VSIGHTS.filter(s=>v.photos[s.id]);
+  const v=VS(),got=VSIGHTS.filter(s=>v.photos[s.id]!=null);
   let h=phBtn('‹ Visit plan',()=>phoneBack());
   if(!got.length)return h+`<p>No photos yet. Take one at a sight on the island.</p>`;
   h+=`<div class="ph-sect">${got.length} photo${got.length===1?'':'s'}</div>`;

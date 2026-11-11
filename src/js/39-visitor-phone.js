@@ -25,14 +25,14 @@ function vphonePlan(){
   if(len.nights>0||ri||ro)h+=`<div class="ph-card">🛏️ Rental cabin · ${len.nights} night${len.nights===1?'':'s'}<br>Check-in: <b>${ri||'3:00 PM'}</b> ${r.checkedIn?'✓':''}<br>Check-out: <b>${ro||'11:00 AM'}</b> ${r.checkedOut?'✓':''}</div>`;
   let boat='';try{const d=deps('I',day()),last=d[d.length-1],gone=last<S.t;boat=`⛴️ Last boat home today: <b>${fmt(last)}</b> from the island${gone?' (already gone)':''}.`}catch(e){}
   if(boat)h+=`<div class="ph-card ${'warn'}">${boat}</div>`;
-  const n=VSIGHTS.filter(s=>v.seen[s.id]).length;
+  const n=VSIGHTS.filter(s=>v.seen[s.id]!=null).length;
   h+=`<div class="ph-sect">Things to see · ${n}/${VSIGHTS.length}</div>`;
-  for(const s of VSIGHTS)h+=`<div class="ph-card">${v.seen[s.id]?'✓':'☐'} ${s.ic} ${s.n}${v.photos[s.id]?' 📸':''}</div>`;
+  for(const s of VSIGHTS)h+=`<div class="ph-card">${v.seen[s.id]!=null?'✓':'☐'} ${s.ic} ${s.n}${v.photos[s.id]!=null?' 📸':''}</div>`;
   if(typeof visitScore==='function'){let sc='';try{const x=visitScore();sc=(x&&typeof x==='object')?(x.total??x.score??x.pts??JSON.stringify(x)):x}catch(e){}if(sc!=='')h+=`<div class="ph-card"><b>Score so far: ${sc}</b></div>`}
   h+=phBtn('📸 Photos',()=>phoneGo('visit','photos'),{cls:'primary'});
   return h}
 function vphonePhotos(){
-  const v=VS(),got=VSIGHTS.filter(s=>v.photos[s.id]);
+  const v=VS(),got=VSIGHTS.filter(s=>v.photos[s.id]!=null);
   let h=phBtn('‹ Visit plan',()=>phoneBack());
   if(!got.length)return h+`<p>No photos yet. Take one at a sight on the island.</p>`;
   h+=`<div class="ph-sect">${got.length} photo${got.length===1?'':'s'}</div>`;

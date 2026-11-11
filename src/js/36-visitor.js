@@ -57,6 +57,8 @@ const VISIT_END_ROWS=[];
 function visitBudget(len,diff){return Math.round((VISIT_BUDGET[len]||500)*(VISIT_DIFF_MUL[diff]||1))}
 function vFinalDay(){const V=VS();return !!V&&day()>=V.last}
 function vLastBoatAbs(){const V=VS();if(!V)return 0;const ds=deps('I',V.last);return V.last*1440+Math.max(...ds)}
+// no sailing you could still make today from the island (boarding closes 20 min before departure)
+function vNoBoatLeft(){try{const k=findNext('I','walk',true);return !k||k.d>day()}catch(e){return false}}
 function vHostText(x){const V=VS();if(!V)return;V.texts.push({t:S.t,x});if(V.texts.length>30)V.texts.splice(0,V.texts.length-30);
   say(`📱 Text from ${VHOST}: “${x}”`);try{showTile('📱','Text from your host',x.length>70?x.slice(0,68)+'…':x,'info')}catch(e){}}
 function vRule(id,txt){const V=VS(),R=VRULES[id];if(!V||!R)return;V.rules[id]=(V.rules[id]||0)+1;V.rep-=R.rep;vHostText(txt||R.host)}
@@ -198,7 +200,7 @@ function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),s
     vHostText(`Hi! Check-out was ${fmt(VCHECK_OUT)} and the cleaner is waiting in the driveway. I’ve charged the ${$(VLATE_FEE)} late check-out fee.`)}
   if(d>=V.last){
     if(side==='M'&&V.islandAt!=null){visitEnd('home');return true}
-    if(side==='I'&&S.t>vLastBoatAbs()){visitMissed('boat');return true}}
+    if(side==='I'&&(S.t>vLastBoatAbs()||vNoBoatLeft())){visitMissed('boat');return true}}
   return false}
 {const _aa=afterAction;afterAction=function(){if(visitorOn()&&!S.over){try{if(vTick())return}catch(e){console.error(e)}}return _aa.apply(this,arguments)}}
 {const _ed=endDay;endDay=function(where){
