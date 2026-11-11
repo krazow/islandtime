@@ -8142,7 +8142,8 @@ function holCrowd(side,d,dep){const k=holWho(d),w=gameDate(d).getDay();let p=0;
   else if(k.includes('july4')&&dep>=800)p=0.6;
   else if(k.includes('halloween')&&side==='M'&&dep>=1035)p=0.3;
   return p}
-{const _f=seasonFull;seasonFull=function(p,side,d,dep){p=_f.apply(this,arguments);try{const c=holCrowd(side,d,dep);if(c>p)p=c}catch(e){}return p}}
+{const _f=seasonFull;seasonFull=function(p,side,d,dep){p=_f.apply(this,arguments);try{if(holIs('thanksgiving',d))p=Math.min(p,0.08);   // nobody is commuting today
+    const c=holCrowd(side,d,dep);if(c>p)p=c}catch(e){}return p}}
 // the 'full boat' note on the ferry tab and planner is built from fullProb, so it all lines up
 defEvent({id:'thanks_ferry',hook:'arrive',priority:2,max:1,cond:ctx=>ctx.from==='ferry'&&holIs('thanksEve')&&(ctx.at==='aiDock'||ctx.at==='stDock'),chance:0.7,
   run(){adj('stress',2);modal('🥧 A pie in the car line',`<p>Pickups with turkeys in coolers, SUVs with dogs hanging out of the back and a minivan full of pies. A box slides off the roof rack of the car next to you, and a pumpkin pie lands face down on the ramp.</p>`,[
