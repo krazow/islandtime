@@ -39,6 +39,9 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.21
+- **Things to do on the island:** fish off the Riv marina (a $20 Washington license, then cast, wait and set the hook: salmon in season, flounder, an old boot, and rockfish that have to go back), set a crab pot in July (keep males 6¼ inches or bigger, throw the females back; keeping an illegal crab is a bad act with a small chance of a ticket), pick Himalayan blackberries from mid-July (jam, or sell them at the swap board; watch the thorns), and play a real 5×5 card at Wednesday bingo at the Riv (tap to daub, call BINGO before somebody else does). They lower stress, cost time, and add a little to a visitor's score.
+
 ### New in 1.20: Weekend regular
 
 - 📅 **A fourth way to visit:** on the **Visit the island** screen, pick **Weekend regular: a month**, then where you live (**Seattle**, **Tacoma** or **Olympia**) and a difficulty. You live and work on the mainland Monday to Friday and spend the weekends on Anderson Island.

@@ -7748,6 +7748,508 @@ function regLongTake(){const R=REG(),V=VS(),Rn=vRental();if(!regLongCan())return
 {const _t=regTick;regTick=function(){const R=REG();
   try{if(R.long&&R.long.W&&day()===0&&L[S.loc].side==='M'&&R.W.on&&!R.W.done){regWeekendEnd()}}catch(e){console.error(e)}
   return _t.apply(this,arguments)}}
+// ---------------- 🎣 things to do on the island: fishing, crabbing, blackberries ----------------
+// Small activities, each a short modal with a couple of choices and a bit of luck. They cost time, lower stress, and in
+// visitor mode add a little to the visit score (vrepOnce). State lives in S.thx (made on demand, so old saves just work).
+//   fishing  (the Riv marina)   a Washington fishing license ($20, once), then cast / wait / set the hook
+//   crabbing (the Riv marina)   summer only, Thursday through Monday: set a pot, come back, pull it, keep or throw back
+//   berries  (home, lake, swap board)  Himalayan blackberries once they ripen (mid-July on): eat, make jam, or sell
+// Keeping a protected rockfish or an illegal crab is a deliberate bad act: small chance of a ticket (and a bad name).
+function TX(){return S.thx||(S.thx={lic:0,fish:{dk:-9,n:0},pot:null,ownPot:false,berry:{n:0,dk:-9},pick:{dk:-9,n:0},gift:-9,crabKeep:{dk:-9,n:0},got:{fish:0,crab:0,berry:0,boot:0,fines:0},bingo:{dk:-9,n:0}})}
+function thxFun(key,n){try{if(visitorOn())vrepOnce('thx-'+key,n||1,'got out and did something local')}catch(e){}}
+const thxWpick=pairs=>{let t=0;for(const p of pairs)t+=p[1];let r=Math.random()*t;for(const p of pairs){r-=p[1];if(r<0)return p[0]}return pairs[pairs.length-1][0]};
+const thxFriends=()=>Object.keys(S.friends||{}).sort((a,b)=>flv(b)-flv(a)).slice(0,2);
+const thxName=id=>String((S.friends[id]||{}).name||id).split(',')[0].split(' from')[0].replace(/^the /,'The ');
+function thxFood(n,why){if(visitorOn()||!n){say(`🍽️ ${why}: a fine dinner.`);return}S.pantry+=n;say(`🍽️ ${why}: +${n} day${n===1?'':'s'} of food.`)}
+// give something to a friend: +friendship, and a little standing (once a day)
+function thxGive(id,pts,what){friendPts(id,pts);say(`🎁 You drop ${what} off with ${thxName(id)}. They won’t hear of paying you.`);const T=TX();if(T.gift!==dayKey()){T.gift=dayKey();repAdd(2,`shared your ${what.replace(/^(a|an|the|some) /,'')} with a neighbor`)}}
+function thxGiveBtns(pts,what,done){return thxFriends().map(id=>({l:`Give it to ${thxName(id)}`,s:'Friendship +'+pts+'. Island reputation +2 (once a day).',fn:()=>{thxGive(id,pts,what);done()}}))}
+// calm: stress relief with diminishing returns through the day
+function thxCalm(n,amt){S.t+=n;phoneTick();const F=TX().fish;adj('stress',-amt)}
+const thxDay=()=>dayKey();
+const thxLicTxt=()=>TX().lic?'You have a Washington fishing license (good all year).':'You need a Washington fishing license: $20 for the year, at the Riv’s bait counter.';
+
+// ---- fishing ----
+function fishSessions(){const F=TX().fish;return F.dk===thxDay()?F.n:0}
+function fishSalmon(){const s=seasonId();return s==='summer'?['Chinook','a king salmon']:s==='fall'?['coho','a hatchery coho']:s==='winter'?['blackmouth','a blackmouth (winter chinook)']:null}
+function fishOpen(){
+  if(!TX().lic){return modal('🎣 You need a license',`<p>${thxLicTxt()} The WDFW officer who works the Sound doesn’t care how nice the day is.</p>`,[
+    {l:'Buy a fishing license: $20',s:'Covers fishing and shellfish for the year.',dis:S.money<20,fn:()=>{money(-20);TX().lic=1;S.t+=5;say('🎣 A Washington fishing license, $20, printed on slightly damp paper. You pin it to your jacket.');afterAction()}},{l:'Not today',fn:()=>{}}])}
+  const sal=fishSalmon();
+  modal('🎣 Fishing off the marina',`<p>The dock creaks. Gulls, a heron, and the smell of low tide and old bait. ${sal?`Salmon are around: ${sal[1]} would be a good day.`:'Salmon are closed this time of year, but there’s always something down there.'}</p><p style="font-size:13px;color:var(--mute)">${fishSessions()?`You’ve fished ${fishSessions()} time${fishSessions()===1?'':'s'} today. `:''}How long do you want to stay out on the dock?</p>`,[
+    {l:'A few casts: 30 min',s:'Free. Your own old spoon. Fewer bites.',fn:()=>fishGo(0)},
+    {l:'Herring on a mooching rig: 1 hour, $4',s:'Better bait. Better odds.',dis:S.money<4,fn:()=>fishGo(1)},
+    {l:'Settle in with a thermos: 2 hours, $4',s:'The best odds, and the best excuse to do nothing.',dis:S.money<4,fn:()=>fishGo(2)},
+    {l:'Never mind',fn:()=>{}}]);
+}
+function fishGo(lv){
+  const T=TX(),F=T.fish;if(F.dk!==thxDay()){F.dk=thxDay();F.n=0}
+  const mins=[30,60,120][lv],cost=[0,4,4][lv];if(cost)money(-cost);S.t+=mins;phoneTick();F.n++;
+  const bite=Math.random()<[0.55,0.75,0.9][lv];
+  const calm=[8,5,2][Math.min(2,F.n-1)];
+  const done=()=>{adj('stress',-calm);thxFun('fish',2);afterAction()};
+  if(!bite){say(pick(['🎣 The float sits there. A seal surfaces thirty feet away, looks at you, and goes under again. Nothing bites.','🎣 You get a nibble, a lost bait, and a good long think about nothing. No fish.','🎣 Two hours of tide, one tangled line and not a single bite. It was lovely anyway.']));return done()}
+  modal('🎣 Something’s on the line!',`<p>The rod tip bends. Whatever it is, it’s pulling.</p>`,[
+    {l:'Set the hook now',s:'Steady. Better odds of landing it.',fn:()=>fishLand(lv,false,done)},
+    {l:'Let it run a moment first',s:'A bigger fish, maybe, but it could spit the hook.',fn:()=>fishLand(lv,true,done)}]);
+}
+function fishLand(lv,wait,done){
+  if(Math.random()>(wait?0.55:0.8)){say('🎣 The line goes slack. Whatever it was is gone, and so is your hook.');return done()}
+  const sal=fishSalmon(),T=TX(),w=[['rock',14],['flounder',20],['perch',18],['pot',5],['boot',8]];
+  if(sal)w.push(['salmon',(wait?26:18)+lv*4]);
+  const k=thxWpick(w);
+  if(k==='boot'){T.got.boot++;return modal('🥾 An old boot',`<p>It’s a rubber boot, left foot, size 11, full of the Sound. It’s been down there since before the new ferry schedule.</p>`,[{l:'Dump it in the Riv’s dumpster',fn:()=>{adj('stress',-1);say('🥾 Into the dumpster it goes. A guy at the marina calls it “the third one this year.”');done()}},{l:'Hang it on the marina’s boot tree',s:'There is a boot tree.',fn:()=>{adj('stress',-2);say('🥾 It joins eleven other boots on the piling by the ramp. A small plaque says “CATCH OF THE DAY.” You feel part of something.');done()}}])}
+  if(k==='pot'){return modal('🪤 A derelict crab pot',`<p>It’s a rusty crab pot, tangled in lost line, and somebody’s float is still on it. Ghost gear like this keeps catching crabs long after anyone’s forgotten it.</p>`,[
+    {l:'Haul it to the Riv for the derelict-gear program',s:'The right thing. Island reputation +3.',fn:()=>{repAdd(3,'turned in a derelict crab pot');say('🪤 The Riv’s manager logs it with a clipboard. “Good on you.”');done()}},
+    {l:'Keep it: now you own a crab pot',s:'Saves the $8 rental every time you set one.',fn:()=>{T.ownPot=true;say('🪤 You scrub the barnacles off and strap it to the dock cart. Free pot.');done()}}])}
+  if(k==='rock'){return modal('🐟 A rockfish',`<p>A copper rockfish, mottled brown and yellow, about a foot long, its eyes bulging from the trip up. <b>In Puget Sound, rockfish have to go back</b>: they live for decades, and the Sound’s populations have crashed.</p>`,[
+    {l:'Release it gently',s:'It swims back down. Nothing to prove.',fn:()=>{adj('stress',-1);say('🐟 The rockfish flares its spines, then jets back into the dark. Somewhere, a biologist feels a flutter.');done()}},
+    {l:'Keep it for dinner',s:'Illegal. Small chance somebody checks.',fn:()=>{
+      if(Math.random()<0.15){money(-150);T.got.fines++;adj('stress',8);repAdd(-3,'got a ticket for keeping a protected rockfish');say('🚨 A WDFW officer walks down the dock with a clipboard. “Let me see that fish.” A $150 ticket, and the rockfish goes in his bucket.')}
+      else{thxFood(2,'Pan-fried rockfish');say('🐟 Nobody checks. You eat it a little guiltily.')}
+      done()}}])}
+  const SP={salmon:[sal?sal[1]:'a salmon',3,'A silver flash against the green water, and it’s heavy.'],flounder:['a starry flounder',1,'Flat as a dinner plate, both eyes on one side, deeply unimpressed.'],perch:['a pile of shiner perch',1,'A bucketful of silver, hand-sized fish. Good fried whole.']}[k];
+  T.got.fish++;const [nm,food,desc]=SP;
+  modal(`🐟 You landed ${nm}!`,`<p>${desc}</p><p>${k==='salmon'?'That’s real dinner, with some to spare.':'A decent little catch.'}</p>`,[
+    {l:`Cook it tonight: +${food} day${food===1?'':'s'} of food`,fn:()=>{thxFood(food,'Fresh '+(k==='salmon'?'salmon':'fish'));done()}}].concat(thxGiveBtns(k==='salmon'?3:2,nm,done)));
+}
+
+// ---- crabbing ----
+function crabSeason(){const dt=gameDate(day()),m=dt.getMonth(),dm=dt.getDate();return seasonId()==='summer'&&m===6&&dm>=1&&day()!==1&&day()!==2}   // July, Thursday through Monday
+function crabNow(){return dayKey()*1440+tod()}
+function crabSoak(){const P=TX().pot;return P?crabNow()-P.at:0}
+function crabSet(){
+  const T=TX(),cost=T.ownPot?3:11;
+  modal('🦀 Set a crab pot',`<p>Dungeness season: <b>keep males 6¼ inches or bigger</b> (measured across the shell), five a day. Females and undersized crabs go back, gently.</p><p>${T.ownPot?'You have your own pot.':'The Riv rents pots for $8.'} Bait is a chicken carcass: $3. Soak it for a few hours and come back to pull it.</p>`,[
+    {l:`Set the pot: $${cost}`,s:'15 minutes. Then wander off.',dis:S.money<cost,fn:()=>{money(-cost);S.t+=15;phoneTick();T.pot={at:crabNow()};adj('stress',-1);thxFun('crab',1);say('🦀 You drop the pot off the end of the dock, bait bag clipped inside, and check the float one more time.');afterAction()}},
+    {l:'Not now',fn:()=>{}}]);
+}
+function crabPull(){
+  const T=TX(),soak=crabSoak();let n;
+  const lost=soak>1800||(soak>1000&&Math.random()<0.35);
+  S.t+=30;phoneTick();T.pot=null;
+  if(lost){adj('stress',3);say('🦀 You haul up the line. Cut. Somebody’s prop, or a thief, or a very strong seal. The pot is gone and so is your deposit.');return afterAction()}
+  n=Math.min(6,Math.floor(Math.max(0,soak/90)*(0.5+Math.random())));
+  if(!n){adj('stress',-2);say('🦀 The pot comes up full of seaweed and one sulking sculpin. The bait bag is empty. Crabs are clever.');return afterAction()}
+  const crabs=[...Array(n)].map(()=>({size:Math.round((5.25+Math.random()*2.25)*4)/4,male:Math.random()<0.55}));
+  crabNext(crabs,0,[]);
+}
+const crabLegal=c=>c.male&&c.size>=6.25;
+function crabNext(crabs,i,kept){
+  if(i>=crabs.length)return crabEnd(kept);
+  const c=crabs[i],T=TX(),K=T.crabKeep;if(K.dk!==thxDay()){K.dk=thxDay();K.n=0}
+  const next=()=>crabNext(crabs,i+1,kept);
+  modal(`🦀 Crab ${i+1} of ${crabs.length}`,`<p>A <b>${c.size}-inch ${c.male?'male':'female'}</b> Dungeness crab, claws up, furious.</p><p style="font-size:13px;color:var(--mute)">Rules: males 6¼ in. or bigger, five a day. You’ve kept ${K.n} today.</p>`,[
+    {l:c.male?`Keep the ${c.size}-inch male`:'Keep the female',s:'Into the bucket.',fn:()=>{
+      const bad=!crabLegal(c)||K.n>=5;K.n++;kept.push(c);T.got.crab++;
+      if(bad&&Math.random()<0.15){money(-150);T.got.fines++;adj('stress',8);repAdd(-3,'got ticketed for keeping an illegal crab');say(`🚨 A WDFW officer has been watching from the end of the dock. “That one’s ${!c.male?'a female':c.size<6.25?'undersized':'over your limit'}.” $150, and the crab goes back.`);kept.pop()}
+      else if(bad)say('🦀 You keep it. Nobody’s checking today, but you know.');
+      next()}},
+    {l:'Throw it back',s:'Gently, over the rail.',fn:()=>{say(`🦀 You ${c.male?'measure':'check'} it and let it go. It scuttles off sideways with its pride intact.`);next()}}]);
+}
+function crabEnd(kept){
+  const n=kept.length,done=()=>{adj('stress',-6);afterAction()};
+  if(!n){say('🦀 You return everything to the Sound. An empty bucket, a clear conscience, and a good story.');return done()}
+  modal(`🦀 ${n} crab${n===1?'':'s'} in the bucket`,`<p>A pot of salted water, a stick of butter, newspaper on the table. ${n===1?'One crab':'The haul'} won’t last.</p>`,[
+    {l:`Boil them: +${n} day${n===1?'':'s'} of food`,fn:()=>{thxFood(n,'Crab feast');done()}}].concat(thxFriends().slice(0,1).map(id=>({l:`Share a crab feast with ${thxName(id)}`,s:`+${Math.ceil(n/2)} day${n>2?'s':''} of food for you. Friendship +2.`,fn:()=>{thxFood(Math.ceil(n/2),'Your half of the crab feast');friendPts(id,2);say(`🦀 ${thxName(id)} brings the corn and the good butter. Newspaper everywhere.`);done()}})),[{l:'Eat one now, give away the rest',s:'Island reputation +2.',fn:()=>{thxFood(1,'One crab');if(n>1)repAdd(2,'gave crab away');done()}}]));
+}
+
+// ---- blackberries ----
+function berryRipe(){if(seasonId()!=='summer')return 0;const dt=gameDate(day());if(dt.getMonth()===6&&dt.getDate()>=20||dt.getMonth()>=7)return 2;if(dt.getMonth()===6&&dt.getDate()>=13)return 1;return 0}
+function berryN(){const B=TX().berry;if(dayKey()-B.dk>1)B.n=0;return B.n}
+function berryOpen(where){
+  const r=berryRipe(),P=TX().pick;
+  modal('🫐 Blackberry picking',`<p>Himalayan blackberries have taken over every road shoulder, fence line and abandoned lot on the island. ${r===1?'The first ripe ones are just coming on.':'They’re thick and sweet and hanging in clusters.'}</p><p style="font-size:13px;color:var(--mute)">Bring a bucket, long sleeves and a high tolerance for thorns.${P.dk===thxDay()&&P.n?` Picked ${P.n} time${P.n===1?'':'s'} today.`:''}</p>`,[
+    {l:'Along the roadside: 30 min',s:'Easy picking. A little dust, a few cars waving. Fewer berries.',fn:()=>berryGo(0)},
+    {l:'Back in the thicket: 1 hour',s:'Loaded canes, tall brambles, and thorns that reach for you.',fn:()=>berryGo(1)},
+    {l:'Never mind',fn:()=>{}}]);
+}
+function berryGo(spot){
+  const T=TX(),P=T.pick;if(P.dk!==thxDay()){P.dk=thxDay();P.n=0}P.n++;
+  S.t+=[30,60][spot];phoneTick();
+  const ripe=berryRipe(),n=Math.max(1,Math.round(([1,2.4][spot])*(ripe===1?0.6:1)*(0.6+Math.random()*0.9)));
+  const B=T.berry;if(dayKey()-B.dk>1)B.n=0;B.n+=n;B.dk=dayKey();T.got.berry+=n;
+  adj('stress',-[4,5][spot]);thxFun('berry',1);
+  let hurt='';if(Math.random()<[0.35,0.8][spot]){adj('health',-1);hurt=' Your forearms look like a cat fight.'}
+  if(Math.random()<0.05){adj('stress',4);hurt+=' A wasp nest. You leave in a hurry.'}
+  say(`🫐 ${n} bucket${n===1?'':'s'} of Himalayan blackberries, purple fingers and a good smell of sun on fruit.${hurt}`);
+  afterAction();
+}
+function berryActions(a,loc){
+  if(!['home','lake','store'].includes(loc)||seasonId()!=='summer')return;
+  const r=berryRipe(),P=TX().pick,n=berryN();
+  if(['home','lake'].includes(loc)){
+    if(!r)a.push({cat:'here',ic:'🫐',l:'Blackberries aren’t ripe yet',s:'They’re green and red on the canes. Mid-July on.',dis:true});
+    else if(!seasonLite(tod()))a.push({cat:'here',ic:'🫐',l:'Pick blackberries',s:seasonDark(),dis:true});
+    else if(P.dk===thxDay()&&P.n>=2)a.push({cat:'here',ic:'🫐',l:'Picked out for today',s:'Your hands are purple and your arms are cross-hatched.',dis:true});
+    else a.push({cat:'here',ic:'🫐',l:'Pick blackberries',s:'30–60 min. Fills the pantry a little, sells at the swap board, scratches a little. Stress −4.',fn:()=>berryOpen(loc)});
+  }
+  if(loc==='home'&&n>=2)a.push({cat:'here',ic:'🥧',l:`Make jam and cobbler (${n} bucket${n===1?'':'s'})`,s:'45 min. Uses 2 buckets: +1 day of food, stress −2.',fn:()=>{TX().berry.n-=2;S.t+=45;phoneTick();thxFood(1,'Blackberry cobbler and a jar of jam');adj('stress',-2);afterAction()}});
+  if(loc==='store'&&n>0)a.push({cat:'trade',ic:'💵',l:`Sell blackberries at the swap board ($6 each, ${n})`,s:'Marker on a paper plate: “BERRIES, $6.” They go quickly.',fn:()=>{const k=n,p=k*6;TX().berry.n=0;money(p);S.t+=10;say(`💵 You leave ${k} bucket${k===1?'':'s'} on the swap board table. Somebody gets there first and leaves $${p} in a coffee can.`);afterAction()}});
+}
+
+// ---- the actions ----
+function thxActions(a,loc){
+  if(loc==='marina'){
+    const T=TX(),lite=seasonLite(tod()),ses=fishSessions();
+    if(!T.lic)a.push({cat:'here',ic:'🎫',l:'Buy a Washington fishing license: $20',s:'Good for the year. Covers fishing and shellfish.',dis:S.money<20,fn:()=>{money(-20);T.lic=1;S.t+=5;say('🎫 A Washington fishing license, $20, printed on slightly damp paper.');afterAction()}});
+    a.push({cat:'here',ic:'🎣',l:'Go fishing off the dock',s:!T.lic?'You’ll need the $20 license first.':!lite?seasonDark():ses>=3?'The fish have stopped biting for today.':'30 min to 2 hours. Stress relief, and maybe dinner.',dis:!T.lic||!lite||ses>=3,fn:fishOpen});
+    if(seasonId()==='summer'||T.pot){
+      if(T.pot){const s=crabSoak();a.push({cat:'here',ic:'🦀',l:s>=60?'Pull your crab pot':'Your crab pot is soaking',s:s>=60?`It’s been down ${Math.floor(s/60)} h ${s%60} min. Longer is better, up to a point.`:'Give it an hour, at least.',dis:s<60,fn:crabPull})}
+      else if(seasonId()==='summer')a.push({cat:'here',ic:'🦀',l:'Set a crab pot',s:!T.lic?'You’ll need the $20 license first.':!crabSeason()?'Dungeness season: July, Thursday through Monday.':'Dungeness season. Set it, wander off, come back in a few hours.',dis:!T.lic||!crabSeason()||(!lite),fn:crabSet});
+    }
+  }
+  berryActions(a,loc);
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{thxActions(a,S.loc)}catch(e){console.error(e)}return a}}
+// pots and berries from an earlier week don't carry into a new chapter of a story
+if(typeof storyHooks!=='undefined')storyHooks.push({id:'thx',chapterStart(ch){if(ch>0&&S.thx){S.thx.pot=null;S.thx.berry={n:0,dk:-9};S.thx.fish={dk:-9,n:0};S.thx.pick={dk:-9,n:0};S.thx.crabKeep={dk:-9,n:0};S.thx.gift=-9;S.thx.bingo={dk:-9,n:0}}}});
+// ---------------- 🎱 a bingo card of your own (Wednesday bingo night at the Riv) ----------------
+// A quick hand-played game next to the Legion's regular bingo: one 5×5 card ($5). Numbers are called one at a time;
+// tap a number to daub it once it's been called, and call BINGO when you have a line. About ten other cards are in
+// play, and one of them may win first. First line on the board wins $20. A false BINGO costs you three numbers and some dignity.
+// Only the five most recent calls are shown, so keep up. State is in window.BC (a game is over in a minute or two).
+const BC_PRICE=5, BC_PRIZE=20, BC_RIVALS=10, BC_MAX=3;
+let BC=null;
+const bcNums=()=>{const b=[...Array(75)].map((_,i)=>i+1);for(let i=74;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b};
+function bcNew(){
+  const order=bcNums(),others=[...Array(BC_RIVALS)].map(bingoCard),seen=new Set();let rivalAt=76;
+  for(let i=0;i<75;i++){seen.add(order[i]);if(others.some(c=>hasLine(c,seen))){rivalAt=i+1;break}}
+  return {card:bingoCard(),order,idx:0,called:new Set(),daub:new Set(),rivalAt,over:null,msg:'The caller spins the cage and lifts the first ball.',fin:false,wrong:0,false:0};
+}
+function bcOk(){return S.loc==='food'&&day()===2&&tod()>=1080&&tod()<1200&&S.bingo.playing!==day()}
+function bcStart(){
+  const T=TX(),G=T.bingo;if(G.dk!==dayKey()){G.dk=dayKey();G.n=0}
+  if(G.n>=BC_MAX){say('🎱 Three games is plenty for one night. The Legion volunteer taps the empty chair: “Give somebody else a turn.”');return render()}
+  if(S.money<BC_PRICE){say('🎱 You don’t have $5 for a card.');return render()}
+  money(-BC_PRICE);G.n++;S.bingo.cards=(S.bingo.cards||0)+1;S.bingo.donated=(S.bingo.donated||0)+Math.round(BC_PRICE*0.5);
+  if(G.n===1){if(S.friends.walt)friendPts('walt',1);if(S.friends.rusty)friendPts('rusty',1)}
+  BC=bcNew();thxFun('bingo',2);
+  modal('🎱 Bingo: your card',bcHTML(),[{l:'Leave the table',s:'Done playing this one.',fn:bcFinish}],true);
+}
+function bcBalls(){return BC.order.slice(Math.max(0,BC.idx-5),BC.idx).reverse()}
+function bcHTML(){
+  const B=BC,card=B.card;
+  const cell=(n)=>{const d=n===0||B.daub.has(n),called=n!==0&&B.called.has(n);
+    return `<button class="bcc${d?' on':''}" ${B.over||n===0?'disabled':''} onclick="bcDaub(${n})" aria-label="${n===0?'free space':ballName(n)}${d?', daubed':''}" style="width:52px;height:46px;margin:1px;border:1.5px solid ${called&&!d?'#e3642e':'var(--line)'};border-radius:${d?'50%':'8px'};font:700 16px 'DM Sans',sans-serif;font-variant-numeric:tabular-nums;${d?'background:#e3642e;color:#fff':'background:#fff;color:inherit'};padding:0;touch-action:manipulation">${n===0?'★':n}</button>`};
+  let t='<div style="text-align:center;margin:6px 0"><div style="display:inline-block">'+[...'BINGO'].map(l=>`<span style="display:inline-block;width:54px;font:700 18px Fraunces,serif;color:#fff;background:var(--sound);border-radius:6px;margin:0;padding:2px 0">${l}</span>`).join('')+'</div>';
+  for(let r=0;r<5;r++){t+='<div>';for(let c=0;c<5;c++)t+=cell(card[c][r]);t+='</div>'}t+='</div>';
+  const rec=bcBalls();
+  const head=`<p id="bc-last" style="text-align:center;margin:0 0 4px">${rec.length?`Last called: <b style="font-size:22px">${ballName(rec[0])}</b>`:'No numbers yet.'} · ${B.idx} called</p>${rec.length>1?`<p style="text-align:center;margin:0;font-size:13px;color:var(--mute)">Before that: ${rec.slice(1).map(ballName).join(' · ')}</p>`:''}`;
+  const btn=(id,l,fn,pri)=>`<button id="${id}" class="act ${pri?'primary':''}" ${B.over?'disabled':''} onclick="${fn}" style="flex:1;min-height:46px;margin:0"><span class="tx"><b>${l}</b></span></button>`;
+  return `${head}${t}<div style="display:flex;gap:8px;margin:6px 0">${btn('bc-next','Next number','bcCall()')}${btn('bc-bingo','BINGO!','bcBingo()',true)}</div><p id="bc-msg" style="text-align:center;margin:4px 0;min-height:2.6em">${B.msg}</p><p style="font-size:12px;color:var(--mute);text-align:center;margin:0">Tap a number to daub it once it’s called. About ${BC_RIVALS} other cards in play. First line wins $${BC_PRIZE}.</p>`;
+}
+function bcShow(){const b=document.querySelector('#mbg .mb');if(b)b.innerHTML=bcHTML()}
+window.bcCall=()=>{const B=BC;if(!B||B.over)return;
+  const n=B.order[B.idx++];B.called.add(n);sfx('ball');
+  if(B.idx>=B.rivalAt){B.over='rival';const had=hasLine(B.card,B.daub);
+    B.msg=`<b>${ballName(n)}.</b> “BINGO!” from the back of the room. ${had?'You had a line, too, a heartbeat too late.':'Not yours this time.'}`}
+  else B.msg=`<b style="font-size:18px">${ballName(n)}</b>`;
+  bcShow()};
+window.bcDaub=n=>{const B=BC;if(!B||B.over||!n)return;
+  if(!B.called.has(n)){B.wrong++;B.msg='That one hasn’t been called. Easy, eager hands.';bcShow();return}
+  if(B.daub.has(n))B.daub.delete(n);else B.daub.add(n);bcShow()};
+window.bcBingo=()=>{const B=BC;if(!B||B.over)return;
+  if(hasLine(B.card,B.daub)){B.over='win';B.msg=`<b style="color:var(--good);font-size:20px">BINGO!</b> The caller checks your numbers against the board. Good. $${BC_PRIZE}.`;sfx('win');buzz([60,40,60,40,200]);bcShow();return}
+  B.false++;B.msg='“Let’s see it…” The caller reads your numbers. No line. The room groans, and three more numbers go by.';
+  for(let i=0;i<3&&!B.over;i++)window.bcCall();
+  if(!B.over){B.msg='“Let’s see it…” No line. The room groans, and three more numbers go by while you’re being embarrassed.';bcShow()}
+  };
+function bcFinish(){
+  const B=BC;if(!B||B.fin)return;B.fin=true;
+  S.t+=10+Math.round(B.idx*0.8);phoneTick();
+  let note;
+  if(B.over==='win'){money(BC_PRIZE);S.bingo.won=(S.bingo.won||0)+BC_PRIZE;adj('stress',-8);note=`🎱 BINGO! You won <b>${$(BC_PRIZE)}</b> on a $${BC_PRICE} card. Walt claps once, firmly.`}
+  else{adj('stress',-5+B.false*3);
+    if(!B.over)note='🎱 You push back from the table with a half-daubed card.';else note='🎱 Somebody else took it. You were close enough to feel it.';
+    if(Math.random()<0.2&&B.over){money(5);note+=' A Booster Club volunteer slips you a $5 door-prize raffle win anyway.'}}
+  say(note);BC=null;afterAction();
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
+  if(S.loc==='food'&&day()===2&&bcOk()){const G=TX().bingo,n=G.dk===dayKey()?G.n:0;
+    a.push({ic:'🎱',l:`Play one card yourself: $${BC_PRICE}`,s:n>=BC_MAX?'Three games is plenty for one night.':`Tap to daub as the numbers are called, then call BINGO. First line wins $${BC_PRIZE}. A few minutes.`,cat:'here',dis:S.money<BC_PRICE||n>=BC_MAX,fn:bcStart})}
+}catch(e){console.error(e)}return a}}
+// ---------------- 🚤 your own boat: a used skiff between the Riv marina and Sunnyside ----------------
+// Buy a used aluminum skiff at the Riv marina ($2,500). Keep it in a slip at the marina ($90 a month) or on a trailer at
+// home (free, but launching and hauling out adds 20 minutes a trip). Cross yourself between the island (the Riv marina)
+// and the mainland (the public dock and boat launch at Sunnyside Beach, Steilacoom; Saltar's Point is the next beach over).
+// It's a way around a canceled sailing, not a free shortcut: 25–40 minutes, a gallon or so of gas each way (there's none on
+// the island except Dale's, $12 a gallon), and you arrive without your car. The car stays wherever it is.
+// Risks: a storm or small craft advisory (refused), fog, chop, darkness and a low tide at the launch (your call, with
+// consequences), and an outboard that quits. Residents only: visitors take the ferry.
+//   S.boat = {own, store:'slip'|'trailer', at:'marina'|'sunny', fuel (gal), cond (0..100), trips, paidThru (dayKey)}
+const BOAT_PRICE=2500, BOAT_SLIP=90, BOAT_TANK=6, BOAT_GAL=1.2, BOAT_TRIP=[25,40];
+const BOAT_SUNNY={name:'Sunnyside Beach boat launch (Steilacoom)',side:'M',ic:'🛶',desc:'The public dock and boat launch at Sunnyside Beach Park, a short walk from Saltar’s Point. A ramp, a float and a lot of mud at low tide'};
+Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:false,configurable:true,writable:true});   // hidden from the travel list until you own a boat
+MP.sunny=[-0.9,0.9];
+const boatOwn=()=>!!(typeof S!=='undefined'&&S&&S.boat&&S.boat.own);
+function boatSync(){try{Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:boatOwn()&&!visitorOn(),configurable:true,writable:true})}catch(e){}}
+{const _r=render;render=function(){boatSync();return _r.apply(this,arguments)}}
+const boatGal=g=>Math.round(g*10)/10;
+function boatFuelBtn(){const B=S.boat;return `${boatGal(B.fuel)}/${BOAT_TANK} gal`}
+// ---- tides: ~12.4 h cycle; "low" for about a quarter of it
+function boatPhase(off){return (((dayKey()*1440+tod()+(off||0))%745)+745)%745/745}
+function boatLow(off){const p=boatPhase(off);return p>=0.38&&p<0.62}
+function boatTideWait(){return Math.max(5,Math.ceil((0.62-boatPhase())*745))}
+// ---- conditions right now ----
+function boatConditions(dest){
+  const d=day(),m=tod(),st=S.week&&S.week.storm,sea=seasonId(),mul=sea==='summer'?0.5:sea==='winter'?1.3:1,r=wxR(d,'skiff'),H=[];let refuse=null;
+  if(st&&S.t>=st.start-360&&S.t<st.end)refuse='a gale is coming in: the marina’s flags are standing straight out and there’s a small craft advisory up and down the Sound.';
+  else if(r<0.06*mul)refuse='there’s a small craft advisory today: steep chop and 25-knot gusts. A skiff has no business out there.';
+  else if(r<0.2*mul)H.push({k:'choppy',t:'🌊 Choppy: a stiff southwest breeze and whitecaps in the middle of the Sound. Slower, wetter, thirstier.'});
+  if(S.week&&S.week.fog&&S.week.fog[d]&&m<660)H.push({k:'fog',t:'🌫️ Fog: you can hear the ferry horn but not see the ferry. No radar on a skiff.'});
+  if(!seasonLite(m)||!seasonLite(m+BOAT_TRIP[1]))H.push({k:'dark',t:'🌙 Dark: no real nav lights, drift logs, and the Coast Guard would say don’t.'});
+  const low=dest==='sunny'||S.loc==='sunny'?boatLow():false;
+  if(low)H.push({k:'low',t:'🪨 Low tide: the Sunnyside ramp is mud flats for a hundred feet.'});
+  return {refuse,H,low};
+}
+function boatForecastTxt(){
+  const c=boatConditions('sunny');
+  return c.refuse?'⛔ '+c.refuse.charAt(0).toUpperCase()+c.refuse.slice(1):c.H.length?c.H.map(h=>h.t).join('<br>'):'☀️ Calm: light wind, flat water, good visibility.';
+}
+// ---- crossing ----
+function boatNeed(){return BOAT_GAL}
+function boatDest(){return S.loc==='marina'?'sunny':'marina'}
+function boatCross(){
+  const B=S.boat,dest=boatDest(),c=boatConditions(dest),toMain=dest==='sunny',need=boatNeed();
+  const head=`<p>${toMain?'From the Riv marina to Sunnyside Beach in Steilacoom.':'From the Sunnyside launch back to the Riv marina.'} About ${BOAT_TRIP[0]}–${BOAT_TRIP[1]} minutes, ~${need} gallons of gas. Your car stays where it is.</p>`;
+  const wx=`<p style="font-size:13px">${c.refuse?'⛔ '+c.refuse.charAt(0).toUpperCase()+c.refuse.slice(1):c.H.length?c.H.map(h=>h.t).join('<br>'):'☀️ Calm water, a light breeze, good visibility.'}</p>`;
+  const stat=`<p style="font-size:12px;color:var(--mute)">Tank ${boatFuelBtn()} · outboard ${B.cond>=70?'running well':B.cond>=40?'a bit rough':'ailing'}${B.store==='trailer'?' · trailer: +20 min to launch':''}.</p>`;
+  if(B.fuel<need)return modal('🚤 Out of gas',head+`<p>The tank has ${boatFuelBtn()}. That’s not enough to get across.</p>`+stat,[{l:'OK',fn:()=>{}}]);
+  if(cargoN()>0||!canWalkCarry())return modal('🚤 Too much to carry',head+`<p>A skiff is for you and a backpack. ${cargoN()>0?'Leave the cargo for the ferry.':'Those groceries need the car deck.'}</p>`,[{l:'OK',fn:()=>{}}]);
+  if(c.refuse)return modal('🚤 Not today',head+wx,[{l:'OK, ferry it is',fn:()=>{}}]);
+  const risky=c.H.filter(h=>h.k!=='low');
+  const go=opt=>()=>boatGo(dest,opt);
+  const base={choppy:risky.some(h=>h.k==='choppy'),fog:risky.some(h=>h.k==='fog'),dark:risky.some(h=>h.k==='dark')};
+  const btns=[];
+  if(c.low){const w=boatTideWait();btns.push({l:`Wait for the tide (about ${w} min)`,s:'Time passes; the water comes back up the ramp.',fn:()=>{S.t+=w;phoneTick();say('🌊 You sit on a driftwood log and watch the tide come back in, one inch at a time.');afterAction()}});
+    btns.push({l:risky.length?'Go anyway: drag it through the mud':'Drag it through the mud',s:'+20 min, stress +4, ruined boots.',fn:go(Object.assign({},base,{low:true}))})}
+  else btns.push({l:risky.length?'Go anyway':'Cast off',s:risky.length?'On your own head.':`About ${BOAT_TRIP[0]}–${BOAT_TRIP[1]} min.`,fn:go(base)});
+  btns.push({l:'Not now',fn:()=>{}});
+  modal('🚤 Cross in your skiff',head+wx+stat,btns);
+}
+function boatGo(dest,opt){
+  const B=S.boat,notes=[];let min=BOAT_TRIP[0]+Math.floor(Math.random()*(BOAT_TRIP[1]-BOAT_TRIP[0]+1))+(opt.choppy?8:0)+(B.store==='trailer'?20:0),gal=boatNeed()+(opt.choppy?0.4:0);
+  if(opt.low){min+=20;adj('stress',4);notes.push('🪨 The skiff scrapes the whole ramp. You end up ankle-deep in cold mud, dragging it the last hundred feet.')}
+  if(opt.dark&&Math.random()<0.3){min+=30;B.cond=Math.max(0,B.cond-25);adj('stress',8);notes.push('🪵 In the dark you clip a drift log. A bang, a long scrape and a very quiet few minutes. The skiff is still afloat, but the outboard sounds worse.')}
+  if(opt.fog&&Math.random()<0.3){min+=35;adj('stress',8);notes.push('🌫️ In the fog you lose the shoreline and steer by the ferry horn and your own stubbornness. You wander a long while before the beach shows up.')}
+  if(opt.choppy&&Math.random()<0.3){adj('health',-2);adj('stress',5);S.phone=Math.max(0,S.phone-25);notes.push('🌊 A wave comes over the bow. You arrive soaked, with a damp phone.')}
+  B.fuel=boatGal(Math.max(0,B.fuel-gal));
+  const mech=Math.random()<0.07+(B.cond<60?0.12:0)+(B.cond<30?0.15:0);
+  const fin=(extra,more)=>boatArrive(dest,min+extra,notes.concat(more||[]));
+  if(!mech)return fin(0);
+  const tow=S.friends.sam;
+  modal('🔧 The outboard quits',`<p>Midway across, the outboard coughs, surges and dies. Silence, slapping water, and a tug pulling you toward the Narrows. The ferry is somewhere behind you.</p>`,[
+    {l:'Yank the pull cord',s:'20 min. Probably.',fn:()=>{if(Math.random()<0.65){B.cond=Math.max(0,B.cond-8);fin(20,['🔧 On the ninth pull it catches, runs rough and settles. You don’t say a word until you’re tied up.'])}else{adj('stress',6);adj('health',-1);fin(90,['🔧 It won’t catch. You row the last mile with the little oars, and you’ll feel it tomorrow.'])}}},
+    {l:'Row it in',s:'70 min of effort. Stress +4.',fn:()=>{adj('stress',4);adj('health',-1);fin(70,['🚣 You row with one eye on the tide. It’s humbling and a good workout.'])}},
+    tow?{l:'Text Sam: “Can you come get me?”',s:'Sam’s sailboat. About 40 min. Free, but you owe him.',fn:()=>{friendPts('sam',1);adj('stress',2);fin(40,['⛵ Sam appears under sail, takes your line and tows you in without saying anything about the engine. You owe him a favor.'])}}:{l:'Call the tow service',s:'$150, 45 min.',fn:()=>{money(-150);fin(45,['⚓ A tow boat tows you in. $150, and a bored guy named Dwayne.'])}},
+    ]);
+}
+function boatArrive(dest,min,notes){
+  const B=S.boat,toMain=dest==='sunny';
+  crossing(toMain?'I':'M','Across the Sound in your skiff',`${min} minutes · ${L[dest].name}`,()=>{
+    S.t+=min;phoneTick();B.cond=Math.max(0,B.cond-2);B.trips=(B.trips||0)+1;B.at=dest;S.loc=dest;S.stats.boatTrips=(S.stats.boatTrips||0)+1;
+    say(toMain?`🚤 You tie up at the Sunnyside float in ${min} minutes. Your car is still on the island.`:`🚤 The Riv marina comes up out of the haze. ${min} minutes, and the car is exactly where you left it.`);
+    notes.forEach(n=>say(n));
+    afterAction()},true);
+}
+// ---- buying, fuel, service, selling ----
+function boatBuy(){
+  modal('🚤 A used skiff, $2,500',`<p>A hand-lettered sign on the marina board: <b>14-ft aluminum skiff, 15 hp outboard, 6-gal tank. Runs great. Don’t ask about 2019.</b> A dent in the bow, a seat that’s been replaced twice, and a trailer if you want it.</p><p style="font-size:13px;color:var(--mute)">It’s no car ferry: ${BOAT_TRIP[0]}–${BOAT_TRIP[1]} minutes across, about ${BOAT_GAL} gallons each way, and no crossing in storms, fog, chop or the dark. Gas is only at Dale’s on the island. Where do you keep it?</p>`,[
+    {l:`Rent a slip at the Riv marina: $${(BOAT_PRICE+BOAT_SLIP).toLocaleString()}`,s:`$${BOAT_PRICE.toLocaleString()} for the boat plus $${BOAT_SLIP} a month moorage (the first month now).`,dis:S.money<BOAT_PRICE+BOAT_SLIP,fn:()=>boatBought('slip')},
+    {l:`Keep it on the trailer: $${BOAT_PRICE.toLocaleString()}`,s:'No moorage fee, but launching and hauling out adds 20 min each trip.',dis:S.money<BOAT_PRICE,fn:()=>boatBought('trailer')},
+    {l:'Not now',fn:()=>{}}]);
+}
+function boatBought(store){
+  money(-BOAT_PRICE-(store==='slip'?BOAT_SLIP:0));S.t+=30;phoneTick();
+  S.boat={own:true,store,at:'marina',fuel:3,cond:70,trips:0,paidThru:dayKey()+28};adj('stress',-3);boatSync();
+  say(`🚤 Cash on the hood of a truck, a signature on a bill of sale, and you own a boat. ${store==='slip'?`You’re in a slip at the Riv marina ($${BOAT_SLIP} a month).`:'It’s on a trailer at the Riv ramp.'} The seller left 3 gallons of gas in the tank.`);
+  showTile('🚤','You own a boat','A used skiff at the Riv marina','good');afterAction();
+}
+function boatFuelHome(){const B=S.boat,g=boatGal(Math.min(S.homeGas,BOAT_TANK-B.fuel));S.homeGas=boatGal(S.homeGas-g);B.fuel=boatGal(B.fuel+g);S.t+=10;phoneTick();say(`⛽ You pour ${g} gallon${g===1?'':'s'} from the shed stash into the skiff’s tank (${boatFuelBtn()}).`);afterAction()}
+function boatServe(){money(-60);S.t+=30;phoneTick();S.boat.cond=100;say('🔧 New plug, fresh gas-line filter and a quick lesson from the marina’s mechanic. The outboard purrs.');afterAction()}
+function boatSell(){const B=S.boat,p=Math.round(900+B.cond*8);modal('🚤 Sell the skiff?',`<p>A guy on the dock offers <b>$${p.toLocaleString()}</b> cash. ${B.cond<50?'He winces at the outboard.':'He looks the hull over and nods.'}</p>`,[{l:`Sell for $${p.toLocaleString()}`,fn:()=>{money(p);S.boat=null;boatSync();S.t+=20;say(`🚤 Handshake, cash, and an empty slip. ${p<2000?'You lost a little':'Not bad'} on the deal.`);afterAction()}},{l:'Keep it',fn:()=>{}}]);}
+function boatMoorage(){
+  const B=S.boat;if(!boatOwn()||B.store!=='slip')return;
+  if(dayKey()>=B.paidThru){money(-BOAT_SLIP);B.paidThru+=28;say(`⚓ The month’s moorage at the Riv marina: $${BOAT_SLIP}, charged to your card.`)}
+}
+{const _e=endDay;endDay=function(){try{boatMoorage()}catch(e){console.error(e)}return _e.apply(this,arguments)}}
+// the boat spends the night at the public float: a note on the hull
+defEvent({id:'boat_overnight',hook:'night',priority:2,max:2,chance:0.45,cond:()=>boatOwn()&&S.boat.at==='sunny'&&S.boat.store==='slip',
+  run(ctx){money(-35);ctx.notes.push('🚤 A Steilacoom parks officer left a $35 overnight-moorage notice on your skiff at the Sunnyside float. The public dock is for day use.')}});
+Object.assign(TILE_META,{boat_overnight:['🚤','Moorage notice at Sunnyside','bad']});
+if(typeof storyHooks!=='undefined')storyHooks.push({id:'boat',chapterStart(ch,notes){if(ch>0&&boatOwn()){const B=S.boat;B.paidThru=28;if(B.store==='slip'){money(-BOAT_SLIP);notes&&notes.push(`⚓ A new month of moorage at the Riv marina: $${BOAT_SLIP}.`)}}}});
+// ---- actions ----
+function boatActions(a,loc){
+  if(visitorOn())return;
+  const B=S.boat,own=boatOwn();
+  if(loc==='marina'){
+    if(!own)a.push({cat:'ferry',ic:'🚤',l:'Look at the used skiff for sale: $2,500',s:'A hand-lettered sign on the marina board. 14 ft, 15 hp, runs great.',fn:boatBuy});
+    else{
+      const out=typeof activeOutage==='function'&&activeOutage();
+      if(B.at==='marina')a.push({cat:'ferry',ic:'🚤',l:'Take the skiff across to Sunnyside',s:`${BOAT_TRIP[0]}–${BOAT_TRIP[1]} min, ~${BOAT_GAL} gal. Tank ${boatFuelBtn()}.${out?' The ferry’s down: this is the way around.':''}`,cls:out?'primary':'',fn:boatCross});
+      else a.push({cat:'ferry',ic:'🚤',l:'Your skiff is at Sunnyside',s:'You left it at the public float on the mainland.',dis:true});
+      if(B.at==='marina'){
+        if(S.homeGas>0&&B.fuel<BOAT_TANK-0.2)a.push({cat:'fuel',ic:'⛽',l:'Fill the skiff’s tank from your shed gas',s:`${S.homeGas} gal stashed. Tank ${boatFuelBtn()}. The generator needs some too.`,fn:boatFuelHome});
+        if(B.cond<90)a.push({cat:'fuel',ic:'🔧',l:'Service the outboard: $60',s:'30 min with the marina mechanic. Fewer breakdowns.',dis:S.money<60,fn:boatServe});
+        a.push({cat:'ferry',ic:'🌤️',l:'Check the marine forecast',s:'The flag, the chalkboard, and the guy who’s always on the dock.',fn:()=>{S.t+=5;modal('🌤️ Marine forecast',`<p>${boatForecastTxt()}</p>`+(boatLow()?'<p style="font-size:13px">Tide is low right now.</p>':'<p style="font-size:13px">Tide is '+(boatLow(120)?'dropping to a low in a couple of hours.':'not low.')+'</p>'),[{l:'OK',fn:()=>{}}])}});
+        a.push({cat:'ferry',ic:'💵',l:'Sell the skiff',s:'A guy on the dock is always interested.',fn:boatSell});
+      }
+    }
+  }
+  if(loc==='sunny'&&own){
+    if(B.at==='sunny')a.push({cat:'ferry',ic:'🚤',l:'Take the skiff home to the Riv marina',s:`${BOAT_TRIP[0]}–${BOAT_TRIP[1]} min, ~${BOAT_GAL} gal. Tank ${boatFuelBtn()}.${B.store==='slip'?' Don’t leave it overnight: the float is for day use.':''}`,cls:'primary',fn:boatCross});
+    else a.push({cat:'ferry',ic:'🚤',l:'Your skiff is at the Riv marina',s:'You left it on the island.',dis:true});
+  }
+  if(loc==='gas'&&own&&B.at==='sunny'&&B.fuel<BOAT_TANK-0.2){const g=boatGal(BOAT_TANK-B.fuel),c=Math.round(g*GAS_PRICE);a.push({cat:'fuel',ic:'⛽',l:`Fill the skiff’s portable tank: $${c}`,s:`${g} gal at $${GAS_PRICE}/gal. It’s at the launch; carry the tank up. You can’t take it on the ferry.`,dis:S.money<c,fn:()=>{money(-c);B.fuel=BOAT_TANK;S.t+=20;phoneTick();say(`⛽ You lug the red marine tank up from the Sunnyside float and fill it: ${g} gal, $${c}.`);afterAction()}})}
+  if(loc==='dale'&&own&&B.at==='marina'&&B.fuel<BOAT_TANK-0.2&&isOpen('dale')){const g=Math.min(3,boatGal(BOAT_TANK-B.fuel)),c=Math.round(g*DALE_PRICE);a.push({cat:'fuel',ic:'⛽',l:`Buy ${g} gal for the skiff: $${c}`,s:`$${DALE_PRICE}/gal into your gas can, poured in at the marina.`,dis:S.money<c,fn:()=>{money(-c);B.fuel=boatGal(B.fuel+g);S.t+=10;phoneTick();say(`⛽ Dale fills a red can, no questions. ${g} gal for the skiff, $${c}.`);afterAction()}})}
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{boatActions(a,S.loc)}catch(e){console.error(e)}return a}}
+// ---------------- 🎆🎃🦃🎄 holidays on the island ----------------
+// Real dates, from gameDate(day()) (the game's calendar: fall starts Nov 2 2026, winter Jan 4 2027, spring Apr 5 2027,
+// summer Jun 29 2026; a week game is the first 7 days, a month game or a story chapter 28). Only holidays that fall
+// inside the game happen:
+//   Fourth of July   Sat Jul 4 (summer, week 1): parade, potluck, the BBQ and fireworks from 16-seasons, boats packed off the marina
+//   Halloween        Oct 31: trunk-or-treat at the Legion hall (no season starts early enough to reach it: it fires if a calendar ever does)
+//   Thanksgiving     Wed Nov 25 (the ferry crush) and Thu Nov 26 (a dinner invitation, or host the neighbors): fall month, week 4
+//   Christmas        Fri Nov 27 on (tree lighting, decorations, a ferry-crew carol, ZooLights) through Jan 6, so fall week 4 and winter week 1
+// Ferry crowding goes through seasonFull(). State is in S.hol (made on demand).
+function HOL(){return S.hol||(S.hol={done:{},deco:0,pie:-9})}
+function holWho(d){const dt=gameDate(d==null?day():d),m=dt.getMonth(),n=dt.getDate(),w=dt.getDay(),k=[];
+  if(m===6&&n===4)k.push('july4');
+  if(m===9&&n===31)k.push('halloween');
+  if(m===10&&w===4&&n>=22&&n<=28)k.push('thanksgiving');
+  if(m===10&&w===3&&n>=21&&n<=27)k.push('thanksEve');
+  if(m===10&&w===5&&n>=23&&n<=29)k.push('blackFriday');
+  if((m===10&&n>=27)||m===11||(m===0&&n<=6))k.push('xmas');
+  return k}
+const holIs=(k,d)=>{try{return holWho(d).includes(k)}catch(e){return false}};
+const holDone=k=>HOL().done[k]===dayKey();
+function holAnnounce(id,k,txt,atHome){defEvent({id,hook:'wake',priority:2,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&holIs(k),run(){say(txt())}})}
+Object.assign(TILE_META,{hol_july4:['🎆','Fourth of July','info'],hol_halloween:['🎃','Halloween','info'],hol_thanks_eve:['🦃','Thanksgiving eve: the ferry crush','info'],hol_thanks:['🦃','Thanksgiving','info'],hol_blackfriday:['🎄','The tree lighting tonight','info'],hol_xmas_jan:['🎄','The lights are still up','info'],
+  thanks_ferry:['🥧','A pie in the car line','good'],xmas_carol:['🎶','A carol on the ferry','good'],july4_boats:['🛥️','Packed boats on the Sound','info']});
+holAnnounce('hol_july4','july4',()=>'🎆 <b>Fourth of July.</b> The Legion parade steps off from the school at <b>10:00 AM</b> (fire engines, a tractor, every kid on the island on a bike). The potluck at the Legion hall is 4 PM. Then the fireworks over the Sound around 10 PM, with every boat on the water anchored to watch.');
+holAnnounce('hol_halloween','halloween',()=>'🎃 <b>Halloween.</b> The houses out here are too far apart for trick-or-treating, so the Legion hall holds <b>trunk-or-treat</b> in its parking lot, 5:00 to 7:30 PM. Costumes, candy and cars with their trunks decorated like haunted ferries.');
+holAnnounce('hol_thanks_eve','thanksEve',()=>'🦃 <b>The Wednesday before Thanksgiving.</b> Every islander with family on the mainland, and every mainland family with someone on the island, is on the boats today. Expect full sailings, especially the afternoon ones, with pies on the dashboards. Tomorrow the ferry runs the holiday schedule.');
+holAnnounce('hol_thanks','thanksgiving',()=>'🦃 <b>Thanksgiving.</b> The boats run on the holiday schedule and the island smells like turkey. The Legion hall serves a community dinner from 2 PM, and half the island has been invited to someone’s house.');
+holAnnounce('hol_blackfriday','blackFriday',()=>'🎄 <b>The tree lighting.</b> The Legion lights the island’s big fir tonight at 5:30 PM: cocoa, carols and Santa on the fire truck. Over on the mainland, <b>ZooLights</b> opens tonight at Point Defiance, a million lights for a walrus.');
+defEvent({id:'hol_xmas_jan',hook:'wake',priority:2,max:1,noScale:true,chance:1,cond:ctx=>atHomeWake(ctx)&&seasonId()==='winter'&&holIs('xmas')&&day()===0,run(){say('🎄 The Christmas lights are still up on half the island, and will be until somebody’s husband gets a ladder. The Legion’s “recycle your tree” pile at the school is already a small mountain.')}});
+
+// ---- ferry crowding: the Wednesday before Thanksgiving and the Sunday after, the Fourth ----
+function holCrowd(side,d,dep){const k=holWho(d),w=gameDate(d).getDay();let p=0;
+  if(k.includes('thanksEve')){p=side==='M'?(dep>=800?0.72:dep>=555?0.4:0):(dep<=700?0.4:dep>=765?0.5:0)}
+  else if(k.includes('blackFriday')&&side==='M'&&dep>=875)p=0.45;
+  else if(w===0&&holIs('blackFriday',d-2)){p=side==='M'?(dep>=875?0.75:0):(dep>=765?0.4:0)}   // the Sunday after Thanksgiving
+  else if(k.includes('july4')&&dep>=800)p=0.6;
+  else if(k.includes('halloween')&&side==='M'&&dep>=1035)p=0.3;
+  return p}
+{const _f=seasonFull;seasonFull=function(p,side,d,dep){p=_f.apply(this,arguments);try{const c=holCrowd(side,d,dep);if(c>p)p=c}catch(e){}return p}}
+// the 'full boat' note on the ferry tab and planner is built from fullProb, so it all lines up
+defEvent({id:'thanks_ferry',hook:'arrive',priority:2,max:1,cond:ctx=>ctx.from==='ferry'&&holIs('thanksEve')&&(ctx.at==='aiDock'||ctx.at==='stDock'),chance:0.7,
+  run(){adj('stress',2);modal('🥧 A pie in the car line',`<p>Pickups with turkeys in coolers, SUVs with dogs hanging out of the back and a minivan full of pies. A box slides off the roof rack of the car next to you, and a pumpkin pie lands face down on the ramp.</p>`,[
+    {l:'Help scrape it up',s:'10 min. They give you a slice from the other pie.',fn:()=>{S.t+=10;adj('stress',-3);repAdd(2,'helped a family with a dropped pie');say('🥧 You scrape the pie off the pavement with a ferry ticket. “We have three more at home,” the mother says, and hands you a slice of the other one. Still warm.')}},
+    {l:'Keep walking',fn:()=>{say('🥧 You decide it’s not yours to fix. Somebody else gets the napkins.')}}]);return {block:false}}});
+defEvent({id:'xmas_carol',hook:'arrive',priority:2,max:1,cond:ctx=>ctx.from==='ferry'&&holIs('xmas')&&(ctx.at==='aiDock'||ctx.at==='stDock'),chance:0.6,
+  run(){modal('🎶 The ferry crew sings',`<p>The deckhands are wearing Santa hats over their float coats. Halfway across, the captain’s voice comes over the PA: “Folks, we’re not supposed to do this, but it’s Christmas.” A tinny “Jingle Bells” starts up, led by a first mate who is clearly the one who can sing.</p>`,[
+    {l:'Sing along',s:'Stress −5.',fn:()=>{adj('stress',-5);say('🎶 You sing every verse, off-key, in a car deck full of strangers who sing too. A deckhand hands out candy canes.')}},
+    {l:'Smile and mouth the words',s:'Stress −2.',fn:()=>{adj('stress',-2);say('🎶 You stay in the car and just smile. A candy cane comes in through the window.')}}])}});
+defEvent({id:'july4_boats',hook:'arrive',priority:2,max:1,cond:ctx=>ctx.from==='ferry'&&holIs('july4')&&tod()>=1000,chance:0.8,
+  run(){adj('stress',-1);say('🛥️ From the upper deck you can see the whole Sound filling up: sailboats, cruisers, a tugboat with lawn chairs on the barge, and a million kayaks, all of them heading for a good seat for the fireworks.')}});
+
+// ---- the day's activity windows (like the community calendar in 05) ----
+function holWin(a,key,ic,name,from,to,acts){
+  const m=tod();
+  if(holDone(key))a.push({ic:'✅',l:`${name} ✓`,s:'You were there.',cat:'here',dis:true});
+  else if(m<from)a.push({ic,l:`${name}: ${fmt(from)} today`,s:`Come back between ${fmt(from)} and ${fmt(to)}.`,cat:'here',dis:true});
+  else if(m<=to)acts.forEach(x=>a.push(Object.assign({cat:'here'},x)));
+  else a.push({ic,l:`${name} is over`,s:'Folding chairs are stacked. Next year.',cat:'here',dis:true});
+}
+const holMark=k=>{HOL().done[k]=dayKey()};
+function holBuddy(id,name,how){if(S.friends[id])friendPts(id,2);else meet(id,name,how)}
+function holActions(a,loc){
+  const k=holWho();if(!k.length)return;
+  const dk=dayKey(),m=tod(),res=!visitorOn();
+  if(k.includes('july4')){
+    if(loc==='legion'){
+      holWin(a,'parade','🇺🇸','Fourth of July parade',600,690,[{ic:'🇺🇸',l:'Watch the Fourth of July parade',s:'90 min. Fire engines, tractors, a unicycle. Stress −6.',cls:'primary',fn:holParade}]);
+      holWin(a,'potluck','🍽️','The Legion potluck',960,1110,[{ic:'🍽️',l:'Go to the Fourth of July potluck',s:'2 hours. Counts as dinner. Stress −8.',cls:'primary',fn:holPotluck}]);
+    }
+    if(loc==='marina'&&m>=1290&&m<1380){const X=SEAST();
+      if(X.fw===dk)a.push({ic:'🎆',l:'Fireworks ✓',s:'Ooh. Aah.',cat:'here',dis:true});
+      else a.push({ic:'🎆',l:'Watch the fireworks from the marina dock',s:'45 min. Boats are packed bow-to-stern, every horn goes off at the finale. Stress −12.',cat:'here',cls:'primary',fn:()=>{
+        X.fw=dk;S.t+=45;phoneTick();adj('stress',-12);S.stats.fireworks=(S.stats.fireworks||0)+1;thxFun('fw',2);
+        say('🎆 From the marina dock you’re ringed by boats: cruisers rafted three deep, a sailboat with a string of lights, a canoe with a glow stick. The whole Sound goes off at once at the finale, horns and cheers.');afterAction()}})}
+  }
+  if(k.includes('halloween')&&loc==='legion')holWin(a,'trunk','🎃','Trunk-or-treat',1020,1170,[{ic:'🎃',l:'Go to trunk-or-treat at the Legion hall',s:'90 min. Pick a costume. Stress −6.',cls:'primary',fn:holTrunk}]);
+  if(k.includes('thanksgiving')){
+    if(loc==='legion'&&m>=840&&m<=1050&&!holDone('thanks'))a.push({cat:'here',ic:'🦃',l:'Thanksgiving dinner',s:'Come to the Legion’s community dinner, or go to a friend’s. Stress −8 or so.',cls:'primary',fn:()=>holThanks('legion')});
+    if(loc==='home'&&res&&m>=720&&m<=1140&&!holDone('thanks'))a.push({cat:'here',ic:'🦃',l:'Thanksgiving dinner',s:'Invitations, hosting, or a quiet dinner. Stress −8 or so.',cls:'primary',fn:()=>holThanks('home')});
+    if(loc==='legion'&&holDone('thanks'))a.push({cat:'here',ic:'🦃',l:'Thanksgiving dinner ✓',s:'Full and sleepy.',dis:true});
+  }
+  if(k.includes('thanksEve')&&loc==='home'&&res&&HOL().pie!==dayKey()&&S.pantry>=1&&m<1260)
+    a.push({cat:'here',ic:'🥧',l:'Bake a pie for tomorrow',s:'1 hour. Uses 1 day of food. A pie to bring: it’s the best present at any table.',fn:()=>{HOL().pie=dayKey();S.pantry-=1;S.t+=60;phoneTick();adj('stress',-2);say('🥧 Flour on the counter, a rolling pin you’ve never used and a pumpkin pie that comes out surprisingly well. You hide it from yourself until tomorrow.');afterAction()}});
+  if(k.includes('blackFriday')&&loc==='legion')holWin(a,'tree','🎄','The tree lighting',1050,1140,[{ic:'🎄',l:'Go to the Legion tree lighting',s:'60 min. Cocoa, carols and Santa on a fire truck. Stress −7.',cls:'primary',fn:holTree}]);
+  if(k.includes('xmas')&&loc==='home'&&res&&!HOL().deco&&m<1260)a.push({cat:'home',ic:'🎄',l:'Put up the Christmas lights and a tree: $20',s:'90 min. A real fir from the back lot, and lights on the porch. Home +4, stress −4.',dis:S.money<20,fn:()=>{money(-20);HOL().deco=1;S.t+=90;phoneTick();homeAdj(4);adj('stress',-4);say('🎄 A noble fir from the back lot, a box of lights from 2009 that mostly work and a string of cranberries. The cabin glows through the trees like a lantern.');afterAction()}});
+  if(k.includes('xmas')&&loc==='tc_zoo'&&m>=990&&m<1290&&!holDone('zoolights'))a.push({cat:'here',ic:'✨',l:'ZooLights: $22',s:'2 hours. A million lights, a walrus in a Santa hat, hot cocoa. Stress −10.',dis:S.money<22,fn:()=>{money(-22);holMark('zoolights');S.t+=120;phoneTick();adj('stress',-10);S.ateOut=S.ateOut;thxFun('zoo',2);say('✨ A walk through a forest of lit-up animals: a whale made of 10,000 LEDs, a very proud peacock, and your breath in the cold. You stay for the second cocoa.');afterAction()}});
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{holActions(a,S.loc)}catch(e){console.error(e)}return a}}
+
+// ---- Fourth of July ----
+function holParade(){
+  modal('🇺🇸 The parade',`<p>Folding chairs line the road from the school to the Legion. The Fire District engine leads off, then the school bus with the whole elementary school on top of it, then a tractor towing a hay wagon of Legion members, then a unicycle.</p>`,[
+    {l:'Wave from the curb with a flag',s:'Easy. Stress −6.',fn:()=>{holMark('parade');S.t+=90;phoneTick();adj('stress',-6);holBuddy('walt','Walt from the American Legion','waved a flag next to him at the Fourth of July parade');thxFun('parade',2);say('🇺🇸 You wave a paper flag at a tractor. The tractor waves back. Walt, riding on the hay wagon in a Legion cap, salutes you.');afterAction()}},
+    {l:'Join the parade on your bike',s:'Red, white and blue streamers. Stress −8, but it’s a gamble.',fn:()=>{holMark('parade');S.t+=90;phoneTick();thxFun('parade',2);
+      if(Math.random()<0.65){adj('stress',-8);repAdd(3,'rode a streamered bike in the Fourth of July parade');say('🇺🇸 You fall in behind the unicycle, ringing your bell. The curb cheers. A little kid screams “BIKE GUY!”. It’s the best thing that’s happened all week.')}
+      else{adj('stress',2);adj('health',-1);say('🇺🇸 A streamer jams in your spokes at the first corner and you fold into the ditch in front of the entire island. They applaud anyway. A scraped knee and a lesson learned.')}
+      afterAction()}},
+    {l:'Catch candy',s:'Kids are better at this. Stress −4.',fn:()=>{holMark('parade');S.t+=90;phoneTick();adj('stress',-4);thxFun('parade',1);say('🇺🇸 You catch eleven Tootsie Rolls and a Dum Dum, in competition with a seven-year-old who clearly has a system.');afterAction()}}]);
+}
+function holPotluck(){
+  const dish=S.pantry>=1&&!visitorOn();
+  modal('🍽️ The Legion potluck',`<p>Folding tables down the middle of the hall: three kinds of potato salad, deviled eggs in a tray with little dents, a crockpot of beans, a pie contest and a sheet cake shaped like the flag.</p>`,[
+    {l:'Bring a dish from your pantry',s:dish?'Uses 1 day of food. Island reputation +3.':'You have no food to spare.',dis:!dish,fn:()=>{S.pantry-=1;holMark('potluck');S.t+=120;phoneTick();S.ateOut=day();S.ateOutAt='the Legion potluck';adj('stress',-8);repAdd(3,'brought a dish to the Fourth of July potluck');holBuddy('hendersons','the Hendersons','shared a table at the Fourth of July potluck');say('🍽️ You carry in a covered dish and set it between two other casseroles. By the end it’s empty. Somebody asks for the recipe, which is funny, because you made it up.');afterAction()}},
+    {l:'Bring store-bought: $12',s:'A tray of cookies from the mainland. Nobody minds.',dis:S.money<12,fn:()=>{money(-12);holMark('potluck');S.t+=120;phoneTick();S.ateOut=day();S.ateOutAt='the Legion potluck';adj('stress',-7);holBuddy('hendersons','the Hendersons','shared a table at the Fourth of July potluck');say('🍽️ A tray of cookies, still in the plastic. They disappear anyway.');afterAction()}},
+    {l:'Come empty-handed and put $10 in the jar',s:'The Legion’s donation jar. Island reputation +1.',dis:S.money<10,fn:()=>{money(-10);holMark('potluck');S.t+=120;phoneTick();S.ateOut=day();S.ateOutAt='the Legion potluck';adj('stress',-7);repAdd(1,'dropped $10 in the Legion jar');holBuddy('walt','Walt from the American Legion','handed you a plate at the Fourth of July potluck');say('🍽️ You eat three plates and put ten dollars in the jar. A volunteer promises it’s for the pie contest.');afterAction()}},
+    {l:'Not now',fn:()=>{}}]);
+}
+// ---- Halloween ----
+function holTrunk(){
+  modal('🎃 Trunk-or-treat',`<p>Thirty cars are parked in a horseshoe in the Legion lot, trunks open: one is a haunted ferry, one is a pumpkin patch, one has a very serious skeleton in a lawn chair. The kids are dinosaurs, bees and one tiny Walt in a Legion cap. What are you wearing?</p>`,[
+    {l:'A store-bought costume: $15',s:'A banana, from the Lakewood party store.',dis:S.money<15,fn:()=>{money(-15);holMark('trunk');S.t+=90;phoneTick();adj('stress',-6);repAdd(2,'came in costume to trunk-or-treat');thxFun('halloween',2);say('🎃 You’re a banana. A very tall child asks if you’re a minion. You’re handing out candy in a banana suit, and you’ve never been happier.');afterAction()}},
+    {l:'Something homemade from the closet',s:'Free. A gamble: it might win the contest.',fn:()=>{holMark('trunk');S.t+=90;phoneTick();thxFun('halloween',2);
+      if(Math.random()<0.3){money(20);adj('stress',-9);repAdd(4,'won the trunk-or-treat costume contest');say('🎃 A bedsheet, two flashlights and a ferry captain’s hat: “The Ghost of the 7:35.” You win Most Creative and $20 from the Legion jar.')}
+      else{adj('stress',-5);say('🎃 A ferry deckhand, in your own float coat and a hat. People are confused but kind. A kid asks if you can find his dog.')}
+      afterAction()}},
+    {l:'Skip the costume, hand out candy: $6',s:'A bag of full-size bars. You’re the favorite trunk.',dis:S.money<6,fn:()=>{money(-6);holMark('trunk');S.t+=90;phoneTick();adj('stress',-4);repAdd(2,'handed out full-size candy bars');thxFun('halloween',1);say('🎃 Full-size bars. By 6:30 there’s a line, the kids are telling each other, and a parent asks if you’ll be here next year.');afterAction()}},
+    {l:'Not now',fn:()=>{}}]);
+}
+// ---- Thanksgiving ----
+function holThanks(where){
+  const res=!visitorOn(),fr=thxFriends(),id=fr.includes('hendersons')?'hendersons':fr[0],pie=HOL().pie===dayKey()-1;
+  const done=(txt)=>{holMark('thanks');say(txt);afterAction()};
+  const btns=[];
+  if(res&&id)btns.push({l:`Dinner at ${thxName(id)}’s`,s:`${pie?'Bring your pie. ':''}Free. Friendship +2. Stress −10.`,fn:()=>{S.t+=150;phoneTick();S.ateOut=day();S.ateOutAt=`Thanksgiving at ${thxName(id)}’s`;adj('stress',-10);friendPts(id,pie?3:2);repAdd(1,'');done(`🦃 ${thxName(id)} sets a place for you at a table that’s been extended with a card table and a door on sawhorses. ${pie?'Your pie is the first thing gone. ':''}Somebody says grace, somebody falls asleep in the recliner and everybody wins.`)}});
+  btns.push({l:'The Legion’s community dinner',s:'Free. 80 islanders, folding tables, a turkey the size of a toddler. Stress −8.',fn:()=>{S.t+=120;phoneTick();S.ateOut=day();S.ateOutAt='the Legion Thanksgiving dinner';adj('stress',-8);repAdd(2,'came to the Legion’s Thanksgiving dinner');holBuddy('walt','Walt from the American Legion','carved the turkey at the Legion’s Thanksgiving dinner');thxFun('thanks',3);done('🦃 Walt carves, in his apron. Seventy-nine islanders and you pass the green bean casserole down a table of folding chairs. You’re stuffed, and for an hour there’s no ferry.')}});
+  if(res&&where==='home'){
+    const hostBtn=(l,s,dis,pay)=>({l,s,dis,fn:()=>{pay();S.t+=210;phoneTick();S.ateOut=day();S.ateOutAt='Thanksgiving at your place';adj('stress',-6);
+      const g=fr.slice(0,3);let t;
+      if(g.length){g.forEach(x=>friendPts(x,2));t=`🦃 ${g.map(thxName).join(', ')} come by with folding chairs and side dishes. The cabin has never been this loud or this warm.`}
+      else{meet('bev','Bev the knitter','she came to your first Thanksgiving');meet('hendersons','the Hendersons','sat at your Thanksgiving table');t='🦃 You put a post up on the group page, and two neighbors you barely know come over with a green bean casserole. They stay till nine.'}
+      repAdd(5,'hosted the neighbors for Thanksgiving');homeAdj(2);S.pantry+=2;done(t+' Leftovers: +2 days of food.')}});
+    btns.push(hostBtn('Host: cook for the neighbors, $45 of groceries','3.5 hours. Friendship +2 each, reputation +5, leftovers. A little exhausting.',S.money<45,()=>money(-45)));
+    btns.push(hostBtn('Host, from your pantry (3 days of food)','Same dinner, no cash. A lot of improvising.',S.pantry<3,()=>{S.pantry-=3}));
+  }
+  btns.push({l:'A quiet dinner at home',s:'Stress −2. Nobody needs you to talk.',fn:()=>{S.t+=60;phoneTick();adj('stress',-2);done('🦃 A frozen pie, a podcast and a window on the rain. Nobody asks you anything. It’s fine.')}});
+  btns.push({l:'Not yet',fn:()=>{}});
+  modal('🦃 Thanksgiving',`<p>The boats are on the holiday schedule and the smoke from a hundred chimneys sits flat over the firs. ${id&&res?`${thxName(id)} has already said you’re welcome at their table. `:''}The Legion hall is doing its community dinner. Where do you spend it?</p>`,btns);
+}
+// ---- the tree lighting ----
+function holTree(){
+  holMark('tree');S.t+=60;phoneTick();adj('stress',-7);thxFun('xmas',2);
+  holBuddy('bev','Bev the knitter','she handed you a cocoa at the tree lighting');
+  say('🎄 The big fir by the Legion goes on all at once, and the whole crowd goes “ooooh.” A deckhand from the ferry crew in a Santa hat leads two verses of “O Christmas Tree,” the fire truck pulls in with Santa on the ladder, and the cocoa is surprisingly good.');
+  afterAction();
+}
 </script>
 </body>
 </html>
