@@ -73,12 +73,18 @@ const JOBS={
 };
 const COOP_GOAL=2500;
 const DIFFS={
-  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0},d:'More money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, a house that wears slower.'},
-  normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0},d:'The game as designed: November on Anderson Island. No extras either way.'},
-  hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.20,raccoon:1.6,rent:1,carTrouble:1,pantry:1},d:'Summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages and raccoons, no warming shelter. If you go broke, the Legion hands out food. Score ×1.25.'},
+  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:0.5,fineMul:0.5},d:'More money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, a house that wears slower, half the fines and reputation hits.'},
+  normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:1,fineMul:1},d:'The game as designed: November on Anderson Island. No extras either way.'},
+  hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.20,raccoon:1.6,rent:1,carTrouble:1,pantry:1,repLoss:1.5,fineMul:1.5},d:'Summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages and raccoons, no warming shelter. Fines and reputation hits are 50% steeper. If you go broke, the Legion hands out food. Score ×1.25.'},
 };
 // lv: what each level turns on. Read it with LV('key'): it falls back to Normal for anything missing.
 const DF=()=>DIFFS[(typeof S!=='undefined'&&S&&S.diff)||'normal']||DIFFS.normal;
+// fines and bail by level (Islander half, Ferry Hell half again): fineAmt(150) on Normal is $150
+// places with nothing to do in this mode stay out of the travel list and the map: a visitor has no job, house projects or
+// prescriptions; a Weekend regular works in their own city, not at the islander's jobs
+const DEST_VISIT_HIDE=['work','office','whse','depot','wholesale','warehouse','pharmacy'], DEST_REG_HIDE=['work','office','whse'];
+function destHidden(k){if(typeof visitorOn!=='function'||!visitorOn()||k===S.loc)return false;return (S.visitor.len==='regular'?DEST_REG_HIDE:DEST_VISIT_HIDE).includes(k)}
+const fineAmt=x=>Math.round(x*(LV('fineMul')||1));
 const LV=k=>{const v=(DF().lv||{})[k];return v===undefined?DIFFS.normal.lv[k]:v};
 const CAUSES=['generator failure','propulsion control fault','steering hydraulic leak','no relief captain available (crew shortage)','transfer span stuck at the Steilacoom landing'];
 

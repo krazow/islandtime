@@ -54,7 +54,7 @@ function fishLand(lv,wait,done){
   if(k==='rock'){return modal('🐟 A rockfish',`<p>A copper rockfish, mottled brown and yellow, about a foot long, its eyes bulging from the trip up. <b>In Puget Sound, rockfish have to go back</b>: they live for decades, and the Sound’s populations have crashed.</p>`,[
     {l:'Release it gently',s:'It swims back down. Nothing to prove.',fn:()=>{adj('stress',-1);say('🐟 The rockfish flares its spines, then jets back into the dark. Somewhere, a biologist feels a flutter.');done()}},
     {l:'Keep it for dinner',s:'Illegal. Small chance somebody checks.',fn:()=>{
-      if(Math.random()<0.15){money(-150);T.got.fines++;adj('stress',8);repAdd(-3,'got a ticket for keeping a protected rockfish');say('🚨 A WDFW officer walks down the dock with a clipboard. “Let me see that fish.” A $150 ticket, and the rockfish goes in his bucket.')}
+      if(Math.random()<0.15){money(-fineAmt(150));T.got.fines++;adj('stress',8);repAdd(-3,'got a ticket for keeping a protected rockfish');say('🚨 A WDFW officer walks down the dock with a clipboard. “Let me see that fish.” A $150 ticket, and the rockfish goes in his bucket.')}
       else{thxFood(2,'Pan-fried rockfish');say('🐟 Nobody checks. You eat it a little guiltily.')}
       done()}}])}
   const SP={salmon:[sal?sal[1]:'a salmon',3,'A silver flash against the green water, and it’s heavy.'],flounder:['a starry flounder',1,'Flat as a dinner plate, both eyes on one side, deeply unimpressed.'],perch:['a pile of shiner perch',1,'A bucketful of silver, hand-sized fish. Good fried whole.']}[k];
@@ -91,7 +91,7 @@ function crabNext(crabs,i,kept){
   modal(`🦀 Crab ${i+1} of ${crabs.length}`,`<p>A <b>${c.size}-inch ${c.male?'male':'female'}</b> Dungeness crab, claws up, furious.</p><p style="font-size:13px;color:var(--mute)">Rules: males 6¼ in. or bigger, five a day. You’ve kept ${K.n} today.</p>`,[
     {l:c.male?`Keep the ${c.size}-inch male`:'Keep the female',s:'Into the bucket.',fn:()=>{
       const bad=!crabLegal(c)||K.n>=5;K.n++;kept.push(c);T.got.crab++;
-      if(bad&&Math.random()<0.15){money(-150);T.got.fines++;adj('stress',8);repAdd(-3,'got ticketed for keeping an illegal crab');say(`🚨 A WDFW officer has been watching from the end of the dock. “That one’s ${!c.male?'a female':c.size<6.25?'undersized':'over your limit'}.” $150, and the crab goes back.`);kept.pop()}
+      if(bad&&Math.random()<0.15){money(-fineAmt(150));T.got.fines++;adj('stress',8);repAdd(-3,'got ticketed for keeping an illegal crab');say(`🚨 A WDFW officer has been watching from the end of the dock. “That one’s ${!c.male?'a female':c.size<6.25?'undersized':'over your limit'}.” $150, and the crab goes back.`);kept.pop()}
       else if(bad)say('🦀 You keep it. Nobody’s checking today, but you know.');
       next()}},
     {l:'Throw it back',s:'Gently, over the rail.',fn:()=>{say(`🦀 You ${c.male?'measure':'check'} it and let it go. It scuttles off sideways with its pride intact.`);next()}}]);

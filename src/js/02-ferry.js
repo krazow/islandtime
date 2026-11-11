@@ -104,12 +104,12 @@ function waitFerryFrom(side){ // after a bump, find next from current time ignor
   S.stats.waited+=n.abs-S.t; adj('stress',6); S.t=n.abs+(n.delay||0); S.priority=false; board(side,n,'drive');
 }
 function arrest(where,missed,opt){
-  showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
+  showTile('🚔','Arrested',`Booked at the county jail, out on $${fineAmt(((opt&&opt.pen)||GOODS.drugs.pen).bail)} bail`,'bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
   const pen=(opt&&opt.pen)||GOODS.drugs.pen,nd=DRUG_G.reduce((a,g)=>a+(S.cargo[g]||0),0);
   const lost=[];if(nd)lost.push(nd+' drug package'+(nd>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
-  DRUG_G.forEach(g=>{if(S.cargo[g])S.cargo[g]=0});S.cargo.gas=0;money(-pen.bail);adj('job',-20);adj('stress',30);S.t+=pen.hrs*60;repAdd(-35,'arrested: it was in the sheriff’s blotter');
-  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $${pen.bail} bail ${pen.hrs} hours later. Your boss heard.`);
+  DRUG_G.forEach(g=>{if(S.cargo[g])S.cargo[g]=0});S.cargo.gas=0;money(-fineAmt(pen.bail));adj('job',-20);adj('stress',30);S.t+=pen.hrs*60;repAdd(-35,'arrested: it was in the sheriff’s blotter');
+  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $${fineAmt(pen.bail)} bail ${pen.hrs} hours later. Your boss heard.`);
   if(S.drugCharges>=2) return gameOver('convicted');
   modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':(opt&&opt.txt)||'The buyer was an undercover deputy.'}</p>${opt&&opt.cp?`<p>${opt.cp}</p>`:''}<p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$${pen.bail} bail</b> ${pen.hrs} hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
   afterAction();
@@ -121,7 +121,7 @@ function board(side,s,mode){
     if(Math.random()<p){
       if(illN()>0) return arrest('at the ferry',true);
       if(c.gas>0){
-        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
+        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-fineAmt(150));adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
         if(S.citations>=2) return gameOver('banned');
         return modal('Busted at the ferry',`<p>Gasoline is allowed aboard only in a vehicle’s own tank. Spare cans, <b>full or empty</b>, are prohibited.</p><p>Your ${g>1?g+' cans are':'can is'} confiscated, you get a citation, and the boat leaves without you. The citation will cost you about $150.</p><p><b>Repeat violations can get you banned from riding the ferry.</b> Next time, that’s the game.</p>`,[{l:'Lesson learned. Probably.',fn:()=>{}}]);

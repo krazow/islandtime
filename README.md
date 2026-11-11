@@ -39,6 +39,13 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.21.1: small fixes
+
+- ⚖️ **Fines, bail and reputation losses follow the level:** half on Islander, 50% steeper on Ferry Hell (Normal unchanged). Gains are the same on every level.
+- 🧳 **Visits are tidier:** work sites, the pharmacy and the warehouse club no longer clutter a visitor's travel list or map (a Weekend regular only loses the islander's jobs). Your resident reputation no longer moves while you're visiting; a deliberate bad act counts against your visitor reputation instead.
+- 🍳 **Islander's forgiving boss now covers the Riv weekend shift** too: no firing in your first week.
+- ↩️ **Undo can't re-roll luck:** after an Undo, the same dice come up again, so retrying a hitchhike or a fishing cast gets the same result.
+
 ### New in 1.21: more to do, and a map
 - 🏠 **A two-car garage at the cabin.** Bring the mainland beater over and both cars fit. Garaged cars are half as likely to have a dead battery on cold, dark mornings. When two cars are at the cabin (or anywhere you are), **choose which one to drive**: "Take the Corolla instead", and the game remembers your pick.
 - 🛢️ **Dale's, expanded:** buy a new car battery from Dale ($189, installed in his driveway in 20 minutes, no ferry), and sell him 5-gallon cans of gas ($40) and diesel ($35), up to four a day. Gas you sell him goes back on his shelf. **Diesel in the shed:** buy a diesel can at the Steilacoom gas station, store it in the shed, and take it back out for a truck that ran dry or to sell to Dale.

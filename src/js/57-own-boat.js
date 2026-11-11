@@ -105,7 +105,7 @@ function boatMoorage(){
 {const _e=endDay;endDay=function(){try{boatMoorage()}catch(e){console.error(e)}return _e.apply(this,arguments)}}
 // the boat spends the night at the public float: a note on the hull
 defEvent({id:'boat_overnight',hook:'night',priority:2,max:2,chance:0.45,cond:()=>boatOwn()&&S.boat.at==='sunny'&&S.boat.store==='slip',
-  run(ctx){money(-35);ctx.notes.push('🚤 A Steilacoom parks officer left a $35 overnight-moorage notice on your skiff at the Sunnyside float. The public dock is for day use.')}});
+  run(ctx){money(-fineAmt(35));ctx.notes.push(`🚤 A Steilacoom parks officer left a $${fineAmt(35)} overnight-moorage notice on your skiff at the Sunnyside float. The public dock is for day use.`)}});
 Object.assign(TILE_META,{boat_overnight:['🚤','Moorage notice at Sunnyside','bad']});
 if(typeof storyHooks!=='undefined')storyHooks.push({id:'boat',chapterStart(ch,notes){if(ch>0&&boatOwn()){const B=S.boat;B.paidThru=28;if(B.store==='slip'){money(-BOAT_SLIP);notes&&notes.push(`⚓ A new month of moorage at the Riv marina: $${BOAT_SLIP}.`)}}}});
 // ---- actions ----

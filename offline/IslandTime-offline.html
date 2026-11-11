@@ -458,12 +458,18 @@ const JOBS={
 };
 const COOP_GOAL=2500;
 const DIFFS={
-  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0},d:'More money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, a house that wears slower.'},
-  normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0},d:'The game as designed: November on Anderson Island. No extras either way.'},
-  hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.20,raccoon:1.6,rent:1,carTrouble:1,pantry:1},d:'Summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages and raccoons, no warming shelter. If you go broke, the Legion hands out food. Score ×1.25.'},
+  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:0.5,fineMul:0.5},d:'More money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, a house that wears slower, half the fines and reputation hits.'},
+  normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:1,fineMul:1},d:'The game as designed: November on Anderson Island. No extras either way.'},
+  hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.20,raccoon:1.6,rent:1,carTrouble:1,pantry:1,repLoss:1.5,fineMul:1.5},d:'Summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages and raccoons, no warming shelter. Fines and reputation hits are 50% steeper. If you go broke, the Legion hands out food. Score ×1.25.'},
 };
 // lv: what each level turns on. Read it with LV('key'): it falls back to Normal for anything missing.
 const DF=()=>DIFFS[(typeof S!=='undefined'&&S&&S.diff)||'normal']||DIFFS.normal;
+// fines and bail by level (Islander half, Ferry Hell half again): fineAmt(150) on Normal is $150
+// places with nothing to do in this mode stay out of the travel list and the map: a visitor has no job, house projects or
+// prescriptions; a Weekend regular works in their own city, not at the islander's jobs
+const DEST_VISIT_HIDE=['work','office','whse','depot','wholesale','warehouse','pharmacy'], DEST_REG_HIDE=['work','office','whse'];
+function destHidden(k){if(typeof visitorOn!=='function'||!visitorOn()||k===S.loc)return false;return (S.visitor.len==='regular'?DEST_REG_HIDE:DEST_VISIT_HIDE).includes(k)}
+const fineAmt=x=>Math.round(x*(LV('fineMul')||1));
 const LV=k=>{const v=(DF().lv||{})[k];return v===undefined?DIFFS.normal.lv[k]:v};
 const CAUSES=['generator failure','propulsion control fault','steering hydraulic leak','no relief captain available (crew shortage)','transfer span stuck at the Steilacoom landing'];
 
@@ -527,7 +533,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.21.0', SAVE_SCHEMA=7;
+const APP_VERSION='1.21.1', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -809,12 +815,12 @@ function waitFerryFrom(side){ // after a bump, find next from current time ignor
   S.stats.waited+=n.abs-S.t; adj('stress',6); S.t=n.abs+(n.delay||0); S.priority=false; board(side,n,'drive');
 }
 function arrest(where,missed,opt){
-  showTile('🚔','Arrested','Booked at the county jail, out on $750 bail','bad');
+  showTile('🚔','Arrested',`Booked at the county jail, out on $${fineAmt(((opt&&opt.pen)||GOODS.drugs.pen).bail)} bail`,'bad');
   buzz([300,100,300,100,300]);S.drugCharges++;S.stats.arrests++;
   const pen=(opt&&opt.pen)||GOODS.drugs.pen,nd=DRUG_G.reduce((a,g)=>a+(S.cargo[g]||0),0);
   const lost=[];if(nd)lost.push(nd+' drug package'+(nd>1?'s':''));if(S.cargo.gas)lost.push(S.cargo.gas+' gas can'+(S.cargo.gas>1?'s':''));
-  DRUG_G.forEach(g=>{if(S.cargo[g])S.cargo[g]=0});S.cargo.gas=0;money(-pen.bail);adj('job',-20);adj('stress',30);S.t+=pen.hrs*60;repAdd(-35,'arrested: it was in the sheriff’s blotter');
-  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $${pen.bail} bail ${pen.hrs} hours later. Your boss heard.`);
+  DRUG_G.forEach(g=>{if(S.cargo[g])S.cargo[g]=0});S.cargo.gas=0;money(-fineAmt(pen.bail));adj('job',-20);adj('stress',30);S.t+=pen.hrs*60;repAdd(-35,'arrested: it was in the sheriff’s blotter');
+  say(`🚔 Arrested ${where}. ${lost.length?'Seized: '+lost.join(', ')+'. ':''}Booked at the county jail, released on $${fineAmt(pen.bail)} bail ${pen.hrs} hours later. Your boss heard.`);
   if(S.drugCharges>=2) return gameOver('convicted');
   modal('🚔 Arrested',`<p>${where==='at the ferry'?'A sheriff’s deputy and a K-9 work the car deck. The dog sits down next to your car.':(opt&&opt.txt)||'The buyer was an undercover deputy.'}</p>${opt&&opt.cp?`<p>${opt.cp}</p>`:''}<p>Everything illegal is seized. You’re booked into the Pierce County Jail and released on <b>$${pen.bail} bail</b> ${pen.hrs} hours later${missed?', and the boat is long gone':''}. Your job takes a hit when you don’t show up.</p><p><b>A second drug arrest ends the game.</b></p>`,[{l:'Head back out',fn:()=>{}}]);
   afterAction();
@@ -826,7 +832,7 @@ function board(side,s,mode){
     if(Math.random()<p){
       if(illN()>0) return arrest('at the ferry',true);
       if(c.gas>0){
-        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-150);adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
+        showTile('🚫','Busted with a gas can','Citation for unlawful transit conduct','bad');buzz([200,80,200]);S.citations++;const g=c.gas;c.gas=0;money(-fineAmt(150));adj('stress',22);repAdd(-20,'busted with a gas can on the ferry');repEnemy('Corey the deckhand','you argued with him on the car deck');
         say(`🚫 A deckhand spots your gas can${g>1?'s':''}. You have to dispose of ${g*5} gallons and you get a citation for unlawful transit conduct. You miss the ${fmt(s.dep)}.`);
         if(S.citations>=2) return gameOver('banned');
         return modal('Busted at the ferry',`<p>Gasoline is allowed aboard only in a vehicle’s own tank. Spare cans, <b>full or empty</b>, are prohibited.</p><p>Your ${g>1?g+' cans are':'can is'} confiscated, you get a citation, and the boat leaves without you. The citation will cost you about $150.</p><p><b>Repeat violations can get you banned from riding the ferry.</b> Next time, that’s the game.</p>`,[{l:'Lesson learned. Probably.',fn:()=>{}}]);
@@ -2407,7 +2413,7 @@ function actView(){
         h+=`<details class="go upk" ${UPK_OPEN[c]?'open':''} ontoggle="UPK_OPEN['${c}']=this.open"><summary>${ACT_CATS[c]}${n?` · <span class="upk-n">${n} to do</span>`:' · all good'}</summary>`+g.map(a=>btn(Object.assign({},a,{cls:((a.cls||'')+(a.due&&!a.dis?' due':'')).trim()}))).join('')+'</details>';return}
       h+=`<div class="sect">${ACT_CATS[c]}</div>`+groups[c].map(btn).join('')});
   } else if(acts.length){h+='<div class="sect">Do something</div>'+acts.map(btn).join('')}
-  const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side&&(k!=='vhome'||visitorOn()));
+  const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
   const pOpen=prefs().goOpen,goOpen=pOpen===null||pOpen===undefined?acts.length<=5:pOpen;
   h+=`<details class="go" ${goOpen?'open':''} ontoggle="setPref('goOpen',this.open)"><summary>🧭 Go somewhere${L[S.loc].side==='I'?' on the island':' on the mainland'} (${dests.length})</summary>`;
   const destRow=k=>{
@@ -3289,6 +3295,8 @@ const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
 // On time +3, late −4; a scheduled shift you skip −15 and reputation −5; at 0 you're fired (reputation −10).
 const rivJob=()=>ECO().rivJob||null;
 function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
+  // Islander: no firing in your first week on the weekend shift either (the same grace as the main job, 34-easy-help.js)
+  if(J.m<=0&&LV('firedGraceDays')>0&&dayKey()-(J.since??-999)<LV('firedGraceDays'))J.m=1;
   if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');S.firedAt=Object.assign(S.firedAt||{},{riv:dayKey()});
     notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');}}
 function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
@@ -3308,7 +3316,7 @@ function rivActions(a,d,m){
 }
 function rivShift(d,m){
   const E=ECO(),first=E.rivN===0;E.riv=dayKey();E.rivN++;
-  const late=(m!=null?m:tod())>RIV_START;if(!E.rivJob)E.rivJob={m:70,sched:true};const J=E.rivJob,wasOn=J.sched;J.sched=true;
+  const late=(m!=null?m:tod())>RIV_START;if(!E.rivJob)E.rivJob={m:70,sched:true,since:dayKey()};const J=E.rivJob,wasOn=J.sched;J.sched=true;
   const nts=[];rivMeter(late?-4:3,nts);nts.forEach(x=>say(x));
   const reg=typeof repVal==='function'&&repVal()>=60?10:0;
   S.t=d*1440+RIV_END;phoneTick();const tips=10+Math.floor(Math.random()*41),pay=RIV_PAY+reg+tips;money(pay);adj('stress',8);S.ateOut=d;
@@ -3637,7 +3645,7 @@ function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=da
         fn:()=>{X.brush=0;S.t+=75;homeAdj(3);adj('stress',-1);say('🚛 An hour and a quarter of dragging and chipping. The brush pile is mulch now.');afterAction()}});
       a.push({cat:'yard',ic:'🔥',l:'Burn the brush pile (burn ban!)',due:false,dis:!lite,s:!lite?seasonDark():'20 min instead of 75. It’s illegal during the burn ban, and the Fire District does drive by.',
         fn:()=>{X.brush=0;S.t+=20;homeAdj(3);
-          if(Math.random()<0.55){money(-250);adj('stress',10);S.stats.burnFine=(S.stats.burnFine||0)+1;say('🚒 Ten minutes after the smoke goes up, a Fire District #27 truck rolls down the driveway. They hose it out and write you a $250 burn-ban citation. “It’s July, {{name}}.”');showTile('🚒','Burn-ban fine','$250','bad')}
+          if(Math.random()<0.55){money(-fineAmt(250));adj('stress',10);S.stats.burnFine=(S.stats.burnFine||0)+1;say('🚒 Ten minutes after the smoke goes up, a Fire District #27 truck rolls down the driveway. They hose it out and write you a $250 burn-ban citation. “It’s July, {{name}}.”');showTile('🚒','Burn-ban fine','$250','bad')}
           else{adj('stress',3);say('🔥 The pile goes up fast and hot. You stand there with the hose, sweating, watching for sparks and for the Fire District. Nobody comes. This time.')}
           afterAction()}});
     }
@@ -5043,7 +5051,12 @@ const repVal=()=>(typeof S!=='undefined'&&S&&typeof S.rep==='number')?S.rep:0;
 const repTier=r=>{r=r==null?repVal():r;return REP_TIERS.find(t=>r>=t.min)||REP_TIERS[REP_TIERS.length-1]};
 function REP(){if(!S.repx)S.repx={known:[],enemies:[],lastGood:dayKey(),driftAt:dayKey(),healAt:dayKey(),homeLow:0,gift:-1,coop:Math.floor(((S.coop&&S.coop.you)||0)/100),fails:{},cold:'',n:0};return S.repx}
 // change reputation. opt.notes = push to tonight's notes instead of say(); opt.quiet = no message
-function repAdd(n,why,opt){if(typeof S==='undefined'||!S||S.over||!n)return 0;opt=opt||{};const R=REP(),r0=repVal(),t0=repTier(r0);
+function repAdd(n,why,opt){if(typeof S==='undefined'||!S||S.over||!n)return 0;opt=opt||{};
+  if(n<0&&!opt.raw)n=Math.min(-1,Math.round(n*(LV('repLoss')||1)));   // Islander forgives half, Ferry Hell half again (00-data.js lv.repLoss)
+  // on a visit the island judges you by your visitor reputation (37-visitor-sights.js): good deeds there already earn it, and
+  // a deliberate bad act counts against it instead of against the resident reputation you don't have yet
+  if(typeof visitorOn==='function'&&visitorOn()){if(n<0&&typeof vrepAdd==='function')vrepAdd(n,why);return 0}
+  const R=REP(),r0=repVal(),t0=repTier(r0);
   S.rep=Math.max(REP_MIN,Math.min(REP_MAX,r0+n));const d=S.rep-r0;if(!d)return 0;
   if(n>0)R.lastGood=dayKey();
   if(why){R.known.unshift({d:dayKey(),n:d,why});R.known=R.known.slice(0,6)}
@@ -7781,7 +7794,7 @@ function mapMainPos(k){
   let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return [mpx(2+n%9),mpy(-1-(n%5))];
 }
 function mapPlaces(side){
-  return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn()));
+  return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
 }
 // push overlapping markers apart (deterministic), keeping them near where they belong
 function mapSpread(pts,min,w,h){
@@ -8022,7 +8035,12 @@ if(typeof regBuy==='function'){const _b=regBuy;regBuy=function(){
 // Before each tap on a main-screen action (ACT) the game state is copied. If the action turned out to be simple (only time, place, money,
 // the car, the phone battery and the log changed) the copy is kept and an "↩️ Undo" button shows at the top of the Here tab.
 // Not offered after a day ends, a modal or an event fired, a ferry crossing started, or once anything else has happened.
-const UNDO={str:null,fp:null,label:''};
+const UNDO={str:null,fp:null,label:'',rolls:null};
+// Luck can't be undone: every Math.random() roll an action makes is recorded, and after an Undo the same rolls are replayed, in
+// order, to whatever happens next. Retrying a hitchhike or a fishing cast gets the same result.
+const UNDO_RNG={rec:null,replay:[]},_undoRand=Math.random;
+Math.random=function(){if(UNDO_RNG.replay.length){const v=UNDO_RNG.replay.shift();if(UNDO_RNG.rec)UNDO_RNG.rec.push(v);return v}
+  const v=_undoRand.call(Math);if(UNDO_RNG.rec)UNDO_RNG.rec.push(v);return v};
 const UNDO_KEYS=new Set(['t','phoneT','phone','loc','cars','money','log','stress','health','stats','pantry','carried','cargo','ph','up','tips','home','homeGas','homeDiesel','lbWarn','fun','ateOut','ateOutAt','delivery','rx','nextHide','lastBoatNote','easyWarn','hh','eco','daily']);
 const undoFp=()=>S?`${S.t}|${S.loc}|${Math.round(S.money*100)}|${S.log.length}|${S.phone}|${S.cur}|${S.over?1:0}`:'';
 function undoAvail(){return !!(UNDO.str&&S&&!S.over&&UNDO.fp===undoFp())}
@@ -8031,14 +8049,15 @@ function undoClear(){UNDO.str=null;UNDO.fp=null}
   let str=null;try{if(S&&!S.over&&!prefs().noUndo)str=JSON.stringify(S)}catch(e){}
   const ev=window.event,btn=ev&&ev.target&&ev.target.closest?ev.target.closest('button'):null;
   const label=btn?btn.textContent.replace(/\s+/g,' ').trim().slice(0,44):'last action';
-  const s0=S;
+  const s0=S;UNDO_RNG.rec=[];
   try{return _A.apply(this,arguments)}finally{
+    const rolls=UNDO_RNG.rec;UNDO_RNG.rec=null;
     try{
       UNDO.str=null;UNDO.fp=null;
       if(str&&S===s0&&!S.over&&!document.getElementById('mbg')&&!document.querySelector('.cross,.title,.end')&&(typeof MQ==='undefined'||!MQ.length)){
         const b=JSON.parse(str);let simple=b.cur===S.cur&&(b.ev&&b.ev.history&&S.ev&&S.ev.history?b.ev.history.length===S.ev.history.length:true);
         if(simple)for(const k of new Set([...Object.keys(b),...Object.keys(S)])){if(UNDO_KEYS.has(k))continue;if(JSON.stringify(b[k])!==JSON.stringify(S[k])){simple=false;break}}
-        if(simple&&str!==JSON.stringify(S)){UNDO.str=str;UNDO.fp=undoFp();UNDO.label=label;if(tab==='act'&&!document.getElementById('mbg')){const el=document.querySelector('.undoslot');if(el)el.innerHTML=undoBtn()}}
+        if(simple&&str!==JSON.stringify(S)){UNDO.str=str;UNDO.fp=undoFp();UNDO.label=label;UNDO.rolls=rolls;if(tab==='act'&&!document.getElementById('mbg')){const el=document.querySelector('.undoslot');if(el)el.innerHTML=undoBtn()}}
       }
     }catch(e){console.error(e)}
   }}}
@@ -8048,7 +8067,7 @@ function undoClear(){UNDO.str=null;UNDO.fp=null}
 const undoBtn=()=>undoAvail()?`<button class="undobtn" onclick="UNDO_GO()" aria-label="Undo the last action">↩️ Undo: ${esc(UNDO.label)}</button>`:'';
 window.UNDO_GO=()=>{
   if(!undoAvail())return;
-  const s=JSON.parse(UNDO.str),label=UNDO.label;undoClear();
+  const s=JSON.parse(UNDO.str),label=UNDO.label;UNDO_RNG.replay=(UNDO.rolls||[]).concat(UNDO_RNG.replay);undoClear();
   S=s;uiNarr=[];say(`↩️ Undid: ${label}.`);sfx('tap');tab='act';render();
 };
 {const _av=actView;actView=function(){const h=_av.apply(this,arguments);return `<div class="undoslot">${undoBtn()}</div>`+h}}
@@ -8109,7 +8128,7 @@ function fishLand(lv,wait,done){
   if(k==='rock'){return modal('🐟 A rockfish',`<p>A copper rockfish, mottled brown and yellow, about a foot long, its eyes bulging from the trip up. <b>In Puget Sound, rockfish have to go back</b>: they live for decades, and the Sound’s populations have crashed.</p>`,[
     {l:'Release it gently',s:'It swims back down. Nothing to prove.',fn:()=>{adj('stress',-1);say('🐟 The rockfish flares its spines, then jets back into the dark. Somewhere, a biologist feels a flutter.');done()}},
     {l:'Keep it for dinner',s:'Illegal. Small chance somebody checks.',fn:()=>{
-      if(Math.random()<0.15){money(-150);T.got.fines++;adj('stress',8);repAdd(-3,'got a ticket for keeping a protected rockfish');say('🚨 A WDFW officer walks down the dock with a clipboard. “Let me see that fish.” A $150 ticket, and the rockfish goes in his bucket.')}
+      if(Math.random()<0.15){money(-fineAmt(150));T.got.fines++;adj('stress',8);repAdd(-3,'got a ticket for keeping a protected rockfish');say('🚨 A WDFW officer walks down the dock with a clipboard. “Let me see that fish.” A $150 ticket, and the rockfish goes in his bucket.')}
       else{thxFood(2,'Pan-fried rockfish');say('🐟 Nobody checks. You eat it a little guiltily.')}
       done()}}])}
   const SP={salmon:[sal?sal[1]:'a salmon',3,'A silver flash against the green water, and it’s heavy.'],flounder:['a starry flounder',1,'Flat as a dinner plate, both eyes on one side, deeply unimpressed.'],perch:['a pile of shiner perch',1,'A bucketful of silver, hand-sized fish. Good fried whole.']}[k];
@@ -8146,7 +8165,7 @@ function crabNext(crabs,i,kept){
   modal(`🦀 Crab ${i+1} of ${crabs.length}`,`<p>A <b>${c.size}-inch ${c.male?'male':'female'}</b> Dungeness crab, claws up, furious.</p><p style="font-size:13px;color:var(--mute)">Rules: males 6¼ in. or bigger, five a day. You’ve kept ${K.n} today.</p>`,[
     {l:c.male?`Keep the ${c.size}-inch male`:'Keep the female',s:'Into the bucket.',fn:()=>{
       const bad=!crabLegal(c)||K.n>=5;K.n++;kept.push(c);T.got.crab++;
-      if(bad&&Math.random()<0.15){money(-150);T.got.fines++;adj('stress',8);repAdd(-3,'got ticketed for keeping an illegal crab');say(`🚨 A WDFW officer has been watching from the end of the dock. “That one’s ${!c.male?'a female':c.size<6.25?'undersized':'over your limit'}.” $150, and the crab goes back.`);kept.pop()}
+      if(bad&&Math.random()<0.15){money(-fineAmt(150));T.got.fines++;adj('stress',8);repAdd(-3,'got ticketed for keeping an illegal crab');say(`🚨 A WDFW officer has been watching from the end of the dock. “That one’s ${!c.male?'a female':c.size<6.25?'undersized':'over your limit'}.” $150, and the crab goes back.`);kept.pop()}
       else if(bad)say('🦀 You keep it. Nobody’s checking today, but you know.');
       next()}},
     {l:'Throw it back',s:'Gently, over the rail.',fn:()=>{say(`🦀 You ${c.male?'measure':'check'} it and let it go. It scuttles off sideways with its pride intact.`);next()}}]);
@@ -8380,7 +8399,7 @@ function boatMoorage(){
 {const _e=endDay;endDay=function(){try{boatMoorage()}catch(e){console.error(e)}return _e.apply(this,arguments)}}
 // the boat spends the night at the public float: a note on the hull
 defEvent({id:'boat_overnight',hook:'night',priority:2,max:2,chance:0.45,cond:()=>boatOwn()&&S.boat.at==='sunny'&&S.boat.store==='slip',
-  run(ctx){money(-35);ctx.notes.push('🚤 A Steilacoom parks officer left a $35 overnight-moorage notice on your skiff at the Sunnyside float. The public dock is for day use.')}});
+  run(ctx){money(-fineAmt(35));ctx.notes.push(`🚤 A Steilacoom parks officer left a $${fineAmt(35)} overnight-moorage notice on your skiff at the Sunnyside float. The public dock is for day use.`)}});
 Object.assign(TILE_META,{boat_overnight:['🚤','Moorage notice at Sunnyside','bad']});
 if(typeof storyHooks!=='undefined')storyHooks.push({id:'boat',chapterStart(ch,notes){if(ch>0&&boatOwn()){const B=S.boat;B.paidThru=28;if(B.store==='slip'){money(-BOAT_SLIP);notes&&notes.push(`⚓ A new month of moorage at the Riv marina: $${BOAT_SLIP}.`)}}}});
 // ---- actions ----

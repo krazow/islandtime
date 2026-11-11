@@ -214,7 +214,7 @@ function seasonActions(a,loc){const s=seasonId();if(s==='fall')return;const d=da
         fn:()=>{X.brush=0;S.t+=75;homeAdj(3);adj('stress',-1);say('🚛 An hour and a quarter of dragging and chipping. The brush pile is mulch now.');afterAction()}});
       a.push({cat:'yard',ic:'🔥',l:'Burn the brush pile (burn ban!)',due:false,dis:!lite,s:!lite?seasonDark():'20 min instead of 75. It’s illegal during the burn ban, and the Fire District does drive by.',
         fn:()=>{X.brush=0;S.t+=20;homeAdj(3);
-          if(Math.random()<0.55){money(-250);adj('stress',10);S.stats.burnFine=(S.stats.burnFine||0)+1;say('🚒 Ten minutes after the smoke goes up, a Fire District #27 truck rolls down the driveway. They hose it out and write you a $250 burn-ban citation. “It’s July, {{name}}.”');showTile('🚒','Burn-ban fine','$250','bad')}
+          if(Math.random()<0.55){money(-fineAmt(250));adj('stress',10);S.stats.burnFine=(S.stats.burnFine||0)+1;say('🚒 Ten minutes after the smoke goes up, a Fire District #27 truck rolls down the driveway. They hose it out and write you a $250 burn-ban citation. “It’s July, {{name}}.”');showTile('🚒','Burn-ban fine','$250','bad')}
           else{adj('stress',3);say('🔥 The pile goes up fast and hot. You stand there with the hose, sweating, watching for sparks and for the Fire District. Nobody comes. This time.')}
           afterAction()}});
     }

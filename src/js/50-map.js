@@ -18,7 +18,7 @@ function mapMainPos(k){
   let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return [mpx(2+n%9),mpy(-1-(n%5))];
 }
 function mapPlaces(side){
-  return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn()));
+  return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
 }
 // push overlapping markers apart (deterministic), keeping them near where they belong
 function mapSpread(pts,min,w,h){

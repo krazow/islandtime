@@ -89,7 +89,7 @@ function actView(){
         h+=`<details class="go upk" ${UPK_OPEN[c]?'open':''} ontoggle="UPK_OPEN['${c}']=this.open"><summary>${ACT_CATS[c]}${n?` · <span class="upk-n">${n} to do</span>`:' · all good'}</summary>`+g.map(a=>btn(Object.assign({},a,{cls:((a.cls||'')+(a.due&&!a.dis?' due':'')).trim()}))).join('')+'</details>';return}
       h+=`<div class="sect">${ACT_CATS[c]}</div>`+groups[c].map(btn).join('')});
   } else if(acts.length){h+='<div class="sect">Do something</div>'+acts.map(btn).join('')}
-  const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side&&(k!=='vhome'||visitorOn()));
+  const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
   const pOpen=prefs().goOpen,goOpen=pOpen===null||pOpen===undefined?acts.length<=5:pOpen;
   h+=`<details class="go" ${goOpen?'open':''} ontoggle="setPref('goOpen',this.open)"><summary>🧭 Go somewhere${L[S.loc].side==='I'?' on the island':' on the mainland'} (${dests.length})</summary>`;
   const destRow=k=>{

@@ -31,6 +31,8 @@ const RIV_DAYS=[4,5], RIV_START=960, RIV_END=1320;
 // On time +3, late −4; a scheduled shift you skip −15 and reputation −5; at 0 you're fired (reputation −10).
 const rivJob=()=>ECO().rivJob||null;
 function rivMeter(n,notes,why){const J=rivJob();if(!J)return;J.m=Math.max(0,Math.min(100,J.m+n));
+  // Islander: no firing in your first week on the weekend shift either (the same grace as the main job, 34-easy-help.js)
+  if(J.m<=0&&LV('firedGraceDays')>0&&dayKey()-(J.since??-999)<LV('firedGraceDays'))J.m=1;
   if(J.m<=0){J.sched=false;ECO().rivFired=true;S.firedFrom=(S.firedFrom||[]).concat('riv');S.firedAt=Object.assign(S.firedAt||{},{riv:dayKey()});
     notes.push('🍳 <b>The Riv takes you off the weekend schedule for good.</b> “We needed someone we could count on.”');}}
 function rivNight(where,notes,d){const J=rivJob(),E=ECO();if(!J||!J.sched||S.emp==='riv'||!RIV_DAYS.includes(d)||E.riv===dayKey())return;
@@ -50,7 +52,7 @@ function rivActions(a,d,m){
 }
 function rivShift(d,m){
   const E=ECO(),first=E.rivN===0;E.riv=dayKey();E.rivN++;
-  const late=(m!=null?m:tod())>RIV_START;if(!E.rivJob)E.rivJob={m:70,sched:true};const J=E.rivJob,wasOn=J.sched;J.sched=true;
+  const late=(m!=null?m:tod())>RIV_START;if(!E.rivJob)E.rivJob={m:70,sched:true,since:dayKey()};const J=E.rivJob,wasOn=J.sched;J.sched=true;
   const nts=[];rivMeter(late?-4:3,nts);nts.forEach(x=>say(x));
   const reg=typeof repVal==='function'&&repVal()>=60?10:0;
   S.t=d*1440+RIV_END;phoneTick();const tips=10+Math.floor(Math.random()*41),pay=RIV_PAY+reg+tips;money(pay);adj('stress',8);S.ateOut=d;

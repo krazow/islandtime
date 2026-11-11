@@ -15,7 +15,12 @@ const repVal=()=>(typeof S!=='undefined'&&S&&typeof S.rep==='number')?S.rep:0;
 const repTier=r=>{r=r==null?repVal():r;return REP_TIERS.find(t=>r>=t.min)||REP_TIERS[REP_TIERS.length-1]};
 function REP(){if(!S.repx)S.repx={known:[],enemies:[],lastGood:dayKey(),driftAt:dayKey(),healAt:dayKey(),homeLow:0,gift:-1,coop:Math.floor(((S.coop&&S.coop.you)||0)/100),fails:{},cold:'',n:0};return S.repx}
 // change reputation. opt.notes = push to tonight's notes instead of say(); opt.quiet = no message
-function repAdd(n,why,opt){if(typeof S==='undefined'||!S||S.over||!n)return 0;opt=opt||{};const R=REP(),r0=repVal(),t0=repTier(r0);
+function repAdd(n,why,opt){if(typeof S==='undefined'||!S||S.over||!n)return 0;opt=opt||{};
+  if(n<0&&!opt.raw)n=Math.min(-1,Math.round(n*(LV('repLoss')||1)));   // Islander forgives half, Ferry Hell half again (00-data.js lv.repLoss)
+  // on a visit the island judges you by your visitor reputation (37-visitor-sights.js): good deeds there already earn it, and
+  // a deliberate bad act counts against it instead of against the resident reputation you don't have yet
+  if(typeof visitorOn==='function'&&visitorOn()){if(n<0&&typeof vrepAdd==='function')vrepAdd(n,why);return 0}
+  const R=REP(),r0=repVal(),t0=repTier(r0);
   S.rep=Math.max(REP_MIN,Math.min(REP_MAX,r0+n));const d=S.rep-r0;if(!d)return 0;
   if(n>0)R.lastGood=dayKey();
   if(why){R.known.unshift({d:dayKey(),n:d,why});R.known=R.known.slice(0,6)}
