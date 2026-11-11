@@ -14,7 +14,7 @@ const safeSkip=f=>function(){SAFE.skip=true;try{return f.apply(this,arguments)}f
   try{
     if(mode==='walk'&&!SAFE.skip&&safeOn()&&!S.over){
       const car=carHere(),side=L[S.loc].side;
-      if(car&&car.fuel>=0.1&&canWalkCarry()&&!S.cars.some(c=>L[c.loc]&&L[c.loc].side!==side)&&!(typeof visitorOn==='function'&&visitorOn()&&VS().bike)){
+      if(car&&car.fuel>=0.1&&canWalkCarry()&&!S.cars.some(c=>L[c.loc]&&L[c.loc].side!==side)&&!(typeof boatWaitingFar==='function'&&boatWaitingFar(side))&&!(typeof visitorOn==='function'&&visitorOn()&&VS().bike)){
         const kD=findNext(side,'drive',true),gone=!kD||kD.d>day(),there=side==='I'?'the mainland':'the island',where=L[S.loc].name.replace(' Ferry Terminal',' terminal').replace(' Ferry Landing',' landing');
         return safeAsk(gone?'🌙 The last car sailing has gone':'🚗 Leave your car behind?',
           `<p>${gone?'There are no more boats that take cars tonight. ':''}If you walk on, your car stays parked at the ${where}. You’d have no car on ${there}, and nothing there to get you around.</p><p>${gone?'The next car sailing is '+(kD?DAYS[kD.d]+' at '+fmt(kD.dep):'a way off')+'.':'Drive on instead if you’ll need the car.'}</p>`,

@@ -32,7 +32,7 @@ function fullProb(side,d,dep){
   if(d===6&&side==='M'&&dep>=875) p=0.45;
   p=seasonFull(p,side,d,dep); // season
   // backlog after an outage
-  if(S.week.b.some(b=>S.t>=b.end&&S.t<b.end+180)) p=Math.max(p,0.7);
+  {const bl=typeof backlogP==='function'?backlogP(side,d,dep):0;if(bl)p=Math.max(p,bl)} // the next 3 sailings after an outage (72-vehicles-card.js)
   return Math.min(0.95,p*DF().full);
 }
 function cargoN(){return Object.values(S.cargo).reduce((a,b)=>a+b,0)}

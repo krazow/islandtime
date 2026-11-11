@@ -45,6 +45,13 @@
 - 💵 **Selling and swapping:** sell the mainland beater back at the terminal for $350, or trade the diesel pickup back for an old Subaru and get $600 back. The garage copes when a car leaves.
 - ⛵ **Skiff gas:** shed gas fills the skiff only when it is at home; at the marina or Sunnyside, pour in a gas can you carry.
 - 🔥 **Propane rides the Monday fuel run:** order it and it arrives on Monday (that day if you order before the run, otherwise next Monday).
+- **🚗 Your vehicles card:** every car and your skiff in one collapsible card (Here tab, and a button on the map): where each is, fuel, battery, tires, outboard condition, and what's due (moorage, a new tire, a weak battery).
+- **Parked cars in travel:** the Go-somewhere list and map show "your Corolla is here", and ferry and skiff options mention a car waiting at the far landing. Boat owners get a one-time tip to park the beater at the free Sunnyside lot.
+- **Paid terminal parking:** $8 a night (cash) for each car left in the Steilacoom terminal lot, for islanders and visitors, except the car you sleep in. The Sunnyside launch lot is free.
+- **Visitor hint at the terminal:** once per visit, drive on or walk on, with costs and what you can reach without a car.
+- **Boat as a way home:** the "Leave your car behind?" prompt no longer warns boat owners whose skiff is at the other landing.
+- **Outage backlog:** the next three sailings after an outage are fuller (more cars left behind), and the Ferry tab says so.
+- **A friend drives your second car across:** text Sam or Walt, pay the car fare and owe them a favor; the car arrives at the far terminal on the next sailing.
 
 ### New in 1.21.1: small fixes
 
