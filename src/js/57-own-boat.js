@@ -18,8 +18,8 @@ const boatGal=g=>Math.round(g*10)/10;
 function boatFuelBtn(){const B=S.boat;return `${boatGal(B.fuel)}/${BOAT_TANK} gal`}
 // ---- tides: ~12.4 h cycle; "low" for about a quarter of it
 function boatPhase(off){return (((dayKey()*1440+tod()+(off||0))%745)+745)%745/745}
-function boatLow(off){const p=boatPhase(off);return p>=0.38&&p<0.62}
-function boatTideWait(){return Math.max(5,Math.ceil((0.62-boatPhase())*745))}
+function boatLow(off){const p=boatPhase(off);return p>=0.44&&p<0.56}
+function boatTideWait(){return Math.max(5,Math.ceil((0.56-boatPhase())*745))}
 // ---- conditions right now ----
 function boatConditions(dest){
   const d=day(),m=tod(),st=S.week&&S.week.storm,sea=seasonId(),mul=sea==='summer'?0.5:sea==='winter'?1.3:1,r=wxR(d,'skiff'),H=[];let refuse=null;

@@ -41,6 +41,7 @@
 
 ### New in 1.21
 - **Things to do on the island:** fish off the Riv marina (a $20 Washington license, then cast, wait and set the hook: salmon in season, flounder, an old boot, and rockfish that have to go back), set a crab pot in July (keep males 6¼ inches or bigger, throw the females back; keeping an illegal crab is a bad act with a small chance of a ticket), pick Himalayan blackberries from mid-July (jam, or sell them at the swap board; watch the thorns), and play a real 5×5 card at Wednesday bingo at the Riv (tap to daub, call BINGO before somebody else does). They lower stress, cost time, and add a little to a visitor's score.
+- **Your own boat:** buy a used skiff at the Riv marina ($2,500; a slip at $90 a month, or keep it on a trailer) and cross yourself between the island and the public launch at Sunnyside Beach in Steilacoom: a way around a canceled sailing, not a free shortcut. It takes 25–40 minutes and about a gallon of gas each way (no gas on the island except Dale’s), you arrive without your car, and storms, fog, chop, darkness, a low tide at the ramp and a dying outboard are all in the way. Residents only.
 
 ### New in 1.20: Weekend regular
 

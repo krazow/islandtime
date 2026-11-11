@@ -7765,7 +7765,6 @@ function thxFood(n,why){if(visitorOn()||!n){say(`🍽️ ${why}: a fine dinner.`
 function thxGive(id,pts,what){friendPts(id,pts);say(`🎁 You drop ${what} off with ${thxName(id)}. They won’t hear of paying you.`);const T=TX();if(T.gift!==dayKey()){T.gift=dayKey();repAdd(2,`shared your ${what.replace(/^(a|an|the|some) /,'')} with a neighbor`)}}
 function thxGiveBtns(pts,what,done){return thxFriends().map(id=>({l:`Give it to ${thxName(id)}`,s:'Friendship +'+pts+'. Island reputation +2 (once a day).',fn:()=>{thxGive(id,pts,what);done()}}))}
 // calm: stress relief with diminishing returns through the day
-function thxCalm(n,amt){S.t+=n;phoneTick();const F=TX().fish;adj('stress',-amt)}
 const thxDay=()=>dayKey();
 const thxLicTxt=()=>TX().lic?'You have a Washington fishing license (good all year).':'You need a Washington fishing license: $20 for the year, at the Riv’s bait counter.';
 
@@ -7989,8 +7988,8 @@ const boatGal=g=>Math.round(g*10)/10;
 function boatFuelBtn(){const B=S.boat;return `${boatGal(B.fuel)}/${BOAT_TANK} gal`}
 // ---- tides: ~12.4 h cycle; "low" for about a quarter of it
 function boatPhase(off){return (((dayKey()*1440+tod()+(off||0))%745)+745)%745/745}
-function boatLow(off){const p=boatPhase(off);return p>=0.38&&p<0.62}
-function boatTideWait(){return Math.max(5,Math.ceil((0.62-boatPhase())*745))}
+function boatLow(off){const p=boatPhase(off);return p>=0.44&&p<0.56}
+function boatTideWait(){return Math.max(5,Math.ceil((0.56-boatPhase())*745))}
 // ---- conditions right now ----
 function boatConditions(dest){
   const d=day(),m=tod(),st=S.week&&S.week.storm,sea=seasonId(),mul=sea==='summer'?0.5:sea==='winter'?1.3:1,r=wxR(d,'skiff'),H=[];let refuse=null;
@@ -8190,7 +8189,7 @@ function holActions(a,loc){
     a.push({cat:'here',ic:'🥧',l:'Bake a pie for tomorrow',s:'1 hour. Uses 1 day of food. A pie to bring: it’s the best present at any table.',fn:()=>{HOL().pie=dayKey();S.pantry-=1;S.t+=60;phoneTick();adj('stress',-2);say('🥧 Flour on the counter, a rolling pin you’ve never used and a pumpkin pie that comes out surprisingly well. You hide it from yourself until tomorrow.');afterAction()}});
   if(k.includes('blackFriday')&&loc==='legion')holWin(a,'tree','🎄','The tree lighting',1050,1140,[{ic:'🎄',l:'Go to the Legion tree lighting',s:'60 min. Cocoa, carols and Santa on a fire truck. Stress −7.',cls:'primary',fn:holTree}]);
   if(k.includes('xmas')&&loc==='home'&&res&&!HOL().deco&&m<1260)a.push({cat:'home',ic:'🎄',l:'Put up the Christmas lights and a tree: $20',s:'90 min. A real fir from the back lot, and lights on the porch. Home +4, stress −4.',dis:S.money<20,fn:()=>{money(-20);HOL().deco=1;S.t+=90;phoneTick();homeAdj(4);adj('stress',-4);say('🎄 A noble fir from the back lot, a box of lights from 2009 that mostly work and a string of cranberries. The cabin glows through the trees like a lantern.');afterAction()}});
-  if(k.includes('xmas')&&loc==='tc_zoo'&&m>=990&&m<1290&&!holDone('zoolights'))a.push({cat:'here',ic:'✨',l:'ZooLights: $22',s:'2 hours. A million lights, a walrus in a Santa hat, hot cocoa. Stress −10.',dis:S.money<22,fn:()=>{money(-22);holMark('zoolights');S.t+=120;phoneTick();adj('stress',-10);S.ateOut=S.ateOut;thxFun('zoo',2);say('✨ A walk through a forest of lit-up animals: a whale made of 10,000 LEDs, a very proud peacock, and your breath in the cold. You stay for the second cocoa.');afterAction()}});
+  if(k.includes('xmas')&&loc==='tc_zoo'&&m>=990&&m<1290&&!holDone('zoolights'))a.push({cat:'here',ic:'✨',l:'ZooLights: $22',s:'2 hours. A million lights, a walrus in a Santa hat, hot cocoa. Stress −10.',dis:S.money<22,fn:()=>{money(-22);holMark('zoolights');S.t+=120;phoneTick();adj('stress',-10);thxFun('zoo',2);say('✨ A walk through a forest of lit-up animals: a whale made of 10,000 LEDs, a very proud peacock, and your breath in the cold. You stay for the second cocoa.');afterAction()}});
 }
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{holActions(a,S.loc)}catch(e){console.error(e)}return a}}
 
