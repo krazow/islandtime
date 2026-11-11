@@ -102,4 +102,17 @@ module.exports = [
     assert.deepStrictEqual(await page.evaluate(() => [REG_GOAL.money, regDown()]), [3000, 2500]);
     noErrors(errors);
   } },
+  { name: 'Weekend regular: island reputation rises at most 15 a week; losses are not capped; a new week starts fresh', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await start(page, 'tacoma', 'normal');
+    const r = await page.evaluate(() => { const V = VS(); V.rep = 0;
+      const a = [vrepAdd(10, 'helped'), vrepAdd(10, 'helped again'), vrepAdd(3, 'more')]; const capped = V.rep;
+      const loss = vrepAdd(-5, 'litter'); const after = V.rep;
+      S.weekNo = 1; const next = vrepAdd(4, 'new week');
+      return { a, capped, loss, after, next, rep: V.rep }; });
+    assert.deepStrictEqual(r.a, [10, 5, 0]); assert.strictEqual(r.capped, 15);
+    assert.strictEqual(r.loss, -5); assert.strictEqual(r.after, 10);
+    assert.strictEqual(r.next, 4); assert.strictEqual(r.rep, 14);
+    noErrors(errors);
+  } },
 ];
