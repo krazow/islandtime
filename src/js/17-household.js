@@ -51,14 +51,15 @@ function hhBillsNight(notes,dk){
 // The island post office closed with the old store (it was inside the store building), so USPS brings mail
 // to your roadside mailbox, and every carrier leaves packages on your porch. 10% of deliveries go to the
 // wrong address: they land in H.missing (kind 'mail' or 'pkg') for a later "find your package" feature.
-let DELIVERY_WRONG=0.10; const MAIL_TIME=780;   // the USPS carrier reaches your road around 1 PM
+let DELIVERY_WRONG=null;   // tests may set a number; otherwise the level decides (LV('deliverWrong'))
+ const MAIL_TIME=780;   // the USPS carrier reaches your road around 1 PM
 const CARRIERS={
   usps:{ic:'📮',n:'USPS Ground Advantage',sh:'USPS',fee:0,days:3,dow:[0,1,2,3,4,5],time:780},
   ups:{ic:'🟫',n:'UPS Ground',sh:'UPS',fee:6,days:2,dow:[0,1,2,3,4],time:960},
   fedex:{ic:'🟪',n:'FedEx overnight',sh:'FedEx',fee:14,days:1,dow:[0,1,2,3,4,5],time:660},
   counter:{ic:'🏪',n:'Hold at the Steilacoom pickup counter',sh:'the pickup counter',fee:0,days:2,dow:[0,1,2,3,4,5,6],time:0}};
 function hhArrive(via,dk){const C=CARRIERS[via];let at=dk+C.days;while(!C.dow.includes(at%7))at++;return at}
-const hhWrong=()=>Math.random()<DELIVERY_WRONG;
+const hhWrong=()=>Math.random()<(DELIVERY_WRONG??LV('deliverWrong'));
 function hhMissing(){const H=HH();if(!H.missing)H.missing=[];return H.missing}
 const HH_LETTERS={
   jury:{once:true,min:3,t:'⚖️ A jury summons from Pierce County Superior Court: report to Tacoma at 8:00 AM on a Monday. Fuel-run Monday. You check “undue hardship,” write “I live on an island,” and mail it back. You’re excused before the envelope dries.',fx:()=>adj('stress',-2)},
@@ -216,7 +217,7 @@ function hhNight(where,notes,d){
 Object.assign(TILE_META,{puppy_litter:['🐶','The neighbors’ dog had puppies','good'],raccoons:['🦝','Raccoons got into the trash','bad']});
 defEvent({id:'puppy_litter',hook:'wake',priority:2,max:1,cond:()=>S.loc==='home'&&!HH().dog&&HH().puppy<0&&!HH().once.puppy&&dayKey()>=3,chance:0.2,
   run(){const H=HH();H.once.puppy=1;H.puppy=dayKey()+3;say(`🐶 A hand-lettered sign at the end of the road: “FREE PUPPIES. Lab, mostly. Ask the kids.” The kids have already spotted you. (Adopt from 🏠 Inside the house, until ${DAYS[H.puppy%7]}. Or don’t: they’re very persuasive, but it’s a lot.)`)}});
-defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.5,0.15+0.05*(HH().trash-8)),
+defEvent({id:'raccoons',hook:'night',priority:3,max:2,cooldown:2,cond:ctx=>ctx.where==='home'&&HH().trash>=8,chance:()=>Math.min(0.6,Math.min(0.5,0.15+0.05*(HH().trash-8))*LV('raccoon')),
   run(ctx){homeAdj(-6);adj('stress',5);HH().racMess=dayKey()+1;ctx.notes.push(`🦝 2 AM: a crash, then chittering. Raccoons got into the trash bags by the shed and spread them across the yard with real artistic vision. It’ll take an hour to clean up in the morning. (Dump run: ${hhDumpTxt()}.)`)}});
 // the morning after the raccoons: an hour of cleanup before anything else, which can cost you a boat
 {const _sd=startDay;startDay=function(){const r=_sd.apply(this,arguments);try{const H=HH();if(H.racMess!=null&&H.racMess>=0&&H.racMess<=dayKey()){H.racMess=-1;if(S.loc==='home'){S.t+=60;try{phoneTick()}catch(e){}adj('stress',3);

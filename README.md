@@ -39,6 +39,15 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.18: difficulty levels that mean something
+
+The three levels now change more than the numbers, and the title screen says what each one includes.
+
+- 🌲 **Easy (Islander):** more money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, and a house that wears slower and recovers faster.
+- ⛴️ **Normal:** the game as designed, with no extras either way. The weekly challenge is always played on Normal so scores compare.
+- 🔥 **Hard (Ferry Hell):** summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages (20% instead of 10%) and more raccoons, and no warming shelter. Score ×1.25.
+- Story mode uses the level you pick, and saved games keep the level they started on.
+
 ### New in 1.17: island reputations, a drug trade where only what gets noticed counts, real fuel use, and a weekly challenge
 
 - 🏝️ **Every islander has a reputation now**, under the same rules as yours: 13 named characters and 12 background islanders do good deeds, let things slide, or get into trouble on their own each day. The 📣 Island Group shows **Island gossip**; your friends list shows each friend's tier; better-liked islanders answer your help posts more often and leave porch gifts; jailed characters can't help, and Dale's Place closes while Dale is in county jail. Story mode's epilogue names the best- and worst-liked islanders.
