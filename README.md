@@ -40,6 +40,7 @@
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
 ### New in 1.21: more to do, and a map
+- 🏠 **A two-car garage at the cabin.** Bring the mainland beater over and both cars fit. Garaged cars are half as likely to have a dead battery on cold, dark mornings. When two cars are at the cabin (or anywhere you are), **choose which one to drive**: "Take the Corolla instead", and the game remembers your pick.
 - 🛢️ **Dale's, expanded:** buy a new car battery from Dale ($189, installed in his driveway in 20 minutes, no ferry), and sell him 5-gallon cans of gas ($40) and diesel ($35), up to four a day. Gas you sell him goes back on his shelf. **Diesel in the shed:** buy a diesel can at the Steilacoom gas station, store it in the shed, and take it back out for a truck that ran dry or to sell to Dale.
 - **🗺️ A map you can tap:** in 🧭 Go somewhere, switch from the list to a drawn map of Anderson Island or the mainland. It shows where you are, where your car is, the ferry route and the boat while it crosses. Tap a place to see how to get there. The list stays the default and the game remembers your choice.
 - **⏩ Less waiting:** at a ferry terminal, **Wait for the 2:15 boat (35 min)** skips straight to boarding (outages, fog and full boats still apply). When you're away from the terminal and need the last boat of the night, your phone warns you 60 and 20 minutes before it goes.
