@@ -72,7 +72,7 @@ function endDay(where){
   else if(where==='motel') S.phone=100; else S.phone=Math.min(100,S.phone+35);
   // eat
   (S.quests||[]).filter(q=>!q.done&&q.due<d+1&&q.due===d).forEach(q=>{q.done=true;q.failed=true;friendPts(q.who,-1);repFavorFailed(q.who,notes);notes.push(`🙁 You never got to ${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'your friend'}’s favor.`)});
-  if(S.ateOut===d){notes.push('🍔 Dinner was from the Riv. The pantry gets a night off.')}
+  if(S.ateOut===d){notes.push(`🍔 Dinner was from ${S.ateOutAt||'the Riv'}. The pantry gets a night off.`);S.ateOutAt=null}
   else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
