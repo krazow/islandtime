@@ -6,7 +6,10 @@
 // State: VS().reg = {city, wk..., pend (pay waiting for Friday), vac (vacation days left), rent{}, bills{}, chores{}, W{this weekend}, ...}
 // API: regOn() · REG() · REG_CITIES · REG_GOAL · regNew(home,diff,season) · regCityHere() · regRentOwed() · regLose(kind,title,sub)
 const REG_WEEKS=4, REG_VAC=5;
-const REG_GOAL={money:4000,rep:40,friends:3}, REG_DOWN=3500;
+// the savings goal and the down payment follow the difficulty: Hard starts with $500 less, so it asks for $500 less
+const REG_GOAL_MONEY={easy:4000,normal:4000,hard:3500}, REG_DOWN_BY={easy:3500,normal:3500,hard:3000};
+const REG_GOAL={get money(){return REG_GOAL_MONEY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||4000},rep:40,friends:3};
+const regDown=()=>REG_DOWN_BY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||3500;
 const REG_START={easy:3500,normal:3000,hard:2500};          // savings you begin the month with
 const REG_CITIES={
   seattle:{n:'Seattle', rent:450,commute:40,jobs:['r_sea','r_sea2'],noisy:0.22,theft:0.04,home:'a small apartment',lord:'Mr. Park, your landlord',util:62,

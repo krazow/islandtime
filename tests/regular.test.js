@@ -377,7 +377,7 @@ module.exports = [
     assert.match(await page.textContent('.end'), /you moved to the island/);
     await page.click('button:has-text("Start life on the island")');
     const r = await page.evaluate(() => ({ visitor: !!S.visitor, on: visitorOn(), over: S.over, money: S.money, friends: Object.keys(S.friends).sort(), lvl: S.friends.walt.lvl, rep: S.rep, diff: S.diff, mode: S.mode, loc: S.loc, emp: S.emp, hud: document.querySelector('.hud-sub').textContent, rent: typeof rentOn === 'function' && rentOn() }));
-    assert.strictEqual(r.visitor, false); assert.strictEqual(r.on, false); assert.strictEqual(r.over, false); assert.strictEqual(r.money, 1400, 'savings minus the $3,500 down payment: ' + r.money);
+    assert.strictEqual(r.visitor, false); assert.strictEqual(r.on, false); assert.strictEqual(r.over, false); assert.strictEqual(r.money, 1900, 'savings minus the $3,000 Hard down payment: ' + r.money);
     assert.deepStrictEqual(r.friends, ['bev', 'sam', 'walt']); assert.ok(r.lvl >= 2); assert.ok(r.rep >= 15 && r.rep <= 40); assert.strictEqual(r.diff, 'hard'); assert.strictEqual(r.loc, 'home'); assert.strictEqual(r.emp, 'lakewood'); assert.strictEqual(r.rent, true);
     assert.match(await page.textContent('#mbg'), /Welcome home/);
     noErrors(errors);

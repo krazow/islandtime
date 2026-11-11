@@ -199,7 +199,8 @@ function visitEnd(result){const V=VS();if(!V||V.done||S.over)return;V.done=true;
   const R=vRental();if(R&&R.checkedIn&&!R.checkedOut){R.checkedOut=true;R.outAt=S.t;if(!R.trash)vRule('trash')}
   V.spent=Math.round((V.budget-S.money)*100)/100;
   finish()}
-function visitMissed(why){const V=VS();if(!V||V.done)return;V.missedWhy=why||'boat';visitEnd('missed')}
+function visitMissed(why){const V=VS();if(!V||V.done||V.len==='regular')return;   // Weekend regular: a missed boat is a night to sort out (45-regular-weekend.js)
+  V.missedWhy=why||'boat';visitEnd('missed')}
 // after every action: first time on the island, the 11 AM check-out, and the last day
 function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),side=L[S.loc]?L[S.loc].side:'M',R=vRental();
   if(side==='I'&&V.islandAt==null)V.islandAt=S.t;

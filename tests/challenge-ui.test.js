@@ -90,6 +90,7 @@ module.exports = [
     const t = await page.textContent('.modal');
     assert(/same weather, outages and prices/.test(t) && /Compare scores/.test(t) && /Never mind/.test(t));
     await page.click('text=Never mind');
+    await page.waitForSelector('#mbg', { state: 'detached', timeout: 3000 });
     assert.strictEqual(await page.locator('#mbg').count(), 0);
     noErrors(errors);
   } },

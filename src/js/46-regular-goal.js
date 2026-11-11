@@ -9,14 +9,14 @@ function regGoal(){const V=VS(),net=regNet(),rep=V.rep,fr=regFriendsN(),G=REG_GO
   g.p=(Math.min(1,Math.max(0,net)/G.money)+Math.min(1,Math.max(0,rep)/G.rep)+Math.min(1,fr/G.friends))/3;return g}
 function regGoalCheck(){if(!regOn()||S.over)return;const R=REG(),g=regGoal();
   if(R.offered||!g.all)return;
-  R.offered=true;R.goalAt=regDk();R.house={ask:REG_DOWN,at:regDk(),by:pick(['Marta','Walt','Bev','Rusty','the Hendersons'])};
+  R.offered=true;R.goalAt=regDk();R.house={ask:regDown(),at:regDk(),by:pick(['Marta','Walt','Bev','Rusty','the Hendersons'])};
   say('🏡 A house comes up in the Island Group.');
-  modal('🏡 A house in the Island Group',`<p>The post is two lines long: <b>“Small cedar house, Lake Josephine side. Owners moving to Arizona. Down payment ${$(REG_DOWN)}, and we’d like it to go to somebody the island already knows.”</b></p><p>Under it, a dozen comments: ${R.house.by} has tagged you. “That’s ${currentName()}. They’re one of us.”</p>
+  modal('🏡 A house in the Island Group',`<p>The post is two lines long: <b>“Small cedar house, Lake Josephine side. Owners moving to Arizona. Down payment ${$(regDown())}, and we’d like it to go to somebody the island already knows.”</b></p><p>Under it, a dozen comments: ${R.house.by} has tagged you. “That’s ${currentName()}. They’re one of us.”</p>
     <p style="font-size:13px;color:var(--mute)">You have ${$(S.money)}. Buying ends the month: you’ve moved to the island.</p>`,
-    [{l:`Buy it: ${$(REG_DOWN)} down`,s:'You move to Anderson Island.',dis:S.money<REG_DOWN,fn:regBuy},{l:'Not yet',s:'The post stays up. Buy it from 📱 any time.',fn:()=>{}}],true)}
+    [{l:`Buy it: ${$(regDown())} down`,s:'You move to Anderson Island.',dis:S.money<regDown(),fn:regBuy},{l:'Not yet',s:'The post stays up. Buy it from 📱 any time.',fn:()=>{}}],true)}
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);if(!regOn()||S.over)return a;
-  try{const R=REG();if(R.offered&&R.house&&!R.bought)a.push({cat:'phone',ic:'🏡',l:`Buy the house in the Island Group: ${$(REG_DOWN)} down`,s:'The cedar house on the Lake Josephine side. Ends the month: you move to the island.',cls:'primary',dis:S.money<REG_DOWN||!phoneCan(),fn:regBuy})}catch(e){console.error(e)}return a}}
-function regBuy(){const R=REG(),V=VS();if(S.money<REG_DOWN||S.over)return;money(-REG_DOWN);R.bought=true;
+  try{const R=REG();if(R.offered&&R.house&&!R.bought)a.push({cat:'phone',ic:'🏡',l:`Buy the house in the Island Group: ${$(regDown())} down`,s:'The cedar house on the Lake Josephine side. Ends the month: you move to the island.',cls:'primary',dis:S.money<regDown()||!phoneCan(),fn:regBuy})}catch(e){console.error(e)}return a}}
+function regBuy(){const R=REG(),V=VS();if(S.money<regDown()||S.over)return;money(-regDown());R.bought=true;
   regEnd('moved','{{name}}, you moved to the island',`A cedar house on the Lake Josephine side, a key on a loop of twine, and neighbors who already know your name. ${regFriendsN()} friends, a good name and one very long ferry commute behind you.`,false)}
 function regEnd(kind,title,sub,lost){const V=VS();V.done=true;V.result=kind;V.endT=S.t;
   MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();S.over=true;endScreen(title,sub,!!lost)}
@@ -27,9 +27,9 @@ function regFinish(){const R=REG(),V=VS();
   const o=regRentOwed();if(o>0){money(-o);R.rent.owed=0;R.rent.wk=regWk();R.st.rent+=o}
   for(const k in REG_BILLS){const b=RB(k);if(!b.paid){if(b.check<0){money(-regBillOwed(k));R.st.bills+=regBillOwed(k)}b.paid=true}}
   const g=regGoal();
-  if(g.all&&!R.bought&&S.money>=REG_DOWN){R.offered=true;R.house=R.house||{ask:REG_DOWN,at:regDk(),by:'Marta'};
+  if(g.all&&!R.bought&&S.money>=regDown()){R.offered=true;R.house=R.house||{ask:regDown(),at:regDk(),by:'Marta'};
     MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
-    return modal('🏡 One more thing',`<p>The month is over, and the house in the Island Group is still up. Everything you’d need is in the bank.</p>`,[{l:`Buy it: ${$(REG_DOWN)} down`,fn:regBuy},{l:'Not this time',fn:regEndMonth}],true)}
+    return modal('🏡 One more thing',`<p>The month is over, and the house in the Island Group is still up. Everything you’d need is in the bank.</p>`,[{l:`Buy it: ${$(regDown())} down`,fn:regBuy},{l:'Not this time',fn:regEndMonth}],true)}
   regEndMonth()}
 function regEndMonth(){const g=regGoal();
   if(g.p>=0.6)return regEnd('regular','A regular, not a resident yet',`Four weeks of Friday boats and Sunday nights, and the deckhands know your order. The island is nearly yours. One more month, maybe.`,false);
@@ -81,7 +81,7 @@ function regTodo(it){const V=VS(),R=REG(),C=regCity(),g=regGoal(),d=day(),m=tod(
   out.push({ok:g.money,fail:false,l:`Save ${$(REG_GOAL.money)} after rent and bills`,s:`💰 ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (cash ${$(S.money)} minus rent and bills still owed).`,urgent:false});
   out.push({ok:g.repOk,fail:false,l:`Island reputation ${REG_GOAL.rep}+`,s:`🤝 ${V.rep>0?'+':''}${V.rep} of ${REG_GOAL.rep} · ${vTier()[1]}. Help out around the island, eat with friends, leave no trace.`,urgent:false});
   out.push({ok:g.frOk,fail:false,l:`${REG_GOAL.friends} island friends`,s:`👥 ${g.fr} of ${REG_GOAL.friends}${g.fr?`: ${Object.values(S.friends).map(f=>f.name.split(',')[0].split(' from')[0]).join(', ')}`:'. Volunteer at the Legion, the Riv, the swap board, the farm or the lake.'}`,urgent:false});
-  if(R.offered&&R.house&&!R.bought)out.push({ok:false,fail:false,l:'The house in the Island Group',s:`🏡 ${$(REG_DOWN)} down. Buy it from the 📱 or the ${C.n} to-do and you move to the island.`,urgent:true});
+  if(R.offered&&R.house&&!R.bought)out.push({ok:false,fail:false,l:'The house in the Island Group',s:`🏡 ${$(regDown())} down. Buy it from the 📱 or the ${C.n} to-do and you move to the island.`,urgent:true});
   if(J){J.days.slice().sort((a,b)=>a-b).forEach(i=>{if(!jobStarted(i))return;const vac=R.vacDays[wk*7+i];
     out.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(vac?'🏖️ Vacation day':R.sick[wk*7+i]?'🤒 Sick day':S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${C.n}. Commute ${C.commute}+ min.`,urgent:i===d&&!S.worked[i]&&m<J.start+240})})}
   else out.push({ok:false,fail:true,l:'Find a job',s:'💼 Look in the Gig Work app.',urgent:true});
@@ -131,7 +131,7 @@ function regVisitView(){const V=VS(),R=REG(),g=regGoal(),C=regCity(),Rn=vRental(
   h+=`<div class="ph-card">${g.money?'✓':'☐'} 💰 Savings ${g.net<0?'−':''}${$(Math.abs(g.net))} / ${$(REG_GOAL.money)}${bar(g.net/REG_GOAL.money,g.money)}</div>`;
   h+=`<div class="ph-card">${g.repOk?'✓':'☐'} 🤝 Reputation ${V.rep>0?'+':''}${V.rep} / ${REG_GOAL.rep} · ${vTier()[1]}${bar(V.rep/REG_GOAL.rep,g.repOk)}</div>`;
   h+=`<div class="ph-card">${g.frOk?'✓':'☐'} 👥 Island friends ${g.fr} / ${REG_GOAL.friends}${bar(g.fr/REG_GOAL.friends,g.frOk)}</div>`;
-  if(R.offered&&R.house&&!R.bought)h+=phBtn(`🏡 Buy the house: ${$(REG_DOWN)} down`,regBuy,{cls:'primary',dis:S.money<REG_DOWN,sub:'The cedar house in the Island Group. You move to the island.'});
+  if(R.offered&&R.house&&!R.bought)h+=phBtn(`🏡 Buy the house: ${$(regDown())} down`,regBuy,{cls:'primary',dis:S.money<regDown(),sub:'The cedar house in the Island Group. You move to the island.'});
   h+=`<div class="ph-sect">This weekend</div>`;
   h+=`<div class="ph-card">${Rn?(Rn.hosted?`🏡 Staying with <b>${esc(Rn.hosted.name.split(',')[0])}</b> (free)${Rn.checkedIn?' ✓':''}`:`🛖 Rental cabin · ${$(V.nights*V.rate)} · check-in ${fmt(VCHECK_IN)} Friday ${Rn.checkedIn?'✓':''}<br>Check-out ${fmt(VCHECK_OUT)} Sunday ${Rn.checkedOut?'✓':''}`):'No plan yet.'}</div>`;
   try{const d=deps('I',6),last=d[d.length-1];h+=`<div class="ph-card warn">⛴️ Last boat home Sunday: <b>${fmt(last)}</b> from the island. Miss it and Monday’s work is at risk.</div>`}catch(e){}
