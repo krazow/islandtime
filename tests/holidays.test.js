@@ -142,7 +142,7 @@ module.exports = [
     await at(page, 3, 4, 400, 'home');
     assert.match(await page.evaluate(() => { const n = S.log.length; EV.find(e => e.id === 'hol_blackfriday').run({}); return S.log.slice(n).map(l => l.s).join(' ') }), /ZooLights/);
     // January: still decorated, the wake line
-    await game(page, 'winter', 'week'); await at(page, 0, 0, 400, 'home');
+    await game(page, 'winter', 'week'); await at(page, 0, 1, 400, 'home');
     assert.ok(await page.evaluate(() => !!EV.find(e => e.id === 'hol_xmas_jan').cond({})));
     noErrors(errors);
   } },
