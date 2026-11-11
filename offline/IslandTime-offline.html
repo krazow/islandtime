@@ -9566,6 +9566,272 @@ phoneOnTime(()=>{
     const k=findNext(L[c.loc].side,'drive',true);
     a.push({cat:'ferry',ic:'📱',l:`Ask ${fn} to bring the ${carShortName(c)} across`,s:`${$(fare)} car fare plus a favor. ${k?'Goes on the '+fmt(k.dep)+' sailing':'No sailing in sight'}; it arrives at the ${vgShort(c.loc==='stDock'?'aiDock':'stDock')}.`,dis:!k||!phoneCan()||!canEssential(fare),fn:()=>vgCarRequest(c,id)})}
 }catch(e){console.error(e)}return a}}
+// ---------------- 🚤 boat extras, part 1: what the skiff carries, and the Boater Education Card ----------------
+// State: S.bx (lazy; old saves just work; it rides along from chapter to chapter, because storyAdvance keeps unknown keys):
+//   {card, bought (bxAbs day), reg (calendar year), hull (season key), winter, ins, insThru, idle, up:{lights,fog,eng25}, beat:{}, lot:{seen,own}, bay, outDk}
+// Cargo: a private boat may carry what the ferry bans. Up to two 5-gallon gas cans, a cooler and a few bags of groceries go aboard.
+// Washington requires a Boater Education Card to run a motor of 15 hp or more (anyone born after Jan 1, 1955). The bill of sale or
+// course certificate stands in for a card for 60 days; the card is good for life. Running without one risks a marine patrol ticket ($87).
+// Other files: 79 registration/winterizing/insurance, 80 the lot and the third garage bay, 81 upgrades and resale, 82 fun and friends.
+const BX_CARD_FEE=10, BX_GRACE=60, BX_TICKET=87, BX_REGFINE=50;
+const bxAbs=()=>((S.story&&S.story.ch)||0)*90+dayKey();    // a day count that keeps going across story chapters
+function bxYear(){try{return gameDate(day()).getFullYear()}catch(e){return 2026}}
+function bxSeasonKey(){return ((S.story&&S.story.ch)||0)+':'+seasonId()}
+const bxD=n=>'$'+Math.round(n).toLocaleString('en-US');
+function BX(){
+  if(!S.bx||typeof S.bx!=='object')S.bx={card:false,bought:-999,reg:-1,hull:'',winter:false,ins:false,insThru:-1,idle:0,up:{},beat:{},lot:{seen:false,own:false},bay:false,outDk:-9};
+  const X=S.bx;if(!X.up)X.up={};if(!X.beat)X.beat={};if(!X.lot)X.lot={seen:false,own:false};
+  if(boatOwn()&&X.bought<=-999){X.bought=bxAbs();X.reg=bxYear();X.hull=bxSeasonKey();X.winter=seasonId()==='winter'}
+  return X}
+const bxOk=()=>boatOwn()&&!visitorOn()&&!!S&&!S.over;
+const bxCardLeft=()=>BX_GRACE-(bxAbs()-BX().bought);
+const bxCardOk=()=>BX().card||bxCardLeft()>0;
+const bxRegOk=()=>BX().reg===bxYear();
+// ---- the crossing: cargo allowed, and the notes under the forecast ----
+function bxCargoOk(){const c=S.cargo||{};for(const k in c)if(k!=='gas'&&c[k]>0)return false;return (c.gas||0)<=2}
+function bxCrossNote(){
+  const X=BX(),L2=[],g=(S.cargo&&S.cargo.gas)||0;
+  if(g>0)L2.push(`🛢️ ${g} gas can${g>1?'s':''} aboard. The ferry bans them; a private boat can carry up to two.`);
+  if(S.cooler&&S.carried>0)L2.push('🧊 The cooler rides under the middle seat with your groceries.');
+  if(!X.card){if(bxCardLeft()>0)L2.push(`🪪 No boater card yet: your bill of sale covers you for ${bxCardLeft()} more day${bxCardLeft()===1?'':'s'}.`);
+    else L2.push(`⚠️ No Boater Education Card, and the 60 days are up. Marine patrol writes ${bxD(fineAmt(BX_TICKET))} tickets. (The online course is at home.)`)}
+  if(!bxRegOk())L2.push('⚠️ Your boat registration has lapsed: the decal is out of date.');
+  if(typeof bxFouled==='function'&&bxFouled())L2.push('🐚 The hull is fouled with barnacles and slime: slower and thirstier.');
+  if(X.up.lights)L2.push('💡 Navigation lights: you’re legal after dark.');
+  if(X.up.fog)L2.push('📻 Fog horn and handheld GPS on the seat.');
+  return L2.length?`<p style="font-size:12px;color:var(--mute)">${L2.join('<br>')}</p>`:''}
+// the modal is wrapped for the duration of boatCross only, so the note lands under the forecast
+{const _c=boatCross;boatCross=function(){
+  if(!bxOk())return _c.apply(this,arguments);
+  const gas=((S.cargo&&S.cargo.gas)||0)>0&&bxCargoOk(),_n=cargoN,_m=modal;
+  if(gas)cargoN=()=>0;
+  modal=function(t,b,btns,nc){if(/Cross in your skiff/.test(t))b+=bxCrossNote();return _m.call(this,t,b,btns,nc)};
+  try{return _c.apply(this,arguments)}finally{cargoN=_n;modal=_m}}}
+// choppy water with gas cans aboard: ride it out or lighten the load
+{const _g=boatGo;boatGo=function(dest,opt){
+  opt=Object.assign({},opt);
+  if(bxOk()&&opt.choppy&&!opt.bxAsked&&S.cargo&&S.cargo.gas>0){
+    return modal('🌊 Chop, with gas cans aboard',`<p>Whitecaps out in the middle of the Sound, and ${S.cargo.gas} red can${S.cargo.gas>1?'s':''} sliding around the floorboards. Every slap of the bow sends them sideways.</p>`,[
+      {l:'Slow down and ride it out',s:'+10 min. The cans stay put.',fn:()=>{S.t+=10;phoneTick();say('🌊 You throttle back and take the chop at an angle. Slower, drier, and the cans stay wedged against your legs.');boatGo(dest,Object.assign(opt,{bxAsked:true}))}},
+      {l:'Toss a can over the side',s:'Lighter and steadier, but 5 gallons of gas are gone, and it’s no good for the Sound.',fn:()=>{S.cargo.gas--;adj('stress',2);repAdd(-1,'tossed a gas can into the Sound');say('🛢️ You heave a full can over the side. It bobs away, glug, glug, and you try not to watch it go.');boatGo(dest,Object.assign(opt,{bxAsked:true}))}}])}
+  if(bxOk()&&opt.fog&&BX().up.fog&&Math.random()<0.7){opt.fog=false;say('📻 The GPS blinks a little blue arrow through the gray and you sound the horn every two minutes. You never lose the shore.')}
+  return _g.call(this,dest,opt)}}
+// an outboard that takes more gas and goes faster, a fouled hull that does the opposite
+{const _n=boatNeed;boatNeed=function(){let g=_n.apply(this,arguments);if(bxOk()){if(BX().up.eng25)g*=1.35;if(typeof bxFouled==='function'&&bxFouled())g*=1.15}return Math.round(g*100)/100}}
+// ---- patrol, on arrival ----
+{const _a=boatArrive;boatArrive=function(dest,min,notes){
+  notes=notes||[];
+  if(bxOk()){const X=BX();
+    if(X.up.eng25)min=Math.max(15,Math.round(min*0.7));
+    if(typeof bxFouled==='function'&&bxFouled())min+=6;
+    if(!bxCardOk()&&Math.random()<0.15){const f=fineAmt(BX_TICKET);money(-f);adj('stress',5);repAdd(-2,'ran a boat without a Boater Education Card');S.stats.boatTix=(S.stats.boatTix||0)+1;
+      notes.push(`🚨 A WDFW marine patrol boat pulls alongside. “Boater card?” You don’t have one. A ${bxD(f)} ticket, and a polite lecture about the free online course.`)}
+    else if(!bxRegOk()&&Math.random()<0.12){const f=fineAmt(BX_REGFINE);money(-f);adj('stress',3);
+      notes.push(`🚨 A Pierce County sheriff’s marine unit eyes your lapsed registration decal. A ${bxD(f)} ticket.`)}
+    if((S.cargo&&S.cargo.gas>0)&&min>0)notes.push(`🛢️ The gas can${S.cargo.gas>1?'s':''} made it across without a spill.`)}
+  return _a.call(this,dest,min,notes)}}
+// ---- the course ----
+function bxCourse(){
+  if(S.money<BX_CARD_FEE)return;
+  modal('🪪 Boater Education course',`<p>The state-approved online course: modules on right-of-way, nav lights, life jackets and Puget Sound currents, then a multiple-choice exam. About two hours, then a $${BX_CARD_FEE} card fee. The card is good for life.</p><p style="font-size:13px;color:var(--mute)">Washington requires it for anyone born after January 1, 1955 to run a motor of 15 hp or more. The first offense is $87.</p>`,[
+    {l:`Take the course and exam: $${BX_CARD_FEE}`,s:'2 hours at home with the laptop and a pot of tea.',dis:S.money<BX_CARD_FEE||!!powerOut(),fn:()=>{
+      money(-BX_CARD_FEE);S.t+=120;phoneTick();BX().card=true;adj('stress',-2);
+      say('🪪 Two hours, a lot of arrows pointing at a lot of buoys, and a 92% on the exam. A temporary certificate prints out, and the plastic card follows in the mail. Good for life.');showTile('🪪','Boater Education Card','Good for life','good');afterAction()}},
+    {l:'Not now',fn:()=>{}}])}
+function bxRulesActions(a,loc){
+  if(!bxOk())return;
+  if(loc==='home'&&!BX().card)a.push({cat:'boatx',ic:'🪪',l:`Take the boater education course: $${BX_CARD_FEE}`,s:bxCardLeft()>0?`Two hours, once, for life. Your bill of sale covers ${bxCardLeft()} more day${bxCardLeft()===1?'':'s'}.`:'Two hours, once, for life. Your 60 days are up: without the card, crossings risk an $87 ticket.',dis:S.money<BX_CARD_FEE||!!powerOut(),fn:bxCourse});
+  if(loc==='home'&&BX().card&&boatOwn())a.push({cat:'boatx',ic:'🪪',l:'Boater Education Card ✓',s:'Good for life. It lives in the glove box, in a sandwich bag.',dis:true});
+  if((loc==='marina'||loc==='sunny')&&S.cargo&&S.cargo.gas>0&&S.boat.at===loc&&S.boat.fuel<BOAT_TANK-4.9)a.push({cat:'boatx',ic:'🛢️',l:'Pour a gas can into the skiff’s tank',s:`5 gal into the ${BOAT_TANK}-gal tank (${boatFuelBtn()}).`,fn:()=>{S.cargo.gas--;S.boat.fuel=boatGal(Math.min(BOAT_TANK,S.boat.fuel+5));S.t+=10;phoneTick();say('⛽ You tip a red can into the outboard tank with a funnel and a steady hand.');afterAction()}});
+}
+Object.assign(ACT_CATS,{boatx:'🚤 Your boat'});
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxRulesActions(a,S.loc)}catch(e){console.error(e)}return a}}
+// a new boat: the bill of sale starts the 60-day clock; a registration comes with it
+{const _b=boatBought;boatBought=function(){const r=_b.apply(this,arguments);try{const X=BX();X.bought=bxAbs();X.reg=bxYear();X.hull=bxSeasonKey();X.winter=seasonId()==='winter';X.idle=0}catch(e){console.error(e)}return r}}
+// ---------------- 🚤 boat extras, part 2: registration, winterizing, the hull, insurance, and the weather ----------------
+// Registration: $40 a calendar year (a lapse risks a $50 ticket when you cross). Winterizing the outboard: do it yourself (1 h, $15 of
+// stabilizer, antifreeze and fogging oil) or the marina ($120); an unwinterized outboard can crack in a hard freeze. A slip boat grows
+// a fouled hull each season ($60 to clean). Insurance is $15 a month and covers storm damage and theft at Sunnyside (a $50 deductible).
+const BX_REG=40, BX_WINT=15, BX_WINT_MARINA=120, BX_HULL=60, BX_INS=15, BX_DEDUCT=50;
+const bxGaraged=()=>boatOwn()&&S.boat.store==='garage';
+const bxHome=()=>boatOwn()&&(S.boat.at==='home'||(typeof boatAtHome==='function'&&boatAtHome()));
+const bxFouled=()=>boatOwn()&&!bxGaraged()&&S.boat.store==='slip'&&BX().hull!==bxSeasonKey();
+const bxColdSeason=()=>seasonId()==='winter'||(seasonId()==='fall'&&(S.weekNo||0)>=2);
+const bxInsured=()=>BX().ins;
+function bxReg(){if(S.money<BX_REG)return;money(-BX_REG);S.t+=10;phoneTick();BX().reg=bxYear();say(`🪪 You renew the boat registration online: ${bxD(BX_REG)}, and a new decal comes in the mail for the bow.`);afterAction()}
+function bxWinter(marina){const c=marina?BX_WINT_MARINA:BX_WINT;if(S.money<c)return;money(-c);S.t+=marina?30:60;phoneTick();BX().winter=true;
+  say(marina?'🔧 The marina mechanic drains the lower unit, fogs the cylinders and tops up the antifreeze. $120, and he writes the date on a tag.':'🔧 Stabilizer in the tank, fogging oil in the cylinders, fresh gear oil, and the cooling passages flushed with antifreeze. An hour with a YouTube video on the phone, and you feel competent.');afterAction()}
+function bxHullClean(){if(S.money<BX_HULL)return;money(-BX_HULL);S.t+=45;phoneTick();BX().hull=bxSeasonKey();say('🐚 A diver scrapes a season of barnacles and green slime off the hull. $60, and the skiff feels ten pounds lighter.');afterAction()}
+function bxInsure(on){const X=BX();if(on){if(S.money<BX_INS)return;money(-BX_INS);X.ins=true;X.insThru=bxAbs()+28;S.t+=10;phoneTick();say(`📄 Boat insurance: ${bxD(BX_INS)} a month. It covers storm damage and theft at the public float, less a ${bxD(BX_DEDUCT)} deductible.`)}
+  else{X.ins=false;X.insThru=-1;say('📄 You cancel the boat insurance.')}afterAction()}
+function bxUpkeepActions(a,loc){
+  if(!bxOk())return;const X=BX(),B=S.boat,here=(loc==='marina'&&B.at==='marina')||(loc==='home'&&bxHome());
+  if(loc==='home'||loc==='marina'){
+    if(!bxRegOk())a.push({cat:'boatx',ic:'🪪',l:`Renew the boat registration: ${bxD(BX_REG)}`,s:`Lapsed. A lapsed decal risks a ${bxD(fineAmt(BX_REGFINE))} ticket when you cross.`,dis:S.money<BX_REG,fn:bxReg});
+    else if(loc==='home')a.push({cat:'boatx',ic:'🪪',l:'Boat registration ✓',s:`Current through ${bxYear()}. Renews yearly: ${bxD(BX_REG)}.`,dis:true,fn:()=>{}});
+  }
+  if(here&&!X.winter&&(seasonId()==='fall'||seasonId()==='winter')){
+    a.push({cat:'boatx',ic:'🧊',l:`Winterize the outboard yourself: ${bxD(BX_WINT)}`,s:'1 hour. Stabilizer, fogging oil, antifreeze. A hard freeze can crack an unwinterized outboard.',dis:S.money<BX_WINT,fn:()=>bxWinter(false)});
+    if(loc==='marina')a.push({cat:'boatx',ic:'🔧',l:`Have the marina winterize it: ${bxD(BX_WINT_MARINA)}`,s:'30 min of your time; they do it right.',dis:S.money<BX_WINT_MARINA,fn:()=>bxWinter(true)});
+  }
+  if(here&&X.winter&&(seasonId()==='fall'||seasonId()==='winter')&&loc==='home')a.push({cat:'boatx',ic:'🧊',l:'Outboard winterized ✓',s:'Ready for the freeze.',dis:true,fn:()=>{}});
+  if(loc==='marina'&&B.at==='marina'&&B.store==='slip')a.push({cat:'boatx',ic:'🐚',l:bxFouled()?`Clean the hull: ${bxD(BX_HULL)}`:'Hull is clean ✓',s:bxFouled()?'A diver scrapes the season’s growth off. A fouled hull is slower and burns more gas.':'Cleaned this season. A slip boat grows slime each season.',dis:!bxFouled()||S.money<BX_HULL,fn:bxHullClean});
+  if(loc==='marina'||loc==='home')a.push({cat:'boatx',ic:'📄',l:X.ins?'Cancel the boat insurance':`Insure the boat: ${bxD(BX_INS)} a month`,s:X.ins?`Insured: storm damage and theft at Sunnyside are covered (${bxD(BX_DEDUCT)} deductible).`:'Covers storm damage and theft at Sunnyside, less a $50 deductible.',dis:!X.ins&&S.money<BX_INS,fn:()=>bxInsure(!X.ins)});
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxUpkeepActions(a,S.loc)}catch(e){console.error(e)}return a}}
+// ---- the nights: monthly insurance, idle wear ----
+{const _e=endDay;endDay=function(){try{
+  if(bxOk()){const X=BX();
+    if(X.ins&&bxAbs()>=X.insThru){money(-BX_INS);X.insThru+=28;say(`📄 The month’s boat insurance: ${bxD(BX_INS)}.`)}
+    if(!bxGaraged()){X.idle=(X.idle||0)+1;const every=S.boat.store==='slip'||S.boat.store==='buoy'?2:3;if(X.idle>=every){X.idle=0;S.boat.cond=Math.max(0,S.boat.cond-1)}}}}catch(e){console.error(e)}return _e.apply(this,arguments)}}
+// a gale: a boat in a slip or on a buoy can take a beating
+const bxStormNight=()=>!!(S.week&&S.week.storm&&S.week.storm.day===day());
+defEvent({id:'bx_storm',hook:'night',priority:2,max:99,chance:0.6,cond:()=>bxOk()&&!bxGaraged()&&bxStormNight(),
+  run(ctx){const X=BX(),B=S.boat,cost=bxInsured()?fineAmt(BX_DEDUCT):fineAmt(250);money(-cost);B.cond=Math.max(0,B.cond-25);adj('stress',4);
+    ctx.notes.push(bxInsured()?`⛈️ The gale slammed your skiff against the pilings. The insurance adjuster approves the repair: just the ${bxD(cost)} deductible.`:`⛈️ The gale slammed your skiff against the pilings, cracked a seat and bent the prop. The repair is ${bxD(cost)}, and the outboard isn’t the same.`)}});
+// theft at the public float
+defEvent({id:'bx_theft',hook:'night',priority:2,max:99,chance:0.1,cond:()=>bxOk()&&S.boat.at==='sunny'&&!bxGaraged(),
+  run(ctx){const cost=bxInsured()?fineAmt(BX_DEDUCT):fineAmt(450);money(-cost);S.boat.cond=Math.min(S.boat.cond,60);adj('stress',6);
+    ctx.notes.push(bxInsured()?`🚨 Somebody walked off with your outboard at the Sunnyside float overnight. The insurance covers a replacement; you pay the ${bxD(cost)} deductible.`:`🚨 Somebody walked off with your outboard at the Sunnyside float overnight. A used replacement is ${bxD(cost)}, out of pocket.`)}});
+// a hard freeze for an unwinterized outboard
+defEvent({id:'bx_freeze',hook:'night',priority:2,max:99,chance:0.22,cond:()=>bxOk()&&!bxGaraged()&&!BX().winter&&bxColdSeason()&&!bxStormNight(),
+  run(ctx){const cost=fineAmt(180);money(-cost);S.boat.cond=Math.max(0,S.boat.cond-35);adj('stress',4);
+    ctx.notes.push(`🥶 A hard freeze overnight. Water left in the outboard’s cooling passages froze and cracked a fitting: ${bxD(cost)} at the marina, and it runs rougher. Winterizing would have prevented it.`)}});
+// a nudge: registration and winterizing
+defEvent({id:'bx_nudge',hook:'wake',priority:1,max:99,cooldown:3,chance:0.5,cond:()=>bxOk()&&S.loc==='home'&&(!bxRegOk()||(!BX().winter&&bxColdSeason())||bxFouled()),
+  run(){const X=BX(),m=[];
+    if(!bxRegOk())m.push('📬 A notice from the state: your boat registration has expired. Renew it online ($40).');
+    if(!X.winter&&bxColdSeason())m.push('🧊 The first frost is on the roof. Time to winterize the outboard before the freeze.');
+    if(bxFouled())m.push('🐚 The skiff’s hull is getting fouled in the slip. A cleaning is $60 at the marina.');
+    say(m[0])}});
+Object.assign(TILE_META,{bx_storm:['⛈️','The gale hit your boat','bad'],bx_theft:['🚨','Outboard stolen','bad'],bx_freeze:['🥶','Outboard froze','bad'],bx_nudge:['📬','Boat upkeep','info']});
+if(typeof storyHooks!=='undefined')storyHooks.push({id:'boatx',chapterStart(ch,notes){try{if(!bxOk()||ch<1)return;const X=BX();
+  if(seasonId()==='spring')X.winter=false;
+  if(X.ins){X.insThru=bxAbs()+28;money(-BX_INS);notes&&notes.push(`📄 A new month of boat insurance: ${bxD(BX_INS)}.`)}
+  X.idle=0}catch(e){console.error(e)}}});
+// ---------------- 🏠 boat extras, part 3: the lot next door and the third garage bay ----------------
+// For a player who owns a boat, the lot next to the cabin eventually comes up for sale (an Island Group post or a realtor sign):
+// BX_LOT, a long-term savings goal (real small Anderson Island lots list for about $8,000–$45,000; e.g. 0.19 acre for $9,000, 0.2 acre for $25,000).
+// Then a contractor builds a third garage bay (BX_BAY, 1–2 weeks; he comes over on the ferry, so an outage delays him, same as the cabin
+// upgrades in 65-cabin.js). garageBay() is true once it's built; the boat-storage code (57-own-boat.js) offers 'garage' storage only then.
+// A garaged boat doesn't wear between trips, can't be hit by a storm or stolen; servicing the outboard at home is cheaper than the marina;
+// the shed holds more firewood. The garage card (69-garage.js) shows three slots: the cars and the boat.
+const BX_LOT=15000, BX_BAY=12000, BX_HOME_SERVE=25, BX_WOOD_CAP=22;
+function garageBay(){return !!(typeof S!=='undefined'&&S&&S.bx&&S.bx.bay)}
+window.garageBay=garageBay;
+const bxLotJob=()=>UP().jobs.find(j=>j.k==='bay');
+const bxLotOk=()=>boatOwn()&&!S.over&&!S.challenge&&!visitorOn();
+// ---- the listing ----
+defEvent({id:'bx_lot',hook:'wake',priority:1,max:1,cooldown:0,chance:0.12,cond:()=>bxLotOk()&&S.loc==='home'&&!BX().lot.seen&&((S.weekNo||0)>=1||day()>=2),
+  run(){const X=BX();X.lot.seen=true;
+    say(S.ph&&S.friends&&Object.keys(S.friends).length&&Math.random()<0.5
+      ?'🏘️ A post in the Anderson Island Group: “For sale, 0.2 acre, cleared and level, right next to you-know-who. $15,000 OBO. Septic approved.” You know exactly which lot. It’s next door.'
+      :'🏘️ A realtor’s sign leans in the salal at the edge of your property: “FOR SALE 0.2 ACRE, $15,000.” The lot next door, cleared and level. Small island lots list for roughly $8,000 to $45,000, so that’s no bad price, if you had it.')}});
+Object.assign(TILE_META,{bx_lot:['🏘️','The lot next door is for sale','info']});
+function bxLotBuy(){if(S.money<BX_LOT)return;money(-BX_LOT);BX().lot.own=true;S.t+=60;phoneTick();
+  say(`🏘️ A title company in Gig Harbor, a stack of paper and a pen on a chain. The lot next door is yours: ${bxD(BX_LOT)}. You walk its edges at dusk, trying out names for it.`);showTile('🏘️','You own the lot next door','Room for a third bay','good');afterAction()}
+function bxBayBook(){if(S.money<BX_BAY||S.phone<=0)return;money(-BX_BAY);S.t+=20;phoneTick();
+  const days=7+Math.floor(Math.random()*8),due=(day()+days)*1440+600;UP().jobs.push({k:'bay',due});
+  say(`📱 You book the builder for a third garage bay: ${bxD(BX_BAY)}. The crew comes over on the ferry ${fmtAbs(due)}, if it’s running.`);afterAction()}
+function bxBayDone(quiet){BX().bay=true;if(!quiet){say('🔨 The builder’s crew drops the last sheet of siding and rolls up the big door. A third bay: wide enough for a boat on a trailer, with a work bench. Your skiff can live at home now.');try{showTile('🏠','Third garage bay built','The skiff can live at home','good')}catch(e){}}}
+UP_JOBS.bay={who:'building contractor',done:j=>bxBayDone()};
+if(typeof storyAdvance==='function'){const _s=storyAdvance;storyAdvance=function(){try{if(S&&S.up)S.up.jobs=S.up.jobs.filter(j=>{if(j.k==='bay'){bxBayDone(true);return false}return true})}catch(e){console.error(e)}return _s.apply(this,arguments)}}
+function bxHomeServe(){S.money>=BX_HOME_SERVE&&(money(-BX_HOME_SERVE),S.t+=40,phoneTick(),S.boat.cond=100,say('🔧 A new plug, fresh gear oil and a good clean of the carburetor on your own workbench, in your own bay. $25 and no marina mechanic’s hourly rate.'),afterAction())}
+function bxWood(){const U=UP();S.t+=90;phoneTick();U.wood=Math.min(BX_WOOD_CAP,U.wood+8);U.woodOut=false;adj('stress',-2);say(`🪵 You split and stack a big load in the dry corner of the new bay. ${U.wood} nights of firewood.`);afterAction()}
+function bxLotActions(a){
+  if(S.loc!=='home'||!bxLotOk())return;const X=BX(),L2=X.lot;
+  if(L2.seen&&!L2.own){const p=Math.min(100,Math.floor(Math.max(0,S.money)/BX_LOT*100));
+    a.push({cat:'boatx',ic:'🏘️',l:`Buy the lot next door: ${bxD(BX_LOT)}`,s:`A savings goal. You have ${bxD(Math.max(0,S.money))} of ${bxD(BX_LOT)} (${p}%). Room for a third garage bay.`,dis:S.money<BX_LOT,fn:bxLotBuy})}
+  if(L2.own&&!X.bay){const job=bxLotJob();
+    a.push({cat:'boatx',ic:'🏗️',l:job?'Third garage bay: booked':`Build a third garage bay: ${bxD(BX_BAY)}`,s:job?`The builder comes over on the ferry ${fmtAbs(job.due)}.`:`A third bay for the skiff: no wear between trips, safe from storms and theft, a workbench for servicing it. 1–2 weeks.${S.phone<=0?' Your phone is dead.':''}`,dis:!!job||S.money<BX_BAY||S.phone<=0,fn:bxBayBook})}
+  if(X.bay){
+    if(bxHome()&&S.boat.cond<90)a.push({cat:'boatx',ic:'🔧',l:`Service the outboard at home: ${bxD(BX_HOME_SERVE)}`,s:'40 min at your own workbench. Cheaper than the marina.',dis:S.money<BX_HOME_SERVE,fn:bxHomeServe});
+    const U=UP();if(U.wood<BX_WOOD_CAP-7&&typeof seasonStove==='function')a.push({cat:'boatx',ic:'🪵',l:`Stack a big load of firewood in the bay (${U.wood} nights)`,s:`1.5 hours. The bay holds up to ${BX_WOOD_CAP} nights (the shed alone holds 14).`,fn:bxWood})}
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxLotActions(a);
+  // the garage card (69-garage.js): three slots once the bay is built
+  if(garageBay()&&S.loc==='home'&&!visitorOn()){const g=a.find(x=>x&&/^Garage:/.test(x.l||''));
+    const sk=bxGaraged()?'⛵ skiff':'⛵ (bay free for the skiff)';
+    if(g){g.l=g.l.replace(/\(\d+\/\d+\)\s*$/,'')+'· '+sk+' (3 bays)';g.s=(g.s||'')+' The third bay is built for the boat.'}
+    else a.push({ic:'🏠',l:`Garage: ${sk} (3 bays)`,cat:'here',s:'A third bay, built for the boat.',dis:true})}
+}catch(e){console.error(e)}return a}}
+// ---------------- 🚤 boat extras, part 4: upgrades at the marina, and a fair resale ----------------
+// S.bx.up = {lights, fog, eng25}. Navigation lights: crossings after dark lose the darkness risk. Fog horn + handheld GPS: most of the
+// fog risk goes away. A 25 hp outboard: about 30% faster, 35% more gas. Selling the skiff pays by condition, upgrades and use.
+const BX_UPS=[
+  {id:'lights',ic:'💡',n:'Navigation lights',c:85,min:30,d:'Red, green and a white stern light, wired to a battery. After dark you’re legal and visible: no more drift-log roulette.',say:'💡 Red and green on the bow, white on the stern, a little battery under the seat. You flip the switch twice just to see it.'},
+  {id:'fog',ic:'📻',n:'Fog horn and handheld GPS',c:160,min:30,d:'A canister horn and a waterproof GPS. Fog still isn’t fun, but you stop losing the shoreline.',say:'📻 An air horn, a handheld GPS in a floating case and a laminated chart of the Narrows. You are now the person with a laminated chart.'},
+  {id:'eng25',ic:'🚀',n:'25 hp outboard',c:2200,min:90,d:'Used but sound, with a trade-in on the old 15. About 30% faster across, but 35% more gas. (Still needs the boater card.)',say:'🚀 The mechanic bolts on a 25 hp four-stroke and sends you out for a test run. The bow lifts, the wake spreads, and the Sound is suddenly smaller.'}];
+function bxUpBuy(id){const u=BX_UPS.find(x=>x.id===id);if(!u||BX().up[id]||S.money<u.c)return;money(-u.c);S.t+=u.min;phoneTick();BX().up[id]=true;if(id==='eng25')S.boat.cond=100;say(u.say);showTile(u.ic,u.n+' installed','Marina','good');afterAction()}
+function bxUpActions(a){
+  if(S.loc!=='marina'||!bxOk()||S.boat.at!=='marina')return;
+  BX_UPS.forEach(u=>{const own=BX().up[u.id];a.push({cat:'boatx',ic:u.ic,l:own?`${u.n} ✓`:`${u.n}: ${bxD(u.c)}`,s:own?'Installed. '+u.d:u.d,dis:own||S.money<u.c,fn:()=>bxUpBuy(u.id)})})}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxUpActions(a)}catch(e){console.error(e)}return a}}
+// no darkness risk with lights on
+{const _c=boatConditions;boatConditions=function(){const r=_c.apply(this,arguments);try{if(bxOk()&&BX().up.lights)r.H=r.H.filter(h=>h.k!=='dark')}catch(e){}return r}}
+// ---- resale ----
+function bxSellValue(){const B=S.boat,X=BX();let p=900+B.cond*8;if(X.up.lights)p+=40;if(X.up.fog)p+=90;if(X.up.eng25)p+=1100;p-=Math.min(250,(B.trips||0)*6);return Math.max(500,Math.round(p/10)*10)}
+boatSell=function(){const B=S.boat,p=bxSellValue(),ups=Object.keys(BX().up).filter(k=>BX().up[k]).length;
+  modal('🚤 Sell the skiff?',`<p>A guy on the dock offers <b>${bxD(p)}</b> cash. ${B.cond<50?'He winces at the outboard.':'He looks the hull over and nods.'}${ups?` He reads your upgrades off like a checklist and adds a little for them.`:''}</p><p style="font-size:12px;color:var(--mute)">Based on condition (${Math.round(B.cond)}%)${ups?', your upgrades':''} and how many trips it’s made. Your boater card stays yours.</p>`,[
+    {l:`Sell for ${bxD(p)}`,fn:()=>{money(p);const X=BX();X.up={};X.ins=false;X.insThru=-1;X.bought=-999;S.boat=null;boatSync();S.t+=20;say(`🚤 Handshake, cash, and an empty slip. ${p<2000?'You lost a little':'Not bad'} on the deal.`);afterAction()}},
+    {l:'Keep it',fn:()=>{}}])};
+// ---------------- 🎣 boat extras, part 5: fishing, crabbing and friends from your own boat ----------------
+// Your own boat gets you to the fish: better odds than the dock (crab pots set from the skiff come up fuller; the hook-set odds for
+// salmon are better), and a day on the water with a friend. Two friend storyline beats use the skiff (via 60-friend-stories.js hooks):
+// Sam's sailboat gets becalmed and needs a tow; the Hendersons want photos of the shoreline from the water.
+const bxCalm=()=>{const c=boatConditions('sunny');return !c.refuse};
+const bxDay=()=>seasonLite(tod())&&seasonLite(tod()+120);
+function bxOutOk(gal){return bxOk()&&S.boat.at==='marina'&&S.loc==='marina'&&S.boat.fuel>=gal}
+function bxBoatFish(){
+  const T=TX(),F=T.fish;if(F.dk!==thxDay()){F.dk=thxDay();F.n=0}
+  S.t+=90;phoneTick();money(-4);S.boat.fuel=boatGal(S.boat.fuel-0.4);F.n++;
+  const calm=[8,5,2][Math.min(2,F.n-1)],done=()=>{adj('stress',-calm-2);thxFun('fish',3);afterAction()};
+  if(Math.random()>0.92){say('🎣 You drift along the kelp edge with a herring rig for an hour and a half. A seal follows you the whole way, unimpressed. No bites.');return done()}
+  modal('🎣 A hit off the kelp bed',`<p>The rod doubles over. You’re out where the fish actually are, a hundred yards from the dock.</p>`,[
+    {l:'Set the hook now',s:'Steady. Better odds of landing it.',fn:()=>fishLand(3,false,done)},
+    {l:'Let it run a moment first',s:'A bigger fish, maybe.',fn:()=>fishLand(3,true,done)}])}
+function bxBoatCrab(){const T=TX();if(S.money<8)return;
+  modal('🦀 Set a crab pot from the skiff',`<p>Out past the kelp where the dock crowd never reaches. Pots set from a boat come up fuller, and you’re less likely to lose one to a prop. Bait is a chicken carcass: $3. ${T.ownPot?'You have your own pot.':'The Riv rents pots for $8.'} Dungeness season: males 6¼ inches or bigger, five a day.</p>`,[
+    {l:`Set the pot from the boat: $${T.ownPot?3:11}`,s:'25 min and 0.3 gal.',dis:S.money<(T.ownPot?3:11),fn:()=>{money(-(T.ownPot?3:11));S.t+=25;phoneTick();S.boat.fuel=boatGal(S.boat.fuel-0.3);T.pot={at:crabNow(),boat:true};adj('stress',-2);thxFun('crab',1);say('🦀 You motor out past the end of the kelp, drop the pot in forty feet of water and mark it with a bright float.');afterAction()}},
+    {l:'Not now',fn:()=>{}}])}
+// a pot from the skiff: the pull is lucky (a lost line is unlikely, and the crabs run bigger)
+{const _p=crabPull;crabPull=function(){const T=TX();if(!(T.pot&&T.pot.boat))return _p.apply(this,arguments);
+  const _r=Math.random;Math.random=()=>0.5+_r()*0.5;try{return _p.apply(this,arguments)}finally{Math.random=_r}}}
+// ---- a friend on the water ----
+function bxOuting(id){
+  const X=BX();X.outDk=dayKey();S.t+=90;phoneTick();S.boat.fuel=boatGal(S.boat.fuel-0.5);S.boat.cond=Math.max(0,S.boat.cond-1);
+  adj('stress',-8);friendPts(id,2);const n=thxName(id);
+  say(pick([`🚤 ${n} sits in the bow with a thermos and a hat pulled low. Harbor seals, a bald eagle on a piling, and the whole island laid out low and green. “I never see it from this side,” ${n} says.`,`🚤 You and ${n} idle off Eagle Island with the engine off and two coffees. Neither of you says anything useful for forty minutes. It’s the best conversation you’ve had all week.`,`🚤 A pod of porpoises crosses the bow and ${n} grabs your sleeve like a kid. You’re both laughing when the dock comes back into view.`]));
+  afterAction()}
+function bxFunActions(a){
+  if(!bxOutOk(0.3))return;
+  const T=TX(),calm=bxCalm(),day2=bxDay(),ses=fishSessions();
+  const why=!calm?'The water’s too rough.':!day2?seasonDark():null;
+  a.push({cat:'boatx',ic:'🎣',l:'Fish from your skiff: $4',s:why||(!T.lic?'You’ll need the $20 fishing license first.':ses>=3?'The fish have stopped biting for today.':'90 min and 0.4 gal out at the kelp bed. Much better odds than the dock.'),dis:!!why||!T.lic||ses>=3||S.money<4||S.boat.fuel<0.4,fn:bxBoatFish});
+  if(seasonId()==='summer'&&!T.pot)a.push({cat:'boatx',ic:'🦀',l:'Set a crab pot from the skiff',s:why||(!T.lic?'You’ll need the $20 fishing license first.':!crabSeason()?'Dungeness season: July, Thursday through Monday.':'25 min and 0.3 gal. A fuller pot, and less chance of losing it.'),dis:!!why||!T.lic||!crabSeason()||S.boat.fuel<0.3,fn:bxBoatCrab});
+  const fr=thxFriends();
+  if(fr.length)a.push({cat:'boatx',ic:'🧑‍🤝‍🧑',l:'Take a friend out on the water',s:why||(BX().outDk===dayKey()?'You’ve been out with a friend today.':S.boat.fuel<0.5?'You need at least half a gallon.':'90 min and 0.5 gal. Friendship +2, stress −8.'),dis:!!why||BX().outDk===dayKey()||S.boat.fuel<0.5,
+    fn:()=>modal('🚤 Who comes along?',`<p>Two lifejackets, a thermos, and no particular destination.</p>`,fr.map(id=>({l:`Invite ${thxName(id)}`,s:'90 min, 0.5 gal.',fn:()=>bxOuting(id)})).concat([{l:'Not now',fn:()=>{}}]))});
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxFunActions(a)}catch(e){console.error(e)}return a}}
+// ---- two storyline beats that need a boat ----
+function bxBeat(id,key){return bxOk()&&BX().beat[key]==null&&S.loc==='home'&&!!S.friends[id]&&flv(id)>=2&&S.boat.at==='marina'&&(FST()[id].b>=1||(S.weekNo||0)>=1)}
+function bxBeatDone(id,key,pts,rep,why){BX().beat[key]=dayKey();FST()[id].h++;friendPts(id,pts);if(rep)fstRep(rep,why)}
+defEvent({id:'bx_sam_tow',hook:'wake',priority:2,max:1,chance:0.25,cond:()=>bxBeat('sam','sam')&&bxCalm(),
+  run(){fstText('sam','The Windfall is becalmed off the Riv. No wind, the tide’s taking me toward the Narrows, and the engine is, uh, a concept. Do you still have that skiff? ⛵',true);
+    modal('⛵ Sam’s sailboat',`<p>Sam’s sailboat, the <i>Windfall</i>, is sitting dead in the water a half mile off the marina, sails slack and a figure in a yellow slicker waving a very small oar. “I did NOT plan this,” says the text.</p>`,[
+      {l:'Tow Sam in with the skiff: 1 hour',s:'0.6 gal. Friendship +2, reputation +2.',dis:!bxOk()||S.boat.fuel<0.6,fn:()=>{S.t+=60;phoneTick();S.boat.fuel=boatGal(S.boat.fuel-0.6);bxBeatDone('sam','sam',2,2,'towed Sam’s sailboat in');adj('stress',-2);
+        say('⛵ You motor out, toss Sam a line and tow the <i>Windfall</i> back to the Riv with Sam at the tiller, grinning like he planned it. He pays you in eggs and an exaggerated story.');fstText('sam','You towed a SAILBOAT. With a SKIFF. I’m telling everyone. ⛵',true);afterAction()}},
+      {l:'Tell him the Riv has a tow service',s:'Friendship +0. He’ll manage.',fn:()=>{BX().beat.sam=dayKey();say('⛵ You text the number for the marina’s tow service. Sam gets in on the afternoon tide, mildly offended, mostly fine.')}}])}});
+defEvent({id:'bx_hend_photos',hook:'wake',priority:2,max:1,chance:0.25,cond:()=>bxBeat('hendersons','hend')&&bxCalm()&&seasonLite(tod()+180),
+  run(){fstText('hendersons','Ruth here. The museum wants photographs of the island’s shoreline FROM THE WATER, for the exhibit. Nobody has a boat. You have a boat. 🖼️',true);
+    modal('🖼️ The shoreline from the water',`<p>Ruth Henderson has a list: the Riv dock, the lighthouse side of Eagle Island, the old ferry landing at Lyle Point. “We have a hundred photos from the land,” she says, “and none from where the island actually looks like an island.”</p>`,[
+      {l:'Take the photos from the skiff: 2 hours',s:'0.6 gal. Friendship +2, reputation +2. A photo for your collection.',dis:!bxOk()||S.boat.fuel<0.6,fn:()=>{S.t+=120;phoneTick();S.boat.fuel=boatGal(S.boat.fuel-0.6);bxBeatDone('hendersons','hend',2,2,'photographed the island’s shoreline for the Henderson exhibit');adj('stress',-4);
+        say('🖼️ You idle along the shore with your phone in a plastic bag: the dock, the madrona bluffs, a heron on a piling. Ruth prints your favorite at poster size.');
+        try{if(typeof colPhotoAdd==='function')colPhotoAdd({k:'bx_shore',ic:'🖼️',t:'The island from the water',n:'For the Henderson exhibit',src:'story'})}catch(e){}
+        fstText('hendersons','Framed. Yours is the best one. Don’t tell the others. 🖼️',true);afterAction()}},
+      {l:'Not today',s:'She’ll find someone.',fn:()=>{BX().beat.hend=dayKey();say('🖼️ “Another time,” Ruth says, writing your name at the bottom of her list anyway.')}}])}});
+Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_photos:['🖼️','Photos from the water','info']});
 </script>
 </body>
 </html>

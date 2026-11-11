@@ -52,6 +52,12 @@
 - **Boat as a way home:** the "Leave your car behind?" prompt no longer warns boat owners whose skiff is at the other landing.
 - **Outage backlog:** the next three sailings after an outage are fuller (more cars left behind), and the Ferry tab says so.
 - **A friend drives your second car across:** text Sam or Walt, pay the car fare and owe them a favor; the car arrives at the far terminal on the next sailing.
+- **Boat extras:** your skiff can carry up to two 5-gallon gas cans (the ferry bans them), a cooler and a few bags of groceries. In choppy water with cans aboard you choose: slow down (+10 min) or toss a can over the side.
+- **Boater Education Card:** Washington requires one to run a motor of 15 hp or more (anyone born after Jan 1, 1955). Your bill of sale covers 60 days; after that, take the online course at home (2 hours, $10) for a card that is good for life, or risk an $87 marine patrol ticket.
+- **Boat upkeep:** a yearly registration ($40), winterizing the outboard before the freeze (do it yourself in an hour or pay the marina $120), a hull cleaning each season for a slip boat ($60), and optional insurance ($15 a month) that covers storm damage and theft at the Sunnyside float.
+- **The lot next door and a third garage bay:** once you own a boat, the neighboring lot comes up for sale (about $15,000: a long-term savings goal). Then a contractor, who rides the ferry, builds a third bay ($12,000, one to two weeks). A garaged skiff doesn't wear, can't be hit by a storm or stolen; service the outboard at home for less; stack more firewood. The garage card shows three bays.
+- **Upgrades and resale at the marina:** navigation lights (no darkness risk), a fog horn and handheld GPS, a 25 hp outboard (faster, thirstier), and a fair resale by condition and upgrades.
+- **On the water:** fish and crab from your own skiff with better odds than the dock, take a friend out for friendship and stress relief, and two story beats use the boat: Sam's becalmed sailboat and the Hendersons' shoreline photos.
 
 ### New in 1.21.1: small fixes
 
