@@ -178,7 +178,7 @@ function carHere(){return S.cars.find(c=>c.loc===S.loc)}
 function carMech(c){if(!c)return c;if(c.bat===undefined)c.bat=(c.id==='isl'&&S&&S.battery&&S.battery!=='ok')?S.battery:'ok';if(!c.spare)c.spare='ok';return c}
 function carBat(c){return c?carMech(c).bat:'ok'}
 function setCarBat(c,v){if(c){carMech(c).bat=v}}
-function carShortName(c){return !c||c.name==='Your car'?'car':c.name.replace(/^.*\(|\)$/g,'').replace(/^old /,''):'car'}
+function carShortName(c){return !c||c.name==='Your car'?'car':c.name.replace(/^.*\(|\)$/g,'').replace(/^old /,'')}
 function isOpen(id,t=S.t){const h=L[id].hours;if(!h)return true;const r=h(Math.floor(t/1440));if(!r)return false;const m=t%1440;return m>=r[0]&&m<r[1]}
 function hoursTxt(id){const h=L[id].hours;if(!h)return '';const r=h(day());return r?`Open ${fmt(r[0])}–${fmt(r[1])}`:'Closed today'}
 

@@ -711,7 +711,7 @@ function carHere(){return S.cars.find(c=>c.loc===S.loc)}
 function carMech(c){if(!c)return c;if(c.bat===undefined)c.bat=(c.id==='isl'&&S&&S.battery&&S.battery!=='ok')?S.battery:'ok';if(!c.spare)c.spare='ok';return c}
 function carBat(c){return c?carMech(c).bat:'ok'}
 function setCarBat(c,v){if(c){carMech(c).bat=v}}
-function carShortName(c){return c?c.name.replace(/^.*\(|\)$/g,'').replace(/^old /,''):'car'}
+function carShortName(c){return !c||c.name==='Your car'?'car':c.name.replace(/^.*\(|\)$/g,'').replace(/^old /,'')}
 function isOpen(id,t=S.t){const h=L[id].hours;if(!h)return true;const r=h(Math.floor(t/1440));if(!r)return false;const m=t%1440;return m>=r[0]&&m<r[1]}
 function hoursTxt(id){const h=L[id].hours;if(!h)return '';const r=h(day());return r?`Open ${fmt(r[0])}–${fmt(r[1])}`:'Closed today'}
 
@@ -1578,7 +1578,8 @@ defEvent({id:'arc_hendersons',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
   cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&!ctx.o.started,
   // the car's own battery: a weak one is a gamble; an old island car is more likely to die on a cold, dark morning than a newer one
-  chance:ctx=>{const c=ctx.car,old=c.id==='isl'||c.id==='beat';return carBat(c)==='weak'?0.3:(S.power?(old?0.2:0.08):(old?(c.id==='beat'?0.08:0.06):0.015))},
+  chance:ctx=>{const c=ctx.car,old=!(typeof visitorOn==='function'&&visitorOn())&&(c.id==='isl'||c.id==='beat');   // a visitor's or regular's own car is newer
+    return carBat(c)==='weak'?0.3:(S.power?(old?0.2:0.08):(old?(c.id==='beat'?0.08:0.06):0.015))},
   run(ctx){deadBattery(ctx,false);return {block:true}}});
 function deadBattery(ctx,triedNeighbor){
   const dest=ctx.to,base=dist(ctx.from,dest);S.stats.deadBattery=(S.stats.deadBattery||0)+1;
