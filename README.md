@@ -39,7 +39,7 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
-### New in 1.17: island reputations, a drug trade where only what gets noticed counts, and real fuel use
+### New in 1.17: island reputations, a drug trade where only what gets noticed counts, real fuel use, and a weekly challenge
 
 - 🏝️ **Every islander has a reputation now**, under the same rules as yours: 13 named characters and 12 background islanders do good deeds, let things slide, or get into trouble on their own each day. The 📣 Island Group shows **Island gossip**; your friends list shows each friend's tier; better-liked islanders answer your help posts more often and leave porch gifts; jailed characters can't help, and Dale's Place closes while Dale is in county jail. Story mode's epilogue names the best- and worst-liked islanders.
 - 💊 **The drug trade, where only what gets noticed counts.** Four markets: the Riv marina and the old schoolhouse's back lot on the island; Ponders Corner (Lakewood) and Hilltop (Tacoma) on the mainland. Goods come in tiers (party drugs, pills, hard drugs, plus the old "illicit drugs"); weed is legal to buy at a licensed shop in Lakewood (up to an ounce), but reselling it is a crime. A deal costs nothing unless someone notices; the chance rises with how much changes hands, how busy the spot is, daylight, and heat from recent deals there.
@@ -47,6 +47,8 @@
   - **Noticed by an island resident:** only the two people in the deal lose 15 reputation each.
   - **Nobody, or a mainland stranger:** nothing happens.
 - ⛽ **Real fuel use:** gas burned = miles driven ÷ the car's mpg (island back roads ~25 mph, mainland ~32 mph; the Subaru gets 24 mpg, the beater 22, the diesel pickup 18). Cars use about a third of the gas they did.
+- 🏆 **Weekly challenge:** one week, the same for everyone. Every player gets the same seeded week (season, jobs, weather, outages, Dale's prices) from the title screen's **Weekly challenge** button. At the end you get a score and a **share code** (or link). Paste a friend's code to compare; your challenge leaderboard is kept on this device.
+- 🎯 **Tuned odds:** effort pays off. A steady player reaches the story's savings goal, while coasting falls a few hundred dollars short. Story epilogues no longer repeat or contradict the ferry and island lines.
 
 ### 1.16.2: an update notice
 
