@@ -39,6 +39,11 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.21
+- **Stories for your friends:** Walt (the Legion roof), Sam (runaway chickens and a fox), Bev (hats for the ferry crew), Rusty (thinking of selling the Riv) and the Hendersons (museum photos and a family reunion) each have a four-part story that unlocks as the friendship grows. Beats arrive by text and as events, each with a choice that costs time, money or effort. Pitch in twice and the story leaves a lasting perk: Rusty's free coffee, Sam's eggs, Bev's crew wave, Walt's shingle at the Legion, the Henderson photo wall. They work in the week, month and Story modes and in Weekend regular.
+- **Memorable moments:** twenty small, kind events with a choice, weighted by season and time of day: orcas from the ferry, a king tide over the road, a potluck during a power outage, a lost dog, eagles fighting over a fish, a doe and fawn on Eckenstam-Johnson Road, a sea lion on the dock, a double rainbow, a chainsaw at 7 AM, fog so thick the ferry blows its horn, a kid selling lemonade, and more. At most one a day and three a week.
+- **📒 Collections** (title screen and Settings), kept on your device across all games: a **photo album** of every photo you take, a **crossing log** (rides, first crossing, most in a day, 10/25/50/100 ride milestones) and an **island bingo card** of 25 things to see and do.
+
 ### New in 1.20: Weekend regular
 
 - 📅 **A fourth way to visit:** on the **Visit the island** screen, pick **Weekend regular: a month**, then where you live (**Seattle**, **Tacoma** or **Olympia**) and a difficulty. You live and work on the mainland Monday to Friday and spend the weekends on Anderson Island.

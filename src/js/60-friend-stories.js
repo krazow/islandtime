@@ -152,7 +152,7 @@ function fstApply(id,A,c,beat){
     if(e&&e.perk&&A.h>=2){fstPerk(e.perk[0],e.perk[1],e.perk[2],e.perk[3])}
     else say(`${FSTORIES[id].ic} ${FSTORIES[id].t}: that’s the end of that story. It ended well anyway.`);
     showTile(FSTORIES[id].ic,`${FSTORIES[id].t}: the end`,A.h>=2&&e&&e.perk?'A lasting thanks':'','good');
-    try{if(typeof colBingoMark==='function')colBingoMark('story')}catch(er){}}
+    try{if(typeof colBingoMark==='function')colBingoMark('story_done')}catch(er){}}
   return true}
 function fstRun(id){const F=FST(),A=F[id],S0=FSTORIES[id],beat=S0.beats[A.b];if(!beat)return;
   if(A.sent!==A.b){fstText(id,beat.txt,false);A.sent=A.b}
