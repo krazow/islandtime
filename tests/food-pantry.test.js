@@ -12,8 +12,8 @@ module.exports = [
     await newGame(page, 'hard');
     let r = await at(page, {});
     assert.ok(r.a && !r.a.dis && /5 days of food/.test(r.a.l), JSON.stringify(r)); assert.ok(r.todo);
-    const got = await page.evaluate(() => { const s = S.stress, t = S.t; actions().find(a => /food box/.test(a.l)).fn(); return { c: S.carried, dt: S.t - t, ds: S.stress - s }; });
-    assert.deepStrictEqual(got, { c: 5, dt: 20, ds: 3 });
+    const got = await page.evaluate(() => { S.rx = false; const s = S.stress, t = S.t; actions().find(a => /food box/.test(a.l)).fn(); return { c: S.carried, dt: S.t - t, ds: S.stress - s, rx: S.rx, txt: /prescription/.test(S.log.map(l => l.s).join(' ')) }; });
+    assert.deepStrictEqual(got, { c: 5, dt: 20, ds: 3, rx: true, txt: true });
     r = await at(page, { cur: 3 });
     assert.ok(r.a && r.a.dis, 'one box a week: ' + JSON.stringify(r)); assert.ok(!r.todo);
     // a new week: available again

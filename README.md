@@ -45,7 +45,7 @@ The three levels now change more than the numbers, and the title screen says wha
 
 - 🌲 **Easy (Islander):** more money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, and a house that wears slower and recovers faster.
 - ⛴️ **Normal:** the game as designed, with no extras either way. The weekly challenge is always played on Normal so scores compare.
-- 🔥 **Hard (Ferry Hell):** summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages (20% instead of 10%) and more raccoons, and no warming shelter. Score ×1.25.
+- 🔥 **Hard (Ferry Hell):** summer crowds, constant breakdowns, tight money, weekly rent ($125), car trouble, more lost packages (20% instead of 10%) and more raccoons, and no warming shelter. If you go broke, the Legion food pantry gives you a 5-day food box and your prescription once a week. Score ×1.25.
 - Story mode uses the level you pick, and saved games keep the level they started on.
 
 ### New in 1.17: island reputations, a drug trade where only what gets noticed counts, real fuel use, and a weekly challenge

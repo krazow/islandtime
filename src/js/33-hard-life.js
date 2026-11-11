@@ -5,7 +5,7 @@
 //   rent: {wk: last week whose rent is settled or rolled into arrears, owed: arrears incl. late fees,
 //          strikes: Sundays in a row the rent went unpaid, fees: late fees so far, evict: eviction due}
 //   car:  {last: dayKey of the last breakdown, rolled: {carId: dayKey the morning roll was made}}
-const RENT=175, RENT_LATE=25, RENT_EVICT=3;       // $175/week, due Sunday; 3 unpaid Sundays in a row = eviction
+const RENT=125, RENT_LATE=25, RENT_EVICT=3;       // $125/week, due Sunday; 3 unpaid Sundays in a row = eviction
 const CAR_P=0.1, CAR_COOL=3;                         // ~1 morning in 10 per car on Hard; 3 days between breakdowns
 const TOW_ISL=275, TOW_MAIN=150;                     // the island tow has to ride the ferry over
 const LANDLORD='Darlene, your landlord';

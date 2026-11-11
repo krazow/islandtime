@@ -20,17 +20,17 @@ const drive = (page, opt = {}) => page.evaluate(([clr, o]) => { eval(clr)();
 const pressModal = (page, re) => page.evaluate(src => { const i = MB.findIndex(b => new RegExp(src).test(b.l)); if (i < 0) return 'missing: ' + MB.map(b => b.l).join(' | '); MBTN(i); return 'ok'; }, re.source);
 
 module.exports = [
-  { name: 'hard life: rent is on the to-do list and paid by phone from anywhere on Hard ($175, due Sunday)', fn: async ctx => {
+  { name: 'hard life: rent is on the to-do list and paid by phone from anywhere on Hard ($125, due Sunday)', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page, 'hard');
     const todo = await rentTodo(page);
-    assert.ok(todo && !todo.ok, JSON.stringify(todo)); assert.match(todo.l, /\$175 by Sunday/);
-    assert.match(await page.evaluate(() => S.log.map(l => l.s).join(' ')), /Rent is \$175 a week, due Sunday/);
+    assert.ok(todo && !todo.ok, JSON.stringify(todo)); assert.match(todo.l, /\$125 by Sunday/);
+    assert.match(await page.evaluate(() => S.log.map(l => l.s).join(' ')), /Rent is \$125 a week, due Sunday/);
     await page.evaluate(() => { S.loc = 'work'; S.t = 1440 + 600; S.cur = 1; S.money = 650; S.phone = 50; });
     const a = await rentAct(page);
-    assert.ok(a && !a.dis, JSON.stringify(a)); assert.match(a.l, /\$175/);
+    assert.ok(a && !a.dis, JSON.stringify(a)); assert.match(a.l, /\$125/);
     const r = await page.evaluate(() => { const t = S.t; actions().find(a => /^Pay rent by phone/.test(a.l)).fn(); return { m: S.money, dt: S.t - t }; });
-    assert.deepStrictEqual(r, { m: 475, dt: 5 });
+    assert.deepStrictEqual(r, { m: 525, dt: 5 });
     assert.strictEqual(await rentAct(page), null);
     assert.ok((await rentTodo(page)).ok);
     // a dead phone can't pay
@@ -56,16 +56,16 @@ module.exports = [
     await newGame(page, 'hard', 'month');
     const m0 = await page.evaluate(() => S.money);
     let r = await sunday(page);
-    assert.deepStrictEqual([r.owed, r.strikes, r.fees, r.weekNo, r.over], [200, 1, 25, 1, false]);
+    assert.deepStrictEqual([r.owed, r.strikes, r.fees, r.weekNo, r.over], [150, 1, 25, 1, false]);
     assert.match(r.log, /Text from Darlene, your landlord.*\$25 late fee/);
     const t = await rentTodo(page);
-    assert.ok(!t.ok && t.urgent); assert.match(t.s, /\$375 owed, \$200 of it overdue/);
+    assert.ok(!t.ok && t.urgent); assert.match(t.s, /\$275 owed, \$150 of it overdue/);
     r = await sunday(page);
-    assert.deepStrictEqual([r.owed, r.strikes, r.fees, r.weekNo, r.over], [400, 2, 50, 2, false]);
+    assert.deepStrictEqual([r.owed, r.strikes, r.fees, r.weekNo, r.over], [300, 2, 50, 2, false]);
     assert.match(r.log, /NOTICE TO PAY RENT OR VACATE/);
     assert.match((await rentTodo(page)).s, /One more missed Sunday/);
     const p = await page.evaluate(() => { S.money = 1000; S.phone = 80; actions().find(a => /^Pay rent by phone/.test(a.l)).fn(); return { m: S.money, r: S.hl.rent }; });
-    assert.strictEqual(p.m, 1000 - 575); // $175 this week + $400 behind
+    assert.strictEqual(p.m, 1000 - 425); // $125 this week + $300 behind
     assert.deepStrictEqual([p.r.owed, p.r.strikes], [0, 0]);
     r = await sunday(page);
     assert.deepStrictEqual([r.owed, r.strikes], [0, 0]); // paid this week: no fee
@@ -93,7 +93,7 @@ module.exports = [
       const a = rentOwed(); delete S.hl; const b = rentOwed(); S.hl = { rent: { wk: 0 } }; const c = rentOwed();
       for (const k of ['act', 'todo']) setTab(k);
       return { a, b, c, car: typeof S.hl.car.rolled, hud: !!document.querySelector('.hud') }; });
-    assert.deepStrictEqual(r, { a: 175, b: 175, c: 0, car: 'object', hud: true });
+    assert.deepStrictEqual(r, { a: 125, b: 125, c: 0, car: 'object', hud: true });
     noErrors(errors);
   } },
   { name: 'hard life: car trouble never happens on Normal, even with every roll at zero or forced', fn: async ctx => {
