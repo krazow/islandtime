@@ -7151,10 +7151,11 @@ defFun({id:'tc_grand',town:'Tacoma',kind:'fun',name:'The Grand Cinema',ic:'🎬'
 // State: VS().reg = {city, wk..., pend (pay waiting for Friday), vac (vacation days left), rent{}, bills{}, chores{}, W{this weekend}, ...}
 // API: regOn() · REG() · REG_CITIES · REG_GOAL · regNew(home,diff,season) · regCityHere() · regRentOwed() · regLose(kind,title,sub)
 const REG_WEEKS=4, REG_VAC=5;
-// the savings goal and the down payment follow the difficulty: Hard starts with $500 less, so it asks for $500 less
-const REG_GOAL_MONEY={easy:4000,normal:4000,hard:3500}, REG_DOWN_BY={easy:3500,normal:3500,hard:3000};
-const REG_GOAL={get money(){return REG_GOAL_MONEY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||4000},rep:40,friends:3};
-const regDown=()=>REG_DOWN_BY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||3500;
+// the savings goal and the down payment follow the difficulty: Hard starts with $500 less, so it asks for $500 less.
+// Set against Airbnb-priced weekends at the cabin (about $410 a weekend in fall): a careful month leaves about this much.
+const REG_GOAL_MONEY={easy:3000,normal:3000,hard:2500}, REG_DOWN_BY={easy:2500,normal:2500,hard:2000};
+const REG_GOAL={get money(){return REG_GOAL_MONEY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||3000},rep:40,friends:3};
+const regDown=()=>REG_DOWN_BY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||2500;
 const REG_START={easy:3500,normal:3000,hard:2500};          // savings you begin the month with
 const REG_CITIES={
   seattle:{n:'Seattle', rent:450,commute:40,jobs:['r_sea','r_sea2'],noisy:0.22,theft:0.04,home:'a small apartment',lord:'Mr. Park, your landlord',util:62,
@@ -7245,7 +7246,7 @@ window.regNew=regNew;
 function regIntroModal(){const V=VS(),C=regCity(),H=VISIT_HOMES[V.home];
   const jobs=C.jobs.map(k=>({l:`${JOBS[k].n}: ${$(JOBS[k].pay)}/day`,s:`${JOBS[k].pitch} Commute ${C.commute} min.`,fn:()=>{S.emp=k;S.job=70;say(`💼 Your job: <b>${JOBS[k].n}</b>, ${fmt(JOBS[k].start)}–${fmt(JOBS[k].end)}.`);render()}}));
   modal(`📅 Your month: ${H.ic} ${H.n}`,`<p>You live in ${H.n} and work weekdays. Friday evening you catch the boat. Sunday you’re back on the mainland for work. Four weeks, and the island has to <i>want</i> you.</p>
-    <ul><li>💰 <b>Save ${$(REG_GOAL.money)}</b> after rent and bills.</li><li>🤝 <b>Island reputation ${REG_GOAL.rep}+</b>: be the person who helps.</li><li>👥 <b>${REG_GOAL.friends} island friends.</b></li></ul>
+    <ul><li>💰 <b>Still have ${$(REG_GOAL.money)}</b> after rent and bills.</li><li>🤝 <b>Island reputation ${REG_GOAL.rep}+</b>: be the person who helps.</li><li>👥 <b>${REG_GOAL.friends} island friends.</b></li></ul>
     <p>Do all three and a house comes up in the Island Group. Rent (${$(C.rent)}) is due every Sunday night, paychecks land on Fridays, and you have <b>${REG_VAC} vacation days</b> for a Friday or Monday off.</p><p>Pick your job:</p>`,
     jobs.concat([{l:'Keep the first one',fn:()=>{}}]));}
 // the Monday morning wake-up in a month with a job: fresh week state for the weekend visit
@@ -7568,7 +7569,7 @@ function regBossTick(){const R=REG(),d=day(),J=curJob(),m=tod();
     if(R.inv&&R.inv.kind==='event'&&!R.inv.done&&(S.cal||{}).bazaar===dk){R.inv.done=true;friendPts(R.inv.id,2);R.st.events++;vrepOnce('bzinv',3,`came to the bazaar with ${msgFirst(R.inv.id)}`)}
   }catch(e){console.error(e)}return a}}
 // ---- 📅 Weekend regular: the goal, the endings, the move-in, the to-do list and the phone (see 44-regular.js) ----
-// To move in you need ~$4,000 saved (money after rent and bills), island reputation 40+, and 3 island friends. When all three are met a house
+// To move in you need ~$3,000 still in the bank ($2,500 on Hard) (money after rent and bills), island reputation 40+, and 3 island friends. When all three are met a house
 // comes up in the Island Group: buying it ends the month early with "You moved to the island" and offers a resident game that carries over.
 // Other endings, at the end of week 4: "A regular, not a resident yet" and "The island wasn’t for you". Losses: evicted, fired, medevac.
 const regFriendsN=()=>Object.keys(S.friends||{}).length;
@@ -7647,7 +7648,7 @@ function regStartResident(){
 window.regStartResident=regStartResident;
 // ======== the to-do list ========
 function regTodo(it){const V=VS(),R=REG(),C=regCity(),g=regGoal(),d=day(),m=tod(),J=curJob(),out=[],Rn=vRental(),wk=regWk();
-  out.push({ok:g.money,fail:false,l:`Save ${$(REG_GOAL.money)} after rent and bills`,s:`💰 ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (cash ${$(S.money)} minus rent and bills still owed).`,urgent:false});
+  out.push({ok:g.money,fail:false,l:`Still have ${$(REG_GOAL.money)} after rent and bills`,s:`💰 ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (cash ${$(S.money)} minus rent and bills still owed).`,urgent:false});
   out.push({ok:g.repOk,fail:false,l:`Island reputation ${REG_GOAL.rep}+`,s:`🤝 ${V.rep>0?'+':''}${V.rep} of ${REG_GOAL.rep} · ${vTier()[1]}. Help out around the island, eat with friends, leave no trace.`,urgent:false});
   out.push({ok:g.frOk,fail:false,l:`${REG_GOAL.friends} island friends`,s:`👥 ${g.fr} of ${REG_GOAL.friends}${g.fr?`: ${Object.values(S.friends).map(f=>f.name.split(',')[0].split(' from')[0]).join(', ')}`:'. Volunteer at the Legion, the Riv, the swap board, the farm or the lake.'}`,urgent:false});
   if(R.offered&&R.house&&!R.bought)out.push({ok:false,fail:false,l:'The house in the Island Group',s:`🏡 ${$(regDown())} down. Buy it from the 📱 or the ${C.n} to-do and you move to the island.`,urgent:true});

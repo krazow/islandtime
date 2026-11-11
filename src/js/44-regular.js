@@ -6,10 +6,11 @@
 // State: VS().reg = {city, wk..., pend (pay waiting for Friday), vac (vacation days left), rent{}, bills{}, chores{}, W{this weekend}, ...}
 // API: regOn() · REG() · REG_CITIES · REG_GOAL · regNew(home,diff,season) · regCityHere() · regRentOwed() · regLose(kind,title,sub)
 const REG_WEEKS=4, REG_VAC=5;
-// the savings goal and the down payment follow the difficulty: Hard starts with $500 less, so it asks for $500 less
-const REG_GOAL_MONEY={easy:4000,normal:4000,hard:3500}, REG_DOWN_BY={easy:3500,normal:3500,hard:3000};
-const REG_GOAL={get money(){return REG_GOAL_MONEY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||4000},rep:40,friends:3};
-const regDown=()=>REG_DOWN_BY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||3500;
+// the savings goal and the down payment follow the difficulty: Hard starts with $500 less, so it asks for $500 less.
+// Set against Airbnb-priced weekends at the cabin (about $410 a weekend in fall): a careful month leaves about this much.
+const REG_GOAL_MONEY={easy:3000,normal:3000,hard:2500}, REG_DOWN_BY={easy:2500,normal:2500,hard:2000};
+const REG_GOAL={get money(){return REG_GOAL_MONEY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||3000},rep:40,friends:3};
+const regDown=()=>REG_DOWN_BY[(typeof S!=='undefined'&&S&&S.diff)||'normal']||2500;
 const REG_START={easy:3500,normal:3000,hard:2500};          // savings you begin the month with
 const REG_CITIES={
   seattle:{n:'Seattle', rent:450,commute:40,jobs:['r_sea','r_sea2'],noisy:0.22,theft:0.04,home:'a small apartment',lord:'Mr. Park, your landlord',util:62,
@@ -100,7 +101,7 @@ window.regNew=regNew;
 function regIntroModal(){const V=VS(),C=regCity(),H=VISIT_HOMES[V.home];
   const jobs=C.jobs.map(k=>({l:`${JOBS[k].n}: ${$(JOBS[k].pay)}/day`,s:`${JOBS[k].pitch} Commute ${C.commute} min.`,fn:()=>{S.emp=k;S.job=70;say(`💼 Your job: <b>${JOBS[k].n}</b>, ${fmt(JOBS[k].start)}–${fmt(JOBS[k].end)}.`);render()}}));
   modal(`📅 Your month: ${H.ic} ${H.n}`,`<p>You live in ${H.n} and work weekdays. Friday evening you catch the boat. Sunday you’re back on the mainland for work. Four weeks, and the island has to <i>want</i> you.</p>
-    <ul><li>💰 <b>Save ${$(REG_GOAL.money)}</b> after rent and bills.</li><li>🤝 <b>Island reputation ${REG_GOAL.rep}+</b>: be the person who helps.</li><li>👥 <b>${REG_GOAL.friends} island friends.</b></li></ul>
+    <ul><li>💰 <b>Still have ${$(REG_GOAL.money)}</b> after rent and bills.</li><li>🤝 <b>Island reputation ${REG_GOAL.rep}+</b>: be the person who helps.</li><li>👥 <b>${REG_GOAL.friends} island friends.</b></li></ul>
     <p>Do all three and a house comes up in the Island Group. Rent (${$(C.rent)}) is due every Sunday night, paychecks land on Fridays, and you have <b>${REG_VAC} vacation days</b> for a Friday or Monday off.</p><p>Pick your job:</p>`,
     jobs.concat([{l:'Keep the first one',fn:()=>{}}]));}
 // the Monday morning wake-up in a month with a job: fresh week state for the weekend visit

@@ -93,13 +93,13 @@ module.exports = [
     assert.ok(!s.over, 'still playing: ' + s.end);
     noErrors(errors);
   } },
-  { name: 'Weekend regular: Hard asks for $3,500 saved and $3,000 down; Normal $4,000 and $3,500', fn: async ctx => {
+  { name: 'Weekend regular: Hard asks for $2,500 left and $2,000 down; Normal $3,000 and $2,500', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await start(page, 'tacoma', 'hard');
-    assert.deepStrictEqual(await page.evaluate(() => [REG_GOAL.money, regDown()]), [3500, 3000]);
-    assert.ok(await page.evaluate(() => todoItems().some(i => /Save \$3500/.test(i.l))));
+    assert.deepStrictEqual(await page.evaluate(() => [REG_GOAL.money, regDown()]), [2500, 2000]);
+    assert.ok(await page.evaluate(() => todoItems().some(i => /Still have \$2500/.test(i.l))));
     await start(page, 'tacoma', 'normal');
-    assert.deepStrictEqual(await page.evaluate(() => [REG_GOAL.money, regDown()]), [4000, 3500]);
+    assert.deepStrictEqual(await page.evaluate(() => [REG_GOAL.money, regDown()]), [3000, 2500]);
     noErrors(errors);
   } },
 ];

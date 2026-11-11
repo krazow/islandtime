@@ -340,7 +340,7 @@ module.exports = [
       return o;
     });
     assert.strictEqual(r.g0.all, false);
-    assert.ok(r.todo.some(l => /Save \$4000/.test(l))); assert.ok(r.todo.some(l => /Island reputation 40/.test(l))); assert.ok(r.todo.some(l => /3 island friends/.test(l))); assert.ok(r.todo.some(l => /Pay rent/.test(l)));
+    assert.ok(r.todo.some(l => /Still have \$3000/.test(l))); assert.ok(r.todo.some(l => /Island reputation 40/.test(l))); assert.ok(r.todo.some(l => /3 island friends/.test(l))); assert.ok(r.todo.some(l => /Pay rent/.test(l)));
     assert.ok(!r.todo.some(l => /Doctor|House & yard|dump run/i.test(l)));
     assert.ok(r.net < 4200 && r.net > 3500, 'net of rent and the bills still to come: ' + r.net);
     assert.match(r.view, /Weekend regular · week 1 of 4/); assert.match(r.view, /Savings/); assert.match(r.view, /Reputation/); assert.match(r.view, /Island friends/); assert.match(r.view, /Last boat home Sunday/);
@@ -363,7 +363,7 @@ module.exports = [
     const end = await page.textContent('.end');
     assert.match(end, /you moved to the island/); assert.match(end, /Moved to the island/); assert.match(end, /Start life on the island/); assert.match(end, /Island reputation/); assert.match(end, /Savings after rent and bills/);
     const s = await page.evaluate(() => ({ over: S.over, res: VS().result, end: S.ending, money: S.money }));
-    assert.ok(s.over); assert.strictEqual(s.res, 'moved'); assert.strictEqual(s.end.grade, 'A'); assert.ok(s.money < 2000 && s.money > 1000, 'the down payment came out: ' + s.money);
+    assert.ok(s.over); assert.strictEqual(s.res, 'moved'); assert.strictEqual(s.end.grade, 'A'); assert.ok(s.money < 3000 && s.money > 2000, 'the $2,500 down payment came out: ' + s.money);
     noErrors(errors);
   } },
   { name: 'handoff: "Start life on the island" starts a resident game with your money, friends and a reputation bonus', fn: async ctx => {
@@ -377,7 +377,7 @@ module.exports = [
     assert.match(await page.textContent('.end'), /you moved to the island/);
     await page.click('button:has-text("Start life on the island")');
     const r = await page.evaluate(() => ({ visitor: !!S.visitor, on: visitorOn(), over: S.over, money: S.money, friends: Object.keys(S.friends).sort(), lvl: S.friends.walt.lvl, rep: S.rep, diff: S.diff, mode: S.mode, loc: S.loc, emp: S.emp, hud: document.querySelector('.hud-sub').textContent, rent: typeof rentOn === 'function' && rentOn() }));
-    assert.strictEqual(r.visitor, false); assert.strictEqual(r.on, false); assert.strictEqual(r.over, false); assert.strictEqual(r.money, 1900, 'savings minus the $3,000 Hard down payment: ' + r.money);
+    assert.strictEqual(r.visitor, false); assert.strictEqual(r.on, false); assert.strictEqual(r.over, false); assert.strictEqual(r.money, 2900, 'savings minus the $2,000 Hard down payment: ' + r.money);
     assert.deepStrictEqual(r.friends, ['bev', 'sam', 'walt']); assert.ok(r.lvl >= 2); assert.ok(r.rep >= 15 && r.rep <= 40); assert.strictEqual(r.diff, 'hard'); assert.strictEqual(r.loc, 'home'); assert.strictEqual(r.emp, 'lakewood'); assert.strictEqual(r.rent, true);
     assert.match(await page.textContent('#mbg'), /Welcome home/);
     noErrors(errors);

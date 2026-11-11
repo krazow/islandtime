@@ -1,5 +1,5 @@
 // ---- 📅 Weekend regular: the goal, the endings, the move-in, the to-do list and the phone (see 44-regular.js) ----
-// To move in you need ~$4,000 saved (money after rent and bills), island reputation 40+, and 3 island friends. When all three are met a house
+// To move in you need ~$3,000 still in the bank ($2,500 on Hard) (money after rent and bills), island reputation 40+, and 3 island friends. When all three are met a house
 // comes up in the Island Group: buying it ends the month early with "You moved to the island" and offers a resident game that carries over.
 // Other endings, at the end of week 4: "A regular, not a resident yet" and "The island wasn’t for you". Losses: evicted, fired, medevac.
 const regFriendsN=()=>Object.keys(S.friends||{}).length;
@@ -78,7 +78,7 @@ function regStartResident(){
 window.regStartResident=regStartResident;
 // ======== the to-do list ========
 function regTodo(it){const V=VS(),R=REG(),C=regCity(),g=regGoal(),d=day(),m=tod(),J=curJob(),out=[],Rn=vRental(),wk=regWk();
-  out.push({ok:g.money,fail:false,l:`Save ${$(REG_GOAL.money)} after rent and bills`,s:`💰 ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (cash ${$(S.money)} minus rent and bills still owed).`,urgent:false});
+  out.push({ok:g.money,fail:false,l:`Still have ${$(REG_GOAL.money)} after rent and bills`,s:`💰 ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (cash ${$(S.money)} minus rent and bills still owed).`,urgent:false});
   out.push({ok:g.repOk,fail:false,l:`Island reputation ${REG_GOAL.rep}+`,s:`🤝 ${V.rep>0?'+':''}${V.rep} of ${REG_GOAL.rep} · ${vTier()[1]}. Help out around the island, eat with friends, leave no trace.`,urgent:false});
   out.push({ok:g.frOk,fail:false,l:`${REG_GOAL.friends} island friends`,s:`👥 ${g.fr} of ${REG_GOAL.friends}${g.fr?`: ${Object.values(S.friends).map(f=>f.name.split(',')[0].split(' from')[0]).join(', ')}`:'. Volunteer at the Legion, the Riv, the swap board, the farm or the lake.'}`,urgent:false});
   if(R.offered&&R.house&&!R.bought)out.push({ok:false,fail:false,l:'The house in the Island Group',s:`🏡 ${$(regDown())} down. Buy it from the 📱 or the ${C.n} to-do and you move to the island.`,urgent:true});
