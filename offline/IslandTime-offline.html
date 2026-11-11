@@ -1775,7 +1775,7 @@ function endDay(where){
   else if(where==='motel') S.phone=100; else S.phone=Math.min(100,S.phone+35);
   // eat
   (S.quests||[]).filter(q=>!q.done&&q.due<d+1&&q.due===d).forEach(q=>{q.done=true;q.failed=true;friendPts(q.who,-1);repFavorFailed(q.who,notes);notes.push(`🙁 You never got to ${S.friends[q.who]?S.friends[q.who].name.split(',')[0]:'your friend'}’s favor.`)});
-  if(S.ateOut===d){notes.push('🍔 Dinner was from the Riv. The pantry gets a night off.')}
+  if(S.ateOut===d){notes.push(`🍔 Dinner was from ${S.ateOutAt||'the Riv'}. The pantry gets a night off.`);S.ateOutAt=null}
   else if(where!=='home'&&S.carried>0){S.carried--;notes.push('You eat from your grocery bags.')}
   else if(S.pantry>0){S.pantry--;}
   else {adj('health',-15);adj('stress',10);notes.push('🍽️ You went to bed hungry. The pantry is empty.')}
@@ -6974,6 +6974,89 @@ function vphonePhotos(){
   return h}
 definePhoneApp({id:'visit',name:'Visit',ic:'🧳',order:5,desc:'Your visit plan.',view:arg=>arg==='photos'?vphonePhotos():vphonePlan()});
 {const a=PHONE_APPS.find(x=>x.id==='visit');Object.defineProperty(a,'builtin',{get:()=>visitorOn(),configurable:true})}
+// ---- 🎟️ going out on the mainland: restaurants and entertainment in Steilacoom, Lakewood and Tacoma ----
+// SHARED HELPER for 41-fun-steilacoom.js, 42-fun-lakewood.js, 43-fun-tacoma.js. Each town file calls defFun() for
+// its five real places (two restaurants of different kinds + three entertainment spots).
+//   defFun({id, town:'Steilacoom'|'Lakewood'|'Tacoma', kind:'restaurant'|'fun', name, ic, desc, pos:[x,y],
+//           hours:d=>[openMin,closeMin]|null (d = 0 Mon … 6 Sun), acts:[{l, s, min, cost, stress, health, sat}]})
+//   pos: map position in the same units as MP in 00-data.js (≈ miles; the Steilacoom ferry terminal is [0,0],
+//        Lakewood's supermarket [5,4], Hilltop Tacoma [10.5,4.5], downtown Tacoma ≈ [11,6]).
+//   acts: what you can do there. min = minutes, cost = dollars, stress = change (negative = relaxing),
+//         health = change, sat = days of food it counts as (a meal = 0 days, but it stops tonight's hunger: sat:1 marks a meal).
+// Residents: an outing costs time and money and lowers stress (once per place per day for the stress part).
+// Visitors: each different place you go out to adds to the visit score ("Out on the town", up to 5 places).
+const FUN={};                                    // id -> definition
+const FUN_VISIT_PTS=60, FUN_VISIT_MAX=5;
+function defFun(f){
+  FUN[f.id]=f;
+  L[f.id]={name:f.name,side:'M',ic:f.ic,desc:f.desc,hours:f.hours,fun:true,town:f.town};
+  MP[f.id]=f.pos;
+}
+const funLog=()=>{S.fun=S.fun||{days:{},went:{}};return S.fun};
+function funDo(f,a){
+  const F=funLog(),dk=dayKey(),key=f.id+':'+dk,first=!F.days[key];
+  if(a.cost&&!canEssential(a.cost)){say('Your card is declined. Maybe another night.');return render()}
+  if(a.cost)money(-a.cost);S.t+=a.min||60;
+  if(first&&a.stress)adj('stress',a.stress);if(a.health)adj('health',a.health);
+  if(a.sat){S.ateOut=day();S.ateOutAt=f.name;}                  // counts as a meal (06-day.js skips tonight's hunger when you ate out)
+  F.days[key]=true;F.went[f.id]=(F.went[f.id]||0)+1;S.stats.outings=(S.stats.outings||0)+1;
+  say(`${f.ic} ${a.done||a.l}${a.cost?` (−${$(a.cost)})`:''}.`);
+  afterAction();
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
+  const f=FUN[S.loc];if(!f)return a;const h=f.hours?f.hours(day()):[0,1440],m=tod(),open=!!h&&m>=h[0]&&m<h[1];
+  if(!open){a.push({ic:f.ic,l:`${f.name} is closed`,s:h?`Open ${fmt(h[0])}–${fmt(h[1]%1440)}.`:'Closed today.',dis:true});return a}
+  for(const x of f.acts){const late=m+(x.min||60)>h[1]+30;
+    a.push({ic:x.ic||f.ic,l:x.l+(x.cost?` — ${$(x.cost)}`:''),s:(x.s||'')+` ${x.min||60} min.`+(late?' Closing soon.':''),cat:'here',dis:late,fn:()=>funDo(f,x)})}
+}catch(e){console.error(e)}return a}}
+// visitors: going out on the mainland counts toward the visit
+if(typeof visitScore==='function'){const _vs=visitScore;visitScore=function(){const r=_vs.apply(this,arguments);try{
+  if(!visitorOn()||!S.fun)return r;const n=Math.min(FUN_VISIT_MAX,Object.keys(S.fun.went).filter(k=>FUN[k]).length);if(!n)return r;
+  const p=n*FUN_VISIT_PTS;r.score+=p;r.parts=r.parts||{};r.parts.fun=p;r.lines.splice(r.lines.length-1,0,`🎟️ Out on the town: ${n} place${n===1?'':'s'} on the mainland (+${p})`);
+  if(typeof visitorGrade==='function'){const g=visitorGrade(r.score);r.grade=g[0];r.title=g[1];r.blurb=g[2]}
+}catch(e){console.error(e)}return r}}
+// ---- 🎟️ going out in Tacoma: two restaurants (waterfront seafood, Proctor Mexican) + the zoo, the glass museum and an art-house cinema ----
+// Uses defFun() from 40-fun.js. Hours are rough 2026 hours (d: 0 Mon … 6 Sun); prices are 2026 dollars.
+defFun({id:'tc_dukes',town:'Tacoma',kind:'restaurant',name:'Duke’s Seafood (Ruston Way)',ic:'🦪',
+  desc:'Chowder and fish on the Tacoma waterfront, with a view of the water you just crossed. Nobody here is in a hurry, including the gulls.',
+  pos:[9,10],
+  hours:d=>[660,d===4||d===5?1380:1320],
+  acts:[
+    {l:'Chowder, fish and a window seat',s:'A real sit-down dinner. Counts as tonight’s food. Stress −8.',min:80,cost:42,stress:-8,sat:1,done:'You eat clam chowder and wild salmon while the light goes orange over Commencement Bay'},
+    {l:'Chowder and a roll at the bar',s:'Small, warm, and over quickly. Stress −5.',min:40,cost:17,stress:-5,done:'A cup of chowder and a roll at the bar, and the tide keeps going on without you'},
+    {l:'Walk the Ruston Way waterfront path',s:'Free. The path runs for miles. Stress −6.',min:45,cost:0,stress:-6,done:'You walk the waterfront path, past joggers, dogs and one very serious heron'}]});
+
+defFun({id:'tc_cactus',town:'Tacoma',kind:'restaurant',name:'Cactus (Proctor)',ic:'🌮',
+  desc:'Mexican plates and big margaritas in the Proctor District, where the sidewalks are wide and the farmers market is on Saturday. A very different meal from the waterfront.',
+  pos:[9.5,8.5],
+  hours:d=>[d>=5?600:660,1320],
+  acts:[
+    {l:'Tacos, rice and beans',s:'A full meal. Counts as tonight’s food. Stress −7.',min:60,cost:28,stress:-7,sat:1,done:'Two tacos, rice, beans and too many chips. You leave a good tip and a very clean plate'},
+    {l:'Chips, guacamole and a drink',s:'Not dinner, but close. Stress −5.',min:35,cost:19,stress:-5,done:'Chips, guacamole and a lime-heavy drink at the bar. The island feels very far away'}]});
+
+defFun({id:'tc_zoo',town:'Tacoma',kind:'fun',name:'Point Defiance Zoo & Aquarium',ic:'🦭',
+  desc:'A zoo and an aquarium in a forested park at the north tip of Tacoma. Walruses, sharks and red wolves, none of whom have to catch a ferry. ZooLights runs in the evenings in December.',
+  pos:[9,13],
+  hours:()=>{const s=seasonId();return [540,s==='summer'?1080:s==='winter'?960:1020]},
+  acts:[
+    {l:'Walk the whole zoo',s:'Tickets about $25. Stress −12.',min:180,cost:25,stress:-12,done:'You see the walruses, the sharks and the red wolves, and you sit down twice'},
+    {l:'Just the aquarium and the sea otters',s:'Same ticket, shorter day. Stress −8.',min:90,cost:25,stress:-8,done:'Jellyfish drift past in blue light. It is the calmest 90 minutes you have had in a while'}]});
+
+defFun({id:'tc_glass',town:'Tacoma',kind:'fun',name:'Museum of Glass',ic:'🫧',
+  desc:'On the Thea Foss Waterway, with a working Hot Shop where artists shape molten glass while you watch. Closed Monday and Tuesday. The galleries are being renovated until December 12, 2026.',
+  pos:[11.3,6.6],
+  hours:d=>d>=2?[600,1020]:null,
+  acts:[
+    {l:'Watch the Hot Shop and see the exhibits',s:'Adult ticket $18. Stress −10.',min:120,cost:18,stress:-10,done:'You watch a glowing blob become a bowl, and nobody on the team even looks nervous'},
+    {l:'Sit and watch the Hot Shop',s:'Same ticket, lots of sitting. Stress −7.',min:50,cost:18,stress:-7,done:'You sit in the amphitheater and watch the glass team work, and for once you are not the busiest person in the room'}]});
+
+defFun({id:'tc_grand',town:'Tacoma',kind:'fun',name:'The Grand Cinema',ic:'🎬',
+  desc:'Downtown Tacoma’s nonprofit art-house cinema. Indie films, documentaries, and popcorn that comes with real butter. Open every day of the year, as the sign says.',
+  pos:[11,6],
+  hours:d=>[d<4?780:690,1380],
+  acts:[
+    {l:'See a film',s:'Adult ticket $13. Stress −10.',min:130,cost:13,stress:-10,done:'You see an indie film that is subtitled and mostly about a lighthouse. You enjoy it'},
+    {l:'Film, popcorn and a soda',s:'Adult ticket $13 plus snacks. Stress −11.',min:135,cost:20,stress:-11,done:'A film, a big bucket of popcorn and a soda, in the dark where nobody can find you'}]});
 </script>
 </body>
 </html>
