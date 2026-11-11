@@ -39,6 +39,15 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.22
+- **🚗 Your vehicles card:** every car and your skiff in one collapsible card (Here tab, and a button on the map): where each is, fuel, battery, tires, outboard condition, and what's due (moorage, a new tire, a weak battery).
+- **Parked cars in travel:** the Go-somewhere list and map show "your Corolla is here", and ferry and skiff options mention a car waiting at the far landing. Boat owners get a one-time tip to park the beater at the free Sunnyside lot.
+- **Paid terminal parking:** $8 a night (cash) for each car left in the Steilacoom terminal lot, for islanders and visitors, except the car you sleep in. The Sunnyside launch lot is free.
+- **Visitor hint at the terminal:** once per visit, drive on or walk on, with costs and what you can reach without a car.
+- **Boat as a way home:** the "Leave your car behind?" prompt no longer warns boat owners whose skiff is at the other landing.
+- **Outage backlog:** the next three sailings after an outage are fuller (more cars left behind), and the Ferry tab says so.
+- **A friend drives your second car across:** text Sam or Walt, pay the car fare and owe them a favor; the car arrives at the far terminal on the next sailing.
+
 ### New in 1.21.1: small fixes
 
 - ⚖️ **Fines, bail and reputation losses follow the level:** half on Islander, 50% steeper on Ferry Hell (Normal unchanged). Gains are the same on every level.
