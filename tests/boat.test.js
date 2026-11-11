@@ -137,9 +137,9 @@ module.exports = [
     await page.evaluate(() => actions().find(a => /Take the skiff across/.test(a.l)).fn());
     assert.match(await modalText(page), /Out of gas/); await press(page, /OK/);
     const r = await page.evaluate(() => {
-      window.boatAtHome = () => true; // shed gas is only for a skiff kept at home (car-storage.test.js covers the away case)
+      S.loc = 'home'; Object.assign(S.boat, { store: 'yard', at: 'home', on: 'trailer' }); // shed gas is only for a skiff kept at home (car-storage.test.js covers the away case)
       actions().find(a => /Fill the skiff.s tank from your shed/.test(a.l)).fn(); const shed = { fuel: S.boat.fuel, home: S.homeGas };
-      S.boat.fuel = 1; S.loc = 'dale'; S.t = 1440 + 600; const dale = actions().find(a => /gal for the skiff/.test(a.l)); const m0 = S.money; dale.fn();
+      Object.assign(S.boat, { store: 'slip', at: 'marina', on: 'water' }); S.boat.fuel = 1; S.loc = 'dale'; S.t = 1440 + 600; const dale = actions().find(a => /gal for the skiff/.test(a.l)); const m0 = S.money; dale.fn();
       return { shed, dale: S.boat.fuel, paid: m0 - S.money };
     });
     assert.strictEqual(r.shed.fuel, 4.5); assert.strictEqual(r.shed.home, 0); assert.strictEqual(r.dale, 4); assert.strictEqual(r.paid, 36);

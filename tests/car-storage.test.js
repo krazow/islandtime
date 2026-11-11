@@ -59,7 +59,7 @@ module.exports = [
       const shed = () => actions().some(a => /Fill the skiff.s tank from your shed/.test(a.l)), pour = () => actions().some(a => /^Pour a gas can into the skiff/.test(a.l)); const o = {};
       const saved = window.boatAtHome; window.boatAtHome = () => false; o.awayShed = shed(); o.awayPour = pour();
       S.cargo.gas = 1; o.canPour = pour(); actions().find(a => /^Pour a gas can into the skiff/.test(a.l)).fn(); o.fuel = S.boat.fuel; o.cans = S.cargo.gas; o.homeGas = S.homeGas;
-      S.boat.fuel = 1; window.boatAtHome = () => true; o.homeShed = shed(); S.boat.fuel = 6; o.full = pour(); S.cargo.gas = 2; o.fullPour = pour(); return o; });
+      S.boat.fuel = 1; window.boatAtHome = saved; S.loc = 'home'; Object.assign(S.boat, { store: 'yard', at: 'home', on: 'trailer' }); o.homeShed = shed(); S.loc = 'marina'; Object.assign(S.boat, { store: 'slip', at: 'marina', on: 'water' }); S.boat.fuel = 6; o.full = pour(); S.cargo.gas = 2; o.fullPour = pour(); return o; });
     assert.deepStrictEqual(r, { awayShed: false, awayPour: false, canPour: true, fuel: 6, cans: 0, homeGas: 4, homeShed: true, full: false, fullPour: false });
     noErrors(errors);
   } },

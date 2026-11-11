@@ -143,7 +143,7 @@ function boatActions(a,loc){
         if(typeof cabinDock==='function'&&cabinDock())crossBtn('home','Run the skiff around to your buoy','')}
       else a.push({cat:'ferry',ic:'🚤',l:`Your skiff is ${boatWhere()}`,s:B.at==='home'?'At the cabin.':B.at==='sunny'?'On the mainland.':'Not here.',dis:true});
       if(B.at==='marina'){
-        if(typeof boatAtHome==='function'&&boatAtHome()&&S.homeGas>0&&B.fuel<BOAT_TANK-0.2)a.push({cat:'fuel',ic:'⛽',l:'Fill the skiff’s tank from your shed gas',s:`${S.homeGas} gal stashed. Tank ${boatFuelBtn()}. The generator needs some too.`,fn:boatFuelHome});
+        // shed gas fills the skiff only at home (75-boat-storage.js); at the marina, bring a can
         if(B.cond<90)a.push({cat:'fuel',ic:'🔧',l:'Service the outboard: $60',s:'30 min with the marina mechanic. Fewer breakdowns.',dis:S.money<60,fn:boatServe});
         a.push({cat:'ferry',ic:'💵',l:'Sell the skiff',s:'A guy on the dock is always interested.',fn:boatSell});
       }
