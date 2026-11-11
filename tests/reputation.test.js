@@ -130,7 +130,7 @@ module.exports = [
     assert.strictEqual(r.riv, true, 'the Riv won’t interview you at −30');
     assert.strictEqual(r.blocked, true);
     assert.ok(r.pay >= 68, 'regulars’ rate: ' + r.pay);
-    assert.deepStrictEqual(r.job, { m: 73, sched: true });
+    assert.deepStrictEqual({ m: r.job.m, sched: r.job.sched }, { m: 73, sched: true }); assert.ok(Number.isInteger(r.job.since), 'the shift remembers when it started');
     assert.strictEqual(r.noshow.m, 58); assert.strictEqual(r.noshow.rep, 65, 'a no-show hurts the Riv job meter, not reputation'); assert.match(r.noshow.note, /never showed/);
     assert.deepStrictEqual(r.fired, { fired: true, list: true, rep: 65 });
     noErrors(errors);
