@@ -28,6 +28,7 @@
 
 ### New in 1.21
 - **Upgrade the cabin:** save up for a woodstove insert, rain-catch tank, solar panels and battery, generator transfer switch, heat pump, mooring buoy or insulation. Contractors come over on the ferry on a booked date (and wait out ferry outages). Upgrades carry across month weeks and story chapters.
+- **Daily challenge:** a one-day version of the weekly challenge, seeded from your local date: same weather, sailings, outages and prices for everyone. Hit a quick goal (get to work on time, run the errands or make it home), get a score and an IT1 share code, and compare with friends on the same leaderboard.
 
 ### New in 1.8
 - **Difficulty:** 🌲 *Islander* (easier), ⛴️ *Normal*, or 🔥 *Ferry Hell* (summer tourists, constant breakdowns, score ×1.25).
