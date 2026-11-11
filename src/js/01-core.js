@@ -136,7 +136,7 @@ function baseState(){
     week:null};
 }
 function newGame(diff,mode,season){
-  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=baseState();S.season=seasonOk(season)?season:'fall'; // season
+  MQ=[];tileQ=[];document.querySelectorAll('#tiles .tile').forEach(t=>t.remove());S=chBase();S.season=seasonOk(season)?season:'fall'; // season
   S.diff=DIFFS[diff]?diff:'normal';S.mode=mode==='month'?'month':'week';S.money=DIFFS[S.diff].money;S.week=genWeek(S.diff);
   uiNarr=[];
   say(`Monday, 5:30 AM. Your alarm goes off ${seasonId()==='summer'?'and it’s already light out':'in the dark'}. Work in Lakewood starts at 9:00. The pantry is getting thin.`); // season
