@@ -66,6 +66,7 @@ function endDay(where){
     else {if(S.pantry>0){S.pantry--;UP().fridge=true;}if(S.ev.flags.genFail===d)notes.push('🔌 The generator coughs, sputters and dies. It hasn’t been serviced in weeks.');adj('health',shelterNow()?0:-6);adj('stress',shelterNow()?0:8);notes.push(shelterNow()?'⚡ The island’s power went out. A day of food spoiled in your dead fridge, but you’re not here to feel the cold.':where!=='home'?'⚡ The island’s power went out while you were away. A day of food spoiled in your dead fridge.':!genReady()?'⚡ The power goes out and you don’t own a generator. The house gets cold and a day of food spoils in the fridge.':'⚡ The power goes out and there isn’t enough gas in the shed for the generator. The house gets cold and a day of food spoils in the fridge.')}
   }
   if(stormNight(d)&&Math.random()<0.8){EV_RUNNING='storm';outageChain(where);EV_RUNNING=null}
+  if(typeof cabinStorm==='function'&&cabinOk())try{cabinStorm(where,notes,d)}catch(e){console.error(e)}
   // phone overnight
   phoneTick();const nightOut=!!S.power&&S.power.start<=(d+1)*1440+330;
   if(where==='home') S.phone=(!nightOut||S.ev.flags.genRan===d)?100:Math.max(0,S.phone-6);

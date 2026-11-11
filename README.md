@@ -26,6 +26,9 @@
 - **Island life:** power outages that reset your alarm clock and kill the well pump, dead car batteries with no tow truck on the island, trees down on the road, and neighbors who become friends (and give you rides). Wednesday night is **Bingo at the Riv**, hosted by the American Legion, with proceeds benefiting the Anderson Island Historical Society, Pierce County Fire District #27 or the Anderson Island Elementary Booster Club. Adding new events is easy: see [docs/EVENTS.md](docs/EVENTS.md).
 - **Trading:** import food, medical supplies and fuel to the island and sell at island prices, which spike when the ferry is down. Or take a much bigger risk with illicit drugs, where a deputy's K-9 on the car deck or an undercover buyer means arrest.
 
+### New in 1.21
+- **Upgrade the cabin:** save up for a woodstove insert, rain-catch tank, solar panels and battery, generator transfer switch, heat pump, mooring buoy or insulation. Contractors come over on the ferry on a booked date (and wait out ferry outages). Upgrades carry across month weeks and story chapters.
+
 ### New in 1.8
 - **Difficulty:** 🌲 *Islander* (easier), ⛴️ *Normal*, or 🔥 *Ferry Hell* (summer tourists, constant breakdowns, score ×1.25).
 - **One week or a whole month:** the month carries everything over, week to week. Help the islanders raise $2,500 and the old store reopens as the **AI Food Co-op**, with groceries and gas pumps on the island.

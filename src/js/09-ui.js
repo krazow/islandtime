@@ -85,7 +85,7 @@ function actView(){
     const groups={};acts.forEach(a=>{const c=catOf(a);(groups[c]=groups[c]||[]).push(a)});
     const order=Object.keys(ACT_CATS).filter(c=>groups[c]).sort((x,y)=>(groups[y].some(a=>a.cls==='primary')?1:0)-(groups[x].some(a=>a.cls==='primary')?1:0));
     order.forEach(c=>{
-      if(c==='home'||c==='yard'){const g=groups[c].slice().sort((x,y)=>(y.due&&!y.dis?1:0)-(x.due&&!x.dis?1:0)),n=g.filter(a=>a.due&&!a.dis).length;
+      if(c==='home'||c==='yard'||c==='cabin'){const g=groups[c].slice().sort((x,y)=>(y.due&&!y.dis?1:0)-(x.due&&!x.dis?1:0)),n=g.filter(a=>a.due&&!a.dis).length;
         h+=`<details class="go upk" ${UPK_OPEN[c]?'open':''} ontoggle="UPK_OPEN['${c}']=this.open"><summary>${ACT_CATS[c]}${n?` · <span class="upk-n">${n} to do</span>`:' · all good'}</summary>`+g.map(a=>btn(Object.assign({},a,{cls:((a.cls||'')+(a.due&&!a.dis?' due':'')).trim()}))).join('')+'</details>';return}
       h+=`<div class="sect">${ACT_CATS[c]}</div>`+groups[c].map(btn).join('')});
   } else if(acts.length){h+='<div class="sect">Do something</div>'+acts.map(btn).join('')}
