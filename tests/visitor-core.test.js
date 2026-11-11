@@ -31,7 +31,7 @@ module.exports = [
   { name: 'each length starts on the right day, place and budget, with the rental paid', fn: async ctx => {
     const { page, errors } = await open(ctx);
     const start = await page.evaluate(() => typeof L.vhome !== 'undefined' ? 'vhome' : 'stDock');
-    const want = { day: [5, 150, 0, 5], weekend: [4, 500, 250, 6], week: [0, 1200, 540, 6] };
+    const want = { day: [5, 150, 0, 5], weekend: [4, 660, 410, 6], week: [0, 1770, 1110, 6] };
     for (const len of ['day', 'weekend', 'week']) {
       await visit(page, len);
       const r = await page.evaluate(() => ({ cur: S.cur, t: S.t, loc: S.loc, money: S.money, V: VS(), car: S.cars[0], mode: S.mode, emp: S.emp, over: S.over, tod: tod(), name: L.home.name }));
@@ -43,9 +43,9 @@ module.exports = [
       assert.strictEqual(r.name, 'Rental cabin');
       if (len === 'day') assert.strictEqual(r.V.rental.in, null); else assert.strictEqual(r.V.rental.in, d * 1440 + 900);
     }
-    // difficulty scales the budget a little
+    // difficulty scales the spending money a little (the cabin costs what it costs): $250 × 0.85 + $410
     await visit(page, 'weekend', 'olympia', 'hard');
-    assert.strictEqual(await page.evaluate(() => VS().budget), 425);
+    assert.strictEqual(await page.evaluate(() => VS().budget), 623);
     noErrors(errors);
   }},
   { name: 'no job, rent, bills, prescription, appointment or house chores in a visit', fn: async ctx => {

@@ -67,7 +67,7 @@ module.exports = [
     assert.strictEqual(await act(page, /^Take Monday off and stay another night/), 'ok');
     let s = await st(page);
     assert.strictEqual(s.vac, 4); assert.strictEqual(s.long, 0); assert.strictEqual(s.rental.out, 7 * 1440 + 660);
-    assert.strictEqual(Math.round(m0 - await page.evaluate(() => S.money)), 85, 'one more night at the cabin');
+    assert.strictEqual(Math.round(m0 - await page.evaluate(() => S.money)), 205, 'one more night at the cabin (Airbnb fall average)');
     assert.ok(!(await page.evaluate(() => actions().some(a => /^Take Monday off/.test(a.l)))), 'only once');
     // Sunday night at the cabin, then Monday morning: still the weekend, check-out by 11, Monday is a paid vacation day
     await put(page, 6, 1260, 'home'); await sleep(page, 'home');

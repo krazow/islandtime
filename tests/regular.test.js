@@ -220,7 +220,7 @@ module.exports = [
       return o;
     });
     assert.strictEqual(r.onIsland, 'I'); assert.ok(r.fare > 20); assert.ok(r.wkOn); assert.ok(r.swapped);
-    assert.ok(r.checkin); assert.strictEqual(r.cabin, 170); assert.strictEqual(r.rentalCost, 170); assert.ok(r.checked);
+    assert.ok(r.checkin); assert.strictEqual(r.cabin, 410); assert.strictEqual(r.rentalCost, 410); assert.ok(r.checked);
     assert.strictEqual(r.back, 'M'); assert.ok(r.weekendDone); assert.strictEqual(r.weekends, 1); assert.strictEqual(r.hist, 1); assert.strictEqual(r.over, false); assert.ok(r.pantryRestored);
     assert.strictEqual(r.wk, 1); assert.strictEqual(r.day, 0); assert.strictEqual(r.loc, 'vhome'); assert.ok(r.rentalFresh); assert.ok(r.stillOn); assert.ok(r.wReset);
     assert.ok(r.rentOwed >= 325, 'Sunday’s rent was due: late fee or paid');

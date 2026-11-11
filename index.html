@@ -6446,14 +6446,17 @@ const VSIGHTS=[
 ];
 // when each visit starts (day index: 0 = Monday) and the clock at the start: at your own home (L.vhome) or at the Steilacoom terminal
 const VISIT_START={day:{d:5,home:390,dock:450},weekend:{d:4,home:930,dock:1020},week:{d:0,home:480,dock:540},regular:{d:4,home:930,dock:1020}};
-const VISIT_BUDGET={day:150,weekend:500,week:1200,regular:0}, VISIT_DIFF_MUL={easy:1.2,normal:1,hard:0.85};
-const VISIT_RATE={day:0,weekend:125,week:90,regular:85};      // rental cabin, per night (a week gets the weekly rate)
+const VISIT_BUDGET={day:150,weekend:250,week:660,regular:0}, VISIT_DIFF_MUL={easy:1.2,normal:1,hard:0.85};   // spending money; the cabin is added on top
+// rental cabin, per night: Airbnb's average nightly price on Anderson Island by month (airbnb.com, Nov 2026), averaged per season:
+//   Jun–Aug $226/$271/$299 · Sep–Nov $225/$191/$199 · Dec–Feb $201/$228/$194 · Mar–May $184/$184/$228 (year $219)
+const VISIT_AIRBNB={summer:265,fall:205,winter:208,spring:199}, VISIT_WEEK_OFF=0.9;   // a week gets Airbnb's usual ~10% weekly discount
+function vRate(len,sea){if(len==='day')return 0;const r=VISIT_AIRBNB[sea||(typeof S!=='undefined'&&S&&typeof seasonId==='function'?seasonId():'fall')]||219;return len==='week'?Math.round(r*VISIT_WEEK_OFF):r}
 const VCHECK_IN=900, VCHECK_OUT=660, VLATE_FEE=50; // check-in 3 PM on arrival day, check-out 11 AM on the last day
 const visitorOn=()=>!!(typeof S!=='undefined'&&S&&S.visitor);
 function vsInit(len,home){len=VISIT_LENS[len]?len:'weekend';const st=VISIT_START[len],last=len==='day'?5:6,nights=VISIT_LENS[len].nights;
   return {len,home:home||'tacoma',budget:0,spent:0,photos:{},seen:{},rep:0,packed:0,
   rental:{in:nights?st.d*1440+VCHECK_IN:null,out:nights?last*1440+VCHECK_OUT:null,checkedIn:false,checkedOut:false,inAt:null,outAt:null,trash:false,late:false},done:false,result:null,
-  arr:st.d,last,nights,rate:VISIT_RATE[len]||0,rentalCost:0,fees:0,rules:{},texts:[],islandAt:null,endT:null,reg:null}}
+  arr:st.d,last,nights,rate:0,rentalCost:0,fees:0,rules:{},texts:[],islandAt:null,endT:null,reg:null}}
 function VS(){if(typeof S==='undefined'||!S||!S.visitor)return null;const v=S.visitor,d=vsInit(v.len,v.home);
   for(const k in d){if(v[k]===undefined)v[k]=d[k];else if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])&&typeof v[k]==='object')for(const j in d[k])if(v[k][j]===undefined)v[k][j]=d[k][j]}
   return v}
@@ -6463,7 +6466,7 @@ function VS(){if(typeof S==='undefined'||!S||!S.visitor)return null;const v=S.vi
 //   visitMissed(why)   the last boat left with you on the island (38 can wrap it to offer a place to sleep first)
 //   vHostText(x)       a text from the rental host (kept in VS().texts)       vRule(id[,text])  a broken house rule
 //   vCheckIn() / vCheckOut(trash)   the rental        vLastBoatAbs()  absolute S.t of the last sailing off the island
-//   vFinalDay()        true on the visit's last day   visitBudget(len,diff)  the budget before the rental
+//   vFinalDay()        true on the visit's last day   visitBudget(len,diff)  spending money (the cabin is on top)
 //   VGUIDE.push({id,when,t})   more first-day guide tips          VISIT_END_ROWS.push(()=>[[label,value],…])  end-screen rows
 const VHOST='Marnie, your host';
 const VRULES={
@@ -6495,7 +6498,7 @@ function vRentalDesc(){const V=VS(),R=vRental();
 function vCheckIn(quiet){const V=VS(),R=vRental();if(!R||R.checkedIn)return;R.checkedIn=true;R.inAt=S.t;
   S.pantry+=1;if(S.carried>0&&S.loc==='home'){S.pantry+=S.carried;S.carried=0}
   if(R.hosted){say(`🏡 ${R.hosted.name.split(',')[0]} meets you at the door with a towel and a plate of something. “Spare room’s yours. Don’t mind the dog.” No rent, no rules, just a very warm house.`);try{regHosted(R)}catch(e){console.error(e)}return}
-  if(typeof regOn==='function'&&regOn()){const c=V.nights*V.rate;money(-c);V.rentalCost+=c;REG().st.cabin+=c;say(`🛖 The weekend regular’s rate: ${$(c)} for two nights, charged to your card.`)}
+  if(typeof regOn==='function'&&regOn()){const c=V.nights*V.rate;money(-c);V.rentalCost+=c;REG().st.cabin+=c;say(`🛖 The cabin: ${$(c)} for two nights (${$(V.rate)} a night, about what Airbnb charges on the island this time of year), charged to your card.`)}
   say(`🔑 ${quiet?'You find the lockbox in the dark, punch in the code and let yourself in.':'The lockbox code works on the first try.'} The cabin smells like cedar and someone else’s coffee. A welcome basket on the counter: oatmeal, coffee, a jar of island blackberry jam (+1 day of food).`);
   vHostText(`Welcome to the island! Make yourself at home. House rules: quiet after 10 PM, no smoking, and please take the trash to the bin by the road when you leave. Check-out is ${fmt(VCHECK_OUT)} ${DAYS[V.last]}.`)}
 function vCheckOut(trash){const V=VS(),R=vRental();if(!R||R.checkedOut)return;
@@ -6584,8 +6587,8 @@ function visitorNew(len,home,diff,season){
   if(len==='regular')return regNew(home,diff,season);
   newGame(diff,'week',season);
   MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
-  const V=S.visitor=vsInit(len,home),st=VISIT_START[len],cost=V.nights*V.rate;
-  V.budget=visitBudget(len,S.diff);V.rentalCost=cost;
+  const V=S.visitor=vsInit(len,home),st=VISIT_START[len];V.rate=vRate(len);const cost=V.nights*V.rate;
+  V.budget=visitBudget(len,S.diff)+cost;V.rentalCost=cost;
   // no job, no errands, no house to run
   Object.assign(S,{emp:null,job:0,interview:null,rx:true,appt:false,apptMissed:false,injury:null,injuryRolled:true,pantry:0,carried:0,home:70,homeLow:false,homeGas:0,homeDiesel:0,gen:null,delivery:null,prios:[]});
   vCabin();
@@ -6677,7 +6680,7 @@ function vEndScreen(h1,sub,lost){const V=VS();
 // ======== title screen: 🧳 Visit the island → length → where you live → difficulty ========
 function visitLenModal(then){
   modal('🧳 How long is your visit?','<p>You live on the mainland. A short visit gives you a spending budget and no job; as a <b>Weekend regular</b> you keep your job and come over every weekend for a month. The island’s ferry decides the rest.</p>',
-    Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*(VISIT_RATE[k]||0);return {l:`${V.ic} ${V.n}${k==='regular'?': a month':''}`,s:k==='regular'?V.d:`${V.d} Budget ${$(VISIT_BUDGET[k])}${c?`, cabin ${$(c)}`:''}.`,fn:()=>then(k)}})
+    Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*vRate(k,'fall');return {l:`${V.ic} ${V.n}${k==='regular'?': a month':''}`,s:k==='regular'?V.d:`${V.d} ${$(VISIT_BUDGET[k])} to spend${c?`, plus the cabin (${$(c)}, Airbnb’s fall average)`:''}.`,fn:()=>then(k)}})
     .concat([{l:'Never mind',fn:()=>{}}]))}
 function visitHomeModal(then){
   modal('🏠 Where do you live?','<p>Your visit starts and ends at home. Everyone takes I-5 to the Steilacoom ferry.</p>',
@@ -7249,7 +7252,7 @@ function regIntroModal(){const V=VS(),C=regCity(),H=VISIT_HOMES[V.home];
     jobs.concat([{l:'Keep the first one',fn:()=>{}}]));}
 // the Monday morning wake-up in a month with a job: fresh week state for the weekend visit
 function regWeekInit(){const V=VS(),R=REG();
-  V.arr=4;V.last=6;V.nights=2;V.rate=VISIT_RATE.regular;V.islandAt=null;V.packed=0;V.asked=undefined;V.endT=null;V.done=false;V.result=null;V.texts=V.texts||[];
+  V.arr=4;V.last=6;V.nights=2;V.rate=vRate('regular');V.islandAt=null;V.packed=0;V.asked=undefined;V.endT=null;V.done=false;V.result=null;V.texts=V.texts||[];
   V.rental={in:4*1440+VCHECK_IN,out:6*1440+VCHECK_OUT,checkedIn:false,checkedOut:false,inAt:null,outAt:null,trash:false,late:false,hosted:null};
   R.W={on:false,done:false,n:regWk(),rep0:V.rep,money0:null,friends0:Object.keys(S.friends||{}).length,host:null,invDone:false,spent:0};
   R.inv=null}
@@ -7562,7 +7565,7 @@ function regBossTick(){const R=REG(),d=day(),J=curJob(),m=tod();
         a.push({cat:'trade',ic:'🍲',l:`Go to ${nm}’s for dinner`,s:'2 hours. A free dinner, a good friend. Reputation +3, stress −6.',cls:'primary',fn:()=>{inv.done=true;S.t+=120;phoneTick();S.ateOut=d;S.ateOutAt=`${nm}’s kitchen`;adj('stress',-6);adj('health',1);R.st.dinners++;friendPts(inv.id,2);vrepOnce('dinner',3,`had dinner at ${nm}’s`);
           say(`🍲 ${nm}’s table: too much food, a dog under the chair, and a lot of island gossip. You walk home full.`);afterAction()}})}
       if(regHostCan())a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin. Needs a real friendship.',fn:regHostAsk})}
-    if(side==='M'&&regHostCan()&&loc==='vhome')a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin ($170). Needs a real friendship.',fn:regHostAsk});
+    if(side==='M'&&regHostCan()&&loc==='vhome')a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin ('+$(2*vRate('regular'))+'). Needs a real friendship.',fn:regHostAsk});
     // the bazaar counts for the invitation
     if(R.inv&&R.inv.kind==='event'&&!R.inv.done&&(S.cal||{}).bazaar===dk){R.inv.done=true;friendPts(R.inv.id,2);R.st.events++;vrepOnce('bzinv',3,`came to the bazaar with ${msgFirst(R.inv.id)}`)}
   }catch(e){console.error(e)}return a}}

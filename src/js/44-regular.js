@@ -105,7 +105,7 @@ function regIntroModal(){const V=VS(),C=regCity(),H=VISIT_HOMES[V.home];
     jobs.concat([{l:'Keep the first one',fn:()=>{}}]));}
 // the Monday morning wake-up in a month with a job: fresh week state for the weekend visit
 function regWeekInit(){const V=VS(),R=REG();
-  V.arr=4;V.last=6;V.nights=2;V.rate=VISIT_RATE.regular;V.islandAt=null;V.packed=0;V.asked=undefined;V.endT=null;V.done=false;V.result=null;V.texts=V.texts||[];
+  V.arr=4;V.last=6;V.nights=2;V.rate=vRate('regular');V.islandAt=null;V.packed=0;V.asked=undefined;V.endT=null;V.done=false;V.result=null;V.texts=V.texts||[];
   V.rental={in:4*1440+VCHECK_IN,out:6*1440+VCHECK_OUT,checkedIn:false,checkedOut:false,inAt:null,outAt:null,trash:false,late:false,hosted:null};
   R.W={on:false,done:false,n:regWk(),rep0:V.rep,money0:null,friends0:Object.keys(S.friends||{}).length,host:null,invDone:false,spent:0};
   R.inv=null}

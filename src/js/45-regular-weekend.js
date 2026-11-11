@@ -143,7 +143,7 @@ function regBossTick(){const R=REG(),d=day(),J=curJob(),m=tod();
         a.push({cat:'trade',ic:'🍲',l:`Go to ${nm}’s for dinner`,s:'2 hours. A free dinner, a good friend. Reputation +3, stress −6.',cls:'primary',fn:()=>{inv.done=true;S.t+=120;phoneTick();S.ateOut=d;S.ateOutAt=`${nm}’s kitchen`;adj('stress',-6);adj('health',1);R.st.dinners++;friendPts(inv.id,2);vrepOnce('dinner',3,`had dinner at ${nm}’s`);
           say(`🍲 ${nm}’s table: too much food, a dog under the chair, and a lot of island gossip. You walk home full.`);afterAction()}})}
       if(regHostCan())a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin. Needs a real friendship.',fn:regHostAsk})}
-    if(side==='M'&&regHostCan()&&loc==='vhome')a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin ($170). Needs a real friendship.',fn:regHostAsk});
+    if(side==='M'&&regHostCan()&&loc==='vhome')a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin ('+$(2*vRate('regular'))+'). Needs a real friendship.',fn:regHostAsk});
     // the bazaar counts for the invitation
     if(R.inv&&R.inv.kind==='event'&&!R.inv.done&&(S.cal||{}).bazaar===dk){R.inv.done=true;friendPts(R.inv.id,2);R.st.events++;vrepOnce('bzinv',3,`came to the bazaar with ${msgFirst(R.inv.id)}`)}
   }catch(e){console.error(e)}return a}}
