@@ -20,7 +20,7 @@ function gameOver(why){S.over=true;MQ=[];tileQ=[];document.querySelectorAll('#ti
   endScreen(T[0],T[1],true)}
 function endScreen(h1,sub,lost){
   achCheck({end:true,lost});const achNew=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
-  const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;
+  const sc=scoreOf(),g=lost?['F',h1,sub]:gradeOf(sc),s=S.stats;S.ending={score:sc,grade:g[0],title:g[1],lost:!!lost};chSync(); // challengeResult() reads this
   saveGame();let best=null;const ls=store();try{best=ls?Number(ls.getItem(BEST_KEY)||'NaN'):NaN;if(!lost&&(isNaN(best)||sc>best)){ls&&ls.setItem(BEST_KEY,String(sc));best=isNaN(best)?null:best;var newBest=true}}catch(e){}
   // season: the end screen has a Season row; the title Continue button and save slots show the season
   app.innerHTML=withName(`<div class="end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'GAME OVER':'WEEK COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>

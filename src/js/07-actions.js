@@ -41,7 +41,7 @@ function actions(){
     if(tradingLocked()) a.push({ic:'🌙',l:'Dale isn’t answering today',s:'Try again tomorrow. (Tutorial: Dale shows up from Tuesday.)',dis:true});
     else if(!open) a.push({ic:'🌙',l:'Dale’s porch light is off',s:'Come back between 7 AM and 9 PM.',dis:true});
     else {
-      const stock=S.daleStock[d]??(S.daleStock[d]=Math.random()<0.25?0:3+Math.floor(Math.random()*8));
+      const stock=S.daleStock[d]??(S.daleStock[d]=chWith('dale:'+d,()=>Math.random()<0.25?0:3+Math.floor(Math.random()*8)));
       const car=carHere();
       if(stock<=0) a.push({ic:'🚫',l:'“Fresh out.”',s:'Dale says he hasn’t made a run this week. Try tomorrow.',dis:true});
       else {
@@ -219,7 +219,7 @@ function fuelHelp(a){
   }
   if(S.loc==='home') return;
   // 📞 Dale delivers from his own stock, 50% over his shop price; 7 AM–9 PM, gas only
-  if(!car.diesel){const d=day(),m=tod(),stock=S.daleStock[d]??(S.daleStock[d]=Math.random()<0.25?0:3+Math.floor(Math.random()*8)),
+  if(!car.diesel){const d=day(),m=tod(),stock=S.daleStock[d]??(S.daleStock[d]=chWith('dale:'+d,()=>Math.random()<0.25?0:3+Math.floor(Math.random()*8))),
       g=Math.min(5,stock),per=Math.round(DALE_PRICE*1.5*100)/100,cost=Math.round(g*per),jail=typeof npcJailed==='function'&&npcJailed('dale'),open=m>=420&&m<1260&&!jail;
     a.push({ic:'🛢️',l:`Call Dale to bring gas${g?`: ${g} gal for $${cost}`:''}`,s:S.phone<=0?'Your phone is dead.':jail?npcJailTxt('dale'):!open?'Dale doesn’t pick up before 7 AM or after 9 PM.':!g?'Dale’s out of gas today. “Try me tomorrow.”':`$${per}/gal, half again his shop price ($${DALE_PRICE}). He comes to you. About 40 minutes. Cash.`,
       dis:S.phone<=0||!open||!g||S.money<cost,fn:()=>{money(-cost);S.daleStock[d]-=g;S.stats.daleGal=(S.stats.daleGal||0)+g;S.t+=40;phoneTick();adj('stress',2);

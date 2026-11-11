@@ -117,7 +117,7 @@ function updateNotice(){if(updateShown)return null;const ls=store();if(!ls)retur
     if(bad.length)h+=`<p>${bad.map(n=>`Slot ${n} couldn’t be updated`).join('; ')}.</p>`;
     modal('🎉 Island Time updated',h,[{l:'Got it',fn:mark}],true)}}
 function adopt(d){
-  S=d.S;uiNarr=d.uiNarr;tab=d.tab;
+  S=d.S;uiNarr=d.uiNarr;tab=d.tab;chSync(); // challenge: seeded Math.random on or off
   render();
   if(d.newer&&newerWarned!==d.newer){newerWarned=d.newer;modal('⚠️ Save from a newer version',`<p>This save is from Island Time ${esc(d.newer)}, newer than this copy (${APP_VERSION}). Update the game to keep everything: whatever this copy doesn’t know about is ignored, and may be lost once you keep playing here.</p>`,[{l:'Continue anyway',fn:()=>{}}])}
   if(d.notes&&d.notes.length) modal('Save loaded',`<p>Welcome back. Note: ${d.notes.join('; ')}.</p>`,[{l:'Continue',fn:()=>{}}]);
