@@ -31,7 +31,8 @@ module.exports = [
     await game(page);
     await page.evaluate(() => { S.loc = 'marina'; S.money = 2600; boatBuy(); });
     await press(page, /Keep it on the trailer/);
-    assert.deepStrictEqual(await page.evaluate(() => [S.boat.store, S.money]), ['trailer', 100]);
+    // 1.22: 'trailer' storage became 'yard': the seller tows it home to your yard
+    assert.deepStrictEqual(await page.evaluate(() => [S.boat.store, S.money, S.boat.at, S.boat.on, boatWhere()]), ['yard', 100, 'home', 'trailer', 'on its trailer in your yard']);
     // can't afford it
     await game(page);
     const poor = await page.evaluate(() => { S.loc = 'marina'; S.money = 2000; boatBuy(); return MB.slice(0, 2).map(b => !!b.dis); });
@@ -146,13 +147,15 @@ module.exports = [
     assert.ok(g.none); assert.strictEqual(g.fuel, 6);
     noErrors(errors);
   } },
-  { name: 'boat: a trailer adds launch time; moorage is billed monthly; overnight at the float is ticketed', fn: async ctx => {
+  { name: 'boat: rowing out to the buoy adds launch time; moorage is billed monthly; overnight at the float is ticketed', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await game(page);
-    await calm(page, "S.boat.store = 'trailer'");
+    // 1.22: the old trailer (which never left the Riv ramp) is gone; the launch-time cost now comes from rowing out to the buoy
+    // (towing to a ramp is covered in boat-storage.test.js)
+    await calm(page, "S.boat.store = 'buoy'; S.boat.at = 'home'; S.loc = 'home'");
     const t0 = await page.evaluate(() => S.t);
     await page.evaluate(() => boatGo('sunny', {})); await finishCross(page);
-    assert.ok((await page.evaluate(() => S.t)) - t0 >= 45);
+    assert.ok((await page.evaluate(() => S.t)) - t0 >= 35);
     // moorage
     const mo = await page.evaluate(() => { S.boat.store = 'slip'; S.boat.paidThru = dayKey() + 5; const m0 = S.money; boatMoorage(); const a = S.money - m0; S.boat.paidThru = dayKey(); boatMoorage(); return { early: a, due: S.money - m0, thru: S.boat.paidThru - dayKey() }; });
     assert.strictEqual(mo.early, 0); assert.strictEqual(mo.due, -90); assert.strictEqual(mo.thru, 28);
