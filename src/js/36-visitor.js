@@ -13,6 +13,7 @@ const VISIT_LENS={
   day:    {n:'Day trip', ic:'☀️', nights:0, d:'Saturday. Catch a morning boat over, see what you can, and make the last boat home.'},
   weekend:{n:'Weekend',  ic:'🏕️', nights:2, d:'Friday evening to Sunday. Two nights in a rental cabin.'},
   week:   {n:'A week',   ic:'🌲', nights:6, d:'Monday to Sunday in a rental cabin. Time to see it all, and to run out of groceries.'},
+  regular:{n:'Weekend regular', ic:'📅', nights:2, d:'A month in your city: job on weekdays, rent on Sundays, the island every weekend. Become an islander.'},   // 44-regular.js
 };
 const VISIT_HOMES={
   seattle:{n:'Seattle', ic:'🏙️', mi:55, i5:1,    d:'About 55 miles up I-5. The worst traffic.'},
@@ -28,15 +29,15 @@ const VSIGHTS=[
   {id:'legion', loc:'legion', n:'An event at the Legion',   ic:'🇺🇸'},
 ];
 // when each visit starts (day index: 0 = Monday) and the clock at the start: at your own home (L.vhome) or at the Steilacoom terminal
-const VISIT_START={day:{d:5,home:390,dock:450},weekend:{d:4,home:930,dock:1020},week:{d:0,home:480,dock:540}};
-const VISIT_BUDGET={day:150,weekend:500,week:1200}, VISIT_DIFF_MUL={easy:1.2,normal:1,hard:0.85};
-const VISIT_RATE={day:0,weekend:125,week:90};      // rental cabin, per night (a week gets the weekly rate)
+const VISIT_START={day:{d:5,home:390,dock:450},weekend:{d:4,home:930,dock:1020},week:{d:0,home:480,dock:540},regular:{d:4,home:930,dock:1020}};
+const VISIT_BUDGET={day:150,weekend:500,week:1200,regular:0}, VISIT_DIFF_MUL={easy:1.2,normal:1,hard:0.85};
+const VISIT_RATE={day:0,weekend:125,week:90,regular:85};      // rental cabin, per night (a week gets the weekly rate)
 const VCHECK_IN=900, VCHECK_OUT=660, VLATE_FEE=50; // check-in 3 PM on arrival day, check-out 11 AM on the last day
 const visitorOn=()=>!!(typeof S!=='undefined'&&S&&S.visitor);
 function vsInit(len,home){len=VISIT_LENS[len]?len:'weekend';const st=VISIT_START[len],last=len==='day'?5:6,nights=VISIT_LENS[len].nights;
   return {len,home:home||'tacoma',budget:0,spent:0,photos:{},seen:{},rep:0,packed:0,
   rental:{in:nights?st.d*1440+VCHECK_IN:null,out:nights?last*1440+VCHECK_OUT:null,checkedIn:false,checkedOut:false,inAt:null,outAt:null,trash:false,late:false},done:false,result:null,
-  arr:st.d,last,nights,rate:VISIT_RATE[len]||0,rentalCost:0,fees:0,rules:{},texts:[],islandAt:null,endT:null}}
+  arr:st.d,last,nights,rate:VISIT_RATE[len]||0,rentalCost:0,fees:0,rules:{},texts:[],islandAt:null,endT:null,reg:null}}
 function VS(){if(typeof S==='undefined'||!S||!S.visitor)return null;const v=S.visitor,d=vsInit(v.len,v.home);
   for(const k in d){if(v[k]===undefined)v[k]=d[k];else if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])&&typeof v[k]==='object')for(const j in d[k])if(v[k][j]===undefined)v[k][j]=d[k][j]}
   return v}
@@ -67,20 +68,24 @@ const vRental=()=>{const V=VS();return V&&V.rental&&V.rental.in!=null?V.rental:n
 // ======== the rental cabin: L.home reads as the rental while a visit is on ========
 const VRENT={name:'Rental cabin',ic:'🛖'};
 function vRentalDesc(){const V=VS(),R=vRental();
+  if(R&&R.hosted&&!R.checkedOut)return R.checkedIn?`${R.hosted.name.split(',')[0]} is putting you up. A spare room, a dog on the bed, coffee in the morning. Check-out by ${fmt(VCHECK_OUT)} ${DAYS[V.last]}`:`${R.hosted.name.split(',')[0]} said you can stay. The spare room is ready from ${fmt(VCHECK_IN)} ${DAYS[V.arr]}`;
   if(!R)return 'Somebody else’s rental this weekend. A day trip has no cabin.';
   if(R.checkedOut)return 'You’ve checked out. The key is back in the lockbox.';
   if(!R.checkedIn)return `Your rental for the ${VISIT_LENS[V.len].n.toLowerCase()}. Check-in from ${fmt(VCHECK_IN)} ${DAYS[V.arr]}`;
   return `Your rental. Check-out by ${fmt(VCHECK_OUT)} ${DAYS[V.last]}. Quiet after 10 PM, no smoking, trash out when you leave`}
 (function(){const H=L.home,o={name:H.name,ic:H.ic,desc:H.desc};
   for(const k of ['name','ic','desc'])Object.defineProperty(H,k,{configurable:true,enumerable:true,
-    get(){if(!visitorOn())return o[k];return k==='desc'?vRentalDesc():VRENT[k]},set(v){o[k]=v}})})();
+    get(){if(!visitorOn())return o[k];const R=vRental();if(R&&R.hosted&&k!=='desc')return k==='name'?`${R.hosted.name.split(',')[0]}’s spare room`:'🏡';return k==='desc'?vRentalDesc():VRENT[k]},set(v){o[k]=v}})})();
 function vCheckIn(quiet){const V=VS(),R=vRental();if(!R||R.checkedIn)return;R.checkedIn=true;R.inAt=S.t;
   S.pantry+=1;if(S.carried>0&&S.loc==='home'){S.pantry+=S.carried;S.carried=0}
+  if(R.hosted){say(`🏡 ${R.hosted.name.split(',')[0]} meets you at the door with a towel and a plate of something. “Spare room’s yours. Don’t mind the dog.” No rent, no rules, just a very warm house.`);try{regHosted(R)}catch(e){console.error(e)}return}
+  if(typeof regOn==='function'&&regOn()){const c=V.nights*V.rate;money(-c);V.rentalCost+=c;REG().st.cabin+=c;say(`🛖 The weekend regular’s rate: ${$(c)} for two nights, charged to your card.`)}
   say(`🔑 ${quiet?'You find the lockbox in the dark, punch in the code and let yourself in.':'The lockbox code works on the first try.'} The cabin smells like cedar and someone else’s coffee. A welcome basket on the counter: oatmeal, coffee, a jar of island blackberry jam (+1 day of food).`);
   vHostText(`Welcome to the island! Make yourself at home. House rules: quiet after 10 PM, no smoking, and please take the trash to the bin by the road when you leave. Check-out is ${fmt(VCHECK_OUT)} ${DAYS[V.last]}.`)}
 function vCheckOut(trash){const V=VS(),R=vRental();if(!R||R.checkedOut)return;
   S.t+=trash?20:5;R.checkedOut=true;R.outAt=S.t;R.trash=!!trash;
   if(S.pantry>0){S.carried+=S.pantry;S.pantry=0}
+  if(R.hosted){say(`🧳 You strip the bed, carry the dishes to the sink and say your goodbyes. ${R.hosted.name.split(',')[0]} hugs you like you live here.`);try{regHosted(R,true)}catch(e){console.error(e)}return}
   if(!R.late&&S.t>R.out){R.late=true;money(-VLATE_FEE);V.fees+=VLATE_FEE;vHostText(`Hope you enjoyed the stay! Check-out was ${fmt(VCHECK_OUT)}, so there’s a ${$(VLATE_FEE)} late check-out fee.`)}
   say(trash?'🧳 Bags in the car, the dishes put away, two trash bags hauled to the bin by the road. You drop the key in the lockbox.':'🧳 Bags in the car, the key in the lockbox. The trash can stay where it is.');
   if(!trash)vRule('trash');
@@ -97,6 +102,7 @@ function vHomeActions(base){const V=VS(),R=vRental(),d=day(),m=tod(),a=[];
     else a.push({ic:'🔑',l:'Check in to the rental cabin',s:'The lockbox code came by text. 10 min.',cls:'primary',fn:()=>{S.t+=10;vCheckIn();afterAction()}});
     return a}
   a.push(...base.filter(x=>V_HOME_KEEP.test(x.l||'')));
+  if(R.hosted){if(d>=V.last)a.push({cat:'here',ic:'🧳',l:'Say goodbye and check out',s:'20 min. No fees, no rules: just good manners.',cls:'primary',fn:()=>{vCheckOut(true);afterAction()}});return a}
   a.push({cat:'here',ic:'📋',l:'Read the house rules',s:'Taped inside the kitchen cabinet.',fn:vRulesModal});
   const late=m>=1320||m<360;
   a.push({cat:'here',ic:'🔥',l:late?'Fire pit and music on the deck (after 10 PM)':'Fire pit and music on the deck',s:late?'1 hour. Stress −8. It’s quiet hours.':'1 hour. Stress −8. Quiet hours start at 10 PM.',
@@ -109,7 +115,7 @@ function vHomeActions(base){const V=VS(),R=vRental(),d=day(),m=tod(),a=[];
 
 // ======== no job, no rent, no bills, no house: gate the resident's life off during a visit ========
 const V_DROP=/^(Pay rent|Pay bills|Checks in the mail|Look for a job|Browse job listings|You don’t work here|Trade the Subaru|Order island grocery delivery|Grocery delivery on its way|Backyard coop|Buy a portable generator|Generator (installed|bought)|Pick up prescription|Prescription picked up|Take yourself off the weekend schedule|Post on the co-op board|Mouse traps|Adopt )/;
-function vKeep(x){if(V_DROP.test(x.l||''))return false;let c='';try{c=catOf(x)}catch(e){}
+function vKeep(x){if(typeof regOn==='function'&&regOn())return regKeep(x);if(V_DROP.test(x.l||''))return false;let c='';try{c=catOf(x)}catch(e){}
   if(c==='work'&&!/ankle|Urgent|Nothing urgent/i.test((x.l||'')+' '+(x.s||'')))return false;return true}
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);if(!visitorOn()||S.over)return a;
   try{if(S.loc==='home')return vHomeActions(a);return a.filter(vKeep)}catch(e){console.error(e);return a}}}
@@ -134,7 +140,7 @@ for(const e of EV)if(V_NO_EV.includes(e.id)){const c=e.cond;e.cond=function(ctx)
 
 // ======== to-do: the visit's own list ========
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);if(!visitorOn()||S.over)return it;
-  try{return vTodo(it.filter(x=>/^(Get your ankle treated|Replace the car battery|Pick up your grocery order|Optional: Bingo)/.test(x.l||'')))}catch(e){console.error(e);return it}}}
+  try{if(VS().len==='regular')return regTodo(it);return vTodo(it.filter(x=>/^(Get your ankle treated|Replace the car battery|Pick up your grocery order|Optional: Bingo)/.test(x.l||'')))}catch(e){console.error(e);return it}}}
 function vTodo(keep){const V=VS(),R=vRental(),d=day(),it=[];
   it.push({ok:V.islandAt!=null,fail:false,l:'Get to the island',s:V.islandAt!=null?'⛴️ You made it over.':'⛴️ Drive to the Steilacoom ferry terminal. Be in line 20 minutes before the boat.',urgent:V.islandAt==null});
   if(R){it.push({ok:R.checkedIn,fail:false,l:'Check in at the rental cabin',s:R.checkedIn?'🔑 Checked in.':`🛖 From ${fmt(VCHECK_IN)} ${DAYS[V.arr]}. It’s “Rental cabin” on the island map.`,urgent:!R.checkedIn&&S.t>=R.in&&L[S.loc].side==='I'});
@@ -151,7 +157,7 @@ function vTodo(keep){const V=VS(),R=vRental(),d=day(),it=[];
 
 // ======== HUD: visit day instead of "Day 3 of 7", no job meter ========
 function vDayTxt(){const V=VS(),n=V.last-V.arr+1,i=Math.min(n,Math.max(1,day()-V.arr+1));return `🧳 ${VISIT_LENS[V.len].n}${n>1?` · day ${i} of ${n}`:''}`}
-{const _h=hud;hud=function(){let h=_h.apply(this,arguments);if(!visitorOn())return h;try{const V=VS();
+{const _h=hud;hud=function(){let h=_h.apply(this,arguments);if(!visitorOn())return h;try{const V=VS();if(V.len==='regular')return h;
   h=h.replace(/Day \d+ of 7/,vDayTxt());
   h=h.replace(/<div class="stat"><small>Job<\/small><b>[^<]*<\/b><div class="meter"><i[^>]*><\/i><\/div><\/div>/,`<div class="stat"><small>Budget</small><b>${$(Math.max(0,V.budget))}</b>${meter(V.budget>0?clamp(Math.round(S.money/V.budget*100),0,100):0,true)}</div>`);
   const R=vRental();h=h.replace(/<div class="stat" title="Home condition"><small>Home<\/small><b>[^<]*<\/b><div class="meter"><i[^>]*><\/i><\/div><\/div>/,`<div class="stat" title="Rental cabin"><small>Cabin</small><b style="font-size:13px">${!R?'none':R.checkedOut?'out':R.checkedIn?'🔑 in':'later'}</b></div>`)}catch(e){console.error(e)}return h}}
@@ -159,6 +165,7 @@ function vDayTxt(){const V=VS(),n=V.last-V.arr+1,i=Math.min(n,Math.max(1,day()-V
 // ======== starting a visit ========
 function visitorNew(len,home,diff,season){
   len=VISIT_LENS[len]?len:'weekend';home=VISIT_HOMES[home]?home:'tacoma';
+  if(len==='regular')return regNew(home,diff,season);
   newGame(diff,'week',season);
   MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
   const V=S.visitor=vsInit(len,home),st=VISIT_START[len],cost=V.nights*V.rate;
@@ -196,8 +203,9 @@ function visitMissed(why){const V=VS();if(!V||V.done)return;V.missedWhy=why||'bo
 // after every action: first time on the island, the 11 AM check-out, and the last day
 function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),side=L[S.loc]?L[S.loc].side:'M',R=vRental();
   if(side==='I'&&V.islandAt==null)V.islandAt=S.t;
-  if(R&&R.checkedIn&&!R.checkedOut&&!R.late&&S.t>=R.out){R.late=true;money(-VLATE_FEE);V.fees+=VLATE_FEE;
+  if(R&&R.checkedIn&&!R.checkedOut&&!R.late&&!R.hosted&&S.t>=R.out){R.late=true;money(-VLATE_FEE);V.fees+=VLATE_FEE;
     vHostText(`Hi! Check-out was ${fmt(VCHECK_OUT)} and the cleaner is waiting in the driveway. I’ve charged the ${$(VLATE_FEE)} late check-out fee.`)}
+  if(V.len==='regular')return typeof regTick==='function'?regTick():false;   // 45-regular-weekend.js: each weekend ends when you’re back, the month goes on
   if(d>=V.last){
     if(side==='M'&&V.islandAt!=null){visitEnd('home');return true}
     if(side==='I'&&(S.t>vLastBoatAbs()||vNoBoatLeft())){visitMissed('boat');return true}}
@@ -206,11 +214,12 @@ function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),s
 {const _ed=endDay;endDay=function(where){
   if(!visitorOn()||S.over)return _ed.apply(this,arguments);
   const V=VS(),R=vRental();
-  if(!V.done&&day()>=V.last){if(L[S.loc].side==='I')return visitMissed('night');return visitEnd(V.islandAt!=null?'home':'never')}
+  if(!V.done&&V.len!=='regular'&&day()>=V.last){if(L[S.loc].side==='I')return visitMissed('night');return visitEnd(V.islandAt!=null?'home':'never')}
   if(where==='home'&&R&&!R.checkedIn&&!R.checkedOut&&S.t>=R.in)vCheckIn(true);
   return _ed.apply(this,arguments)}}
 {const _fin=finish;finish=function(){
   if(!visitorOn())return _fin.apply(this,arguments);
+  if(VS().len==='regular')return regFinish();
   const V=VS();if(!V.done){V.done=true;V.result=V.result||(L[S.loc]&&L[S.loc].side==='I'?'missed':'home');V.endT=S.t;V.spent=Math.round((V.budget-S.money)*100)/100}
   MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();S.over=true;
   const T=vEndTitle(V);endScreen(T[0],T[1])}}
@@ -251,7 +260,7 @@ function vEndScreen(h1,sub,lost){const V=VS();
 // ======== title screen: 🧳 Visit the island → length → where you live → difficulty ========
 function visitLenModal(then){
   modal('🧳 How long is your visit?','<p>You live on the mainland. Pick a visit: you get a spending budget instead of a job, and the island’s ferry decides the rest.</p>',
-    Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*(VISIT_RATE[k]||0);return {l:`${V.ic} ${V.n}`,s:`${V.d} Budget ${$(VISIT_BUDGET[k])}${c?`, cabin ${$(c)}`:''}.`,fn:()=>then(k)}})
+    Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*(VISIT_RATE[k]||0);return {l:`${V.ic} ${V.n}${k==='regular'?': a month':''}`,s:k==='regular'?V.d:`${V.d} Budget ${$(VISIT_BUDGET[k])}${c?`, cabin ${$(c)}`:''}.`,fn:()=>then(k)}})
     .concat([{l:'Never mind',fn:()=>{}}]))}
 function visitHomeModal(then){
   modal('🏠 Where do you live?','<p>Your visit starts and ends at home. Everyone takes I-5 to the Steilacoom ferry.</p>',
@@ -276,7 +285,7 @@ const VGUIDE=[
   {id:'v_lastboat',when:()=>vFinalDay()&&L[S.loc].side==='I',t:()=>`🌙 Last day. ${vRental()&&!vRental().checkedOut?`Check out of the cabin by <b>${fmt(VCHECK_OUT)}</b> and take the trash out. `:''}The <b>last boat</b> off the island leaves at <b>${fmt(vLastBoatAbs())}</b>. Miss it and you’re stuck.`}];
 {const _tv=tipView;tipView=function(){if(!visitorOn())return _tv.apply(this,arguments);
   try{if(!tipsOn()||S.over)return '';const T=tutState();if(T.at===S.t)return '';
-    const t=VGUIDE.find(x=>!T.seen.includes(x.id)&&(()=>{try{return !!x.when()}catch(e){return false}})());if(!t)return '';
+    const t=(VS().len==='regular'&&typeof REG_GUIDE!=='undefined'?REG_GUIDE:VGUIDE).find(x=>!T.seen.includes(x.id)&&(()=>{try{return !!x.when()}catch(e){return false}})());if(!t)return '';
     const txt=typeof t.t==='function'?t.t():t.t;
     return `<div class="tip" role="note" aria-label="Visit tip"><div class="tut-k">🧳 Your visit</div>${txt}<div class="tb"><button onclick="tipSeen('${t.id}')">Got it</button><button onclick="setPref('tips',false);render()">Turn off tips</button></div></div>`}
   catch(e){console.error(e);return ''}}}
@@ -288,5 +297,5 @@ const VGUIDE=[
     for(const k in def){if(v[k]===undefined||v[k]===null&&def[k]!==null)v[k]=def[k];else if(def[k]&&typeof def[k]==='object'&&!Array.isArray(def[k])&&v[k]&&typeof v[k]==='object')for(const j in def[k])if(v[k][j]===undefined)v[k][j]=def[k][j]}
     if(!Array.isArray(v.texts))v.texts=[];
     for(const k of ['budget','rep','fees','rentalCost','spent'])v[k]=num(v[k],0);
-    x.mode='week';x.emp=null;x.rx=true;delete x.story}}
+    if(v.len==='regular'){x.mode='month';x.weekNo=Math.max(0,Math.min(3,num(x.weekNo,0)))}else{x.mode='week';x.emp=null;x.rx=true}delete x.story}}
   return r}}

@@ -21,7 +21,8 @@ function vrepAdd(n,why){if(!visitorOn()||!n)return 0;const v=VS(),r0=v.rep;v.rep
   (v.repLog=v.repLog||[]).unshift({d:day(),n:d,why});v.repLog=v.repLog.slice(0,8);
   say(`${d>0?'🤲':'🗣️'} Island reputation ${d>0?'+':''}${d}${why?`: ${why}`:''}.`);return d}
 // a "buy local" style bonus, once per day per kind
-function vrepOnce(key,n,why){const v=VS(),k=key+'@'+day();v.repDone=v.repDone||{};if(v.repDone[k])return 0;v.repDone[k]=true;return vrepAdd(n,why)}
+function vrepOnce(key,n,why){const v=VS(),k=key+'@'+(v.len==='regular'?dayKey():day());   // a month has four of each weekday
+  v.repDone=v.repDone||{};if(v.repDone[k])return 0;v.repDone[k]=true;return vrepAdd(n,why)}
 const vSeenN=()=>{const v=VS();return v?VSIGHTS.filter(s=>v.seen[s.id]!==undefined).length:0};
 function vSeen(id){const v=VS();if(v&&v.seen[id]===undefined){v.seen[id]=day();const s=VSIGHTS.find(x=>x.id===id);if(s)say(`✅ Sight seen: <b>${s.ic} ${s.n}</b> (${vSeenN()}/${VSIGHTS.length}).`)}}
 
