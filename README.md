@@ -39,6 +39,15 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.19: visit the island
+
+- 🧳 **Visitor mode.** Tap **Visit the island** on the title screen to play a visitor instead of a resident. Pick a **day trip** (Saturday), a **weekend** (Friday evening to Sunday) or **a week**, and where you live: **Seattle** (about 55 miles), **Tacoma** (15) or **Olympia** (25). Then pick a difficulty.
+- 🚗 **Getting there:** pack a cooler at home (there's no grocery store on the island), bring your bike if you like, and drive to the Steilacoom ferry. **I-5 traffic** can slow you down, worst at rush hour, on Friday afternoons and on summer Saturdays, and a crash can add up to an hour. Drive on, or walk on for less.
+- 🛖 **The rental cabin:** check in from 3 PM, check out by 11 AM ($50 if you're late), and mind the house rules. No job, rent, bills or chores, just a budget: $150 for a day, $500 for a weekend, $1,200 for a week.
+- 📸 **Things to see:** Lake Josephine, the Johnson Farm museum (weekend afternoons), Andy's Wild Wood Park, Jacobs Point, dinner at the Riv and whatever is on at the Legion. Take a photo at each one, and some are better at the right time of day.
+- 🤝 **Islanders notice visitors:** wave back, park in the lot and pack out your trash, and they'll offer tips and rides. Block the ferry lane and they won't.
+- ⛴️ **Catch the last boat home.** Making it home is worth the most points. Miss it, and the visit ends there. A 🧳 Visit app on your phone shows your plan, the last boat today, a checklist of sights and your photos.
+
 ### New in 1.18: difficulty levels that mean something
 
 The three levels now change more than the numbers, and the title screen says what each one includes.
