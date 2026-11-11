@@ -94,6 +94,8 @@ function endDay(where){
   if(where==='home'){adj('stress',-nightRec(rest));adj('health',nightRec(3));
     const offDay=!curJob()||!curJob().days.includes(d);if(offDay){adj('stress',-nightRec(10));adj('health',nightRec(3));notes.push('🛋️ A day off. You actually feel rested.')}}
   else if(where==='terminal'){S.stats.stranded++;adj('stress',15);adj('health',-6);notes.push(carHere()?'🚗 The terminal locks up after the last boat, so you sleep in your car in the ferry lot, seat reclined, coat for a blanket. The ferry horn wakes you at 4:30.':'🪑 The terminal locks up after the last boat. You spend the night on the bench under the overhang outside, coat zipped to your chin.')}
+  else if(where==='host'){S.stats.stranded++;adj('stress',-2);notes.push('🏡 An islander from the Island Group puts you up: a spare bed, a dog on your feet, and coffee in the morning.')}
+  else if(where==='vhome'){adj('stress',-nightRec(8));adj('health',nightRec(2));notes.push('🛏️ You sleep in your own bed on the mainland.')}
   else {S.stats.stranded++;money(-115);adj('stress',4);notes.push('🏨 $115 for a Lakewood motel room that smells like carpet cleaner.')}
   if(S.stress>=100){adj('job',-5);adj('health',-4);S.stress=55;notes.push('🔥 Burnout. You spend an hour staring at the water instead of sleeping.')}
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
