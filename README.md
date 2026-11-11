@@ -41,6 +41,7 @@
 
 ### New in 1.21
 - **🗺️ A map you can tap:** in 🧭 Go somewhere, switch from the list to a drawn map of Anderson Island or the mainland. It shows where you are, where your car is, the ferry route and the boat while it crosses. Tap a place to see how to get there. The list stays the default and the game remembers your choice.
+- **⏩ Less waiting:** at a ferry terminal, **Wait for the 2:15 boat (35 min)** skips straight to boarding (outages, fog and full boats still apply). When you're away from the terminal and need the last boat of the night, your phone warns you 60 and 20 minutes before it goes.
 
 ### New in 1.20: Weekend regular
 
