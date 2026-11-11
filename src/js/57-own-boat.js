@@ -119,7 +119,7 @@ function boatActions(a,loc){
       if(B.at==='marina')a.push({cat:'ferry',ic:'🚤',l:'Take the skiff across to Sunnyside',s:`${BOAT_TRIP[0]}–${BOAT_TRIP[1]} min, ~${BOAT_GAL} gal. Tank ${boatFuelBtn()}.${out?' The ferry’s down: this is the way around.':''}`,cls:out?'primary':'',fn:boatCross});
       else a.push({cat:'ferry',ic:'🚤',l:'Your skiff is at Sunnyside',s:'You left it at the public float on the mainland.',dis:true});
       if(B.at==='marina'){
-        if(S.homeGas>0&&B.fuel<BOAT_TANK-0.2)a.push({cat:'fuel',ic:'⛽',l:'Fill the skiff’s tank from your shed gas',s:`${S.homeGas} gal stashed. Tank ${boatFuelBtn()}. The generator needs some too.`,fn:boatFuelHome});
+        if(typeof boatAtHome==='function'&&boatAtHome()&&S.homeGas>0&&B.fuel<BOAT_TANK-0.2)a.push({cat:'fuel',ic:'⛽',l:'Fill the skiff’s tank from your shed gas',s:`${S.homeGas} gal stashed. Tank ${boatFuelBtn()}. The generator needs some too.`,fn:boatFuelHome});
         if(B.cond<90)a.push({cat:'fuel',ic:'🔧',l:'Service the outboard: $60',s:'30 min with the marina mechanic. Fewer breakdowns.',dis:S.money<60,fn:boatServe});
         a.push({cat:'ferry',ic:'🌤️',l:'Check the marine forecast',s:'The flag, the chalkboard, and the guy who’s always on the dock.',fn:()=>{S.t+=5;modal('🌤️ Marine forecast',`<p>${boatForecastTxt()}</p>`+(boatLow()?'<p style="font-size:13px">Tide is low right now.</p>':'<p style="font-size:13px">Tide is '+(boatLow(120)?'dropping to a low in a couple of hours.':'not low.')+'</p>'),[{l:'OK',fn:()=>{}}])}});
         a.push({cat:'ferry',ic:'💵',l:'Sell the skiff',s:'A guy on the dock is always interested.',fn:boatSell});
