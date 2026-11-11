@@ -89,12 +89,12 @@ function actView(){
         h+=`<details class="go upk" ${UPK_OPEN[c]?'open':''} ontoggle="UPK_OPEN['${c}']=this.open"><summary>${ACT_CATS[c]}${n?` · <span class="upk-n">${n} to do</span>`:' · all good'}</summary>`+g.map(a=>btn(Object.assign({},a,{cls:((a.cls||'')+(a.due&&!a.dis?' due':'')).trim()}))).join('')+'</details>';return}
       h+=`<div class="sect">${ACT_CATS[c]}</div>`+groups[c].map(btn).join('')});
   } else if(acts.length){h+='<div class="sect">Do something</div>'+acts.map(btn).join('')}
-  const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side);
+  const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side&&(k!=='vhome'||visitorOn()));
   const pOpen=prefs().goOpen,goOpen=pOpen===null||pOpen===undefined?acts.length<=5:pOpen;
   h+=`<details class="go" ${goOpen?'open':''} ontoggle="setPref('goOpen',this.open)"><summary>🧭 Go somewhere${L[S.loc].side==='I'?' on the island':' on the mainland'} (${dests.length})</summary>`;
   dests.forEach(k=>{
     const opts=travelOpts(k);
-    h+=`<div class="dest compact"><div class="dn"><b>${L[k].ic} ${L[k].name}</b><span>${L[k].hours?hoursTxt(k):''}</span></div><div class="chips">${opts.map(o=>{const i=ACTS.push(()=>go(k,o))-1;return `<button class="chip" ${o.dis||(o.cost&&o.m==='bus'&&S.money<o.cost)?'disabled':''} onclick="ACT(${i})">${o.l}</button>`}).join('')}</div></div>`;
+    h+=`<div class="dest compact"><div class="dn"><b>${L[k].ic} ${L[k].name}</b><span>${L[k].hours?hoursTxt(k):''}</span></div><div class="chips">${opts.map(o=>{const i=ACTS.push(()=>go(k,o))-1;return `<button class="chip" ${o.dis||(o.cost&&o.m==='bus'&&S.money<o.cost)?'disabled':''} onclick="ACT(${i})">${o.l}</button>`}).join('')}</div>${(()=>{const n=opts.find(o=>o.s);return n?`<div class="small-note" style="color:var(--mute);margin:2px 0 0">${n.s}</div>`:''})()}</div>`;
   });
   h+='</details>';
   if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">To reach the mainland, go to the ferry landing.</p>`;
