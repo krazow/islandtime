@@ -71,7 +71,7 @@ module.exports = [
     // waiting for an iced-up boat says why it's late
     const say = await page.evaluate(() => {
       S.cur = 1; S.t = 1440 + 330; S.loc = 'aiDock'; S.cars[0].loc = 'aiDock'; S.cars[0].fuel = 10; S.week.sea.ice[1] = 20; S.week.b = []; S.priority = true;
-      S.log = []; waitFerry('walk'); return S.log.map(l => l.s).join(' ');
+      setPref('safeOff', true); S.log = []; waitFerry('walk'); setPref('safeOff', false); return S.log.map(l => l.s).join(' ');
     });
     assert.match(say, /Ice on the ferry ramp.*minutes late/);
     noErrors(errors);

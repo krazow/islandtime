@@ -42,6 +42,7 @@
 ### New in 1.21
 - **🗺️ A map you can tap:** in 🧭 Go somewhere, switch from the list to a drawn map of Anderson Island or the mainland. It shows where you are, where your car is, the ferry route and the boat while it crosses. Tap a place to see how to get there. The list stays the default and the game remembers your choice.
 - **⏩ Less waiting:** at a ferry terminal, **Wait for the 2:15 boat (35 min)** skips straight to boarding (outages, fog and full boats still apply). When you're away from the terminal and need the last boat of the night, your phone warns you 60 and 20 minutes before it goes.
+- **🛡️ Are you sure? and ↩️ Undo:** the game asks before choices you can't take back and probably didn't mean: leaving your car behind, walking on after the last car boat, going to bed hungry with food in reach, skipping the last boat home on a visit's final day, buying the house in Weekend regular. After a simple action (moving, resting, buying) a one-step **Undo** button appears; it's gone once a day ends or an event fires. Settings has a switch to turn the prompts off.
 
 ### New in 1.20: Weekend regular
 
