@@ -6549,10 +6549,10 @@ function vCabin(){const U=UP();Object.assign(U,{dishes:0,laundry:0,needles:0,bed
   septic:10,gutters:0,limbs:0,well:0,moss:0,pot:0,genSvc:0,propane:100,woodOut:false});U.jobs=(U.jobs||[]).filter(j=>!UP_JOBS[j.k]);S.home=70}
 {const _f=upkeepNight;upkeepNight=function(){if(visitorOn())vCabin();const r=_f.apply(this,arguments);if(visitorOn())vCabin();return r}}
 // house events, raccoons, puppies, work parties: not at a rental
-const V_NO_EV=['leaky_roof','mice','mouse_caught','black_mold','chimney_fire','crawl_flood','limb_roof','septic_backup','clogged_drain','well_quit','friend_dropin','work_party','raccoons','puppy_litter','garage_stuck','sam_groceries','neighbor_ride'];
+const V_NO_EV=['leaky_roof','mice','mouse_caught','black_mold','chimney_fire','crawl_flood','limb_roof','septic_backup','clogged_drain','well_quit','friend_dropin','work_party','raccoons','puppy_litter','garage_stuck','sam_groceries','neighbor_ride','garage_sale'];
 for(const e of EV)if(V_NO_EV.includes(e.id)){const c=e.cond;e.cond=function(ctx){if(visitorOn())return false;return c?c.apply(this,arguments):true}}
 // the day card has no "missed work" for a visitor
-{const _f=dailyCard;dailyCard=function(){const r=_f.apply(this,arguments);return visitorOn()?r.replace(/ · 💼 [^<·]*/,''):r}}
+{const _f=dailyCard;dailyCard=function(){const r=_f.apply(this,arguments);return visitorOn()&&S.visitor.len!=='regular'?r.replace(/ · 💼 [^<·]*/,''):r}}
 
 // ======== to-do: the visit's own list ========
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);if(!visitorOn()||S.over)return it;
@@ -6783,7 +6783,7 @@ function vPhoto(s){const v=VS(),P=V_PHOTO[s.id],m=tod(),great=P.ok(m)||!!(v.tips
 
 // ---- random visit events (all deliberate-choice reputation; bad luck never costs reputation) ----
 const vNeighbor=()=>{try{const n=npcPick({notJailed:true});return n&&n.name?n.name:'A neighbor'}catch(e){return 'A neighbor'}};
-const vOn=(extra)=>ctx=>visitorOn()&&!(S.over)&&(!extra||extra(ctx));
+const vOn=(extra)=>ctx=>visitorOn()&&!(S.over)&&(!(typeof regOn==='function'&&regOn())||L[S.loc].side==='I')&&(!extra||extra(ctx));   // weekend regular: the island events stay on the island
 defEvent({id:'v_wave',hook:'arrive',priority:1,max:4,cooldown:1,chance:0.12,cond:vOn(ctx=>!!carHere()&&ctx.at!=='aiDock'),
   run(){modal('👋 The island wave','<p>A pickup comes the other way on the narrow road. The driver lifts two fingers off the wheel. Everybody out here does it.</p>',[
     {l:'Wave back',s:'Reputation +1.',fn:()=>{vrepAdd(1,'waved back like a local');say('👋 You lift two fingers. The driver nods. You feel unreasonably accepted.')}},
@@ -7150,7 +7150,7 @@ defFun({id:'tc_grand',town:'Tacoma',kind:'fun',name:'The Grand Cinema',ic:'🎬'
 // API: regOn() · REG() · REG_CITIES · REG_GOAL · regNew(home,diff,season) · regCityHere() · regRentOwed() · regLose(kind,title,sub)
 const REG_WEEKS=4, REG_VAC=5;
 const REG_GOAL={money:4000,rep:40,friends:3}, REG_DOWN=3500;
-const REG_START={easy:3000,normal:2600,hard:2200};          // savings you begin the month with
+const REG_START={easy:3500,normal:3000,hard:2500};          // savings you begin the month with
 const REG_CITIES={
   seattle:{n:'Seattle', rent:450,commute:40,jobs:['r_sea','r_sea2'],noisy:0.22,theft:0.04,home:'a small apartment',lord:'Mr. Park, your landlord',util:62,
     d:'A small apartment, $450 a week. The best pay, the worst commute and a noisy upstairs neighbor.'},
@@ -7163,7 +7163,7 @@ const REG_BILLS={
   util:{ic:'💡',n:'Utilities',who:'City Light & Water',amt:()=>(REG_CITIES[VS().home]||REG_CITIES.tacoma).util,fee:12,coll:30,w:1,d:2},
   ins:{ic:'🚗',n:'Car insurance',who:'Evergreen Mutual',amt:()=>88,fee:15,coll:35,w:2,d:1}};
 const REG_RENT_LATE=25, REG_RENT_EVICT=3;
-JOBS.r_sea={n:'Office job, downtown Seattle',loc:'rwork',start:510,end:1020,pay:215,days:[0,1,2,3,4],reg:'seattle',pitch:'8:30–5:00 weekdays. The best pay in the region and the worst commute.'};
+JOBS.r_sea={n:'Office job, downtown Seattle',loc:'rwork',start:510,end:1020,pay:205,days:[0,1,2,3,4],reg:'seattle',pitch:'8:30–5:00 weekdays. The best pay in the region and the worst commute.'};
 JOBS.r_sea2={n:'Warehouse, SoDo (Seattle)',loc:'rwork',start:390,end:900,pay:180,days:[0,1,2,3,4],reg:'seattle',pitch:'6:30–3:00 weekdays. Early start, lighter traffic, lower pay.'};
 JOBS.r_tac={n:'Records clerk, Tacoma hospital',loc:'rwork',start:510,end:990,pay:195,days:[0,1,2,3,4],reg:'tacoma',pitch:'8:30–4:30 weekdays. A short commute.'};
 JOBS.r_tac2={n:'Dispatch clerk, Port of Tacoma',loc:'rwork',start:420,end:930,pay:180,days:[0,1,2,3,4],reg:'tacoma',pitch:'7:00–3:30 weekdays. You’re home before the rush.'};
@@ -7198,6 +7198,8 @@ dist=function(a,b){
   if(o==='vhome')return x==='rwork'?regCity().commute:6;
   return _rgDist('vhome',o)+(x==='rmarket'?2:0);       // work and the market sit about where home does, as far as the ferry goes
 };
+// the city jobs are only for the month, in your city; the month has no resident jobs
+{const _je=jobEligible;jobEligible=function(k){const J=JOBS[k];if(J&&J.reg)return regOn()&&VS().home===J.reg&&_je.apply(this,arguments);if(regOn())return false;return _je.apply(this,arguments)}}
 {const _t=vtTraffic;vtTraffic=function(from,to){const r=_t.apply(this,arguments);
   try{if(regOn()&&(REG_LOCS.includes(from)||REG_LOCS.includes(to))){r.txt=r.min<=5?`Traffic: ${r.why}.`:`Traffic: ${r.why}, +${r.min} min`}}catch(e){}return r}}
 {const _r=vtTrafficRoll;vtTrafficRoll=function(from,to){

@@ -133,10 +133,10 @@ function vCabin(){const U=UP();Object.assign(U,{dishes:0,laundry:0,needles:0,bed
   septic:10,gutters:0,limbs:0,well:0,moss:0,pot:0,genSvc:0,propane:100,woodOut:false});U.jobs=(U.jobs||[]).filter(j=>!UP_JOBS[j.k]);S.home=70}
 {const _f=upkeepNight;upkeepNight=function(){if(visitorOn())vCabin();const r=_f.apply(this,arguments);if(visitorOn())vCabin();return r}}
 // house events, raccoons, puppies, work parties: not at a rental
-const V_NO_EV=['leaky_roof','mice','mouse_caught','black_mold','chimney_fire','crawl_flood','limb_roof','septic_backup','clogged_drain','well_quit','friend_dropin','work_party','raccoons','puppy_litter','garage_stuck','sam_groceries','neighbor_ride'];
+const V_NO_EV=['leaky_roof','mice','mouse_caught','black_mold','chimney_fire','crawl_flood','limb_roof','septic_backup','clogged_drain','well_quit','friend_dropin','work_party','raccoons','puppy_litter','garage_stuck','sam_groceries','neighbor_ride','garage_sale'];
 for(const e of EV)if(V_NO_EV.includes(e.id)){const c=e.cond;e.cond=function(ctx){if(visitorOn())return false;return c?c.apply(this,arguments):true}}
 // the day card has no "missed work" for a visitor
-{const _f=dailyCard;dailyCard=function(){const r=_f.apply(this,arguments);return visitorOn()?r.replace(/ · 💼 [^<·]*/,''):r}}
+{const _f=dailyCard;dailyCard=function(){const r=_f.apply(this,arguments);return visitorOn()&&S.visitor.len!=='regular'?r.replace(/ · 💼 [^<·]*/,''):r}}
 
 // ======== to-do: the visit's own list ========
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);if(!visitorOn()||S.over)return it;

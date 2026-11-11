@@ -39,6 +39,17 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.20: Weekend regular
+
+- 📅 **A fourth way to visit:** on the **Visit the island** screen, pick **Weekend regular: a month**, then where you live (**Seattle**, **Tacoma** or **Olympia**) and a difficulty. You live and work on the mainland Monday to Friday and spend the weekends on Anderson Island.
+- 🏠 **Your city home:** rent (about $450 in Seattle, $325 in Tacoma, $300 in Olympia) is due every Sunday on every difficulty, with a late fee, a notice and an eviction after three missed Sundays. Dishes, laundry and trash pile up, the mail piles up, and the phone, utilities and car insurance bills come due like the islander's. A noisy upstairs neighbor and a stolen porch package are possible.
+- 💼 **Your city job:** an office in Seattle (best pay, worst commute), the hospital records office in Tacoma or the state office in Olympia (steady hours). The same job meter and lateness rules apply, you can call in sick, and on Friday you can leave work early for the boat. You get **5 vacation days** for a Friday or Monday. Your boss may text you on the island: answering costs stress, ignoring it costs the job meter.
+- 💵 **Money:** a paycheck every Friday replaces the visit budget, and everything comes out of it. The goal is about **$4,000** saved after rent and bills, island reputation **40** and **3 island friends**. Progress is in the to-do list and the Visit app.
+- 🌲 **Weekends on the island** use the visitor systems: the rental cabin (or a friend's spare room, free), house rules, sights and photos, packing food, I-5 traffic and the last boat on Sunday. Missing the last boat no longer ends the game; you find a couch or sleep at the landing, and a Monday morning stranded by a ferry outage is a missed day of work.
+- 🤝 **Island reputation and friends** carry over all month. Help out at the Legion, the farm, the store and the lake, and islanders become friends who text you during the week.
+- 🏡 **Moving in:** when you meet the goal a house comes up. **Buy it** to end the month early with **You moved to the island**, then **Start life on the island** begins a resident game with your savings (minus the down payment), your friends and a reputation bonus. At the end of week 4 you get **A regular, not a resident yet** or **The island wasn't for you**. Rent you can't pay, a lost job or a medevac end the month early.
+- Short visits and the resident game are unchanged.
+
 ### New in 1.19: visit the island, and go out on the mainland
 
 - 🎟️ **Going out:** 15 real places on the mainland, in a **Going out** group in the travel list. Residents spend time and money to unwind (stress drops once per place per day, and a restaurant meal counts as dinner). Visitors score points for each different place they go out to, up to five.

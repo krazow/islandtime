@@ -7,7 +7,7 @@
 // API: regOn() · REG() · REG_CITIES · REG_GOAL · regNew(home,diff,season) · regCityHere() · regRentOwed() · regLose(kind,title,sub)
 const REG_WEEKS=4, REG_VAC=5;
 const REG_GOAL={money:4000,rep:40,friends:3}, REG_DOWN=3500;
-const REG_START={easy:3000,normal:2600,hard:2200};          // savings you begin the month with
+const REG_START={easy:3500,normal:3000,hard:2500};          // savings you begin the month with
 const REG_CITIES={
   seattle:{n:'Seattle', rent:450,commute:40,jobs:['r_sea','r_sea2'],noisy:0.22,theft:0.04,home:'a small apartment',lord:'Mr. Park, your landlord',util:62,
     d:'A small apartment, $450 a week. The best pay, the worst commute and a noisy upstairs neighbor.'},
@@ -20,7 +20,7 @@ const REG_BILLS={
   util:{ic:'💡',n:'Utilities',who:'City Light & Water',amt:()=>(REG_CITIES[VS().home]||REG_CITIES.tacoma).util,fee:12,coll:30,w:1,d:2},
   ins:{ic:'🚗',n:'Car insurance',who:'Evergreen Mutual',amt:()=>88,fee:15,coll:35,w:2,d:1}};
 const REG_RENT_LATE=25, REG_RENT_EVICT=3;
-JOBS.r_sea={n:'Office job, downtown Seattle',loc:'rwork',start:510,end:1020,pay:215,days:[0,1,2,3,4],reg:'seattle',pitch:'8:30–5:00 weekdays. The best pay in the region and the worst commute.'};
+JOBS.r_sea={n:'Office job, downtown Seattle',loc:'rwork',start:510,end:1020,pay:205,days:[0,1,2,3,4],reg:'seattle',pitch:'8:30–5:00 weekdays. The best pay in the region and the worst commute.'};
 JOBS.r_sea2={n:'Warehouse, SoDo (Seattle)',loc:'rwork',start:390,end:900,pay:180,days:[0,1,2,3,4],reg:'seattle',pitch:'6:30–3:00 weekdays. Early start, lighter traffic, lower pay.'};
 JOBS.r_tac={n:'Records clerk, Tacoma hospital',loc:'rwork',start:510,end:990,pay:195,days:[0,1,2,3,4],reg:'tacoma',pitch:'8:30–4:30 weekdays. A short commute.'};
 JOBS.r_tac2={n:'Dispatch clerk, Port of Tacoma',loc:'rwork',start:420,end:930,pay:180,days:[0,1,2,3,4],reg:'tacoma',pitch:'7:00–3:30 weekdays. You’re home before the rush.'};
@@ -55,6 +55,8 @@ dist=function(a,b){
   if(o==='vhome')return x==='rwork'?regCity().commute:6;
   return _rgDist('vhome',o)+(x==='rmarket'?2:0);       // work and the market sit about where home does, as far as the ferry goes
 };
+// the city jobs are only for the month, in your city; the month has no resident jobs
+{const _je=jobEligible;jobEligible=function(k){const J=JOBS[k];if(J&&J.reg)return regOn()&&VS().home===J.reg&&_je.apply(this,arguments);if(regOn())return false;return _je.apply(this,arguments)}}
 {const _t=vtTraffic;vtTraffic=function(from,to){const r=_t.apply(this,arguments);
   try{if(regOn()&&(REG_LOCS.includes(from)||REG_LOCS.includes(to))){r.txt=r.min<=5?`Traffic: ${r.why}.`:`Traffic: ${r.why}, +${r.min} min`}}catch(e){}return r}}
 {const _r=vtTrafficRoll;vtTrafficRoll=function(from,to){
