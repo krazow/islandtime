@@ -26,6 +26,13 @@
 - **Island life:** power outages that reset your alarm clock and kill the well pump, dead car batteries with no tow truck on the island, trees down on the road, and neighbors who become friends (and give you rides). Wednesday night is **Bingo at the Riv**, hosted by the American Legion, with proceeds benefiting the Anderson Island Historical Society, Pierce County Fire District #27 or the Anderson Island Elementary Booster Club. Adding new events is easy: see [docs/EVENTS.md](docs/EVENTS.md).
 - **Trading:** import food, medical supplies and fuel to the island and sell at island prices, which spike when the ferry is down. Or take a much bigger risk with illicit drugs, where a deputy's K-9 on the car deck or an undercover buyer means arrest.
 
+### New in 1.22
+- 🚤 **Where you keep the skiff:** choose at purchase and change it later (at the Riv or at home), with a cost / launch / risk comparison. A **slip** at the Riv ($90 a month, ready to go), **on its trailer in your yard** (free, tow it to a ramp), **on your mooring buoy** (free with the cabin's buoy upgrade) or in the **garage's third bay** (when you have one).
+- 🛟 **The buoy keeps its promise:** the skiff lives off your own beach. Row out (about 10 minutes) and cross straight to Sunnyside and back home, no marina needed. A gale night can swamp it (outboard −40 and a bailing chore) or sink it ($350 salvage), unless you **haul it up the beach** first.
+- 🚙 **Towing:** a $250 tow hitch per car at the Steilacoom gas station or Home Depot (the diesel pickup already has one; the Subaru can tow the skiff; the old Corolla can't). **Tow it to the Riv ramp and launch**, **haul out and tow it home**, or launch and haul at Sunnyside. At low tide the ramp is too shallow: wait or come back.
+- ⛴️ **A trailer on the ferry** pays the vehicle-length fare for car plus trailer (30 to under 40 ft with the skiff aboard, $77.96 / $107.10 peak; over 22 to under 30 ft with an empty trailer behind the Subaru), and the skiff travels with that car until you launch it or park the trailer at the cabin, the Riv lot or the Sunnyside lot.
+- 🌧️ **Yard upkeep:** rain fills an uncovered skiff on its trailer (bail it, or buy an $80 cover), and winter wears the outboard a little while it sits outside.
+
 ### New in 1.8
 - **Difficulty:** 🌲 *Islander* (easier), ⛴️ *Normal*, or 🔥 *Ferry Hell* (summer tourists, constant breakdowns, score ×1.25).
 - **One week or a whole month:** the month carries everything over, week to week. Help the islanders raise $2,500 and the old store reopens as the **AI Food Co-op**, with groceries and gas pumps on the island.

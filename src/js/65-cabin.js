@@ -5,7 +5,7 @@
 // Hooks other files can call: cabinHas(id), cabinDock() (a private boat module can check it for a mooring).
 const CABIN_UP=[
   {id:'weather',ic:'🧤',n:'Insulation and weatherstripping',c:380,days:1,who:'a weatherization crew',d:'Blown-in attic insulation, door sweeps and window seals. The house wears down about a quarter slower and the propane lasts longer.'},
-  {id:'mooring',ic:'⚓',n:'Mooring buoy (and a skiff ladder)',c:600,days:3,who:'the marine contractor',d:'A permitted buoy off your beach. Quiet water to look at: stress −1 every night at home. If you ever own a boat, it ties up here for free.'},
+  {id:'mooring',ic:'⚓',n:'Mooring buoy (and a skiff ladder)',c:600,days:3,who:'the marine contractor',d:'A permitted buoy off your beach. Quiet water to look at: stress −1 every night at home. Own the skiff and it lives here for free: row out and cross straight to Sunnyside from your own beach (haul it up the beach before a gale).'},
   {id:'tank',ic:'🛢️',n:'Rain-catch tank',c:950,days:2,who:'the tank installer',d:'A 1,500-gallon tank off the gutters and a small pump. When the well pump quits or the power’s out, you still have water.'},
   {id:'switch',ic:'🔌',n:'Generator transfer switch',c:780,days:2,who:'the electrician',d:'A real inlet and interlock instead of extension cords. 60% fewer failed starts and 25% less gas burned.'},
   {id:'insert',ic:'🔥',n:'Woodstove insert',c:1900,days:3,who:'the stove installer',d:'A certified insert with a liner. Warmer nights (stress −2), a third of the firewood and less propane.'},
