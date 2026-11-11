@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Island Time: An Anderson Island Ferry Game</title>
-<meta name="description" content="Survive a week of island life on Anderson Island, WA: ferry breakdowns, groceries, doctor visits and no gas on the island.">
+<meta name="description" content="Life on Anderson Island, WA, one ferry at a time: live there for a week, a month or a year, play a story year or a weekly challenge, or visit from Seattle, Tacoma or Olympia and catch the last boat home.">
 <meta name="theme-color" content="#12313b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2808,16 +2808,16 @@ function titleScreen(){clearTiles();const showUpdate=updateNotice();
    ${Array.from({length:16},(_,i)=>{const x=i*32-10,h=50+((i*29)%45);return `<polygon points="${x},96 ${x+16},${96-h} ${x+32},96" fill="#2f5d4a"/>`}).join('')}
    <g transform="translate(150,150)"><g class="bob"><rect x="0" y="20" width="170" height="24" rx="4" fill="#f4f1ea"/><rect x="0" y="38" width="170" height="9" fill="#2f5d4a"/><rect x="60" y="2" width="50" height="20" fill="#f4f1ea"/><rect x="65" y="6" width="40" height="7" fill="#2a3d45"/><rect x="80" y="-12" width="9" height="16" fill="#e3642e"/></g></g>
    <path d="M0 210 h480 M0 230 h480" stroke="#fff" stroke-opacity=".1"/></svg></div>
-  <div class="body"><h1>Island Time<span>A week of living on Anderson Island, WA</span></h1>
-  <p>There’s no bridge. One small county ferry connects your island home to your job, the grocery store, the gas pump and your doctor. This week it has to get you through all of it.</p>
-  <ul><li>Work in Lakewood Mon–Fri. Clock in by 9:00.</li><li>Keep food in the pantry. The island’s only store closed this year.</li><li>Keep gas in the car. There’s no gas on the island, and gas cans are banned on the ferry.</li><li>Make your Thursday doctor’s appointment in Tacoma and pick up your prescription.</li><li>Be in the ferry line 20 minutes early. Watch for fog, full boats and breakdowns.</li><li>Trade on the side: import food, medicine and fuel to the island, or take a bigger risk.</li></ul>
+  <div class="body"><h1>Island Time<span>Life on Anderson Island, WA, one ferry at a time</span></h1>
+  <p>There’s no bridge. One small county ferry connects Anderson Island to the jobs, groceries, gas and doctors on the mainland. Live there for a week, a month or a whole year, or come over as a visitor and try to make the last boat home.</p>
+  <ul><li><b>Live on the island:</b> work in Lakewood, keep food in the pantry and gas in the car (there’s no store or gas on the island, and gas cans are banned on the ferry), make your doctor’s appointment, and be in the ferry line 20 minutes early.</li><li><b>Story mode:</b> a year in four chapters: the ferry levy, the storm of the decade, and the co-op that wants to reopen the store.</li><li><b>Visit the island:</b> a day trip, a weekend or a week from Seattle, Tacoma or Olympia. Beat I-5 traffic, see the sights, and catch the last boat home.</li><li><b>Weekly challenge:</b> the same week for everyone. Share your code and compare scores.</li><li><b>Islander, Normal or Ferry Hell:</b> from a forgiving boss and a warming shelter to weekly rent and car trouble.</li><li>Make friends (and the odd enemy), go out in Steilacoom, Lakewood and Tacoma, or trade on the side.</li></ul>
   ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${seasonBadge(d.S)} · ${d.S.story?`Chapter ${(d.S.story.ch|0)+1} of 4 · `:''}${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
   <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
   ${saveNotice?`<div class="hint">⚠️ ${saveNotice}</div>`:''}${exitNotice?`<div class="hint">${exitNotice}</div>`:''}
   <button id="installBtn" class="ghost" style="display:${deferredInstall&&!isStandalone()?'block':'none'}" onclick="doInstall()">📲 Install as an app</button>
   ${!isStandalone()&&isIOS()?'<div class="hint">📲 <b>Play it like an app:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It works offline, too.</div>':''}
-  <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun. The schedule, prices and people are made up. The store closure and the fuel rules are real as of mid-2026.</div></div></div>`);
+  <div class="small-note">Version ${APP_VERSION}. Fictionalized for fun: the islanders are made up. The 2026 ferry schedule and fares, the store closure and the fuel rules are real, and the mainland restaurants and attractions are real places (hours and prices may differ).</div></div></div>`);
   exitNotice='';
   if(showUpdate)showUpdate();
 }
