@@ -21,7 +21,8 @@ function vrepAdd(n,why){if(!visitorOn()||!n)return 0;const v=VS(),r0=v.rep;v.rep
   (v.repLog=v.repLog||[]).unshift({d:day(),n:d,why});v.repLog=v.repLog.slice(0,8);
   say(`${d>0?'🤲':'🗣️'} Island reputation ${d>0?'+':''}${d}${why?`: ${why}`:''}.`);return d}
 // a "buy local" style bonus, once per day per kind
-function vrepOnce(key,n,why){const v=VS(),k=key+'@'+day();v.repDone=v.repDone||{};if(v.repDone[k])return 0;v.repDone[k]=true;return vrepAdd(n,why)}
+function vrepOnce(key,n,why){const v=VS(),k=key+'@'+(v.len==='regular'?dayKey():day());   // a month has four of each weekday
+  v.repDone=v.repDone||{};if(v.repDone[k])return 0;v.repDone[k]=true;return vrepAdd(n,why)}
 const vSeenN=()=>{const v=VS();return v?VSIGHTS.filter(s=>v.seen[s.id]!==undefined).length:0};
 function vSeen(id){const v=VS();if(v&&v.seen[id]===undefined){v.seen[id]=day();const s=VSIGHTS.find(x=>x.id===id);if(s)say(`✅ Sight seen: <b>${s.ic} ${s.n}</b> (${vSeenN()}/${VSIGHTS.length}).`)}}
 
@@ -65,7 +66,7 @@ function vPhoto(s){const v=VS(),P=V_PHOTO[s.id],m=tod(),great=P.ok(m)||!!(v.tips
 
 // ---- random visit events (all deliberate-choice reputation; bad luck never costs reputation) ----
 const vNeighbor=()=>{try{const n=npcPick({notJailed:true});return n&&n.name?n.name:'A neighbor'}catch(e){return 'A neighbor'}};
-const vOn=(extra)=>ctx=>visitorOn()&&!(S.over)&&(!extra||extra(ctx));
+const vOn=(extra)=>ctx=>visitorOn()&&!(S.over)&&(!(typeof regOn==='function'&&regOn())||L[S.loc].side==='I')&&(!extra||extra(ctx));   // weekend regular: the island events stay on the island
 defEvent({id:'v_wave',hook:'arrive',priority:1,max:4,cooldown:1,chance:0.12,cond:vOn(ctx=>!!carHere()&&ctx.at!=='aiDock'),
   run(){modal('👋 The island wave','<p>A pickup comes the other way on the narrow road. The driver lifts two fingers off the wheel. Everybody out here does it.</p>',[
     {l:'Wave back',s:'Reputation +1.',fn:()=>{vrepAdd(1,'waved back like a local');say('👋 You lift two fingers. The driver nods. You feel unreasonably accepted.')}},

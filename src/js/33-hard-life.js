@@ -13,7 +13,7 @@ function hlInit(){return {rent:{wk:-1,owed:0,strikes:0,fees:0,evict:false},car:{
 function HL(){const h=S.hl||(S.hl=hlInit()),d=hlInit();   // fill missing fields in place (keeps references valid)
   for(const k in d){if(!h[k]||typeof h[k]!=='object')h[k]=d[k];else for(const j in d[k])if(h[k][j]===undefined)h[k][j]=d[k][j]}return h}
 {const _bs=baseState;baseState=function(){const s=_bs();s.hl=hlInit();return s}}
-const rentOn=()=>!!S&&LV('rent')>0;
+const rentOn=()=>!!S&&!S.visitor&&LV('rent')>0;   // a visitor's rent is the weekend-regular mode's own (44-regular.js)
 
 // ---- 🏠 rent ----
 function rentOwed(){const R=HL().rent;return (R.wk<(S.weekNo||0)?RENT:0)+R.owed}

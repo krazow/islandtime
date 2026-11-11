@@ -125,6 +125,7 @@ function dockActions(a,side){
     }
   }
 }
+function workPay(v){money(v)}   // a shift's pay: the weekend-regular mode holds it for Friday's paycheck
 function workActions(a,d,m){
   const J=curJob();if(!J) return;
   if(!jobStarted(d)){a.push({ic:'🗓️',l:'You start tomorrow',s:`${J.n}. First day: your next shift day.`,dis:true});return}
@@ -136,7 +137,7 @@ function workActions(a,d,m){
   const lateTxt=lateBy===0?'On time.':lateBy<=30?`${lateBy} min late (job −4)`:`${lateBy} min late (job −10, docked pay)`;
   const pay=lateBy>30?Math.round(J.pay*(1-lateBy/480)):J.pay;
   const start=Math.max(m,J.start),mid=J.start+Math.round((J.end-J.start)*0.6);
-  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:(typeof weatherExcuse==='function'&&weatherExcuse(d))?(lateBy<=30?0:-3):lateBy<=30?-4:-10)); /* season: ice-day lateness is forgiven */adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
+  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;workPay(payAmt);adj('job',jobAdj+(lateBy===0?3:(typeof weatherExcuse==='function'&&weatherExcuse(d))?(lateBy<=30?0:-3):lateBy<=30?-4:-10)); /* season: ice-day lateness is forgiven */adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
   a.push({ic:'💼',l:`Work a full shift (until ${fmt(J.end)})`,s:`${J.n}. ${lateTxt} Pay ${$(pay)}.`,cls:'primary',fn:()=>doShift(J.end,pay,0,lateBy?'You slink in late and work through lunch to make up for it.':'You clock in on time. Your coworkers from the mainland have no idea what that took.')});
   if(start<mid&&J.loc!=='food'&&!J.boat) a.push({ic:'🩺',l:`Work until ${fmt(mid)}, then leave`,s:`Half day. ${d===APPT_DAY&&apptActive()?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(mid,Math.round(pay*0.55),d===APPT_DAY&&apptActive()?-2:-8,`You leave at ${fmt(mid)} with a mumbled explanation.`)});
 }

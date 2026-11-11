@@ -1982,6 +1982,7 @@ function dockActions(a,side){
     }
   }
 }
+function workPay(v){money(v)}   // a shift's pay: the weekend-regular mode holds it for Friday's paycheck
 function workActions(a,d,m){
   const J=curJob();if(!J) return;
   if(!jobStarted(d)){a.push({ic:'🗓️',l:'You start tomorrow',s:`${J.n}. First day: your next shift day.`,dis:true});return}
@@ -1993,7 +1994,7 @@ function workActions(a,d,m){
   const lateTxt=lateBy===0?'On time.':lateBy<=30?`${lateBy} min late (job −4)`:`${lateBy} min late (job −10, docked pay)`;
   const pay=lateBy>30?Math.round(J.pay*(1-lateBy/480)):J.pay;
   const start=Math.max(m,J.start),mid=J.start+Math.round((J.end-J.start)*0.6);
-  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;money(payAmt);adj('job',jobAdj+(lateBy===0?3:(typeof weatherExcuse==='function'&&weatherExcuse(d))?(lateBy<=30?0:-3):lateBy<=30?-4:-10)); /* season: ice-day lateness is forgiven */adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
+  const doShift=(endM,payAmt,jobAdj,msg)=>{S.worked[d]=true;S.late[d]=lateBy;S.stats.workdays=(S.stats.workdays||0)+1;S.t=d*1440+endM;workPay(payAmt);adj('job',jobAdj+(lateBy===0?3:(typeof weatherExcuse==='function'&&weatherExcuse(d))?(lateBy<=30?0:-3):lateBy<=30?-4:-10)); /* season: ice-day lateness is forgiven */adj('stress',lateBy>0?6:2);say(msg+` +${$(payAmt)}.`);afterAction()};
   a.push({ic:'💼',l:`Work a full shift (until ${fmt(J.end)})`,s:`${J.n}. ${lateTxt} Pay ${$(pay)}.`,cls:'primary',fn:()=>doShift(J.end,pay,0,lateBy?'You slink in late and work through lunch to make up for it.':'You clock in on time. Your coworkers from the mainland have no idea what that took.')});
   if(start<mid&&J.loc!=='food'&&!J.boat) a.push({ic:'🩺',l:`Work until ${fmt(mid)}, then leave`,s:`Half day. ${d===APPT_DAY&&apptActive()?'For your doctor’s appointment (job −2).':'Boss won’t love it (job −8).'} Pay ${$(Math.round(pay*0.55))}.`,fn:()=>doShift(mid,Math.round(pay*0.55),d===APPT_DAY&&apptActive()?-2:-8,`You leave at ${fmt(mid)} with a mumbled explanation.`)});
 }
@@ -6199,7 +6200,7 @@ function hlInit(){return {rent:{wk:-1,owed:0,strikes:0,fees:0,evict:false},car:{
 function HL(){const h=S.hl||(S.hl=hlInit()),d=hlInit();   // fill missing fields in place (keeps references valid)
   for(const k in d){if(!h[k]||typeof h[k]!=='object')h[k]=d[k];else for(const j in d[k])if(h[k][j]===undefined)h[k][j]=d[k][j]}return h}
 {const _bs=baseState;baseState=function(){const s=_bs();s.hl=hlInit();return s}}
-const rentOn=()=>!!S&&LV('rent')>0;
+const rentOn=()=>!!S&&!S.visitor&&LV('rent')>0;   // a visitor's rent is the weekend-regular mode's own (44-regular.js)
 
 // ---- 🏠 rent ----
 function rentOwed(){const R=HL().rent;return (R.wk<(S.weekNo||0)?RENT:0)+R.owed}
@@ -6428,6 +6429,7 @@ const VISIT_LENS={
   day:    {n:'Day trip', ic:'☀️', nights:0, d:'Saturday. Catch a morning boat over, see what you can, and make the last boat home.'},
   weekend:{n:'Weekend',  ic:'🏕️', nights:2, d:'Friday evening to Sunday. Two nights in a rental cabin.'},
   week:   {n:'A week',   ic:'🌲', nights:6, d:'Monday to Sunday in a rental cabin. Time to see it all, and to run out of groceries.'},
+  regular:{n:'Weekend regular', ic:'📅', nights:2, d:'A month in your city: job on weekdays, rent on Sundays, the island every weekend. Become an islander.'},   // 44-regular.js
 };
 const VISIT_HOMES={
   seattle:{n:'Seattle', ic:'🏙️', mi:55, i5:1,    d:'About 55 miles up I-5. The worst traffic.'},
@@ -6443,15 +6445,15 @@ const VSIGHTS=[
   {id:'legion', loc:'legion', n:'An event at the Legion',   ic:'🇺🇸'},
 ];
 // when each visit starts (day index: 0 = Monday) and the clock at the start: at your own home (L.vhome) or at the Steilacoom terminal
-const VISIT_START={day:{d:5,home:390,dock:450},weekend:{d:4,home:930,dock:1020},week:{d:0,home:480,dock:540}};
-const VISIT_BUDGET={day:150,weekend:500,week:1200}, VISIT_DIFF_MUL={easy:1.2,normal:1,hard:0.85};
-const VISIT_RATE={day:0,weekend:125,week:90};      // rental cabin, per night (a week gets the weekly rate)
+const VISIT_START={day:{d:5,home:390,dock:450},weekend:{d:4,home:930,dock:1020},week:{d:0,home:480,dock:540},regular:{d:4,home:930,dock:1020}};
+const VISIT_BUDGET={day:150,weekend:500,week:1200,regular:0}, VISIT_DIFF_MUL={easy:1.2,normal:1,hard:0.85};
+const VISIT_RATE={day:0,weekend:125,week:90,regular:85};      // rental cabin, per night (a week gets the weekly rate)
 const VCHECK_IN=900, VCHECK_OUT=660, VLATE_FEE=50; // check-in 3 PM on arrival day, check-out 11 AM on the last day
 const visitorOn=()=>!!(typeof S!=='undefined'&&S&&S.visitor);
 function vsInit(len,home){len=VISIT_LENS[len]?len:'weekend';const st=VISIT_START[len],last=len==='day'?5:6,nights=VISIT_LENS[len].nights;
   return {len,home:home||'tacoma',budget:0,spent:0,photos:{},seen:{},rep:0,packed:0,
   rental:{in:nights?st.d*1440+VCHECK_IN:null,out:nights?last*1440+VCHECK_OUT:null,checkedIn:false,checkedOut:false,inAt:null,outAt:null,trash:false,late:false},done:false,result:null,
-  arr:st.d,last,nights,rate:VISIT_RATE[len]||0,rentalCost:0,fees:0,rules:{},texts:[],islandAt:null,endT:null}}
+  arr:st.d,last,nights,rate:VISIT_RATE[len]||0,rentalCost:0,fees:0,rules:{},texts:[],islandAt:null,endT:null,reg:null}}
 function VS(){if(typeof S==='undefined'||!S||!S.visitor)return null;const v=S.visitor,d=vsInit(v.len,v.home);
   for(const k in d){if(v[k]===undefined)v[k]=d[k];else if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])&&typeof v[k]==='object')for(const j in d[k])if(v[k][j]===undefined)v[k][j]=d[k][j]}
   return v}
@@ -6482,20 +6484,24 @@ const vRental=()=>{const V=VS();return V&&V.rental&&V.rental.in!=null?V.rental:n
 // ======== the rental cabin: L.home reads as the rental while a visit is on ========
 const VRENT={name:'Rental cabin',ic:'🛖'};
 function vRentalDesc(){const V=VS(),R=vRental();
+  if(R&&R.hosted&&!R.checkedOut)return R.checkedIn?`${R.hosted.name.split(',')[0]} is putting you up. A spare room, a dog on the bed, coffee in the morning. Check-out by ${fmt(VCHECK_OUT)} ${DAYS[V.last]}`:`${R.hosted.name.split(',')[0]} said you can stay. The spare room is ready from ${fmt(VCHECK_IN)} ${DAYS[V.arr]}`;
   if(!R)return 'Somebody else’s rental this weekend. A day trip has no cabin.';
   if(R.checkedOut)return 'You’ve checked out. The key is back in the lockbox.';
   if(!R.checkedIn)return `Your rental for the ${VISIT_LENS[V.len].n.toLowerCase()}. Check-in from ${fmt(VCHECK_IN)} ${DAYS[V.arr]}`;
   return `Your rental. Check-out by ${fmt(VCHECK_OUT)} ${DAYS[V.last]}. Quiet after 10 PM, no smoking, trash out when you leave`}
 (function(){const H=L.home,o={name:H.name,ic:H.ic,desc:H.desc};
   for(const k of ['name','ic','desc'])Object.defineProperty(H,k,{configurable:true,enumerable:true,
-    get(){if(!visitorOn())return o[k];return k==='desc'?vRentalDesc():VRENT[k]},set(v){o[k]=v}})})();
+    get(){if(!visitorOn())return o[k];const R=vRental();if(R&&R.hosted&&k!=='desc')return k==='name'?`${R.hosted.name.split(',')[0]}’s spare room`:'🏡';return k==='desc'?vRentalDesc():VRENT[k]},set(v){o[k]=v}})})();
 function vCheckIn(quiet){const V=VS(),R=vRental();if(!R||R.checkedIn)return;R.checkedIn=true;R.inAt=S.t;
   S.pantry+=1;if(S.carried>0&&S.loc==='home'){S.pantry+=S.carried;S.carried=0}
+  if(R.hosted){say(`🏡 ${R.hosted.name.split(',')[0]} meets you at the door with a towel and a plate of something. “Spare room’s yours. Don’t mind the dog.” No rent, no rules, just a very warm house.`);try{regHosted(R)}catch(e){console.error(e)}return}
+  if(typeof regOn==='function'&&regOn()){const c=V.nights*V.rate;money(-c);V.rentalCost+=c;REG().st.cabin+=c;say(`🛖 The weekend regular’s rate: ${$(c)} for two nights, charged to your card.`)}
   say(`🔑 ${quiet?'You find the lockbox in the dark, punch in the code and let yourself in.':'The lockbox code works on the first try.'} The cabin smells like cedar and someone else’s coffee. A welcome basket on the counter: oatmeal, coffee, a jar of island blackberry jam (+1 day of food).`);
   vHostText(`Welcome to the island! Make yourself at home. House rules: quiet after 10 PM, no smoking, and please take the trash to the bin by the road when you leave. Check-out is ${fmt(VCHECK_OUT)} ${DAYS[V.last]}.`)}
 function vCheckOut(trash){const V=VS(),R=vRental();if(!R||R.checkedOut)return;
   S.t+=trash?20:5;R.checkedOut=true;R.outAt=S.t;R.trash=!!trash;
   if(S.pantry>0){S.carried+=S.pantry;S.pantry=0}
+  if(R.hosted){say(`🧳 You strip the bed, carry the dishes to the sink and say your goodbyes. ${R.hosted.name.split(',')[0]} hugs you like you live here.`);try{regHosted(R,true)}catch(e){console.error(e)}return}
   if(!R.late&&S.t>R.out){R.late=true;money(-VLATE_FEE);V.fees+=VLATE_FEE;vHostText(`Hope you enjoyed the stay! Check-out was ${fmt(VCHECK_OUT)}, so there’s a ${$(VLATE_FEE)} late check-out fee.`)}
   say(trash?'🧳 Bags in the car, the dishes put away, two trash bags hauled to the bin by the road. You drop the key in the lockbox.':'🧳 Bags in the car, the key in the lockbox. The trash can stay where it is.');
   if(!trash)vRule('trash');
@@ -6512,6 +6518,7 @@ function vHomeActions(base){const V=VS(),R=vRental(),d=day(),m=tod(),a=[];
     else a.push({ic:'🔑',l:'Check in to the rental cabin',s:'The lockbox code came by text. 10 min.',cls:'primary',fn:()=>{S.t+=10;vCheckIn();afterAction()}});
     return a}
   a.push(...base.filter(x=>V_HOME_KEEP.test(x.l||'')));
+  if(R.hosted){if(d>=V.last)a.push({cat:'here',ic:'🧳',l:'Say goodbye and check out',s:'20 min. No fees, no rules: just good manners.',cls:'primary',fn:()=>{vCheckOut(true);afterAction()}});return a}
   a.push({cat:'here',ic:'📋',l:'Read the house rules',s:'Taped inside the kitchen cabinet.',fn:vRulesModal});
   const late=m>=1320||m<360;
   a.push({cat:'here',ic:'🔥',l:late?'Fire pit and music on the deck (after 10 PM)':'Fire pit and music on the deck',s:late?'1 hour. Stress −8. It’s quiet hours.':'1 hour. Stress −8. Quiet hours start at 10 PM.',
@@ -6524,7 +6531,7 @@ function vHomeActions(base){const V=VS(),R=vRental(),d=day(),m=tod(),a=[];
 
 // ======== no job, no rent, no bills, no house: gate the resident's life off during a visit ========
 const V_DROP=/^(Pay rent|Pay bills|Checks in the mail|Look for a job|Browse job listings|You don’t work here|Trade the Subaru|Order island grocery delivery|Grocery delivery on its way|Backyard coop|Buy a portable generator|Generator (installed|bought)|Pick up prescription|Prescription picked up|Take yourself off the weekend schedule|Post on the co-op board|Mouse traps|Adopt )/;
-function vKeep(x){if(V_DROP.test(x.l||''))return false;let c='';try{c=catOf(x)}catch(e){}
+function vKeep(x){if(typeof regOn==='function'&&regOn())return regKeep(x);if(V_DROP.test(x.l||''))return false;let c='';try{c=catOf(x)}catch(e){}
   if(c==='work'&&!/ankle|Urgent|Nothing urgent/i.test((x.l||'')+' '+(x.s||'')))return false;return true}
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);if(!visitorOn()||S.over)return a;
   try{if(S.loc==='home')return vHomeActions(a);return a.filter(vKeep)}catch(e){console.error(e);return a}}}
@@ -6542,14 +6549,14 @@ function vCabin(){const U=UP();Object.assign(U,{dishes:0,laundry:0,needles:0,bed
   septic:10,gutters:0,limbs:0,well:0,moss:0,pot:0,genSvc:0,propane:100,woodOut:false});U.jobs=(U.jobs||[]).filter(j=>!UP_JOBS[j.k]);S.home=70}
 {const _f=upkeepNight;upkeepNight=function(){if(visitorOn())vCabin();const r=_f.apply(this,arguments);if(visitorOn())vCabin();return r}}
 // house events, raccoons, puppies, work parties: not at a rental
-const V_NO_EV=['leaky_roof','mice','mouse_caught','black_mold','chimney_fire','crawl_flood','limb_roof','septic_backup','clogged_drain','well_quit','friend_dropin','work_party','raccoons','puppy_litter','garage_stuck','sam_groceries','neighbor_ride'];
+const V_NO_EV=['leaky_roof','mice','mouse_caught','black_mold','chimney_fire','crawl_flood','limb_roof','septic_backup','clogged_drain','well_quit','friend_dropin','work_party','raccoons','puppy_litter','garage_stuck','sam_groceries','neighbor_ride','garage_sale'];
 for(const e of EV)if(V_NO_EV.includes(e.id)){const c=e.cond;e.cond=function(ctx){if(visitorOn())return false;return c?c.apply(this,arguments):true}}
 // the day card has no "missed work" for a visitor
-{const _f=dailyCard;dailyCard=function(){const r=_f.apply(this,arguments);return visitorOn()?r.replace(/ · 💼 [^<·]*/,''):r}}
+{const _f=dailyCard;dailyCard=function(){const r=_f.apply(this,arguments);return visitorOn()&&S.visitor.len!=='regular'?r.replace(/ · 💼 [^<·]*/,''):r}}
 
 // ======== to-do: the visit's own list ========
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);if(!visitorOn()||S.over)return it;
-  try{return vTodo(it.filter(x=>/^(Get your ankle treated|Replace the car battery|Pick up your grocery order|Optional: Bingo)/.test(x.l||'')))}catch(e){console.error(e);return it}}}
+  try{if(VS().len==='regular')return regTodo(it);return vTodo(it.filter(x=>/^(Get your ankle treated|Replace the car battery|Pick up your grocery order|Optional: Bingo)/.test(x.l||'')))}catch(e){console.error(e);return it}}}
 function vTodo(keep){const V=VS(),R=vRental(),d=day(),it=[];
   it.push({ok:V.islandAt!=null,fail:false,l:'Get to the island',s:V.islandAt!=null?'⛴️ You made it over.':'⛴️ Drive to the Steilacoom ferry terminal. Be in line 20 minutes before the boat.',urgent:V.islandAt==null});
   if(R){it.push({ok:R.checkedIn,fail:false,l:'Check in at the rental cabin',s:R.checkedIn?'🔑 Checked in.':`🛖 From ${fmt(VCHECK_IN)} ${DAYS[V.arr]}. It’s “Rental cabin” on the island map.`,urgent:!R.checkedIn&&S.t>=R.in&&L[S.loc].side==='I'});
@@ -6566,7 +6573,7 @@ function vTodo(keep){const V=VS(),R=vRental(),d=day(),it=[];
 
 // ======== HUD: visit day instead of "Day 3 of 7", no job meter ========
 function vDayTxt(){const V=VS(),n=V.last-V.arr+1,i=Math.min(n,Math.max(1,day()-V.arr+1));return `🧳 ${VISIT_LENS[V.len].n}${n>1?` · day ${i} of ${n}`:''}`}
-{const _h=hud;hud=function(){let h=_h.apply(this,arguments);if(!visitorOn())return h;try{const V=VS();
+{const _h=hud;hud=function(){let h=_h.apply(this,arguments);if(!visitorOn())return h;try{const V=VS();if(V.len==='regular')return h;
   h=h.replace(/Day \d+ of 7/,vDayTxt());
   h=h.replace(/<div class="stat"><small>Job<\/small><b>[^<]*<\/b><div class="meter"><i[^>]*><\/i><\/div><\/div>/,`<div class="stat"><small>Budget</small><b>${$(Math.max(0,V.budget))}</b>${meter(V.budget>0?clamp(Math.round(S.money/V.budget*100),0,100):0,true)}</div>`);
   const R=vRental();h=h.replace(/<div class="stat" title="Home condition"><small>Home<\/small><b>[^<]*<\/b><div class="meter"><i[^>]*><\/i><\/div><\/div>/,`<div class="stat" title="Rental cabin"><small>Cabin</small><b style="font-size:13px">${!R?'none':R.checkedOut?'out':R.checkedIn?'🔑 in':'later'}</b></div>`)}catch(e){console.error(e)}return h}}
@@ -6574,6 +6581,7 @@ function vDayTxt(){const V=VS(),n=V.last-V.arr+1,i=Math.min(n,Math.max(1,day()-V
 // ======== starting a visit ========
 function visitorNew(len,home,diff,season){
   len=VISIT_LENS[len]?len:'weekend';home=VISIT_HOMES[home]?home:'tacoma';
+  if(len==='regular')return regNew(home,diff,season);
   newGame(diff,'week',season);
   MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
   const V=S.visitor=vsInit(len,home),st=VISIT_START[len],cost=V.nights*V.rate;
@@ -6611,8 +6619,9 @@ function visitMissed(why){const V=VS();if(!V||V.done)return;V.missedWhy=why||'bo
 // after every action: first time on the island, the 11 AM check-out, and the last day
 function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),side=L[S.loc]?L[S.loc].side:'M',R=vRental();
   if(side==='I'&&V.islandAt==null)V.islandAt=S.t;
-  if(R&&R.checkedIn&&!R.checkedOut&&!R.late&&S.t>=R.out){R.late=true;money(-VLATE_FEE);V.fees+=VLATE_FEE;
+  if(R&&R.checkedIn&&!R.checkedOut&&!R.late&&!R.hosted&&S.t>=R.out){R.late=true;money(-VLATE_FEE);V.fees+=VLATE_FEE;
     vHostText(`Hi! Check-out was ${fmt(VCHECK_OUT)} and the cleaner is waiting in the driveway. I’ve charged the ${$(VLATE_FEE)} late check-out fee.`)}
+  if(V.len==='regular')return typeof regTick==='function'?regTick():false;   // 45-regular-weekend.js: each weekend ends when you’re back, the month goes on
   if(d>=V.last){
     if(side==='M'&&V.islandAt!=null){visitEnd('home');return true}
     if(side==='I'&&(S.t>vLastBoatAbs()||vNoBoatLeft())){visitMissed('boat');return true}}
@@ -6621,11 +6630,12 @@ function vTick(){const V=VS();if(!V||V.done||S.over)return false;const d=day(),s
 {const _ed=endDay;endDay=function(where){
   if(!visitorOn()||S.over)return _ed.apply(this,arguments);
   const V=VS(),R=vRental();
-  if(!V.done&&day()>=V.last){if(L[S.loc].side==='I')return visitMissed('night');return visitEnd(V.islandAt!=null?'home':'never')}
+  if(!V.done&&V.len!=='regular'&&day()>=V.last){if(L[S.loc].side==='I')return visitMissed('night');return visitEnd(V.islandAt!=null?'home':'never')}
   if(where==='home'&&R&&!R.checkedIn&&!R.checkedOut&&S.t>=R.in)vCheckIn(true);
   return _ed.apply(this,arguments)}}
 {const _fin=finish;finish=function(){
   if(!visitorOn())return _fin.apply(this,arguments);
+  if(VS().len==='regular')return regFinish();
   const V=VS();if(!V.done){V.done=true;V.result=V.result||(L[S.loc]&&L[S.loc].side==='I'?'missed':'home');V.endT=S.t;V.spent=Math.round((V.budget-S.money)*100)/100}
   MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();S.over=true;
   const T=vEndTitle(V);endScreen(T[0],T[1])}}
@@ -6666,7 +6676,7 @@ function vEndScreen(h1,sub,lost){const V=VS();
 // ======== title screen: 🧳 Visit the island → length → where you live → difficulty ========
 function visitLenModal(then){
   modal('🧳 How long is your visit?','<p>You live on the mainland. Pick a visit: you get a spending budget instead of a job, and the island’s ferry decides the rest.</p>',
-    Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*(VISIT_RATE[k]||0);return {l:`${V.ic} ${V.n}`,s:`${V.d} Budget ${$(VISIT_BUDGET[k])}${c?`, cabin ${$(c)}`:''}.`,fn:()=>then(k)}})
+    Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*(VISIT_RATE[k]||0);return {l:`${V.ic} ${V.n}${k==='regular'?': a month':''}`,s:k==='regular'?V.d:`${V.d} Budget ${$(VISIT_BUDGET[k])}${c?`, cabin ${$(c)}`:''}.`,fn:()=>then(k)}})
     .concat([{l:'Never mind',fn:()=>{}}]))}
 function visitHomeModal(then){
   modal('🏠 Where do you live?','<p>Your visit starts and ends at home. Everyone takes I-5 to the Steilacoom ferry.</p>',
@@ -6691,7 +6701,7 @@ const VGUIDE=[
   {id:'v_lastboat',when:()=>vFinalDay()&&L[S.loc].side==='I',t:()=>`🌙 Last day. ${vRental()&&!vRental().checkedOut?`Check out of the cabin by <b>${fmt(VCHECK_OUT)}</b> and take the trash out. `:''}The <b>last boat</b> off the island leaves at <b>${fmt(vLastBoatAbs())}</b>. Miss it and you’re stuck.`}];
 {const _tv=tipView;tipView=function(){if(!visitorOn())return _tv.apply(this,arguments);
   try{if(!tipsOn()||S.over)return '';const T=tutState();if(T.at===S.t)return '';
-    const t=VGUIDE.find(x=>!T.seen.includes(x.id)&&(()=>{try{return !!x.when()}catch(e){return false}})());if(!t)return '';
+    const t=(VS().len==='regular'&&typeof REG_GUIDE!=='undefined'?REG_GUIDE:VGUIDE).find(x=>!T.seen.includes(x.id)&&(()=>{try{return !!x.when()}catch(e){return false}})());if(!t)return '';
     const txt=typeof t.t==='function'?t.t():t.t;
     return `<div class="tip" role="note" aria-label="Visit tip"><div class="tut-k">🧳 Your visit</div>${txt}<div class="tb"><button onclick="tipSeen('${t.id}')">Got it</button><button onclick="setPref('tips',false);render()">Turn off tips</button></div></div>`}
   catch(e){console.error(e);return ''}}}
@@ -6703,7 +6713,7 @@ const VGUIDE=[
     for(const k in def){if(v[k]===undefined||v[k]===null&&def[k]!==null)v[k]=def[k];else if(def[k]&&typeof def[k]==='object'&&!Array.isArray(def[k])&&v[k]&&typeof v[k]==='object')for(const j in def[k])if(v[k][j]===undefined)v[k][j]=def[k][j]}
     if(!Array.isArray(v.texts))v.texts=[];
     for(const k of ['budget','rep','fees','rentalCost','spent'])v[k]=num(v[k],0);
-    x.mode='week';x.emp=null;x.rx=true;delete x.story}}
+    if(v.len==='regular'){x.mode='month';x.weekNo=Math.max(0,Math.min(3,num(x.weekNo,0)))}else{x.mode='week';x.emp=null;x.rx=true}delete x.story}}
   return r}}
 // ---- 🧳 visitor mode: sights, scoring and visitor reputation (see 36-visitor.js for the shared contract) ----
 // Everything here does nothing unless visitorOn(). New island places (farm, andys, jacobs) live in L all the time, but their
@@ -6728,7 +6738,8 @@ function vrepAdd(n,why){if(!visitorOn()||!n)return 0;const v=VS(),r0=v.rep;v.rep
   (v.repLog=v.repLog||[]).unshift({d:day(),n:d,why});v.repLog=v.repLog.slice(0,8);
   say(`${d>0?'🤲':'🗣️'} Island reputation ${d>0?'+':''}${d}${why?`: ${why}`:''}.`);return d}
 // a "buy local" style bonus, once per day per kind
-function vrepOnce(key,n,why){const v=VS(),k=key+'@'+day();v.repDone=v.repDone||{};if(v.repDone[k])return 0;v.repDone[k]=true;return vrepAdd(n,why)}
+function vrepOnce(key,n,why){const v=VS(),k=key+'@'+(v.len==='regular'?dayKey():day());   // a month has four of each weekday
+  v.repDone=v.repDone||{};if(v.repDone[k])return 0;v.repDone[k]=true;return vrepAdd(n,why)}
 const vSeenN=()=>{const v=VS();return v?VSIGHTS.filter(s=>v.seen[s.id]!==undefined).length:0};
 function vSeen(id){const v=VS();if(v&&v.seen[id]===undefined){v.seen[id]=day();const s=VSIGHTS.find(x=>x.id===id);if(s)say(`✅ Sight seen: <b>${s.ic} ${s.n}</b> (${vSeenN()}/${VSIGHTS.length}).`)}}
 
@@ -6772,7 +6783,7 @@ function vPhoto(s){const v=VS(),P=V_PHOTO[s.id],m=tod(),great=P.ok(m)||!!(v.tips
 
 // ---- random visit events (all deliberate-choice reputation; bad luck never costs reputation) ----
 const vNeighbor=()=>{try{const n=npcPick({notJailed:true});return n&&n.name?n.name:'A neighbor'}catch(e){return 'A neighbor'}};
-const vOn=(extra)=>ctx=>visitorOn()&&!(S.over)&&(!extra||extra(ctx));
+const vOn=(extra)=>ctx=>visitorOn()&&!(S.over)&&(!(typeof regOn==='function'&&regOn())||L[S.loc].side==='I')&&(!extra||extra(ctx));   // weekend regular: the island events stay on the island
 defEvent({id:'v_wave',hook:'arrive',priority:1,max:4,cooldown:1,chance:0.12,cond:vOn(ctx=>!!carHere()&&ctx.at!=='aiDock'),
   run(){modal('👋 The island wave','<p>A pickup comes the other way on the narrow road. The driver lifts two fingers off the wheel. Everybody out here does it.</p>',[
     {l:'Wave back',s:'Reputation +1.',fn:()=>{vrepAdd(1,'waved back like a local');say('👋 You lift two fingers. The driver nods. You feel unreasonably accepted.')}},
@@ -6822,7 +6833,7 @@ function visitScore(){
 // Everything here does nothing unless visitorOn(). L.vhome is the visitor's own place on the mainland.
 L.vhome={side:'M',ic:'🏠',
   get name(){const h=visitorOn()&&VISIT_HOMES[VS().home];return h?`Your place (${h.n})`:'Your place'},
-  get desc(){return 'Home, on the mainland. Pack your food and your bike here, then drive to the Steilacoom ferry.'}};
+  get desc(){return visitorOn()&&VS().len==='regular'?`Home in ${VISIT_HOMES[VS().home].n}: ${REG_CITIES[VS().home].home}. Chores, mail, bills and a bed. Pack your food on Thursday or Friday, then drive to the Steilacoom ferry.`:'Home, on the mainland. Pack your food and your bike here, then drive to the Steilacoom ferry.'}};
 const VT_FOOD_PER_DAY=8;
 function vtHome(){return VISIT_HOMES[VS().home]||VISIT_HOMES.tacoma}
 function vtDriveMin(){return Math.round(vtHome().mi*60/45+3)}          // mi at ~45 mph plus ramps and parking
@@ -6855,7 +6866,7 @@ function vtTrafficRoll(from,to){
   if(Math.random()<0.04+0.06*i5) return {min:30+Math.floor(Math.random()*31),crash:true};
   return {min:Math.round(e.min*(0.5+Math.random())),crash:false};
 }
-const vtTrip=(from,dest)=>visitorOn()&&(from==='vhome'||dest==='vhome');
+const vtTrip=(from,dest)=>visitorOn()&&(from==='vhome'||dest==='vhome'||(typeof regTrip==='function'&&regTrip(from,dest)));
 const _vtTravelOpts=travelOpts;
 travelOpts=function(dest){
   const o=_vtTravelOpts(dest);
@@ -6893,7 +6904,7 @@ go=function(dest,o){
   S.loc=dest;fireHook('arrive',{at:dest,from});afterAction();
 };
 // ---- actions: packing food, the bike, bed at home, a packed lunch, no boat tonight ----
-function vtPack(n){const vs=VS();money(-VT_FOOD_PER_DAY*n);S.carried+=n;vs.packed+=n;S.cooler=true;S.t+=10*n;
+function vtPack(n){const vs=VS(),fromP=(typeof regOn==='function'&&regOn())?Math.min(n,S.pantry):0;S.pantry-=fromP;money(-VT_FOOD_PER_DAY*(n-fromP));S.carried+=n;vs.packed+=n;S.cooler=true;S.t+=10*n;
   say(n>1?`🧊 You fill the cooler: ${n} days of sandwiches, fruit and snacks.`:'🥪 You pack a lunch: a sandwich, an apple and a bag of chips.');afterAction()}
 function vtHostAsk(){
   const vs=VS();vs.asked=day();S.t+=20;
@@ -6943,14 +6954,14 @@ strandedModal=function(){
 //   bank (credit union, bills), gigs (Gig Work + job listings), market (grocery delivery), telehealth (prescriptions/refills),
 //   rides (neighbors driving residents). Kept: Messages, Phone, Clock, App Store, Island Group, Ferry Pass, Tides & Weather.
 const VPHONE_HIDDEN=['bank','gigs','market','telehealth','rides','jobs','landlord','pharmacy'];
-const vphoneHidden=id=>visitorOn()&&VPHONE_HIDDEN.includes(id);
+const vphoneHidden=id=>visitorOn()&&((typeof regOn==='function'&&regOn())?['rides','telehealth','landlord','pharmacy'].includes(id):VPHONE_HIDDEN.includes(id));   // weekend regular: the work apps come back
 {const _pa=phoneApp;phoneApp=function(id){if(id==='visit')return visitorOn()?_pa(id):undefined;if(vphoneHidden(id))return undefined;return _pa(id)}}
 {const _ps=phoneStoreApps;phoneStoreApps=function(){return _ps().filter(a=>a.id!=='visit'&&!vphoneHidden(a.id))}}
 {const _pg=window.phoneGo;window.phoneGo=function(app,arg){if(vphoneHidden(app)||(app==='visit'&&!visitorOn()))return;return _pg(app,arg)}}
 {const _po=window.phoneOpen;window.phoneOpen=function(app,arg){if(vphoneHidden(app)||(app==='visit'&&!visitorOn()))app=null;return _po(app,arg)}}
 {const _pi=phoneInstall;phoneInstall=function(id){if(vphoneHidden(id))return false;return _pi(id)}}
 // a visitor's phone comes ready with the ferry app and the Island Group (once per visit)
-{const _pr=phoneRender;phoneRender=function(){if(visitorOn()&&PH_OPEN){const P=PH();if(!P.vready){P.vready=1;for(const id of['ferrypass','group'])if(_ppA(id)&&!P.apps.includes(id)&&P.apps.length<PHONE_SLOTS)P.apps.push(id)}}
+{const _pr=phoneRender;phoneRender=function(){if(visitorOn()&&PH_OPEN){const P=PH();if(!P.vready){P.vready=1;for(const id of(typeof regOn==='function'&&regOn()?['ferrypass','group','bank','gigs']:['ferrypass','group']))if(_ppA(id)&&!P.apps.includes(id)&&P.apps.length<PHONE_SLOTS)P.apps.push(id)}}
   return _pr.apply(this,arguments)}}
 function _ppA(id){return PHONE_APPS.find(a=>a.id===id)}
 const VSIGHT_CAP={lake:'Bald eagles over the lake.',farm:'Old barns and a tractor at the Johnson Farm.',andys:'Tall trees at Andy’s Wild Wood Park.',jacobs:'The water from Jacobs Point.',riv:'A burger at the Riv.',legion:'Flags and folding chairs at the Legion.'};
@@ -7130,6 +7141,572 @@ defFun({id:'tc_grand',town:'Tacoma',kind:'fun',name:'The Grand Cinema',ic:'🎬'
   acts:[
     {l:'See a film',s:'Adult ticket $13. Stress −10.',min:130,cost:13,stress:-10,done:'You see an indie film that is subtitled and mostly about a lighthouse. You enjoy it'},
     {l:'Film, popcorn and a soda',s:'Adult ticket $13 plus snacks. Stress −11.',min:135,cost:20,stress:-11,done:'A film, a big bucket of popcorn and a soda, in the dark where nobody can find you'}]});
+// ---- 📅 Weekend regular: a month living on the mainland, working weekdays, spending weekends on the island ----
+// A visit mode (S.visitor is set, VS().len==='regular') that is also a month (S.mode==='month', 4 weeks, S.weekNo 0..3).
+// Files: 44 core (state, start, city places and commute, the job, rent, bills, chores, paycheck, vacation days, the month's end)
+//        45 weekends (rental per weekend, hosts, stranded nights, the boss, invitations, friends) · 46 goal (the house, endings,
+//        the handoff to a resident game, the Visit app, to-do list)
+// State: VS().reg = {city, wk..., pend (pay waiting for Friday), vac (vacation days left), rent{}, bills{}, chores{}, W{this weekend}, ...}
+// API: regOn() · REG() · REG_CITIES · REG_GOAL · regNew(home,diff,season) · regCityHere() · regRentOwed() · regLose(kind,title,sub)
+const REG_WEEKS=4, REG_VAC=5;
+const REG_GOAL={money:4000,rep:40,friends:3}, REG_DOWN=3500;
+const REG_START={easy:3500,normal:3000,hard:2500};          // savings you begin the month with
+const REG_CITIES={
+  seattle:{n:'Seattle', rent:450,commute:40,jobs:['r_sea','r_sea2'],noisy:0.22,theft:0.04,home:'a small apartment',lord:'Mr. Park, your landlord',util:62,
+    d:'A small apartment, $450 a week. The best pay, the worst commute and a noisy upstairs neighbor.'},
+  tacoma: {n:'Tacoma',  rent:325,commute:20,jobs:['r_tac','r_tac2'],noisy:0.04,theft:0.05,home:'a rented house',lord:'Darlene, your landlord',util:95,
+    d:'A rented house, $325 a week. A short commute and a short drive to the ferry.'},
+  olympia:{n:'Olympia', rent:300,commute:15,jobs:['r_oly','r_oly2'],noisy:0.1,theft:0.03,home:'a duplex',lord:'Ed, your landlord',util:78,
+    d:'One side of a duplex, $300 a week. Steady state-office hours and lighter traffic.'}};
+const REG_BILLS={
+  phone:{ic:'📱',n:'Phone',who:'your phone carrier',amt:()=>55,fee:10,coll:25,w:0,d:3},
+  util:{ic:'💡',n:'Utilities',who:'City Light & Water',amt:()=>(REG_CITIES[VS().home]||REG_CITIES.tacoma).util,fee:12,coll:30,w:1,d:2},
+  ins:{ic:'🚗',n:'Car insurance',who:'Evergreen Mutual',amt:()=>88,fee:15,coll:35,w:2,d:1}};
+const REG_RENT_LATE=25, REG_RENT_EVICT=3;
+JOBS.r_sea={n:'Office job, downtown Seattle',loc:'rwork',start:510,end:1020,pay:205,days:[0,1,2,3,4],reg:'seattle',pitch:'8:30–5:00 weekdays. The best pay in the region and the worst commute.'};
+JOBS.r_sea2={n:'Warehouse, SoDo (Seattle)',loc:'rwork',start:390,end:900,pay:180,days:[0,1,2,3,4],reg:'seattle',pitch:'6:30–3:00 weekdays. Early start, lighter traffic, lower pay.'};
+JOBS.r_tac={n:'Records clerk, Tacoma hospital',loc:'rwork',start:510,end:990,pay:195,days:[0,1,2,3,4],reg:'tacoma',pitch:'8:30–4:30 weekdays. A short commute.'};
+JOBS.r_tac2={n:'Dispatch clerk, Port of Tacoma',loc:'rwork',start:420,end:930,pay:180,days:[0,1,2,3,4],reg:'tacoma',pitch:'7:00–3:30 weekdays. You’re home before the rush.'};
+JOBS.r_oly={n:'Clerk, state office (Olympia)',loc:'rwork',start:480,end:990,pay:185,days:[0,1,2,3,4],reg:'olympia',pitch:'8:00–4:30 weekdays. Steady hours, steady pay, every day the same.'};
+JOBS.r_oly2={n:'Bookstore, downtown Olympia',loc:'rwork',start:600,end:1110,pay:150,days:[0,1,2,3,4],reg:'olympia',pitch:'10:00–6:30 weekdays. Slow mornings, lower pay.'};
+const regOn=()=>{try{return visitorOn()&&S.visitor.len==='regular'}catch(e){return false}};
+const regCity=()=>REG_CITIES[(typeof VS==='function'&&VS()&&VS().home)||'tacoma']||REG_CITIES.tacoma;
+function regInit(home){return {city:home||'tacoma',pend:0,paidWk:-1,vac:REG_VAC,vacDays:{},sick:{},hadJob:true,
+  rent:{wk:-1,owed:0,strikes:0,fees:0,evict:false},bills:{},mail:0,mailRead:0,chores:{dishes:0,laundry:0,trash:0},cityFood:0,swapped:false,
+  W:{on:false,done:false,n:0,rep0:0,money0:0,friends0:0,host:null,invDone:false},weekends:0,hist:[],start:0,earplugs:false,
+  goalAt:-1,offered:false,house:null,inv:null,bossAt:{},cw:{},texted:{},
+  st:{earned:0,rent:0,bills:0,cabin:0,vacUsed:0,sickDays:0,missed:0,stranded:0,bossAnswered:0,bossIgnored:0,early:0,lateFees:0,theft:0,noisy:0,hosted:0,dinners:0,events:0,help:0}}}
+function REG(){const V=VS();if(!V.reg)V.reg=regInit(V.home);return fillDefaults(V.reg,regInit(V.home))}
+const regWk=()=>S.weekNo||0;
+const regDk=()=>regWk()*7+day();
+
+// ======== the city: where you live, work and shop (places exist only in this mode) ========
+const REG_LOCS=['rwork','rmarket'];
+L.rwork={ic:'💼',get side(){return regOn()?'M':'X'},
+  get name(){const J=curJob()||(S&&S.interview&&JOBS[S.interview.job]);return J?J.n:'Your workplace'},
+  get desc(){const J=curJob();return J?`Your job in ${regCity().n}. Clock in by ${fmt(J.start)}.`:'Where you work.'},
+  hours:d=>d<5?[360,1230]:null};
+L.rmarket={ic:'🛒',get side(){return regOn()?'M':'X'},
+  get name(){return `Supermarket & gas (${regCity().n})`},desc:'Close to home, normal prices. Gas pumps out front and a pharmacy counter in the back.',hours:()=>[360,1380]};
+const _rgDist=dist;
+dist=function(a,b){
+  if(a===b)return 0;
+  const ra=REG_LOCS.includes(a),rb=REG_LOCS.includes(b);
+  if(!ra&&!rb)return _rgDist(a,b);
+  const x=ra?a:b,o=ra?b:a;
+  if(REG_LOCS.includes(o))return 9;
+  if(o==='vhome')return x==='rwork'?regCity().commute:6;
+  return _rgDist('vhome',o)+(x==='rmarket'?2:0);       // work and the market sit about where home does, as far as the ferry goes
+};
+// the city jobs are only for the month, in your city; the month has no resident jobs
+{const _je=jobEligible;jobEligible=function(k){const J=JOBS[k];if(J&&J.reg)return regOn()&&VS().home===J.reg&&_je.apply(this,arguments);if(regOn())return false;return _je.apply(this,arguments)}}
+{const _t=vtTraffic;vtTraffic=function(from,to){const r=_t.apply(this,arguments);
+  try{if(regOn()&&(REG_LOCS.includes(from)||REG_LOCS.includes(to))){r.txt=r.min<=5?`Traffic: ${r.why}.`:`Traffic: ${r.why}, +${r.min} min`}}catch(e){}return r}}
+{const _r=vtTrafficRoll;vtTrafficRoll=function(from,to){
+  if(regOn()&&(REG_LOCS.includes(from)||REG_LOCS.includes(to))){const e=vtTraffic(from,to,S.t);
+    if(Math.random()<0.012*vtHome().i5)return {min:25+Math.floor(Math.random()*25),crash:true};
+    return {min:Math.round(e.min*(0.5+Math.random())),crash:false}}
+  return _r.apply(this,arguments)}}
+const regTrip=(from,dest)=>regOn()&&(REG_LOCS.includes(from)||REG_LOCS.includes(dest));
+// coming home with groceries stocks the pantry
+{const _go=go;go=function(dest,o){const from=S.loc,r=_go.apply(this,arguments);
+  try{if(regOn()&&S.loc==='vhome'&&from!=='vhome'&&S.carried>0){const n=S.carried;S.pantry+=n;S.carried=0;say(`🛒 You unload ${n} day${n>1?'s':''} of food into the pantry.`);render()}}catch(e){console.error(e)}return r}}
+
+// ======== starting the month ========
+function regNew(home,diff,season){
+  home=VISIT_HOMES[home]?home:'tacoma';
+  newGame(diff,'month',season);
+  MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
+  const V=S.visitor=vsInit('regular',home),R=V.reg=regInit(home),C=REG_CITIES[home];
+  V.budget=REG_START[S.diff]||REG_START.normal;R.start=V.budget;V.rentalCost=0;
+  Object.assign(S,{emp:C.jobs[0],job:70,interview:null,rx:false,appt:false,apptMissed:false,injury:null,injuryRolled:true,pantry:3,carried:0,home:85,homeLow:false,homeGas:0,homeDiesel:0,gen:null,delivery:null,prios:[]});
+  S.empStart=0;vCabin();
+  S.money=V.budget;
+  S.cars=[{id:'isl',name:'Your car',loc:'vhome',fuel:12,tank:14,diesel:false}];
+  S.loc='vhome';S.cur=0;S.t=390;S.phoneT=S.t;S.phone=100;
+  S.alarm={plug:{on:false,time:420},phone:{on:true,time:420}};
+  uiNarr=[];S.log=[];S.ev.force=[];
+  regWeekInit();
+  const H=VISIT_HOMES[home];
+  say(`📅 <b>Weekend regular.</b> Monday, ${fmt(S.t)}. You live in ${H.n}, in ${C.home}. The job is here. The island is for weekends.`);
+  say(`💵 You start the month with ${$(S.money)} in savings. Rent is ${$(C.rent)} a week, due Sunday.`);
+  startDay();
+  S.log=S.log.filter(e=>!/^🏠 Rent/.test(String(e.s)));uiNarr=uiNarr.filter(x=>!/^🏠 Rent/.test(String(x)));
+  regIntroModal();
+  try{showTile('📅','Weekend regular',`${H.n} · week 1 of ${REG_WEEKS}`,'info')}catch(e){}
+  saveGame();
+}
+window.regNew=regNew;
+function regIntroModal(){const V=VS(),C=regCity(),H=VISIT_HOMES[V.home];
+  const jobs=C.jobs.map(k=>({l:`${JOBS[k].n}: ${$(JOBS[k].pay)}/day`,s:`${JOBS[k].pitch} Commute ${C.commute} min.`,fn:()=>{S.emp=k;S.job=70;say(`💼 Your job: <b>${JOBS[k].n}</b>, ${fmt(JOBS[k].start)}–${fmt(JOBS[k].end)}.`);render()}}));
+  modal(`📅 Your month: ${H.ic} ${H.n}`,`<p>You live in ${H.n} and work weekdays. Friday evening you catch the boat. Sunday you’re back on the mainland for work. Four weeks, and the island has to <i>want</i> you.</p>
+    <ul><li>💰 <b>Save ${$(REG_GOAL.money)}</b> after rent and bills.</li><li>🤝 <b>Island reputation ${REG_GOAL.rep}+</b>: be the person who helps.</li><li>👥 <b>${REG_GOAL.friends} island friends.</b></li></ul>
+    <p>Do all three and a house comes up in the Island Group. Rent (${$(C.rent)}) is due every Sunday night, paychecks land on Fridays, and you have <b>${REG_VAC} vacation days</b> for a Friday or Monday off.</p><p>Pick your job:</p>`,
+    jobs.concat([{l:'Keep the first one',fn:()=>{}}]));}
+// the Monday morning wake-up in a month with a job: fresh week state for the weekend visit
+function regWeekInit(){const V=VS(),R=REG();
+  V.arr=4;V.last=6;V.nights=2;V.rate=VISIT_RATE.regular;V.islandAt=null;V.packed=0;V.asked=undefined;V.endT=null;V.done=false;V.result=null;V.texts=V.texts||[];
+  V.rental={in:4*1440+VCHECK_IN,out:6*1440+VCHECK_OUT,checkedIn:false,checkedOut:false,inAt:null,outAt:null,trash:false,late:false,hosted:null};
+  R.W={on:false,done:false,n:regWk(),rep0:V.rep,money0:null,friends0:Object.keys(S.friends||{}).length,host:null,invDone:false,spent:0};
+  R.inv=null}
+
+// ======== week and day rollovers ========
+{const _wr=weekRollover;weekRollover=function(notes){const r=_wr.apply(this,arguments);try{if(regOn()){regWeekInit();S.rx=false;
+  notes.push(`🗓️ A new week in ${regCity().n}. Week ${regWk()+1} of ${REG_WEEKS}.`)}}catch(e){console.error(e)}return r}}
+{const _sd=startDay;startDay=function(){const r=_sd.apply(this,arguments);try{if(regOn()&&!S.over)regMorning()}catch(e){console.error(e)}return r}}
+function regMorning(){const R=REG(),d=day(),dk=regDk(),J=curJob(),C=regCity();
+  if(d===0)say(`🏙️ Monday in ${C.n}. ${J?`Work starts at ${fmt(J.start)}. `:''}Week ${regWk()+1} of ${REG_WEEKS}: ${REG_VAC-R.vac} vacation day${REG_VAC-R.vac===1?'':'s'} used, ${R.vac} left.`);
+  if(R.vacDays[dk]&&J&&J.days.includes(d)&&!S.worked[d]){regVacApply(dk)}
+  if(d===4)say('📅 Friday. Paycheck at 5:00 PM. Catch an evening boat if you want the weekend: the last one off the mainland is at 10:20 PM.');
+}
+function regVacApply(dk){const R=REG(),d=day(),J=curJob();if(!J)return;S.worked[d]=true;S.late[d]=0;R.pend+=J.pay;R.st.vacUsed++;
+  say(`🏖️ A paid vacation day. ${$(J.pay)} on Friday’s paycheck all the same.`)}
+function regVacCan(){const R=REG(),d=day(),J=curJob(),m=tod();return !!J&&R.vac>0&&J.days.includes(d)&&(d===0||d===4)&&!S.worked[d]&&!R.vacDays[regDk()]&&m<J.start+240&&jobStarted(d)}
+function regVacTake(){const R=REG(),d=day(),J=curJob();if(!regVacCan())return;R.vac--;R.vacDays[regDk()]=true;S.t+=5;phoneTick();
+  S.worked[d]=true;S.late[d]=0;R.pend+=J.pay;R.st.vacUsed++;adj('stress',-4);
+  say(`🏖️ You email the boss: a vacation day. (${R.vac} left of ${REG_VAC}.) Paid, and it feels illegal.`);afterAction()}
+function regVacTomorrow(){const R=REG(),d=day(),J=curJob();if(!J||R.vac<=0||d!==3||!J.days.includes(4)||R.vacDays[regWk()*7+4])return;
+  R.vac--;R.vacDays[regWk()*7+4]=true;S.t+=5;phoneTick();say(`🏖️ Friday is a vacation day. (${R.vac} left of ${REG_VAC}.) You can catch an early boat.`);afterAction()}
+function regSickCan(){const J=curJob(),d=day();return !!J&&J.days.includes(d)&&d<5&&!S.worked[d]&&S.health<45&&!REG().sick[regDk()]&&tod()<J.start+240}
+function regSick(){const R=REG(),d=day();if(!regSickCan())return;R.sick[regDk()]=true;R.st.sickDays++;S.worked[d]=true;S.late[d]=0;S.t+=10;phoneTick();adj('job',-2);adj('health',4);adj('stress',-3);
+  say('🤒 You call in sick. No pay for the day, and your boss sounds more tired than you do.');afterAction()}
+
+// ======== the job: paychecks, early Friday exit, commute stress ========
+function workPay(v){money(v)}
+{const _w=workPay;workPay=function(v){if(regOn()){const R=REG();R.pend+=v;R.st.earned+=v;return}return _w.apply(this,arguments)}}
+function regPaycheck(force){if(!regOn()||S.over)return;const R=REG(),d=day();
+  if(R.paidWk===regWk())return;
+  if(!(d>4||(d===4&&(tod()>=1020||force))))return;
+  R.paidWk=regWk();const amt=Math.round(R.pend);R.pend=0;
+  if(amt>0){money(amt);say(`💵 <b>Paycheck:</b> ${$(amt)} direct-deposited.`);try{phoneNotify('💵','Paycheck',$(amt))}catch(e){}}
+  else say('💵 Payday, and the check is $0. You didn’t work this week.')}
+{const _w=workActions;workActions=function(a,d,m){const r=_w.apply(this,arguments);
+  try{if(regOn()){const J=curJob();
+    if(d===4&&J&&!S.worked[d]&&jobStarted(d)&&J.days.includes(4)&&m>=J.start&&m<780){
+      const pay=Math.round(J.pay*0.55),cut=d*1440+780;
+      a.push({ic:'⛴️',l:'Leave work early for the boat (1:00 PM)',s:`Pay ${$(pay)}. Boss won’t love it (job −6). Beat the Friday getaway traffic.`,fn:()=>{const R=REG(),late=Math.max(0,m-J.start);
+        S.worked[d]=true;S.late[d]=late;S.t=Math.max(S.t,cut);workPay(pay);adj('job',-6);adj('stress',2);R.st.early++;
+        say('⛴️ “Doctor’s appointment,” you tell the boss, with an island in your eyes. You’re out the door at 1:00.');afterAction()}})}}}catch(e){console.error(e)}
+  return r}}
+
+// ======== rent (every difficulty in this mode) ========
+const regRentOwed=()=>{const R=REG();return (R.rent.wk<regWk()?regCity().rent:0)+R.rent.owed};
+function regRentPay(){const R=REG(),amt=regRentOwed(),nm=regCity().lord.split(',')[0];if(!amt||!phoneCan())return;
+  money(-amt);const late=R.rent.owed>0;R.rent.owed=0;R.rent.wk=regWk();R.rent.strikes=0;R.rent.evict=false;R.st.rent+=amt;S.t+=5;phoneTick();adj('stress',late?-4:-1);
+  say(late?`🏠 You pay ${nm} ${$(amt)}: the back rent and the late fee. “Thank you. Really.”`:`🏠 Rent paid: ${$(amt)} to ${nm}. A roof for another week.`);afterAction()}
+function regRentNight(notes,d){
+  if(d!==6)return;
+  const R=REG(),wk=regWk(),C=regCity(),nm=C.lord.split(',')[0];
+  if(R.rent.wk>=wk&&!R.rent.owed){R.rent.strikes=0;return}
+  if(R.rent.wk<wk){R.rent.owed+=C.rent;R.rent.wk=wk}
+  R.rent.owed+=REG_RENT_LATE;R.rent.fees+=REG_RENT_LATE;R.rent.strikes++;S.stats.lateBills=(S.stats.lateBills||0)+1;R.st.lateFees+=REG_RENT_LATE;
+  if(R.rent.strikes===1){adj('stress',4);notes.push(`🏠 📱 Text from ${nm}: “Rent didn’t come through this week. I added the ${$(REG_RENT_LATE)} late fee. You owe ${$(R.rent.owed)} now.”`)}
+  else if(R.rent.strikes===2){adj('stress',12);notes.push(`🏠 ⚠️ An envelope on your door: <b>NOTICE TO PAY RENT OR VACATE</b>. ${$(R.rent.owed)} owed. ${nm} wrote on it in pen: “Please. By Sunday.”`)}
+  else{R.rent.evict=true;adj('stress',20);notes.push(`🏠 Three Sundays without rent. ${nm} has filed for eviction.`)}}
+// ======== bills: statements come by mail; pay online or mail a check ========
+const regBillDue=k=>REG_BILLS[k].w*7+REG_BILLS[k].d;
+const RB=k=>{const b=REG().bills;return b[k]||(b[k]={paid:false,late:0,fees:0,check:-1})};
+const regBillAmt=k=>REG_BILLS[k].amt();
+const regBillOwed=k=>regBillAmt(k)+RB(k).fees;
+const regBillsOpen=()=>Object.keys(REG_BILLS).filter(k=>!RB(k).paid&&RB(k).check<0&&regDk()>=regBillDue(k)-6);
+const regBillsUnpaid=()=>Object.keys(REG_BILLS).filter(k=>!RB(k).paid);
+const regBillTxt=k=>{const dd=regBillDue(k)-regDk();return dd<0?`${-dd} day${dd===-1?'':'s'} late`:dd===0?'due today':dd===1?'due tomorrow':`due ${DAYS[regBillDue(k)%7]}`};
+function regBillPay(k,how){const b=RB(k),B=REG_BILLS[k],amt=regBillOwed(k),R=REG();
+  if(how==='online'){money(-amt);b.paid=true;R.st.bills+=amt;S.t+=5;phoneTick();adj('stress',-1);say(`${B.ic} Paid ${B.who}: ${$(amt)}, online.`)}
+  else{money(-(amt+0.78));b.check=regDk()+2;R.st.bills+=amt;S.t+=10;say(`✉️ A check for ${$(amt)} to ${B.who} goes in the mailbox. It should arrive in two days${regDk()+2>regBillDue(k)?', which is after it’s due':''}.`)}}
+function regBillsModal(){const ks=regBillsOpen(),ph=phoneCan(),opts=[];
+  ks.forEach(k=>{const B=REG_BILLS[k];
+    opts.push({l:`${B.ic} Pay ${B.n.toLowerCase()} online: ${$(regBillOwed(k))}`,s:`${B.who}, ${regBillTxt(k)}. 5 min.${ph?'':' Your phone is dead.'}`,dis:!ph,fn:()=>{regBillPay(k,'online');afterAction()}});
+    opts.push({l:`✉️ Mail a check for the ${B.n.toLowerCase()} bill`,s:`2 days to get there${regDk()+2>regBillDue(k)?': it’ll arrive late':''}. 10 min.`,fn:()=>{regBillPay(k,'mail');afterAction()}})});
+  if(ks.length>1&&ph)opts.unshift({l:`💻 Pay them all online: ${$(ks.reduce((s,k)=>s+regBillOwed(k),0))}`,s:`${ks.length} bills, 5 minutes each.`,fn:()=>{ks.forEach(k=>regBillPay(k,'online'));afterAction()}});
+  modal('🧾 Bills',`<p>The bills come by mail while you’re on the island. Late means a fee, and after two weeks, collections.</p>${ks.length?'':'<p><i>Nothing due right now.</i></p>'}`,opts.concat([{l:'Not now',fn:()=>{}}]))}
+function regBillsNight(notes,dk){
+  for(const k in REG_BILLS){const b=RB(k),B=REG_BILLS[k],due=regBillDue(k);if(b.paid)continue;
+    if(b.check>=0&&b.check<=dk){b.paid=true;continue}
+    if(dk<due)continue;
+    b.late++;if(b.late===1){S.stats.lateBills=(S.stats.lateBills||0)+1;REG().st.lateFees+=B.fee;
+      if(b.check>=0){money(-B.fee);notes.push(`${B.ic} Your check to ${B.who} is still in the mail, and they don’t care: ${$(B.fee)} late fee.`)}
+      else{b.fees+=B.fee;notes.push(`${B.ic} The ${B.n.toLowerCase()} bill was due and you didn’t pay it. ${B.who} adds a ${$(B.fee)} late fee.`)}adj('stress',3)}
+    else if(b.late>=14&&b.check<0){const amt=regBillOwed(k)+B.coll;money(-amt);b.paid=true;adj('stress',2);notes.push(`${B.ic} ${B.who} sent the bill to collections and charged your card ${$(amt)} with a ${$(B.coll)} fee on top.`)}}}
+// ======== the mailbox: it fills up while you’re away ========
+function regMailHere(){return REG().mail}
+function regReadMail(){const R=REG(),n=R.mail,open=regBillsOpen();S.t+=8;R.mail=0;R.mailRead=regDk();
+  const lines=[];for(const k of open){const B=REG_BILLS[k];lines.push(`${B.ic} A statement from ${B.who}: <b>${$(regBillOwed(k))}</b>, ${regBillTxt(k)}.`)}
+  const junk=['🍕 A pizza flyer for a place that closed in March.','🗳️ A glossy mailer about a ballot measure you can’t vote on.','📰 A catalog of heated socks.','💌 A postcard from your sister: “Come visit!”'];
+  for(let i=0;i<Math.min(3,Math.max(0,n-lines.length));i++)lines.push(junk[(regDk()+i)%junk.length]);
+  say(`📬 You sort ${n} piece${n===1?'':'s'} of mail.`);
+  modal('📬 The mailbox',lines.length?lines.map(l=>`<p>${l}</p>`).join(''):'<p>Nothing but a coupon for oil changes.</p>',[{l:'OK',fn:()=>{}}]);afterAction()}
+// ======== chores at home: light, but they add up ========
+const REG_CHORES={dishes:{ic:'🍽️',l:'Do the dishes',min:20,st:-1,n:'The sink is full.',done:'Dishes done. The sink gleams.'},laundry:{ic:'🧺',l:'Do a load of laundry',min:45,st:-1,n:'The hamper is a mountain.',done:'Laundry done, folded and put away. Nobody is more surprised than you.'},trash:{ic:'🗑️',l:'Take out the trash',min:10,st:0,n:'The bin is overflowing.',done:'Trash out to the curb.'}};
+function regChoreDo(k){const R=REG(),c=REG_CHORES[k];R.chores[k]=0;S.t+=c.min;adj('stress',c.st);regHomeCalc();say(`${c.ic} ${c.done}`);afterAction()}
+function regHomeCalc(){const R=REG(),c=R.chores;S.home=clamp(Math.round(92-c.dishes*8-c.laundry*5-c.trash*6),0,100)}
+// ======== the night in the city ========
+function regNight(where,notes,d){
+  const R=REG(),C=regCity(),dk=regDk();
+  // mail piles up (none on Sundays)
+  if(d!==6)R.mail++;
+  // bills and rent
+  regBillsNight(notes,dk);regRentNight(notes,d);
+  // chores pile up faster when you’re home
+  const home=where==='vhome',inc=home?1:0.3;
+  for(const k in R.chores)R.chores[k]=Math.min(5,Math.round((R.chores[k]+inc*(k==='laundry'?0.6:1))*10)/10);
+  regHomeCalc();
+  if(home){adj('stress',-nightRec(6));
+    if(S.home<40){adj('stress',4);notes.push('🏠 The place is a mess and it’s hard to relax. Dishes, laundry, trash: a few chores would help.')}}
+  // nuisances: the neighbor and the porch
+  if(home&&Math.random()<C.noisy*(R.earplugs?0.4:1)){R.st.noisy++;adj('stress',6);adj('health',-1);notes.push(where==='vhome'&&C===REG_CITIES.seattle?'🔊 The upstairs neighbor drags furniture until 1 AM. You stare at the ceiling. You don’t sleep well.':'🔊 Somebody’s party goes until 1 AM next door. You don’t sleep well.')}
+  const away=where!=='vhome'&&d>=4;
+  if((away||Math.random()<0.25)&&Math.random()<C.theft*(away?2:1)){const loss=S.money>200?38:0;
+    if(loss){money(-loss);R.st.theft++;adj('stress',4);notes.push(`📦 A package you ordered was stolen off the porch. A replacement from the store comes to ${$(loss)}.`)}}
+  // the phone charges overnight at home
+  if(home)S.phone=100;
+}
+{const _up=upkeepNight;upkeepNight=function(where,notes,d){const r=_up.apply(this,arguments);try{if(regOn())regNight(where,notes,d)}catch(e){console.error(e)}return r}}
+{const _ed=endDay;endDay=function(where){
+  if(!regOn()||S.over)return _ed.apply(this,arguments);
+  const d=day(),wasEmp=!!S.emp,R=REG(),at=S.loc;
+  try{regPaycheck(true)}catch(e){console.error(e)}
+  let r=_ed.apply(this,arguments);
+  try{if(S.over)return r;
+    const car=S.cars[0];
+    {
+      if(where==='vhome'){S.loc='vhome';if(car&&car.loc!=='vhome'&&car.loc!=='stDock')car.loc='vhome'}
+      else if(L[at]&&L[at].side==='I'&&where!=='home'){S.loc='aiDock'}}
+    if(wasEmp&&!S.emp&&!S.over){return regLose('fired','You’re fired',`Your boss has run out of patience. Without the paycheck there’s no rent, no cabin and no island. The month ends here.`)}
+    if(R.rent.evict&&!S.over){return regLose('evicted','Evicted',`Three Sundays without rent. ${regCity().lord.split(',')[0]} is apologetic, a friend helps you load the boxes, and the island will have to wait.`)}
+    render()}catch(e){console.error(e)}
+  return r}}
+
+// ======== the city home and the supermarket: actions ========
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);if(!regOn()||S.over)return a;
+  try{return regActions(a)}catch(e){console.error(e);return a}}}
+function regActions(a){const loc=S.loc,d=day(),m=tod(),R=REG(),C=regCity(),J=curJob(),out=[];
+  const mainland=L[loc]&&L[loc].side==='M';
+  for(const x of a){ // the visitor's "sleep in your own bed" is replaced below; packing food only on Thursday and Friday
+    if(/^Sleep in your own bed/.test(x.l||''))continue;
+    if(/^(Pack food|Pack a lunch)/.test(x.l||'')&&!(d===3||d===4))continue;
+    out.push(x)}
+  if(loc==='vhome'){
+    out.push({cat:'phone',ic:'⏰',l:`Alarm: ${alarmTxt()}`,s:'Tap to change the time. Your phone is the alarm in the city.',fn:alarmModal});
+    if(S.phone<90)out.push({cat:'phone',ic:'🔋',l:`Charge your phone (${S.phone}%)`,s:'45 minutes on the charger: +60%.',fn:()=>{S.t+=45;phoneTick();S.phone=Math.min(100,S.phone+60);say('🔋 Phone charged up.');afterAction()}});
+    out.push({cat:'home',ic:'🛏️',l:m>=1080?'Go to bed':'Turn in early',s:`Ends the day. Eats 1 day of food (pantry: ${S.pantry}). Alarm: ${alarmTxt()}.`,cls:m>=1260?'primary':'',fn:()=>endDay('vhome')});
+    if(m<1260){const rn=U_REST(),gain=[8,5,3][rn]??1;out.push({cat:'home',ic:'☕',l:'Rest for an hour',s:`Stress −${gain}.${rn>=2?' Diminishing returns.':''}`,fn:()=>{S.t+=60;adj('stress',-gain);S.rest={k:dayKey(),n:rn+1};say('You put your feet up and watch the rain on the window.');afterAction()}})}
+    for(const k in REG_CHORES){const c=REG_CHORES[k],lv=R.chores[k];
+      out.push({cat:'home',ic:c.ic,l:`${c.l}${lv>=3?' (piling up)':''}`,s:`${c.min} min.${lv>=3?` ${c.n}`:' Not urgent.'}`,due:lv>=3,dis:lv<0.5,fn:()=>regChoreDo(k)})}
+    out.push({cat:'home',ic:'📬',l:R.mail?`Check the mail (${R.mail} piece${R.mail===1?'':'s'})`:'Check the mail',s:R.mail?'Statements, flyers and a postcard, probably. 8 min.':'Nothing new.',dis:!R.mail,fn:regReadMail});
+    const owed=regRentOwed();
+    out.push({cat:'phone',ic:'🏠',l:`Pay rent: ${$(owed)}`,due:d>=5||R.rent.owed>0,s:owed?`${C.lord.split(',')[0]}, due Sunday night. 5 min on your phone.`:'Paid for this week.',dis:!owed||!phoneCan()||!canEssential(owed),fn:regRentPay});
+    const open=regBillsOpen();
+    out.push({cat:'phone',ic:'🧾',l:open.length?`Pay bills (${open.length} due)`:'Pay bills',s:open.length?open.map(k=>`${REG_BILLS[k].n} ${$(regBillOwed(k))}, ${regBillTxt(k)}`).join(' · '):'Nothing due right now.',dis:!open.length,fn:regBillsModal});
+    if(d===3&&J&&R.vac>0&&!R.vacDays[regWk()*7+4])out.push({cat:'work',ic:'🏖️',l:`Take tomorrow (Friday) off: vacation day (${R.vac} left)`,s:'Paid. A long weekend on the island.',fn:regVacTomorrow});
+  }
+  if(L[loc]&&L[loc].side!=='X'&&J){
+    if(regVacCan())out.push({cat:'work',ic:'🏖️',l:`Take today off: vacation day (${R.vac} left)`,s:`Paid. 5 min to email the boss. ${d===0?'Monday':'Friday'} off.`,fn:regVacTake});
+    if(regSickCan())out.push({cat:'work',ic:'🤒',l:'Call in sick',s:'Not feeling well enough to work. No pay today, job −2.',fn:regSick})}
+  if(loc==='rmarket'&&isOpen('rmarket')){
+    const car=!!carHere(),cap=14-S.carried;
+    [[1,13],[3,36],[5,58],[7,78]].forEach(([n,c])=>out.push({cat:'trade',ic:'🛒',l:`Buy ${n} day${n>1?'s':''} of groceries: $${c}`,s:`The city price: cheap. ${S.pantry} in the pantry${S.carried?`, ${S.carried} in the car`:''}.`,dis:!canEssential(c)||n>cap||(!car&&S.carried+n>4),fn:()=>{money(-c);S.carried+=n;S.stats.food+=n;S.t+=12+n*3;say(`🛒 Groceries: ${n} day${n>1?'s':''} for $${c}. Home, and it all goes in the pantry.`);afterAction()}}));
+    const car2=carHere();
+    if(car2){const need=Math.round((car2.tank-car2.fuel)*10)/10;
+      out.push({cat:'fuel',ic:'⛽',l:`Fill up the tank: $${Math.round(need*GAS_PRICE)}`,s:`${need} gal at $${GAS_PRICE}/gal. Tank ${car2.fuel}/${car2.tank}.`,cls:need>=4?'primary':'',dis:need<0.5||S.money<need*GAS_PRICE,fn:()=>{money(-need*GAS_PRICE);car2.fuel=car2.tank;S.t+=10;say(`⛽ Full tank: ${need} gallons for $${Math.round(need*GAS_PRICE)}.`);afterAction()}})}
+    out.push({cat:'work',ic:'💊',l:S.rx?'Prescription picked up ✓':'Pick up prescription: $15 copay',s:S.rx?'':d>=2?'Ready at the pharmacy counter.':'Not ready until Wednesday.',dis:S.rx||d<2||!canEssential(15),fn:()=>{money(-15);S.rx=true;S.t+=15;adj('stress',-3);say('💊 Refill in hand, before the weekend.');afterAction()}});
+    if(!R.earplugs)out.push({cat:'trade',ic:'🎧',l:'Buy earplugs: $12',s:'Fewer sleepless nights with the neighbors.',dis:S.money<12,fn:()=>{money(-12);R.earplugs=true;S.t+=5;say('🎧 A box of foam earplugs. The ceiling will have to drag its furniture without you.');afterAction()}});
+  }
+  return out}
+// ---- 📅 Weekend regular: the weekends (see 44-regular.js) ----
+// Each weekend is a visit: V.rental is fresh every week (check-in Friday 3 PM, check-out Sunday 11 AM), the visit ends when you’re back on
+// the mainland, and the month goes on. A missed last boat is a night to sort out, not the end. Friends host you, invite you to dinner,
+// and text during the week; helping out around the island earns the reputation and friends the goal needs.
+const REG_HELP={ // where an islander can use a hand: loc → who, label, minutes, rep, hours
+  legion:{id:'walt',name:'Walt, who runs the Legion’s Saturday coffee',ic:'🇺🇸',l:'Volunteer at the Legion hall',min:120,rep:3,st:-3,h:[540,960],t:'You fold chairs, pour terrible coffee and stack the bingo cards. Walt says “Huh” and slides you the good donut.'},
+  food:{id:'rusty',name:'Rusty from the Riv',ic:'🍺',l:'Help Rusty close up the Riv',min:60,rep:2,st:-2,h:[1020,1260],t:'You wipe tables and stack chairs while Rusty sweeps and tells you what everyone’s ferry business really is.'},
+  store:{id:'bev',name:'Bev the knitter',ic:'🧶',l:'Help Bev run the swap board',min:60,rep:2,st:-2,h:[600,1080],t:'You sort the jars, re-tape the flyers and make change from the coffee can. Bev knits you a pot holder while you work.'},
+  farm:{id:'hendersons',name:'the Hendersons',ic:'🥧',l:'Volunteer at the Johnson Farm',min:90,rep:2,st:-3,h:[780,960],t:'You sweep the barn and carry boxes of old photographs. Ruth Henderson feeds you pie and a whole family history.'},
+  lake:{id:'sam',name:'Sam, who keeps chickens near the lake',ic:'🐔',l:'Pick up trash around the lake',min:45,rep:2,st:-4,h:[360,1230],t:'You fill two bags with other people’s wrappers. Sam wanders down in rubber boots, holding a chicken, and gives you a hand.'}};
+function regHelpHere(){return REG_HELP[S.loc]}
+const REG_HELP_CAP=5;     // reputation from helping out: at most this much a day
+function regHelp(h){const R=REG(),V=VS(),loc=S.loc,key='help_'+loc,dk=regDk();
+  S.t+=h.min;phoneTick();adj('stress',h.st);R.st.help++;
+  // the first time you’re just a helpful stranger; a second day on, they know your name
+  if(S.friends[h.id])friendPts(h.id,1);
+  else{R.acq=R.acq||{};if(R.acq[h.id]!=null&&R.acq[h.id]!==dk)meet(h.id,h.name,'you keep showing up to help');else R.acq[h.id]=dk}
+  R.helpRep=R.helpRep||{};const used=R.helpRep[dk]||0,rep=Math.max(0,Math.min(h.rep,REG_HELP_CAP-used));R.helpRep[dk]=used+rep;
+  say(`${h.ic} ${h.t}${S.friends[h.id]||R.acq[h.id]!==dk?'':' “Come by again,” they say.'}`);
+  V.repDone=V.repDone||{};V.repDone[key+'@'+dk]=true;if(rep)vrepAdd(rep,`helped out: ${h.l.toLowerCase()}`);else say('🤲 Everybody’s been helped enough today. They don’t need a thing.');afterAction()}
+
+// ======== what stays and what goes from the resident's list ========
+const REG_DROP=/^(Pay rent by phone|Checks in the mail|Order island grocery delivery|Grocery delivery on its way|Backyard coop|Buy a portable generator|Generator (installed|bought)|Adopt |Mouse traps|Take yourself off the weekend schedule|Post on the co-op board|Trade the Subaru|Buy a mainland beater|Pledge to the co-op|Check the bulletin board|Read the sign on the door)/;
+function regKeep(x){return !REG_DROP.test(x.l||'')}
+
+// ======== after every action ========
+function regTick(){const V=VS(),R=REG(),d=day(),side=L[S.loc]?L[S.loc].side:'M',Rn=vRental();
+  regFoodSwap(side);
+  regPaycheck(false);
+  // the weekend begins when you’re on the island Friday afternoon or later
+  if(side==='I'&&!R.W.on&&(d>=5||(d===4&&tod()>=720))){R.W.on=true;R.W.money0=S.money;R.W.rep0=V.rep;R.W.friends0=Object.keys(S.friends||{}).length;R.W.n=regWk();R.st.hosted+=Rn&&Rn.hosted?1:0;
+    say(`🌲 Weekend ${regWk()+1} on Anderson Island. Island time starts now.`)}
+  // the weekend ends when you’re back on the mainland on Sunday (or after checking out)
+  if(R.W.on&&!R.W.done&&side==='M'&&(d===6||(Rn&&Rn.checkedOut)))regWeekendEnd();
+  try{regBossTick()}catch(e){console.error(e)}
+  try{regGoalCheck()}catch(e){console.error(e)}
+  // late at night, away from a bed
+  const late=d*1440+23*60+30;
+  if(S.t>=late&&S.loc!=='home'&&S.loc!=='vhome'){
+    if(side==='I')return !!regIslandStrand();
+    if(side==='M'){regMainlandLate();return true}}
+  return false}
+// the island pantry and the city pantry are separate piles
+function regFoodSwap(side){const R=REG();
+  if(side==='I'&&!R.swapped){R.swapped=true;R.cityFood=S.pantry;S.pantry=0}
+  else if(side==='M'&&R.swapped){R.swapped=false;S.pantry=R.cityFood+S.pantry;R.cityFood=0}}
+function regWeekendEnd(){const V=VS(),R=REG(),Rn=vRental();R.W.done=true;R.weekends++;
+  if(Rn&&Rn.checkedIn&&!Rn.checkedOut){Rn.checkedOut=true;Rn.outAt=S.t;if(!Rn.trash&&!Rn.hosted)vRule('trash')}
+  const sp=Math.round((R.W.money0==null?S.money:R.W.money0)-S.money),dr=V.rep-R.W.rep0,nf=Object.keys(S.friends||{}).length-R.W.friends0;
+  R.hist.push({wk:regWk(),spent:sp,rep:dr,friends:nf,hosted:!!(Rn&&Rn.hosted)});
+  say(`🏡 Weekend ${regWk()+1} is over: you’re back on the mainland.`);
+  modal(`🌲 Weekend ${regWk()+1} on the island`,`<p>The boat pulls away and the island gets small behind you.</p>
+    <div class="kv"><span>🤝 Island reputation</span><b>${V.rep>0?'+':''}${V.rep} (${dr>=0?'+':''}${dr})</b></div>
+    <div class="kv"><span>👥 Island friends</span><b>${Object.keys(S.friends||{}).length}${nf?` (+${nf})`:''}</b></div>
+    <div class="kv"><span>💵 Net on the weekend</span><b>${sp>=0?'−':'+'}${$(Math.abs(sp))}</b></div>
+    <div class="kv"><span>🏡 Stayed</span><b>${Rn&&Rn.hosted?'with '+Rn.hosted.name.split(',')[0]+' (free)':Rn&&Rn.checkedIn?'at the rental cabin':'(no night on the island)'}</b></div>
+    <p style="font-size:13px;color:var(--mute)">${regWk()<REG_WEEKS-1?'Home, a bed and Monday. Rent is due tonight.':'The last weekend of the month. Rent is due tonight.'}</p>`,[{l:'Head home',fn:()=>{}}]);
+  try{saveGame()}catch(e){}}
+
+// ======== a night away: the last boat is gone ========
+function regIslandStrand(){const R=REG(),Rn=vRental(),V=VS();
+  // the cabin is still yours Friday and Saturday night: the base game takes you there
+  if(Rn&&Rn.checkedIn&&!Rn.checkedOut){render();return false}
+  R.st.stranded++;render();
+  const fr=Object.keys(S.friends||{}).filter(id=>!npcJailed||!npcJailed(id)),btns=[];
+  fr.forEach(id=>{const lv=flv(id),p=Math.min(0.97,(lv>=3?0.95:lv>=2?0.8:0.55)+Math.max(0,V.rep)/400),nm=msgFirst(id);
+    btns.push({l:`📱 Text ${nm} for a couch`,s:`${LVL_NAME[lv]||'Friend'}. They might say yes. Free.`,dis:!phoneCan(),fn:()=>{S.t+=5;phoneUse(1);
+      if(Math.random()<p){friendPts(id,1);R.st.hosted++;say(`🏡 ${nm}: “Of course. I’ll turn the porch light on.” A spare bed, a blanket that smells like woodsmoke.`);endDay('host')}
+      else{adj('stress',3);say(`📱 ${nm} texts back: “So sorry, full house tonight!” You’re on your own.`);afterAction()}}})});
+  btns.push({l:'📱 Ask in the Island Group',s:V.asked===day()?'You already asked tonight.':'20 min. An islander might host you.',dis:V.asked===day()||!phoneCan(),fn:vtHostAsk});
+  btns.push({l:carHere()?'🚗 Sleep in your car at the landing':'🪑 Sleep on the bench at the landing',s:'Free. Not comfortable. Health −6, stress +15.',fn:()=>{S.loc='aiDock';endDay('terminal')}});
+  modal('🌙 Stranded on the island',`<p>The last boat is gone and there’s no bed waiting. ${day()===6?'Monday’s work is at risk: the first boat is at 5:15 AM.':'Where do you sleep?'}</p>`,btns,true);
+  return true}
+function regMainlandLate(){const car=carHere();
+  if(S.loc==='vhome')return false;
+  render();
+  const base=dist(S.loc,'vhome'),btns=[];
+  if(car&&car.fuel>=vtFuel(car,base))btns.push({l:'🚗 Drive home in the dark',s:`${base} min. You’ll be home after midnight. Stress +4.`,fn:()=>{car.loc='vhome';car.fuel=Math.max(0,Math.round((car.fuel-vtFuel(car,base))*100)/100);S.loc='vhome';adj('stress',4);say('🚗 The roads are empty and the radio plays something sad. You’re home, finally.');endDay('vhome')}});
+  else{const c=Math.round(8+base*0.8);btns.push({l:`📱 Rideshare home: $${c}`,s:`${base+8} min.`,dis:!phoneCan()||!canEssential(c),fn:()=>{money(-c);S.loc='vhome';say('📱 A rideshare driver takes you home. Your car will be fine where it is.');endDay('vhome')}})}
+  btns.push({l:carHere()?'🚗 Sleep in your car in the ferry lot':'🪑 The bench outside the Steilacoom terminal',s:'Free. The waiting room locks after the last boat.',fn:()=>{S.loc='stDock';endDay('terminal')}});
+  btns.push({l:'🏨 Motel in Lakewood',s:'$115. Real bed.',fn:()=>endDay('motel')});
+  modal('Late on the mainland','<p>It’s late and you’re not at home. Where do you sleep?</p>',btns,true);return true}
+{const _sm=strandedModal;strandedModal=function(){if(regOn()&&L[S.loc].side==='M'&&S.loc!=='vhome')return regMainlandLate();return _sm.apply(this,arguments)}}
+
+// ======== hosting: a friend’s spare room instead of the rental ========
+function regHostChance(id){const lv=flv(id),rep=Math.max(0,VS().rep);return Math.min(0.97,(lv>=3?0.9:lv>=2?0.75:0.5)+rep/400)}
+function regHostCan(){const R=REG(),Rn=vRental();return regOn()&&!!Rn&&!Rn.checkedIn&&!Rn.hosted&&!R.W.done&&day()>=1&&day()<=5&&Object.keys(S.friends||{}).length>0&&phoneCan()}
+function regHostAsk(){const R=REG(),Rn=vRental();
+  const ids=Object.keys(S.friends||{}).filter(id=>!(typeof npcJailed==='function'&&npcJailed(id)));
+  modal('🏡 Who’s got a spare room?',`<p>Friends on the island put people up. It’s free, it needs a real friendship, and it can fall through.</p>`,
+    ids.map(id=>({l:`📱 Ask ${msgFirst(id)}`,s:`${LVL_NAME[flv(id)]||'Friend'}. ${regHostChance(id)>=0.8?'Pretty likely.':regHostChance(id)>=0.6?'Probably.':'No promises.'} 5 min.`,
+      fn:()=>{S.t+=5;phoneUse(1);
+        if(R.W.asked&&R.W.asked[id]){say(`📱 You already asked ${msgFirst(id)} this week.`);return afterAction()}
+        R.W.asked=R.W.asked||{};R.W.asked[id]=1;
+        if(Math.random()<regHostChance(id)){Rn.hosted={id,name:S.friends[id].name};friendPts(id,1);msgPush(id,1,'Any chance I could crash with you this weekend?');const T=msgPush(id,0,'Absolutely. Spare room’s made up. Bring your appetite.');T.u++;
+          say(`🏡 ${msgFirst(id)}: “Absolutely. Spare room’s made up.” The cabin is cancelled: you’ll stay with ${msgFirst(id)}.`)}
+        else{adj('stress',2);msgPush(id,1,'Any chance I could crash with you this weekend?');const T=msgPush(id,0,'Ugh, wish I could! Relatives in town. Rain check?');T.u++;say(`📱 ${msgFirst(id)}: “Wish I could! Relatives in town.” You’ll book the cabin.`)}
+        afterAction()}})).concat([{l:'Never mind',fn:()=>{}}]))}
+function regHosted(Rn,out){const id=Rn.hosted&&Rn.hosted.id;if(!id)return;
+  if(out){friendPts(id,1);vrepOnce('hosted',3,'a good houseguest');return}
+  vrepOnce('hosted',2,'came to stay with a neighbor')}
+// ======== invitations and weekday texts from the island ========
+function regInvite(R,d){if(!Object.keys(S.friends||{}).length||R.inv)return;
+  const ids=Object.keys(S.friends).filter(id=>!(typeof npcJailed==='function'&&npcJailed(id)));if(!ids.length)return;
+  if(Math.random()>0.75)return;
+  const id=pick(ids),nm=msgFirst(id),bz=typeof LIFE_CAL!=='undefined'&&LIFE_CAL.bazaar.ok()&&seasonId()==='fall'&&Math.random()<0.7;
+  const sat=regWk()*7+5;
+  R.inv=bz?{id,kind:'event',dk:sat,txt:`Bazaar’s Saturday at the Legion, you coming?`}:{id,kind:'dinner',dk:sat,txt:`Dinner at my place Saturday at 6, if you’re coming over. I made way too much.`};
+  const T=msgPush(id,0,R.inv.txt);T.u++;MSG().inc[id]=dayKey();
+  say(`📱 Text from ${nm}: “${R.inv.txt}”`);try{phoneNotify('💬',nm,R.inv.txt)}catch(e){}}
+function regCoworker(R,d){if(d>3||Math.random()>0.22)return;const n=pick(['Dana','Marcus','Priya','Tom from accounting']),
+  x=pick(['you coming to the potluck Thursday? bring the good chips','did you see the reorg email?? call me','the printer is eating paper again, send help','lunch tomorrow? my treat, I won a bet']);
+  say(`📱 Text from ${n} at work: “${x}”`)}
+function regSocialNight(notes,d){const R=REG();
+  if(d===2||d===3)regInvite(R,d);
+  if(d>=0&&d<=3&&regOn())regCoworker(R,d);
+  // a dinner or event you never made it to
+  if(R.inv&&d===6&&!R.inv.done&&!R.inv.noted){R.inv.noted=true;
+    if(Object.keys(S.friends).includes(R.inv.id)&&R.inv.dk===regWk()*7+5){friendPts(R.inv.id,-1);notes.push(`🙁 You didn’t make it to ${msgFirst(R.inv.id)}’s ${R.inv.kind==='dinner'?'dinner':'event'}. A quiet text: “Next time!”`)}}
+  if(d===6)R.inv=null}
+{const _up=upkeepNight;upkeepNight=function(where,notes,d){const r=_up.apply(this,arguments);try{if(regOn())regSocialNight(notes,d)}catch(e){console.error(e)}return r}}
+// ======== the boss texts you on the island ========
+function regBossTick(){const R=REG(),d=day(),J=curJob(),m=tod();
+  if(!J||L[S.loc].side!=='I'||d>4||!J.days.includes(d)||m<J.start+30||m>J.end||R.bossAt[regDk()]||S.worked[d]&&!R.vacDays[regDk()])return;
+  if(!(R.vacDays[regDk()]||d===4||d===0))return;     // you’re “off”: a Friday or Monday on the island
+  R.bossAt[regDk()]=1;if(Math.random()>0.55)return;
+  const Q=['Quick question about the Henderson file…','Hey, do you remember where the Q3 numbers live?','Sorry to bug you: the client moved the meeting up. Can you look at one thing?','Hi! The login for the shared drive isn’t working for me. Any chance?'];
+  const q=pick(Q);try{phoneNotify('💼','Boss',q)}catch(e){}
+  modal('📱 Text from your boss',`<p>“${q}”</p><p style="font-size:13px;color:var(--mute)">You’re on an island, on a day off.</p>`,[
+    {l:'Answer it',s:'25 min on one bar of signal. Stress +6, job +2.',fn:()=>{S.t+=25;phoneUse(3);adj('stress',6);adj('job',2);R.st.bossAnswered++;say('📱 You answer from the Riv’s parking lot, holding your phone up toward the water for a second bar. “You’re a lifesaver,” the boss writes.');afterAction()}},
+    {l:'Ignore it',s:'Job −6. They’ll live.',fn:()=>{adj('job',-6);R.st.bossIgnored++;say('📵 You turn the phone face down. The boss notices.');afterAction()}}])}
+// ======== sights and spots: help out, dinner at a friend’s ========
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);if(!regOn()||S.over)return a;
+  try{
+    const R=REG(),V=VS(),d=day(),m=tod(),loc=S.loc,side=L[loc]&&L[loc].side,dk=regDk();
+    for(const x of a)if(/^(Pack food|Pack a lunch)/.test(x.l||'')){x.l=x.l.replace(/ — \$\d+/,'');x.s='Uses your pantry first, and buys the rest. '+(x.s||'')}
+    if(side==='I'){
+      const h=REG_HELP[loc];
+      if(h&&m>=h.h[0]&&m<h.h[1]&&(!L[loc].hours||isOpen(loc))){const done=V.repDone&&V.repDone['help_'+loc+'@'+dk];
+        a.push({cat:'here',ic:h.ic,l:h.l,s:done?'You already helped here today.':`${h.min>=60?h.min/60+' h':h.min+' min'}. Reputation +${h.rep} (up to ${REG_HELP_CAP} a day). ${S.friends[h.id]?'Keeps a friendship going.':R.acq&&R.acq[h.id]!=null?'They’re starting to know you.':'You might make a friend.'}`,dis:!!done,fn:()=>regHelp(h)})}
+      const inv=R.inv;
+      if(inv&&inv.kind==='dinner'&&inv.dk===dk&&!inv.done&&m>=1020&&m<1200&&S.friends[inv.id]){const nm=msgFirst(inv.id);
+        a.push({cat:'trade',ic:'🍲',l:`Go to ${nm}’s for dinner`,s:'2 hours. A free dinner, a good friend. Reputation +3, stress −6.',cls:'primary',fn:()=>{inv.done=true;S.t+=120;phoneTick();S.ateOut=d;S.ateOutAt=`${nm}’s kitchen`;adj('stress',-6);adj('health',1);R.st.dinners++;friendPts(inv.id,2);vrepOnce('dinner',3,`had dinner at ${nm}’s`);
+          say(`🍲 ${nm}’s table: too much food, a dog under the chair, and a lot of island gossip. You walk home full.`);afterAction()}})}
+      if(regHostCan())a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin. Needs a real friendship.',fn:regHostAsk})}
+    if(side==='M'&&regHostCan()&&loc==='vhome')a.push({cat:'phone',ic:'🏡',l:'Ask a friend to host you this weekend',s:'Free, instead of the rental cabin ($170). Needs a real friendship.',fn:regHostAsk});
+    // the bazaar counts for the invitation
+    if(R.inv&&R.inv.kind==='event'&&!R.inv.done&&(S.cal||{}).bazaar===dk){R.inv.done=true;friendPts(R.inv.id,2);R.st.events++;vrepOnce('bzinv',3,`came to the bazaar with ${msgFirst(R.inv.id)}`)}
+  }catch(e){console.error(e)}return a}}
+// ---- 📅 Weekend regular: the goal, the endings, the move-in, the to-do list and the phone (see 44-regular.js) ----
+// To move in you need ~$4,000 saved (money after rent and bills), island reputation 40+, and 3 island friends. When all three are met a house
+// comes up in the Island Group: buying it ends the month early with "You moved to the island" and offers a resident game that carries over.
+// Other endings, at the end of week 4: "A regular, not a resident yet" and "The island wasn’t for you". Losses: evicted, fired, medevac.
+const regFriendsN=()=>Object.keys(S.friends||{}).length;
+function regNet(){let n=S.money-regRentOwed();for(const k of regBillsUnpaid()){const b=RB(k);if(b.check<0)n-=regBillOwed(k)}return Math.round(n)}
+function regGoal(){const V=VS(),net=regNet(),rep=V.rep,fr=regFriendsN(),G=REG_GOAL;
+  const g={net,rep,fr,money:net>=G.money,repOk:rep>=G.rep,frOk:fr>=G.friends};g.all=g.money&&g.repOk&&g.frOk;
+  g.p=(Math.min(1,Math.max(0,net)/G.money)+Math.min(1,Math.max(0,rep)/G.rep)+Math.min(1,fr/G.friends))/3;return g}
+function regGoalCheck(){if(!regOn()||S.over)return;const R=REG(),g=regGoal();
+  if(R.offered||!g.all)return;
+  R.offered=true;R.goalAt=regDk();R.house={ask:REG_DOWN,at:regDk(),by:pick(['Marta','Walt','Bev','Rusty','the Hendersons'])};
+  say('🏡 A house comes up in the Island Group.');
+  modal('🏡 A house in the Island Group',`<p>The post is two lines long: <b>“Small cedar house, Lake Josephine side. Owners moving to Arizona. Down payment ${$(REG_DOWN)}, and we’d like it to go to somebody the island already knows.”</b></p><p>Under it, a dozen comments: ${R.house.by} has tagged you. “That’s ${currentName()}. They’re one of us.”</p>
+    <p style="font-size:13px;color:var(--mute)">You have ${$(S.money)}. Buying ends the month: you’ve moved to the island.</p>`,
+    [{l:`Buy it: ${$(REG_DOWN)} down`,s:'You move to Anderson Island.',dis:S.money<REG_DOWN,fn:regBuy},{l:'Not yet',s:'The post stays up. Buy it from 📱 any time.',fn:()=>{}}],true)}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);if(!regOn()||S.over)return a;
+  try{const R=REG();if(R.offered&&R.house&&!R.bought)a.push({cat:'phone',ic:'🏡',l:`Buy the house in the Island Group: ${$(REG_DOWN)} down`,s:'The cedar house on the Lake Josephine side. Ends the month: you move to the island.',cls:'primary',dis:S.money<REG_DOWN||!phoneCan(),fn:regBuy})}catch(e){console.error(e)}return a}}
+function regBuy(){const R=REG(),V=VS();if(S.money<REG_DOWN||S.over)return;money(-REG_DOWN);R.bought=true;
+  regEnd('moved','{{name}}, you moved to the island',`A cedar house on the Lake Josephine side, a key on a loop of twine, and neighbors who already know your name. ${regFriendsN()} friends, a good name and one very long ferry commute behind you.`,false)}
+function regEnd(kind,title,sub,lost){const V=VS();V.done=true;V.result=kind;V.endT=S.t;
+  MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();S.over=true;endScreen(title,sub,!!lost)}
+function regLose(kind,title,sub){return regEnd(kind,title,sub,true)}
+// the end of week 4, Sunday night
+function regFinish(){const R=REG(),V=VS();
+  if(R.rent.evict)return regLose('evicted','Evicted',`Three Sundays without rent. ${regCity().lord.split(',')[0]} is apologetic, a friend helps you load the boxes, and the island will have to wait.`);
+  const o=regRentOwed();if(o>0){money(-o);R.rent.owed=0;R.rent.wk=regWk();R.st.rent+=o}
+  for(const k in REG_BILLS){const b=RB(k);if(!b.paid){if(b.check<0){money(-regBillOwed(k));R.st.bills+=regBillOwed(k)}b.paid=true}}
+  const g=regGoal();
+  if(g.all&&!R.bought&&S.money>=REG_DOWN){R.offered=true;R.house=R.house||{ask:REG_DOWN,at:regDk(),by:'Marta'};
+    MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());
+    return modal('🏡 One more thing',`<p>The month is over, and the house in the Island Group is still up. Everything you’d need is in the bank.</p>`,[{l:`Buy it: ${$(REG_DOWN)} down`,fn:regBuy},{l:'Not this time',fn:regEndMonth}],true)}
+  regEndMonth()}
+function regEndMonth(){const g=regGoal();
+  if(g.p>=0.6)return regEnd('regular','A regular, not a resident yet',`Four weeks of Friday boats and Sunday nights, and the deckhands know your order. The island is nearly yours. One more month, maybe.`,false);
+  return regEnd('notforyou','The island wasn’t for you',`A month of rent, I-5 and ferry lines, and the island never quite let you in. It’s a beautiful place to visit. Some people are visitors.`,false)}
+{const _fin=finish;finish=function(){if(regOn())return regFinish();return _fin.apply(this,arguments)}}
+function regScore(){const V=VS(),R=REG(),g=regGoal();let sc=Math.round(Math.max(0,g.net)/10+Math.max(0,V.rep)*4+regFriendsN()*60+R.weekends*50+S.health);
+  if(V.result==='moved')sc+=1000;else if(V.result==='regular')sc+=250;else if(V.result==='notforyou')sc-=0;
+  return Math.max(0,sc)}
+const REG_RES={moved:'🏡 Moved to the island',regular:'📅 A regular',notforyou:'🧳 Not for you',evicted:'🏠 Evicted',fired:'💼 Fired',gameover:'🚑 Cut short',lost:'🚑 Cut short'};
+{const _es=endScreen;endScreen=function(h1,sub,lost){if(!regOn())return _es.apply(this,arguments);try{return regEndScreen(h1,sub,lost)}catch(e){console.error(e);return _es.apply(this,arguments)}}}
+function regEndScreen(h1,sub,lost){const V=VS(),R=REG();if(lost&&!V.result){V.result='gameover';V.done=true}
+  achCheck({end:true,lost});const achNew=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
+  const g=regGoal(),sc=regScore(),res=V.result,grade=lost?'F':res==='moved'?'A':res==='regular'?'B':'D',C=regCity(),H=VISIT_HOMES[V.home]||VISIT_HOMES.tacoma;
+  S.ending={score:sc,grade,title:h1,lost:!!lost,visit:true,result:res,regular:true};saveGame();
+  const row=(k,v)=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`,mark=ok=>ok?'✓':'✗',st=R.st,s=S.stats;
+  const names=Object.values(S.friends||{}).map(f=>f.name.split(',')[0].split(' from')[0]).join(', ')||'none';
+  app.innerHTML=withName(`<div class="end visit-end"><div style="display:flex;justify-content:space-between;align-items:center"><div class="small-note" style="color:var(--mute)">${lost?'MONTH CUT SHORT':'MONTH COMPLETE'} · {{name}}</div><button class="gear" style="background:var(--sand);color:var(--ink)" onclick="openSettings()" aria-label="Settings">⚙️</button></div><h1>${h1}</h1><p>${sub}</p>
+  <div style="display:flex;gap:16px;align-items:center;margin:16px 0"><div class="grade">${esc(grade)}</div><div><b style="font-family:Fraunces;font-size:20px">${REG_RES[res]||esc(String(res||''))}</b><div style="color:var(--mute);font-size:14px">📅 Weekend regular · from ${H.ic} ${H.n} · ${DF().ic} ${DF().n}</div></div></div>
+  ${row('Score',sc)}
+  ${row(`${mark(g.money)} Savings after rent and bills`,`${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)}`)}
+  ${row(`${mark(g.repOk)} Island reputation`,`${V.rep>0?'+':''}${V.rep} of ${REG_GOAL.rep} · ${vTier()[1]}`)}
+  ${row(`${mark(g.frOk)} Island friends`,`${g.fr} of ${REG_GOAL.friends}: ${esc(names)}`)}
+  ${row('🌲 Weekends on the island',`${R.weekends} of ${REG_WEEKS}`)}
+  ${row('💵 Cash at the end',`<span style="${S.money<0?'color:#ff8a70':''}">${S.money<0?'−':''}${$(Math.abs(Math.round(S.money)))}</span> (started with ${$(R.start)})`)}
+  ${row('💼 Earned / rent paid',`${$(Math.round(st.earned))} / ${$(st.rent)}`)}
+  ${row('🧾 Bills paid',$(st.bills))}${row('🛖 Cabin and rentals',$(st.cabin))}${row('🏡 Weekends with a friend hosting',st.hosted)}
+  ${row('🏖️ Vacation days used',`${st.vacUsed} of ${REG_VAC}`)}${row('🍲 Dinners and events with friends',`${st.dinners}+${st.events}`)}${row('🤲 Times you helped out',st.help)}
+  ${row('🌙 Nights stranded on the island',st.stranded)}${row('⛴️ Ferry crossings',s.crossings)}${row('Spent on fares',$(s.fares))}
+  <div class="kv ach-end"><span>🏆 Achievements this game</span><b style="text-align:right">${achNew.length?achNew.map(a=>a.ic+' '+a.n).join(', '):'none new'}</b></div>
+  ${res==='moved'?`<button class="big" style="width:100%;margin-top:22px" onclick="regStartResident()">Start life on the island 🏡</button>`:''}
+  <button class="${res==='moved'?'act':'big'}" style="width:100%;margin-top:${res==='moved'?10:22}px${res==='moved'?';justify-content:center':''}" onclick="regAgain()">${res==='moved'?'<span class="tx" style="text-align:center"><b>Another month, another city</b></span>':'Another month 📅'}</button><button class="act" style="margin-top:10px;justify-content:center" onclick="titleScreen()"><span class="tx" style="text-align:center"><b>Back to title</b></span></button></div>`);
+  try{const end=document.querySelector('.end');if(end&&typeof feedbackOpen==='function'){const p=document.createElement('p');p.className='fb-end';p.innerHTML='<button type="button" id="fbEnd" class="linkbtn" onclick="feedbackOpen()">💬 Send feedback</button>';end.appendChild(p)}}catch(e){}
+  window.scrollTo(0,0)}
+window.regAgain=()=>{const go=()=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));go()};
+// ======== the handoff: "Start life on the island" = a resident game with your money, friends and name ========
+function regStartResident(){
+  const V=VS(),carry={money:Math.max(250,Math.round(S.money)),friends:JSON.parse(JSON.stringify(S.friends||{})),rep:Math.min(100,15+Math.round(Math.max(0,V.rep)/2)),diff:S.diff,season:S.season,name:S.name};
+  S=null;newGame(carry.diff,'month',carry.season);
+  MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
+  S.name=carry.name||S.name;S.money=carry.money;S.friends=carry.friends;S.rep=carry.rep;
+  uiNarr=[];S.log=[];
+  say(`🏡 <b>You live here now.</b> The cedar house, the one-lane road and the 5:15 boat. ${Object.keys(S.friends).length} friends already know your name.`);
+  tab='act';render();
+  modal('🏡 Welcome home',`<p>You closed on the house. Now the commute is the other way: <b>the ferry, the job and the pantry are yours</b>. You brought ${$(S.money)}, ${Object.keys(S.friends).length} island friends and a good name (reputation +${S.rep}).</p>`,[{l:'Start the month',fn:()=>{}}]);
+  saveGame()}
+window.regStartResident=regStartResident;
+// ======== the to-do list ========
+function regTodo(it){const V=VS(),R=REG(),C=regCity(),g=regGoal(),d=day(),m=tod(),J=curJob(),out=[],Rn=vRental(),wk=regWk();
+  out.push({ok:g.money,fail:false,l:`Save ${$(REG_GOAL.money)} after rent and bills`,s:`💰 ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (cash ${$(S.money)} minus rent and bills still owed).`,urgent:false});
+  out.push({ok:g.repOk,fail:false,l:`Island reputation ${REG_GOAL.rep}+`,s:`🤝 ${V.rep>0?'+':''}${V.rep} of ${REG_GOAL.rep} · ${vTier()[1]}. Help out around the island, eat with friends, leave no trace.`,urgent:false});
+  out.push({ok:g.frOk,fail:false,l:`${REG_GOAL.friends} island friends`,s:`👥 ${g.fr} of ${REG_GOAL.friends}${g.fr?`: ${Object.values(S.friends).map(f=>f.name.split(',')[0].split(' from')[0]).join(', ')}`:'. Volunteer at the Legion, the Riv, the swap board, the farm or the lake.'}`,urgent:false});
+  if(R.offered&&R.house&&!R.bought)out.push({ok:false,fail:false,l:'The house in the Island Group',s:`🏡 ${$(REG_DOWN)} down. Buy it from the 📱 or the ${C.n} to-do and you move to the island.`,urgent:true});
+  if(J){J.days.slice().sort((a,b)=>a-b).forEach(i=>{if(!jobStarted(i))return;const vac=R.vacDays[wk*7+i];
+    out.push({ok:!!S.worked[i],fail:(i<d&&!S.worked[i])||(i===d&&m>=J.start+240&&!S.worked[i]),l:`Work: ${DAYS[i]}`,s:S.worked[i]?(vac?'🏖️ Vacation day':R.sick[wk*7+i]?'🤒 Sick day':S.late[i]?`Done, ${S.late[i]} min late`:'Done, on time'):`${fmt(J.start)}–${fmt(J.end)}, ${C.n}. Commute ${C.commute}+ min.`,urgent:i===d&&!S.worked[i]&&m<J.start+240})})}
+  else out.push({ok:false,fail:true,l:'Find a job',s:'💼 Look in the Gig Work app.',urgent:true});
+  if(S.interview)out.push({ok:false,fail:false,l:`Interview: ${JOBS[S.interview.job].n}`,s:`${ivDay(S.interview)} ${fmt(S.interview.time)} at ${L[S.interview.loc].name}`,urgent:S.interview.day===d});
+  out.push({ok:R.paidWk===wk,fail:false,l:'Friday paycheck',s:R.paidWk===wk?'💵 Deposited.':`💵 Friday 5:00 PM. ${$(Math.round(R.pend))} earned so far this week.`,urgent:false});
+  const o=regRentOwed();out.push({ok:o===0,fail:false,l:`Pay rent: ${$(C.rent)} by Sunday`,s:o===0?'🏠 Paid for this week.':R.rent.owed?`🏠 ${$(o)} owed${R.rent.strikes>=2?'. ⚠️ One more missed Sunday and you’re evicted.':'.'}`:`🏠 ${$(o)} to ${C.lord.split(',')[0]}. Pay from the 📱 or at home. Late fee ${$(REG_RENT_LATE)}.`,urgent:o>0&&(d>=5||R.rent.owed>0)});
+  const open=regBillsOpen();if(open.length)out.push({ok:false,fail:open.some(k=>regDk()>regBillDue(k)),l:`Bills: ${open.map(k=>REG_BILLS[k].n.toLowerCase()).join(', ')}`,s:`🧾 ${open.map(k=>`${$(regBillOwed(k))} ${regBillTxt(k)}`).join(' · ')}. Pay from the 💳 app or at home.`,urgent:open.some(k=>regDk()>=regBillDue(k))});
+  else out.push({ok:true,fail:false,l:'Bills',s:'🧾 Nothing due right now.',urgent:false});
+  out.push({ok:R.vac>0,fail:false,l:`Vacation days: ${R.vac} of ${REG_VAC} left`,s:'🏖️ Take a Friday or a Monday off: Thursday night for Friday, or that morning.',urgent:false});
+  out.push({ok:S.pantry>=2||S.carried>=1,fail:false,l:'Keep food at home',s:`🍽️ ${R.swapped?R.cityFood:S.pantry} day${(R.swapped?R.cityFood:S.pantry)===1?'':'s'} in the ${C.n} pantry${S.carried?`, ${S.carried} in the car`:''}. The supermarket is close and cheap.`,urgent:!R.swapped&&S.pantry<1&&!S.carried});
+  const car=S.cars.find(c=>c.id==='isl');if(car)out.push({ok:car.fuel>=4,fail:false,l:'Keep gas in the car',s:`⛽ ${car.fuel}/${car.tank} gal. Commute, ferry runs and the weekend add up. There’s no gas on the island.`,urgent:car.fuel<2});
+  out.push({ok:S.rx,fail:false,l:'Pick up prescription refill',s:d<2?'💊 Ready Wednesday at the supermarket pharmacy.':'💊 Ready at the supermarket pharmacy. You run out Saturday night.',urgent:d>=2&&!S.rx&&d<=4});
+  // the weekend
+  if(Rn){const wkEnd=R.W.done;
+    out.push({ok:wkEnd,fail:false,l:`Weekend ${wk+1} on the island`,s:Rn.hosted?`🏡 You’re staying with ${Rn.hosted.name.split(',')[0]} (free).`:Rn.checkedIn?'🔑 Checked in.':`🛖 Rental cabin from ${fmt(VCHECK_IN)} Friday (${$(V.nights*V.rate)}), or ask a friend to host you. Catch an evening boat.`,urgent:d===4&&m>=720&&!R.W.on});
+    if(R.W.on&&!wkEnd)out.push({ok:false,fail:false,l:`Last boat home: ${DAYS[6]} ${fmt(vLastBoatAbs())}`,s:'⛴️ Check out of the cabin by 11 AM Sunday. Miss the boat and Monday’s work is at risk.',urgent:d>=6})}
+  if(R.inv&&R.inv.dk===wk*7+5&&!R.inv.done)out.push({ok:false,fail:false,l:`${msgFirst(R.inv.id)} invited you`,s:`💬 “${R.inv.txt}”`,urgent:d===5});
+  const keep=it.filter(x=>/^(Get your ankle treated|Replace the car battery)/.test(x.l||''));
+  return out.concat(keep)}
+const REG_GUIDE=[
+  {id:'r_start',when:()=>day()===0&&L[S.loc].side==='M',t:()=>`📅 <b>Weekend regular.</b> Weekdays you work in ${regCity().n}; rent is due Sunday; the island is for weekends. The 📋 To-do list shows the three things you need to move in: savings, reputation and friends.`},
+  {id:'r_work',when:()=>day()<5&&S.loc==='vhome'&&!S.worked[day()],t:()=>`💼 Drive to <b>${curJob()?curJob().n:'work'}</b> and clock in by ${curJob()?fmt(curJob().start):'9'}. Traffic adds up: leave early. Pay lands as a paycheck on Friday.`},
+  {id:'r_boat',when:()=>day()===4,t:()=>'⛴️ Friday: pack food at home, drive to Steilacoom and catch an evening boat. The rental cabin opens at 3 PM. Or ask an island friend to host you.'},
+  {id:'r_help',when:()=>L[S.loc].side==='I'&&S.loc!=='aiDock',t:()=>'🤝 <b>Help out</b> at the Legion, the Riv, the swap board, the farm or the lake. It earns reputation and friends, and friends host you, feed you and text you.'}];
+// ======== the phone: bank, groceries to the city home, the Visit app ========
+function regBankView(){const R=REG(),g=regGoal(),C=regCity();let h=apmShow('bank');
+  h+=`<div class="icu-bal ${S.money<0?'neg':''}"><small>${S.money<0?'Card balance':'Checking'}</small><b>${S.money<0?'−':''}${$(Math.abs(S.money))}</b></div>`;
+  h+=phCard(`🎯 <b>Savings toward the house:</b> ${g.net<0?'−':''}${$(Math.abs(g.net))} of ${$(REG_GOAL.money)} (after rent and bills).`,g.money?'ok':'');
+  h+=phNote(`💵 Paycheck on Friday: ${$(Math.round(R.pend))} earned this week so far. Pay by job and day.`);
+  const o=regRentOwed();h+=`<div class="ph-sub">Rent</div>`;
+  h+=o?phBtn(`🏠 Pay rent: ${$(o)}`,regRentPay,{cls:regDk()%7>=5||R.rent.owed?'primary':'',sub:`${C.lord.split(',')[0]}. Due Sunday night.${R.rent.owed?' Includes late fees.':''}`,dis:!canEssential(o)}):phCard('✅ Rent is paid for this week.','ok');
+  h+=`<div class="ph-sub">Bills</div>`;const open=regBillsOpen();
+  if(!open.length)h+=phCard('✅ Nothing due right now.','ok');
+  for(const k of open){const B=REG_BILLS[k],dd=regBillDue(k)-regDk();h+=`<div class="ph-li icu-bill ${dd<0?'late':dd<=1?'soon':''}"><b>${B.ic} ${B.n} · ${$(regBillOwed(k))}</b><span>${regBillTxt(k)}${RB(k).fees?' · incl. late fee':''}</span></div>`+phBtn(`Pay ${B.n.toLowerCase()}: ${$(regBillOwed(k))}`,()=>{regBillPay(k,'online');apmMsg('bank',`✅ Paid ${B.n.toLowerCase()}.`);afterAction()},{sub:`${B.who}. 5 min.`})}
+  return h}
+function regMarketView(){const R=REG(),o=R.mkt,win=tod()>=420&&tod()<1140;let h=apmShow('market');
+  if(o)h+=phCard(`⏳ <b>On its way:</b> ${o.n} days of food to your ${REG_CITIES[VS().home].n} door, around ${fmt(o.at)}.`);
+  h+=phNote(`City prices, delivered to your home. If you’re on the island when it arrives, it waits in the pantry for you.`);
+  [[3,36],[5,58]].forEach(([n,c])=>{const cost=c+6,ok=canEssential(cost);
+    h+=phBtn(`🛒 ${n} days of food: ${$(cost)}`,()=>{money(-cost);S.t+=5;phoneUse(1);S.stats.food+=n;R.mkt={n,at:S.t+120};say(`🛒 Ordered ${n} days of groceries to your door: ${$(cost)} with the delivery fee. Around ${fmt(S.t+120)}.`);apmMsg('market',`🛒 Order placed. Delivery around ${fmt(S.t+120)}.`);afterAction()},{dis:!!o||!win||!ok,sub:o?'One order at a time.':!win?'Orders 7:00 AM–7:00 PM.':`${$(c)} + $6 delivery.`})});
+  return h}
+phoneOnTime(()=>{if(!regOn()||S.over)return;const R=REG(),o=R.mkt;if(o&&S.t>=o.at){R.mkt=null;if(R.swapped)R.cityFood+=o.n;else S.pantry+=o.n;
+  say(`📦 Your groceries were delivered to the ${REG_CITIES[VS().home].n} door: +${o.n} days of food.`);try{phoneNotify('📦','Groceries delivered',`+${o.n} days of food`)}catch(e){}}});
+function regVisitView(){const V=VS(),R=REG(),g=regGoal(),C=regCity(),Rn=vRental(),wk=regWk(),bar=(p,ok)=>`<div class="meter"><i style="width:${Math.round(Math.min(1,Math.max(0,p))*100)}%;${ok?'background:var(--good,#4a9)':''}"></i></div>`;
+  let h=`<div class="ph-card"><b>📅 Weekend regular · week ${wk+1} of ${REG_WEEKS}</b><br>${VISIT_HOMES[V.home].ic} ${C.n}: ${$(C.rent)} rent, ${R.vac} of ${REG_VAC} vacation days left.</div>`;
+  h+=`<div class="ph-sect">The goal: move to the island</div>`;
+  h+=`<div class="ph-card">${g.money?'✓':'☐'} 💰 Savings ${g.net<0?'−':''}${$(Math.abs(g.net))} / ${$(REG_GOAL.money)}${bar(g.net/REG_GOAL.money,g.money)}</div>`;
+  h+=`<div class="ph-card">${g.repOk?'✓':'☐'} 🤝 Reputation ${V.rep>0?'+':''}${V.rep} / ${REG_GOAL.rep} · ${vTier()[1]}${bar(V.rep/REG_GOAL.rep,g.repOk)}</div>`;
+  h+=`<div class="ph-card">${g.frOk?'✓':'☐'} 👥 Island friends ${g.fr} / ${REG_GOAL.friends}${bar(g.fr/REG_GOAL.friends,g.frOk)}</div>`;
+  if(R.offered&&R.house&&!R.bought)h+=phBtn(`🏡 Buy the house: ${$(REG_DOWN)} down`,regBuy,{cls:'primary',dis:S.money<REG_DOWN,sub:'The cedar house in the Island Group. You move to the island.'});
+  h+=`<div class="ph-sect">This weekend</div>`;
+  h+=`<div class="ph-card">${Rn?(Rn.hosted?`🏡 Staying with <b>${esc(Rn.hosted.name.split(',')[0])}</b> (free)${Rn.checkedIn?' ✓':''}`:`🛖 Rental cabin · ${$(V.nights*V.rate)} · check-in ${fmt(VCHECK_IN)} Friday ${Rn.checkedIn?'✓':''}<br>Check-out ${fmt(VCHECK_OUT)} Sunday ${Rn.checkedOut?'✓':''}`):'No plan yet.'}</div>`;
+  try{const d=deps('I',6),last=d[d.length-1];h+=`<div class="ph-card warn">⛴️ Last boat home Sunday: <b>${fmt(last)}</b> from the island. Miss it and Monday’s work is at risk.</div>`}catch(e){}
+  if(R.inv&&!R.inv.done)h+=`<div class="ph-card">💬 ${esc(msgFirst(R.inv.id))}: “${esc(R.inv.txt)}”</div>`;
+  h+=`<div class="ph-sect">Things to see · ${vSeenN()}/${VSIGHTS.length}</div>`;
+  for(const s of VSIGHTS)h+=`<div class="ph-card">${V.seen[s.id]!=null?'✓':'☐'} ${s.ic} ${s.n}${V.photos[s.id]!=null?' 📸':''}</div>`;
+  h+=phBtn('📸 Photos',()=>phoneGo('visit','photos'),{});
+  return h}
+{const a=PHONE_APPS.find(x=>x.id==='visit');if(a){const v=a.view;a.view=arg=>regOn()&&arg!=='photos'?regVisitView():v(arg)}
+  const b=PHONE_APPS.find(x=>x.id==='bank');if(b){const v=b.view,bg=b.badge;b.view=arg=>regOn()?regBankView():v(arg);b.badge=()=>regOn()?regBillsOpen().filter(k=>regBillDue(k)-regDk()<=1).length+(regRentOwed()>0&&regDk()%7>=5?1:0):bg()}
+  const m=PHONE_APPS.find(x=>x.id==='market');if(m){const v=m.view,bg=m.badge;m.view=arg=>regOn()?regMarketView():v(arg);m.badge=()=>regOn()?0:bg()}}
 </script>
 </body>
 </html>

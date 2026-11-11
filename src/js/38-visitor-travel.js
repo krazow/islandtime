@@ -2,7 +2,7 @@
 // Everything here does nothing unless visitorOn(). L.vhome is the visitor's own place on the mainland.
 L.vhome={side:'M',ic:'🏠',
   get name(){const h=visitorOn()&&VISIT_HOMES[VS().home];return h?`Your place (${h.n})`:'Your place'},
-  get desc(){return 'Home, on the mainland. Pack your food and your bike here, then drive to the Steilacoom ferry.'}};
+  get desc(){return visitorOn()&&VS().len==='regular'?`Home in ${VISIT_HOMES[VS().home].n}: ${REG_CITIES[VS().home].home}. Chores, mail, bills and a bed. Pack your food on Thursday or Friday, then drive to the Steilacoom ferry.`:'Home, on the mainland. Pack your food and your bike here, then drive to the Steilacoom ferry.'}};
 const VT_FOOD_PER_DAY=8;
 function vtHome(){return VISIT_HOMES[VS().home]||VISIT_HOMES.tacoma}
 function vtDriveMin(){return Math.round(vtHome().mi*60/45+3)}          // mi at ~45 mph plus ramps and parking
@@ -35,7 +35,7 @@ function vtTrafficRoll(from,to){
   if(Math.random()<0.04+0.06*i5) return {min:30+Math.floor(Math.random()*31),crash:true};
   return {min:Math.round(e.min*(0.5+Math.random())),crash:false};
 }
-const vtTrip=(from,dest)=>visitorOn()&&(from==='vhome'||dest==='vhome');
+const vtTrip=(from,dest)=>visitorOn()&&(from==='vhome'||dest==='vhome'||(typeof regTrip==='function'&&regTrip(from,dest)));
 const _vtTravelOpts=travelOpts;
 travelOpts=function(dest){
   const o=_vtTravelOpts(dest);
@@ -73,7 +73,7 @@ go=function(dest,o){
   S.loc=dest;fireHook('arrive',{at:dest,from});afterAction();
 };
 // ---- actions: packing food, the bike, bed at home, a packed lunch, no boat tonight ----
-function vtPack(n){const vs=VS();money(-VT_FOOD_PER_DAY*n);S.carried+=n;vs.packed+=n;S.cooler=true;S.t+=10*n;
+function vtPack(n){const vs=VS(),fromP=(typeof regOn==='function'&&regOn())?Math.min(n,S.pantry):0;S.pantry-=fromP;money(-VT_FOOD_PER_DAY*(n-fromP));S.carried+=n;vs.packed+=n;S.cooler=true;S.t+=10*n;
   say(n>1?`🧊 You fill the cooler: ${n} days of sandwiches, fruit and snacks.`:'🥪 You pack a lunch: a sandwich, an apple and a bag of chips.');afterAction()}
 function vtHostAsk(){
   const vs=VS();vs.asked=day();S.t+=20;

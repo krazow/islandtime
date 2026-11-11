@@ -3,14 +3,14 @@
 //   bank (credit union, bills), gigs (Gig Work + job listings), market (grocery delivery), telehealth (prescriptions/refills),
 //   rides (neighbors driving residents). Kept: Messages, Phone, Clock, App Store, Island Group, Ferry Pass, Tides & Weather.
 const VPHONE_HIDDEN=['bank','gigs','market','telehealth','rides','jobs','landlord','pharmacy'];
-const vphoneHidden=id=>visitorOn()&&VPHONE_HIDDEN.includes(id);
+const vphoneHidden=id=>visitorOn()&&((typeof regOn==='function'&&regOn())?['rides','telehealth','landlord','pharmacy'].includes(id):VPHONE_HIDDEN.includes(id));   // weekend regular: the work apps come back
 {const _pa=phoneApp;phoneApp=function(id){if(id==='visit')return visitorOn()?_pa(id):undefined;if(vphoneHidden(id))return undefined;return _pa(id)}}
 {const _ps=phoneStoreApps;phoneStoreApps=function(){return _ps().filter(a=>a.id!=='visit'&&!vphoneHidden(a.id))}}
 {const _pg=window.phoneGo;window.phoneGo=function(app,arg){if(vphoneHidden(app)||(app==='visit'&&!visitorOn()))return;return _pg(app,arg)}}
 {const _po=window.phoneOpen;window.phoneOpen=function(app,arg){if(vphoneHidden(app)||(app==='visit'&&!visitorOn()))app=null;return _po(app,arg)}}
 {const _pi=phoneInstall;phoneInstall=function(id){if(vphoneHidden(id))return false;return _pi(id)}}
 // a visitor's phone comes ready with the ferry app and the Island Group (once per visit)
-{const _pr=phoneRender;phoneRender=function(){if(visitorOn()&&PH_OPEN){const P=PH();if(!P.vready){P.vready=1;for(const id of['ferrypass','group'])if(_ppA(id)&&!P.apps.includes(id)&&P.apps.length<PHONE_SLOTS)P.apps.push(id)}}
+{const _pr=phoneRender;phoneRender=function(){if(visitorOn()&&PH_OPEN){const P=PH();if(!P.vready){P.vready=1;for(const id of(typeof regOn==='function'&&regOn()?['ferrypass','group','bank','gigs']:['ferrypass','group']))if(_ppA(id)&&!P.apps.includes(id)&&P.apps.length<PHONE_SLOTS)P.apps.push(id)}}
   return _pr.apply(this,arguments)}}
 function _ppA(id){return PHONE_APPS.find(a=>a.id===id)}
 const VSIGHT_CAP={lake:'Bald eagles over the lake.',farm:'Old barns and a tractor at the Johnson Farm.',andys:'Tall trees at Andy’s Wild Wood Park.',jacobs:'The water from Jacobs Point.',riv:'A burger at the Riv.',legion:'Flags and folding chairs at the Legion.'};
