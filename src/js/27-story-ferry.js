@@ -7,7 +7,7 @@
 //  Beat 2, dry dock: chapter 1 weeks 1–2 the regular boat is at the shipyard and the relief boat fills in.
 const sfOn=()=>typeof S!=='undefined'&&!!(S&&S.story);
 const sfCh=()=>typeof S!=='undefined'&&S&&S.story?S.story.ch:-1;
-const SF_START=40, SF_VOTE_DAY=1, SF_RESULT_AT=1200, SF_CREW='no relief captain available (crew shortage)', SF_ENGINE='the relief boat’s one engine is acting up';
+const SF_START=48, SF_VOTE_DAY=1, SF_RESULT_AT=1200, SF_CREW='no relief captain available (crew shortage)', SF_ENGINE='the relief boat’s one engine is acting up';
 function sfF(){const st=S.story;if(!st.flags)st.flags={};if(!st.ferry)st.ferry={support:SF_START,vote:null,sig:-1,share:'',flyers:false,talk:'',against:'',morn:'',dockOn:false,acts:0};return st.ferry}
 const sfFlags=()=>S.story.flags||(S.story.flags={});
 const sfWk=()=>`${sfCh()}:${S.weekNo||0}`;

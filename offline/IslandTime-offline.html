@@ -1749,6 +1749,7 @@ function dailyCard(d){
   {const J=curJob();if(J?J.days.includes(d)&&jobStarted(d):d<5) parts.push(S.worked[d]?(S.late[d]?`💼 worked (${S.late[d]} min late)`:'💼 worked, on time'):'💼 missed work');}
   return `<div class="today"><b>${DAYS[d]} in review</b>${parts.join(' · ')}${evs.length?`<br>Island events: ${evs.join(' ')}`:''}</div>`;
 }
+function coopTownMul(){return 1}
 function endDay(where){
   processTimed();const dayCard=dailyCard(day());
   const d=day(), notes=[];achCheck({where});
@@ -1798,7 +1799,7 @@ function endDay(where){
   notes.forEach(n=>S.log.push({t:S.t,s:n}));
   if(S.health<=0) return gameOver('health');
   if(S.job<=0&&S.emp){S.firedFrom=(S.firedFrom||[]).concat(S.emp);S.firedAt=Object.assign(S.firedAt||{},{[S.emp]:dayKey()});notes.push(`📦 <b>You’re fired</b> from ${curJob().n}. Your boss is “sorry about the ferry, but.” Time to look for work: 💼 the Gig Work app has the listings, or try the bulletin board at the old store.`);S.emp=null;S.job=0;S.stats.firings=(S.stats.firings||0)+1;adj('stress',15)}
-  S.coop.town+=15+Math.floor(Math.random()*30);coopCheck(notes);
+  S.coop.town+=Math.round((15+Math.floor(Math.random()*30))*coopTownMul());coopCheck(notes);
   let nd=d+1;
   if(d===6){if(S.mode==='month'&&S.weekNo<3){weekRollover(notes);nd=0}else return finish()}
   // when you wake up
@@ -5428,7 +5429,7 @@ ACH.push(
 //  Beat 2, dry dock: chapter 1 weeks 1–2 the regular boat is at the shipyard and the relief boat fills in.
 const sfOn=()=>typeof S!=='undefined'&&!!(S&&S.story);
 const sfCh=()=>typeof S!=='undefined'&&S&&S.story?S.story.ch:-1;
-const SF_START=40, SF_VOTE_DAY=1, SF_RESULT_AT=1200, SF_CREW='no relief captain available (crew shortage)', SF_ENGINE='the relief boat’s one engine is acting up';
+const SF_START=48, SF_VOTE_DAY=1, SF_RESULT_AT=1200, SF_CREW='no relief captain available (crew shortage)', SF_ENGINE='the relief boat’s one engine is acting up';
 function sfF(){const st=S.story;if(!st.flags)st.flags={};if(!st.ferry)st.ferry={support:SF_START,vote:null,sig:-1,share:'',flyers:false,talk:'',against:'',morn:'',dockOn:false,acts:0};return st.ferry}
 const sfFlags=()=>S.story.flags||(S.story.flags={});
 const sfWk=()=>`${sfCh()}:${S.weekNo||0}`;
@@ -5596,6 +5597,9 @@ const STORY_COOP_GOAL=6000;
 const siOn=()=>typeof S!=='undefined'&&!!(S&&S.story);
 const siCh=()=>S&&S.story?S.story.ch:-1;
 function coopGoal(){return siOn()?STORY_COOP_GOAL:COOP_GOAL}
+// the town's nightly co-op money is scaled up in story games only (x1.75): ~$4,500 by the spring meeting, ~$5,700 by the last-push deadline with no help, so pledges decide it
+const STORY_COOP_TOWN_MUL=1.75;
+coopTownMul=function(){return siOn()?STORY_COOP_TOWN_MUL:1};
 function SI(){const st=S.story;if(!st.flags)st.flags={};if(!st.recap)st.recap=[];
   if(!st.island)st.island={storm:{helped:0,did:{}},coop:{}};const I=st.island;if(!I.storm)I.storm={helped:0,did:{}};if(!I.storm.did)I.storm.did={};if(!I.coop)I.coop={};return I}
 const siFund=()=>(S.coop.you||0)+(S.coop.town||0);

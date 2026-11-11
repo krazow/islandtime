@@ -222,4 +222,28 @@ module.exports = [
     if (r.reg !== null) assert.strictEqual(r.reg, true);
     noErrors(errors);
   } },
+  { name: 'story odds: levy passes ~1/3 with no effort, almost always with a little; co-op needs pledges', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page, 'normal', 'month');
+    await story(page, { ch: 0 });
+    const r = await page.evaluate(() => {
+      const N = 2000, rnd = Math.random, mark = f => { let pass = 0; for (let i = 0; i < N; i++) { S.story.flags = {}; Math.random = () => (i + 0.5) / N; sfResult([]); if (S.story.flags.levy === 'pass') pass++; } Math.random = rnd; return pass / N; };
+      STORY_FERRY_HOOK.chapterStart(0, null); const F = sfF(), s0 = F.support, o = { start: s0 };
+      F.vote = 'none'; o.none = mark(); F.vote = 'no'; o.noVoteNo = mark(); F.vote = 'yes'; o.noVoteYes = mark();
+      F.support = s0 + 4 * 3 + 2; F.vote = 'no'; o.few = mark();   // 4 signature days + one share, even with a no vote
+      // co-op: town money per night x nights until the meeting (3 chapters of 28 + Sun-Wed) and until the last-push deadline
+      const per = []; for (let k = 0; k < 30; k++) { const q = Math.round((15 + k) * coopTownMul()); per.push(q); }
+      const mean = per.reduce((a, b) => a + b, 0) / per.length, meet = 3 * 28 + 3, dead = 3 * 28 + 3 * 7 + 5;
+      o.meet = mean * meet; o.dead = mean * dead; o.goal = STORY_COOP_GOAL;
+      S.story = null; o.plain = coopTownMul(); return o;
+    });
+    assert.ok(r.none >= 0.2 && r.none <= 0.4, 'no effort: ' + r.none);
+    assert.ok(r.noVoteNo >= 0.15 && r.noVoteYes <= 0.5);
+    assert.ok(r.few >= 0.9, 'a little effort: ' + r.few);
+    assert.ok(r.meet >= 4300 && r.meet <= 5200, 'passive fund at the meeting: ' + r.meet);
+    assert.ok(r.dead < r.goal, 'doing nothing never opens the store: ' + r.dead);
+    assert.ok(r.dead + 1000 >= r.goal, '$1,000 of pledges gets it there in the last push: ' + (r.dead + 1000));
+    assert.strictEqual(r.plain, 1, 'non-story games are unchanged');
+    noErrors(errors);
+  } },
 ];

@@ -12,6 +12,9 @@ const STORY_COOP_GOAL=6000;
 const siOn=()=>typeof S!=='undefined'&&!!(S&&S.story);
 const siCh=()=>S&&S.story?S.story.ch:-1;
 function coopGoal(){return siOn()?STORY_COOP_GOAL:COOP_GOAL}
+// the town's nightly co-op money is scaled up in story games only (x1.75): ~$4,500 by the spring meeting, ~$5,700 by the last-push deadline with no help, so pledges decide it
+const STORY_COOP_TOWN_MUL=1.75;
+coopTownMul=function(){return siOn()?STORY_COOP_TOWN_MUL:1};
 function SI(){const st=S.story;if(!st.flags)st.flags={};if(!st.recap)st.recap=[];
   if(!st.island)st.island={storm:{helped:0,did:{}},coop:{}};const I=st.island;if(!I.storm)I.storm={helped:0,did:{}};if(!I.storm.did)I.storm.did={};if(!I.coop)I.coop={};return I}
 const siFund=()=>(S.coop.you||0)+(S.coop.town||0);

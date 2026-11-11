@@ -37,27 +37,27 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await newGame(page, 'normal', 'month');
     await story(page, 0, 0, 1, 600, 'aiDock');
-    assert.strictEqual(await page.evaluate(() => (STORY_FERRY_HOOK.chapterStart(0, null), sfF().support)), 40);
+    assert.strictEqual(await page.evaluate(() => (STORY_FERRY_HOOK.chapterStart(0, null), sfF().support)), 48);
     assert.match(await log(page), /Keep the Boat Running/);
-    assert.ok(await page.evaluate(() => todoItems().some(x => /ferry levy campaign/.test(x.l) && /40%/.test(x.s))));
+    assert.ok(await page.evaluate(() => todoItems().some(x => /ferry levy campaign/.test(x.l) && /48%/.test(x.s))));
     // signatures: +3, once a day, at either landing
-    await run(page, /Gather signatures/); assert.strictEqual(await sup(page), 43);
+    await run(page, /Gather signatures/); assert.strictEqual(await sup(page), 51);
     assert.strictEqual((await act(page, /Gather signatures/)).dis, true);
     await at(page, 2, 600, 'stDock'); assert.strictEqual((await act(page, /Gather signatures/)).dis, false);
-    await run(page, /Gather signatures/); assert.strictEqual(await sup(page), 46);
+    await run(page, /Gather signatures/); assert.strictEqual(await sup(page), 54);
     // Island Group: +2, once a week
     await page.evaluate(() => { S.phone = 90; phoneInstall('group'); S.loc = 'home'; render(); phoneOpen('group'); });
     assert.match(await page.textContent('#phoneUI'), /Keep the Boat Running/);
     await page.locator('#phoneUI button.ph-btn', { hasText: 'Share the campaign' }).click();
-    assert.strictEqual(await sup(page), 48);
+    assert.strictEqual(await sup(page), 56);
     await page.evaluate(() => { phoneClose(); phoneOpen('group'); });
     assert.ok(await page.locator('#phoneUI button.ph-btn', { hasText: 'Share the campaign' }).isDisabled());
     await page.evaluate(() => phoneClose());
     // talk at the old store: +2 once a week; argue against: −2 once a week
     await at(page, 2, 700, 'store');
-    await run(page, /Talk ferry levy/); assert.strictEqual(await sup(page), 50);
+    await run(page, /Talk ferry levy/); assert.strictEqual(await sup(page), 58);
     assert.strictEqual((await act(page, /Talk ferry levy/)).dis, true);
-    await run(page, /Argue against/); assert.strictEqual(await sup(page), 48);
+    await run(page, /Argue against/); assert.strictEqual(await sup(page), 56);
     assert.strictEqual((await act(page, /Argue against/)).dis, true);
     await page.evaluate(() => { S.weekNo = 1; }); assert.strictEqual((await act(page, /Talk ferry levy/)).dis, false);
     await page.evaluate(() => { S.weekNo = 0; });
@@ -65,7 +65,7 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => fourthDay(5)), true);
     await at(page, 5, 600, 'food'); assert.strictEqual(await act(page, /flyers/), null, 'not before 11 AM');
     await at(page, 5, 720, 'food'); assert.match((await act(page, /flyers/)).l, /Legion BBQ/);
-    await run(page, /flyers/); assert.strictEqual(await sup(page), 52);
+    await run(page, /flyers/); assert.strictEqual(await sup(page), 60);
     await at(page, 6, 1100, 'food'); assert.strictEqual(await act(page, /flyers/), null, 'only once');
     // the evening at the Riv works too, if you missed the BBQ
     await page.evaluate(() => { S.story.ferry.flyers = false; });
@@ -80,10 +80,10 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await newGame(page, 'normal', 'month');
     await story(page, 0, 0, 1, 700, 'store');
-    await page.evaluate(() => { S.rep = 65; }); await run(page, /Talk ferry levy/); assert.strictEqual(await sup(page), 43);
-    await page.evaluate(() => { S.rep = -25; S.story.ferry.talk = ''; }); await run(page, /Talk ferry levy/); assert.strictEqual(await sup(page), 44);
-    await page.evaluate(() => { S.rep = 60; S.loc = 'aiDock'; }); await run(page, /Gather signatures/); assert.strictEqual(await sup(page), 49, '+3 × 1.5 rounds to +5');
-    await page.evaluate(() => { S.rep = 70; S.loc = 'store'; }); await run(page, /Argue against/); assert.strictEqual(await sup(page), 46);
+    await page.evaluate(() => { S.rep = 65; }); await run(page, /Talk ferry levy/); assert.strictEqual(await sup(page), 51);
+    await page.evaluate(() => { S.rep = -25; S.story.ferry.talk = ''; }); await run(page, /Talk ferry levy/); assert.strictEqual(await sup(page), 52);
+    await page.evaluate(() => { S.rep = 60; S.loc = 'aiDock'; }); await run(page, /Gather signatures/); assert.strictEqual(await sup(page), 57, '+3 × 1.5 rounds to +5');
+    await page.evaluate(() => { S.rep = 70; S.loc = 'store'; }); await run(page, /Argue against/); assert.strictEqual(await sup(page), 54);
     noErrors(errors);
   } },
   { name: 'story ferry: the ballot (drop box Mon–Tue, mail from home Monday)', fn: async ctx => {
