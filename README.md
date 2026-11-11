@@ -45,9 +45,15 @@
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
 ### New in 1.21
+<<<<<<< HEAD
 - **🗺️ A map you can tap:** in 🧭 Go somewhere, switch from the list to a drawn map of Anderson Island or the mainland. It shows where you are, where your car is, the ferry route and the boat while it crosses. Tap a place to see how to get there. The list stays the default and the game remembers your choice.
 - **⏩ Less waiting:** at a ferry terminal, **Wait for the 2:15 boat (35 min)** skips straight to boarding (outages, fog and full boats still apply). When you're away from the terminal and need the last boat of the night, your phone warns you 60 and 20 minutes before it goes.
 - **🛡️ Are you sure? and ↩️ Undo:** the game asks before choices you can't take back and probably didn't mean: leaving your car behind, walking on after the last car boat, going to bed hungry with food in reach, skipping the last boat home on a visit's final day, buying the house in Weekend regular. After a simple action (moving, resting, buying) a one-step **Undo** button appears; it's gone once a day ends or an event fires. Settings has a switch to turn the prompts off.
+=======
+- **Stories for your friends:** Walt (the Legion roof), Sam (runaway chickens and a fox), Bev (hats for the ferry crew), Rusty (thinking of selling the Riv) and the Hendersons (museum photos and a family reunion) each have a four-part story that unlocks as the friendship grows. Beats arrive by text and as events, each with a choice that costs time, money or effort. Pitch in twice and the story leaves a lasting perk: Rusty's free coffee, Sam's eggs, Bev's crew wave, Walt's shingle at the Legion, the Henderson photo wall. They work in the week, month and Story modes and in Weekend regular.
+- **Memorable moments:** twenty small, kind events with a choice, weighted by season and time of day: orcas from the ferry, a king tide over the road, a potluck during a power outage, a lost dog, eagles fighting over a fish, a doe and fawn on Eckenstam-Johnson Road, a sea lion on the dock, a double rainbow, a chainsaw at 7 AM, fog so thick the ferry blows its horn, a kid selling lemonade, and more. At most one a day and three a week.
+- **📒 Collections** (title screen and Settings), kept on your device across all games: a **photo album** of every photo you take, a **crossing log** (rides, first crossing, most in a day, 10/25/50/100 ride milestones) and an **island bingo card** of 25 things to see and do.
+>>>>>>> agent-c
 
 ### New in 1.20: Weekend regular
 
