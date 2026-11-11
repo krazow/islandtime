@@ -54,7 +54,7 @@ function actions(){
   if(loc==='gas'&&open){
     const car=carHere();
     if(car){const need=Math.round((car.tank-car.fuel)*10)/10,pr=car.diesel?DIESEL_PRICE:GAS_PRICE;
-      if(car.id==='isl'&&S.battery==='weak') a.push({ic:'🔋',l:'Replace the car battery: $165',s:'No more morning jump-starts.',cls:'primary',dis:S.money<165,fn:()=>{money(-165);S.battery='ok';S.t+=35;say('🔋 New battery installed. The Subaru starts like it means it.');afterAction()}});
+      if(carBat(car)==='weak') a.push({ic:'🔋',l:`Replace the ${carShortName(car)}’s battery: $165`,s:'No more morning jump-starts for this car.',cls:'primary',dis:S.money<165,fn:()=>{money(-165);setCarBat(car,'ok');S.t+=35;say(`🔋 New battery in the ${carShortName(car)}. It starts like it means it.`);afterAction()}});
       a.push({ic:'⛽',l:`Fill up the ${car.diesel?'diesel truck':'tank'} — $${Math.round(need*pr)}`,s:`${need} gal at $${pr}/gal. Tank: ${car.fuel}/${car.tank}.`,cls:'primary',dis:need<0.5||S.money<need*pr,fn:()=>{money(-need*pr);car.fuel=car.tank;S.t+=10;say(`Full tank. ${need} gallons of ${car.diesel?'diesel':'gas'} for $${Math.round(need*pr)}. Islanders treat this as a sacred ritual now.`);afterAction()}});
     }
   }

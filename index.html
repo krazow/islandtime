@@ -708,13 +708,19 @@ function adj(k,v){S[k]=clamp(Math.round(S[k]+v),0,100)}
 function money(v){S.money=Math.round((S.money+v)*100)/100}
 const $=x=>'$'+(Math.round(x*100)/100).toFixed(x%1?2:0);
 function carHere(){return S.cars.find(c=>c.loc===S.loc)}
+// ---- each vehicle's own parts (1.22): battery 'ok'|'weak', spare 'ok'|'on' (the donut is on), troubleLast (dayKey) ----
+// Nothing is shared between cars. Old saves had one S.battery for everything: it becomes the island car's own.
+function carMech(c){if(!c)return c;if(c.bat===undefined)c.bat=(c.id==='isl'&&S&&S.battery&&S.battery!=='ok')?S.battery:'ok';if(!c.spare)c.spare='ok';return c}
+function carBat(c){return c?carMech(c).bat:'ok'}
+function setCarBat(c,v){if(c){carMech(c).bat=v}}
+function carShortName(c){return c?c.name.replace(/^.*\(|\)$/g,'').replace(/^old /,''):'car'}
 function isOpen(id,t=S.t){const h=L[id].hours;if(!h)return true;const r=h(Math.floor(t/1440));if(!r)return false;const m=t%1440;return m>=r[0]&&m<r[1]}
 function hoursTxt(id){const h=L[id].hours;if(!h)return '';const r=h(day());return r?`Open ${fmt(r[0])}–${fmt(r[1])}`:'Closed today'}
 
 // ---------------- ferry engine ----------------
 function sailing(side,d,dep,mode,knownOnly){
   const abs=d*1440+dep;
-  if(d===0&&!ferryHoliday(d)&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
+  if(d===0&&!ferryHoliday(d)&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (a propane tanker: crew & driver only)',known:true};
   for(const b of S.week.b){
     if(knownOnly&&b.start>S.t) continue;
     if(abs>=b.start&&abs<b.end){
@@ -1572,14 +1578,16 @@ defEvent({id:'arc_hendersons',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>
 
 // ---- trip start (can block) ----
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
-  cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&ctx.car.id==='isl'&&!ctx.o.started,
-  chance:()=>S.battery==='weak'?0.3:(S.power?0.2:0.06),
+  cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&!ctx.o.started,
+  // the car's own battery: a weak one is a gamble; an old island car is more likely to die on a cold, dark morning than a newer one
+  chance:ctx=>{const c=ctx.car,old=c.id==='isl'||c.id==='beat';return carBat(c)==='weak'?0.3:(S.power?(old?0.2:0.08):(old?(c.id==='beat'?0.08:0.06):0.015))},
   run(ctx){deadBattery(ctx,false);return {block:true}}});
 function deadBattery(ctx,triedNeighbor){
   const dest=ctx.to,base=dist(ctx.from,dest);S.stats.deadBattery=(S.stats.deadBattery||0)+1;
-  const resume=(extra,msg)=>{S.t+=extra;S.battery='weak';if(msg)say(msg);go(dest,Object.assign({},ctx.o,{started:true}))};
+  const car=ctx.car,cn=carShortName(car);
+  const resume=(extra,msg)=>{S.t+=extra;setCarBat(car,'weak');if(msg)say(msg);go(dest,Object.assign({},ctx.o,{started:true}))};
   const btns=[];
-  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 “Morning, {{name}}.” Sam pulls up in a bathrobe with jumper cables. The Subaru coughs to life.')});
+  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 “Morning, {{name}}.” Sam pulls up in a bathrobe with jumper cables. The '+cn+' coughs to life.')});
   else if(!triedNeighbor) btns.push({l:'Knock on the new neighbor’s door',s:'You’ve never actually met them.',fn:()=>{
     if(Math.random()<0.65){meet('sam','Sam, your new neighbor','jump-started your car');resume(20,'🔋 The new neighbor, Sam, digs out jumper cables. “Welcome to island cars.”')}
     else{S.t+=12;say('Nobody answers next door. Their car’s gone.');deadBattery(ctx,true);render()}}});
@@ -1587,7 +1595,7 @@ function deadBattery(ctx,triedNeighbor){
   btns.push({l:`Walk to ${L[dest].name}`,s:`${Math.round(base*4)} min. The car stays here.`,fn:()=>go(dest,{m:'walk',min:Math.round(base*4),started:true})});
   btns.push({l:'Stand by the road and hitch',s:'Maybe.',fn:()=>go(dest,{m:'hitch',min:base+15,started:true})});
   buzz(120);adj('stress',8);
-  modal('🔋 Click. Click. Nothing.',`<p>You turn the key and the dash lights flicker. The battery is dead${S.power?' (the cold, dark night didn’t help)':''}.</p><p>There’s no auto parts store, tow truck or jump service on the island.${S.battery==='weak'?' This battery is clearly on its way out. Replace it at the gas station in Steilacoom.':''}</p>`,btns);
+  modal('🔋 Click. Click. Nothing.',`<p>You turn the key and the dash lights flicker. The ${cn}’s battery is dead${S.power?' (the cold, dark night didn’t help)':''}.</p><p>There’s no auto parts store, tow truck or jump service on the island.${carBat(car)==='weak'?' This battery is clearly on its way out. Replace it at the gas station in Steilacoom.':''}</p>`,btns);
 }
 
 // ---- trip middle ----
@@ -1598,7 +1606,10 @@ defEvent({id:'tree_down',hook:'tripMid',priority:5,max:2,cond:ctx=>L[ctx.from].s
   chance:()=>(powerOut()||(S.week.storm&&S.week.storm.day===day()))?0.3:0.03,
   run(ctx){ctx.add(15);adj('stress',4);say('🌲 A fir is down across the road. You detour the long way around the lake. +15 minutes.')}});
 defEvent({id:'flat_tire',hook:'tripMid',priority:4,max:1,cond:islandCar,chance:ctx=>0.035*(ctx.from==='home'?(UP().pot>=60?4:UP().pot>=35?2:1):1),
-  run(ctx){ctx.add(20);adj('stress',6);say('🛞 Thump-thump-thump. A flat. You change it to the donut spare on the gravel shoulder. +20 minutes.')}});
+  run(ctx){const c=ctx.car;if(c&&carMech(c).spare==='on'){const tow=275,ok=canEssential(tow);if(ok)money(-tow);ctx.add(ok?100:150);adj('stress',12);S.stats.towed=(S.stats.towed||0)+1;
+      say(ok?`🛞 Thump-thump-thump. Another flat, and the ${carShortName(c)} is already on its donut. The tow truck rides the ferry over from Lakewood and plugs it on the shoulder: ${$(tow)}. +1 h 40 min.`
+            :`🛞 Another flat, already on the donut, and no money for the tow. A neighbor with a compressor and a plug kit gets you rolling after a long wait. +2 h 30 min.`);if(!ok)c.spare='on';else c.spare='ok';return}
+    if(c)c.spare='on';ctx.add(20);adj('stress',6);say(`🛞 Thump-thump-thump. A flat. You change the ${c?carShortName(c):'car'} over to its donut spare on the gravel shoulder. +20 minutes. Get a new tire before the next one.`)}});
 defEvent({id:'stranded_neighbor',hook:'tripMid',priority:3,max:1,cond:ctx=>islandCar(ctx)&&!S.friends.walt,chance:0.07,
   run(ctx){
     modal('🚩 Someone’s waving you down',`<p>An older man in an American Legion cap stands next to a pickup with the hood up.</p><p>“Battery’s dead. Got cables?”</p>`,[
@@ -1740,7 +1751,7 @@ function startDay(){
   if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
   if(d===0&&S.diff==='hard') say(seasonId()==='winter'?'🔥 <b>Ferry Hell:</b> the boat is a wreck, the lines are long and money is tight. Good luck.':'🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.'); // season
   if(d===0&&S.diff==='easy') say('🌲 <b>Islander mode:</b> a quieter week on the water. A good time to learn the ropes.');
-  if(d===0) say('⛽ Monday fuel run: with a fuel tanker aboard, federal hazmat rules let only crew and the tanker driver ride. The 9:35 AM from Steilacoom and the 11:30 AM from the island are canceled.');
+  if(d===0) say('🔥 Monday fuel run: a propane tanker rides over to refill the island’s tanks (there’s no gas station on the island). With hazmat aboard, only crew and the driver ride, so the 9:30 AM from Steilacoom and the 11:10 AM from the island are canceled.');
   if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(S.mode==='month'&&S.weekNo>0?0.12:(d===4?1:0.3))){ // later weeks of a month: an occasional mishap, not a weekly certainty
     S.injuryRolled=true;
     if(Math.random()<0.7){S.injury={day:d,treated:false};adj('health',-15);
@@ -1918,7 +1929,7 @@ function actions(){
   if(loc==='gas'&&open){
     const car=carHere();
     if(car){const need=Math.round((car.tank-car.fuel)*10)/10,pr=car.diesel?DIESEL_PRICE:GAS_PRICE;
-      if(car.id==='isl'&&S.battery==='weak') a.push({ic:'🔋',l:'Replace the car battery: $165',s:'No more morning jump-starts.',cls:'primary',dis:S.money<165,fn:()=>{money(-165);S.battery='ok';S.t+=35;say('🔋 New battery installed. The Subaru starts like it means it.');afterAction()}});
+      if(carBat(car)==='weak') a.push({ic:'🔋',l:`Replace the ${carShortName(car)}’s battery: $165`,s:'No more morning jump-starts for this car.',cls:'primary',dis:S.money<165,fn:()=>{money(-165);setCarBat(car,'ok');S.t+=35;say(`🔋 New battery in the ${carShortName(car)}. It starts like it means it.`);afterAction()}});
       a.push({ic:'⛽',l:`Fill up the ${car.diesel?'diesel truck':'tank'} — $${Math.round(need*pr)}`,s:`${need} gal at $${pr}/gal. Tank: ${car.fuel}/${car.tank}.`,cls:'primary',dis:need<0.5||S.money<need*pr,fn:()=>{money(-need*pr);car.fuel=car.tank;S.t+=10;say(`Full tank. ${need} gallons of ${car.diesel?'diesel':'gas'} for $${Math.round(need*pr)}. Islanders treat this as a sacred ritual now.`);afterAction()}});
     }
   }
@@ -2402,7 +2413,7 @@ function actView(){
   let h='';
   if(uiNarr.length) h+=`<div class="narr">${uiNarr.slice(-4).map(s=>'<p>'+s+'</p>').join('')}</div>`;
   const cars=S.cars.map(c=>`<span class="tag ${c.fuel<1.5?'bad':c.loc===S.loc?'good':''}">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${c.loc===S.loc?'here':'at '+L[c.loc].name.replace(' Ferry Landing',' landing').replace(' Ferry Terminal',' terminal')} · ⛽${c.fuel}/${c.tank}</span>`).join('');
-  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.battery==='weak'?'<span class="tag bad">🔋 weak battery</span>':''}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}<span class="tag ${S.phone<20?'bad':''}">${S.phone>0?'📱':'📵'} ${S.phone}%</span>${S.gen?`<span class="tag ${S.gen==='home'?'good':''}">🔌 ${S.gen==='home'?'generator':'generator in car'}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
+  h+=`<div>${cars}${S.homeGas?`<span class="tag">🛢️ ${S.homeGas} gal in shed</span>`:''}${S.homeDiesel?`<span class="tag">🟨 ${S.homeDiesel} gal diesel in shed</span>`:''}${Object.keys(GOODS).filter(g=>S.cargo[g]).map(g=>`<span class="tag ${GOODS[g].law==='ok'?'':GOODS[g].law==='lim'?(S.cargo.diesel>2?'bad':'good'):'bad'}">${GOODS[g].ic} ${S.cargo[g]} ${g==='drugs'?'drug pkg':g==='food'?'food case':g==='med'?'med kit':g+' can'}${S.cargo[g]>1&&g!=='drugs'?'s':''}</span>`).join('')}${S.carried?`<span class="tag">🛍️ ${S.carried}d groceries in hand</span>`:''}${S.cooler?'<span class="tag">🧊 cooler</span>':''}${S.cars.filter(c=>carBat(c)==='weak').map(c=>`<span class="tag bad">🔋 ${carShortName(c)}: weak battery</span>`).join('')}${S.cars.filter(c=>carMech(c).spare==='on').map(c=>`<span class="tag bad">🛞 ${carShortName(c)}: on the spare</span>`).join('')}${S.cigs>0?`<span class="tag">🚬 ${S.cigs}</span>`:''}<span class="tag ${S.phone<20?'bad':''}">${S.phone>0?'📱':'📵'} ${S.phone}%</span>${S.gen?`<span class="tag ${S.gen==='home'?'good':''}">🔌 ${S.gen==='home'?'generator':'generator in car'}</span>`:''}${S.injury&&!S.injury.treated?'<span class="tag bad">🤕 sprained ankle</span>':''}</div>`;
   const acts=actions();
   h+=marketView();
   {const tv=tipView();h=tv+(tv?'':nextView(acts))+h;} // the guided tip covers the same ground, so one at a time
@@ -2580,7 +2591,7 @@ function ferryView(){
   let h=plannerView()+`<div class="board"><h3>⛴️ Today’s sailings · ${DAYS[d]}</h3><div style="font-size:12px;color:#9fc0c8">Status as of ${fmt(S.t)}. Things can change without warning.</div>
    <div class="cols"><div><div class="colh">Leave Anderson Is.</div>${col('I',deps('I',day()))}</div><div><div class="colh">Leave Steilacoom</div>${col('M',deps('M',day()))}</div></div></div>`;
   const alerts=S.week.b.filter(b=>b.start<=S.t).map(b=>`<p>🚨 <b>${fmtAbs(b.start)}</b>: service suspended, ${b.cause}. ${S.t>=b.end?`<span style="color:var(--good)">Restored ${fmtAbs(b.end)}.</span>`:'<b>No restoration estimate.</b>'}</p>`).join('');
-  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run: 9:35 AM Steilacoom and 11:30 AM Anderson Island sailings canceled.</p>':''}${seasonFerryNote()}</div>`; // season
+  h+=`<div class="sect">Rider alerts</div><div class="rules">${alerts||'<p>No active alerts. Enjoy it while it lasts.</p>'}${d===0?'<p>⛽ Monday fuel run (propane tanker): 9:30 AM Steilacoom and 11:10 AM Anderson Island sailings canceled.</p>':''}${seasonFerryNote()}</div>`; // season
   h+=`<div class="sect">Fuel & the ferry (current situation)</div><div class="rules">
   <p>⛽ <b>No gas or diesel is sold on Anderson Island.</b> The General Store, the island’s only gas station, closed Feb 2, 2026. A food co-op hopes to reopen it and the pumps in 2027.</p>
   <p>🚫 <b>Gasoline:</b> allowed aboard only in a vehicle’s or boat’s own built-in tank. Spare gas cans, <b>full or empty</b>, are prohibited. County policy cites federal hazmat rules for ferries (49 CFR 176.76) and state law (RCW 9.91.025, unlawful transit conduct). Violators must dispose of the fuel and container, can be cited, and repeat offenders can be barred from the ferry.</p>
@@ -2615,7 +2626,7 @@ function todoItems(){
   it.push({ok:isl.fuel>=3,fail:false,l:`Keep gas in the ${isl.diesel?'truck':'island car'}`,s:`${isl.fuel}/${isl.tank} gal. No gas on the island: fill up on the mainland, or pay Dale.`,urgent:isl.fuel<1.5});
   if(stormKnown()) it.push({ok:genReady()&&S.homeGas>=3,fail:false,l:'Be ready for the storm',s:`${S.week.storm.day===d?`Gale today, from about ${fmt(S.week.storm.start)}`:`Gale tomorrow (${DAYS[S.week.storm.day]}): 🌦️ Tides & Weather saw it coming`}. You need a generator at home (Home Depot, Lakewood) and 3 gal stashed in the shed (${S.homeGas} now), or the fridge dies.`,urgent:S.week.storm.day===d&&S.homeGas<3});
   if(d<=2) it.push({ok:S.bingo.nights>0,fail:d===2&&tod()>=1200&&!S.bingo.nights,l:'Optional: Bingo at the Riv',s:`Wednesday 6:00 PM, American Legion. Benefits the ${BINGO_FOR[S.week.bingo]}.`,urgent:false});
-  if(S.battery==='weak') it.push({ok:false,fail:false,l:'Replace the car battery',s:'Gas station in Steilacoom. Until then, mornings are a gamble.',urgent:false});
+  S.cars.filter(c=>carBat(c)==='weak').forEach(c=>it.push({ok:false,fail:false,l:`Replace the ${carShortName(c)}’s battery`,s:'Gas station in Steilacoom, or Dale on the island. Until then, mornings are a gamble for this car.',urgent:false}));
   {const U=UP(),due=[U.fridge&&'fridge',U.mold&&'mold',U.damp>=3&&'damp',U.ash>=3&&'ash',U.chimney>=21&&'chimney',U.wood<=1&&'firewood',U.septic>=75&&'septic',U.gutters>=60&&'gutters',U.limbs>=60&&'tree limbs',U.well>45&&'well',U.moss>=60&&'roof moss',U.pot>=60&&'potholes',S.gen==='home'&&U.genSvc>14&&'generator',U.propane<25&&'propane'].filter(Boolean);
    it.push({ok:!due.length,fail:false,l:'House & yard upkeep',s:due.length?`Needs attention: ${due.join(', ')}. See 🏠 and 🌲 at home.`:'Everything’s in good shape.',urgent:due.length>=3});}
   it.push({ok:S.home>=50,fail:false,l:'Keep the house in shape',s:`🏠 Home ${S.home}/100. It slips every day. Below ${HOME_LOW}: worse sleep, more breakdowns, fewer visitors. ${HOME_HIGH}+: better rest and cozy mornings.`,urgent:S.home<HOME_LOW});
@@ -4393,7 +4404,7 @@ function irOpen(m){m=m==null?tod():m;return m>=300&&m<1380}   // no drivers 11 P
 function irLive(){const R=IR();return !!R&&S.t<R.until&&L[S.loc].side==='I'}
 function irCarWhy(){const c=S.cars.find(x=>x.id==='isl')||S.cars[0],here=carHere();
   if(here&&here.fuel<1)return '⛽ Your car is out of gas.';
-  if(S.battery==='weak'||S.battery==='dead')return '🔋 Your car battery is a gamble.';
+  {const w=S.cars.find(c=>carBat(c)!=='ok');if(w)return `🔋 The ${carShortName(w)}’s battery is a gamble.`}
   if(!here&&c&&L[c.loc]&&L[c.loc].side==='M')return '🚗 Your car is on the mainland.';
   if(!here)return '🚗 Your car isn’t here.';
   return '';}
@@ -6263,7 +6274,7 @@ function rentNight(notes,d){
 // Fires the 'carStart' event hook from go(): once per car per day, 4 AM to noon, on either side of the water.
 // The beater (241,000 miles) is twice as likely to act up as the Subaru or the diesel pickup.
 function carTroubleP(car){const lv=LV('carTrouble')||0;if(!(lv>0)||!car)return 0;return CAR_P*lv*(car.id==='beat'?2:1)}
-const carTroubleOk=ctx=>LV('carTrouble')>0&&ctx.mode==='car'&&!!ctx.car&&dayKey()-HL().car.last>=CAR_COOL;
+const carTroubleOk=ctx=>LV('carTrouble')>0&&ctx.mode==='car'&&!!ctx.car&&dayKey()-(ctx.car.troubleLast??-99)>=CAR_COOL;   // each car keeps its own cooldown
 Object.assign(TILE_META,{hl_battery:['🔋','Car won’t start','bad'],hl_flat:['🛞','Flat tire','bad']});
 function carTroubleLeave(ctx,btns){
   const dest=ctx.to,base=dist(ctx.from,dest),isl=L[ctx.from].side==='I',name=L[dest].name;
@@ -6275,7 +6286,7 @@ function carTroubleLeave(ctx,btns){
 }
 function carTroubleResume(ctx,extra,msg){S.t+=extra;phoneTick();if(msg)say(msg);go(ctx.to,Object.assign({},ctx.o,{started:true,hlDone:true}))}
 function carBattery(ctx){
-  const isl=L[ctx.from].side==='I',car=ctx.car,btns=[];HL().car.last=dayKey();S.stats.carTrouble=(S.stats.carTrouble||0)+1;
+  const isl=L[ctx.from].side==='I',car=ctx.car,btns=[];HL().car.last=dayKey();car.troubleLast=dayKey();setCarBat(car,'weak');S.stats.carTrouble=(S.stats.carTrouble||0)+1;
   if(isl&&S.friends.sam&&ctx.from==='home')btns.push({l:'Text Sam for a jump',s:'About 15 minutes.',fn:()=>carTroubleResume(ctx,15,'🔋 Sam shuffles over with cables and a mug of coffee. Two tries and it catches.')});
   btns.push({l:isl?(ctx.from==='home'?'Knock on a neighbor’s door for a jump':'Flag down a neighbor for a jump'):'Ask around the lot for a jump',s:'About 30 minutes.',
     fn:()=>carTroubleResume(ctx,30,isl?'🔋 A neighbor in muck boots pulls up nose-to-nose with jumper cables. “Cold mornings,” he says, like that explains everything. It does.'
@@ -6285,16 +6296,16 @@ function carBattery(ctx){
   modal('🔋 The car won’t start',`<p>Click. Click. Nothing. You turn the key in the ${car.name.split(' (')[0].toLowerCase()} and the dash lights flicker. Dead battery.</p><p>${isl?'No tow truck, no parts store and no jump service on the island. Somebody’s cables, or your feet.':'Somebody in the lot has cables. Probably.'}</p>`,btns);
   return {block:true}}
 function carFlat(ctx){
-  const isl=L[ctx.from].side==='I',btns=[],tow=isl?TOW_ISL:TOW_MAIN,hurt=!!(S.injury&&!S.injury.treated);HL().car.last=dayKey();S.stats.carTrouble=(S.stats.carTrouble||0)+1;
-  btns.push({l:'Change it to the spare: 45 min',s:hurt?'Not on that ankle.':'Jack, lug wrench, donut spare. Stress +3.',dis:hurt,fn:()=>{adj('stress',3);carTroubleResume(ctx,45,'🛞 Forty-five minutes on the wet gravel with the jack and the lug wrench. Your knees are soaked, but the donut spare is on.')}});
+  const isl=L[ctx.from].side==='I',btns=[],tow=isl?TOW_ISL:TOW_MAIN,hurt=!!(S.injury&&!S.injury.treated),donut=carMech(ctx.car).spare==='on';HL().car.last=dayKey();ctx.car.troubleLast=dayKey();S.stats.carTrouble=(S.stats.carTrouble||0)+1;
+  btns.push({l:'Change it to the spare: 45 min',s:donut?'The donut’s already on. There’s no second spare.':hurt?'Not on that ankle.':'Jack, lug wrench, donut spare. Stress +3.',dis:hurt||donut,fn:()=>{ctx.car.spare='on';adj('stress',3);carTroubleResume(ctx,45,'🛞 Forty-five minutes on the wet gravel with the jack and the lug wrench. Your knees are soaked, but the donut spare is on.')}});
   btns.push({l:isl?`Call the tow from the mainland: ${$(tow)}`:`Call Lakewood Tire & Auto: ${$(tow)}`,s:isl?'The truck rides the ferry over and fixes it on the spot. About 1 h 40 min.':'Mobile tire service plugs it where it sits. About 40 min.',dis:!canEssential(tow),
     fn:()=>{money(-tow);carTroubleResume(ctx,isl?100:40,isl?`🛞 The tow truck from Lakewood rolls off the ferry, the driver plugs your tire in ten minutes and charges you ${$(tow)} for the boat ride. Island prices.`:`🛞 The Lakewood Tire & Auto van shows up, plugs the tire and takes ${$(tow)}. At least you didn’t kneel in a puddle.`)}});
   carTroubleLeave(ctx,btns);
   buzz(120);adj('stress',6);
   modal('🛞 Flat tire',`<p>You walk out to the ${ctx.car.name.split(' (')[0].toLowerCase()} and the front tire is pancaked on the ${isl?'gravel':'pavement'}. ${isl?'There’s no tire shop on the island.':'Lakewood Tire & Auto does mobile repair, for a price.'}</p>`,btns);
   return {block:true}}
-defEvent({id:'hl_battery',hook:'carStart',priority:10,cooldown:CAR_COOL,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.55,run:carBattery});
-defEvent({id:'hl_flat',hook:'carStart',priority:9,cooldown:CAR_COOL,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.45,run:carFlat});
+defEvent({id:'hl_battery',hook:'carStart',priority:10,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.55,run:carBattery});
+defEvent({id:'hl_flat',hook:'carStart',priority:9,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.45,run:carFlat});
 {const _go=go;go=function(dest,o){
   try{if(o&&o.m==='car'&&!o.started&&!o.midDone&&!o.hlDone&&LV('carTrouble')>0){const car=carHere(),m=tod(),C=HL().car;
     if(car&&m>=240&&m<720&&C.rolled[car.id]!==dayKey()){C.rolled[car.id]=dayKey();
@@ -9278,7 +9289,7 @@ const daleOpen=()=>{const m=tod();return m>=420&&m<1260&&!(typeof npcJailed==='f
 const daleBatStock=()=>{const d=day();S.daleBat=S.daleBat||{};if(S.daleBat[d]===undefined)S.daleBat[d]=chWith('dalebat:'+d,()=>Math.random()<0.8?1:0);return S.daleBat[d]};
 const daleBought=()=>{const d=day();S.daleBought=S.daleBought||{};return S.daleBought[d]||0};
 function daleBattery(){const car=carHere();if(!car||!daleBatStock()||!canEssential(DALE_BATTERY))return;
-  money(-DALE_BATTERY);S.daleBat[day()]=0;S.battery='ok';S.t+=20;S.stats.daleBattery=(S.stats.daleBattery||0)+1;
+  money(-DALE_BATTERY);S.daleBat[day()]=0;setCarBat(car,'ok');S.t+=20;S.stats.daleBattery=(S.stats.daleBattery||0)+1;
   if(S.hl&&S.hl.car)S.hl.car.last=dayKey();       // Ferry Hell's car trouble: a fresh battery buys you a few calm mornings
   say(`🔋 Dale pops the hood, swaps in a new battery from the stack behind his shed and hands you the old one “for the core charge, which I’m keeping.” ${DALE_BATTERY>165?`It’s ${$(DALE_BATTERY-165)} more than the mainland, and no ferry.`:''}`);
   afterAction()}
@@ -9291,7 +9302,7 @@ function daleSell(g){const c=S.cargo;if(!(c[g]>0)||daleBought()>=DALE_BUY_MAX)re
   afterAction()}
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
   if(S.loc==='dale'&&daleOpen()){
-    const car=carHere(),bs=daleBatStock(),bad=S.battery&&S.battery!=='ok';
+    const car=carHere(),bs=daleBatStock(),bad=!!car&&carBat(car)!=='ok';
     a.push({ic:'🔋',l:`Buy a new car battery from Dale: ${$(DALE_BATTERY)}`,cls:bad?'primary':'',
       s:!car?'Bring the car: he installs it in the driveway.':!bs?'“Sold my last one Tuesday. Try tomorrow.”':bad?'No more morning jump-starts. Installed in 20 min, no ferry.':'Yours tests fine, but he’ll sell you one anyway. Installed in 20 min.',
       dis:!car||!bs||S.money<DALE_BATTERY,fn:daleBattery});
@@ -9331,6 +9342,19 @@ function driveChoose(id){const c=S.cars.find(c=>c.id===id);if(!c)return;S.drive=
 // a garaged car starts better on cold, dark mornings
 for(const e of EV)if(e.id==='dead_battery'||e.id==='hl_battery'){const ch=e.chance;
   e.chance=ctx=>{const p=typeof ch==='function'?ch(ctx):ch;const c=(ctx&&ctx.car)||carHere();return garaged(c)&&(ctx&&ctx.from?ctx.from==='home':S.loc==='home')?p*0.5:p}}
+// ---- 🚗 each vehicle's own parts (1.22): tires (battery helpers live next to carHere in 01-core.js) ----
+// A flat puts that car on its donut spare (car.spare='on'). Until it gets a new tire, a second flat means a tow.
+// New tires: the Steilacoom gas station (Les Schwab-style mount and balance, 40 min) for the car that's here.
+const TIRE_PRICE=140;
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
+  const car=carHere();
+  if(S.loc==='gas'&&car&&carMech(car).spare==='on'&&tod()>=300&&tod()<1380)
+    a.push({ic:'🛞',l:`New tire for the ${carShortName(car)}: ${$(TIRE_PRICE)}`,s:'Off the donut, back on four real tires. 40 min.',cls:'primary',dis:!canEssential(TIRE_PRICE),
+      fn:()=>{money(-TIRE_PRICE);car.spare='ok';S.t+=40;phoneTick();say(`🛞 A new tire on the ${carShortName(car)}, and the donut goes back under the floor.`);afterAction()}});
+}catch(e){console.error(e)}return a}}
+{const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);try{
+  S.cars.filter(c=>carMech(c).spare==='on').forEach(c=>it.push({ok:false,fail:false,l:`Get a new tire for the ${carShortName(c)}`,s:`🛞 It’s on the donut. Another flat means a tow. Gas station in Steilacoom: ${$(TIRE_PRICE)}.`,urgent:false}));
+}catch(e){}return it}}
 </script>
 </body>
 </html>

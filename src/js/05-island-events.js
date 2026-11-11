@@ -287,14 +287,16 @@ defEvent({id:'arc_hendersons',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>
 
 // ---- trip start (can block) ----
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
-  cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&ctx.car.id==='isl'&&!ctx.o.started,
-  chance:()=>S.battery==='weak'?0.3:(S.power?0.2:0.06),
+  cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&!ctx.o.started,
+  // the car's own battery: a weak one is a gamble; an old island car is more likely to die on a cold, dark morning than a newer one
+  chance:ctx=>{const c=ctx.car,old=!(typeof visitorOn==='function'&&visitorOn())&&(c.id==='isl'||c.id==='beat');   // a visitor's or regular's own car is newerreturn carBat(c)==='weak'?0.3:(S.power?(old?0.2:0.08):(old?(c.id==='beat'?0.08:0.06):0.015))},
   run(ctx){deadBattery(ctx,false);return {block:true}}});
 function deadBattery(ctx,triedNeighbor){
   const dest=ctx.to,base=dist(ctx.from,dest);S.stats.deadBattery=(S.stats.deadBattery||0)+1;
-  const resume=(extra,msg)=>{S.t+=extra;S.battery='weak';if(msg)say(msg);go(dest,Object.assign({},ctx.o,{started:true}))};
+  const car=ctx.car,cn=carShortName(car);
+  const resume=(extra,msg)=>{S.t+=extra;setCarBat(car,'weak');if(msg)say(msg);go(dest,Object.assign({},ctx.o,{started:true}))};
   const btns=[];
-  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 “Morning, {{name}}.” Sam pulls up in a bathrobe with jumper cables. The Subaru coughs to life.')});
+  if(S.friends.sam) btns.push({l:'Text Sam for a jump',s:'About 10 minutes.',fn:()=>resume(10,'🔋 “Morning, {{name}}.” Sam pulls up in a bathrobe with jumper cables. The '+cn+' coughs to life.')});
   else if(!triedNeighbor) btns.push({l:'Knock on the new neighbor’s door',s:'You’ve never actually met them.',fn:()=>{
     if(Math.random()<0.65){meet('sam','Sam, your new neighbor','jump-started your car');resume(20,'🔋 The new neighbor, Sam, digs out jumper cables. “Welcome to island cars.”')}
     else{S.t+=12;say('Nobody answers next door. Their car’s gone.');deadBattery(ctx,true);render()}}});
@@ -302,7 +304,7 @@ function deadBattery(ctx,triedNeighbor){
   btns.push({l:`Walk to ${L[dest].name}`,s:`${Math.round(base*4)} min. The car stays here.`,fn:()=>go(dest,{m:'walk',min:Math.round(base*4),started:true})});
   btns.push({l:'Stand by the road and hitch',s:'Maybe.',fn:()=>go(dest,{m:'hitch',min:base+15,started:true})});
   buzz(120);adj('stress',8);
-  modal('🔋 Click. Click. Nothing.',`<p>You turn the key and the dash lights flicker. The battery is dead${S.power?' (the cold, dark night didn’t help)':''}.</p><p>There’s no auto parts store, tow truck or jump service on the island.${S.battery==='weak'?' This battery is clearly on its way out. Replace it at the gas station in Steilacoom.':''}</p>`,btns);
+  modal('🔋 Click. Click. Nothing.',`<p>You turn the key and the dash lights flicker. The ${cn}’s battery is dead${S.power?' (the cold, dark night didn’t help)':''}.</p><p>There’s no auto parts store, tow truck or jump service on the island.${carBat(car)==='weak'?' This battery is clearly on its way out. Replace it at the gas station in Steilacoom.':''}</p>`,btns);
 }
 
 // ---- trip middle ----
@@ -313,7 +315,10 @@ defEvent({id:'tree_down',hook:'tripMid',priority:5,max:2,cond:ctx=>L[ctx.from].s
   chance:()=>(powerOut()||(S.week.storm&&S.week.storm.day===day()))?0.3:0.03,
   run(ctx){ctx.add(15);adj('stress',4);say('🌲 A fir is down across the road. You detour the long way around the lake. +15 minutes.')}});
 defEvent({id:'flat_tire',hook:'tripMid',priority:4,max:1,cond:islandCar,chance:ctx=>0.035*(ctx.from==='home'?(UP().pot>=60?4:UP().pot>=35?2:1):1),
-  run(ctx){ctx.add(20);adj('stress',6);say('🛞 Thump-thump-thump. A flat. You change it to the donut spare on the gravel shoulder. +20 minutes.')}});
+  run(ctx){const c=ctx.car;if(c&&carMech(c).spare==='on'){const tow=275,ok=canEssential(tow);if(ok)money(-tow);ctx.add(ok?100:150);adj('stress',12);S.stats.towed=(S.stats.towed||0)+1;
+      say(ok?`🛞 Thump-thump-thump. Another flat, and the ${carShortName(c)} is already on its donut. The tow truck rides the ferry over from Lakewood and plugs it on the shoulder: ${$(tow)}. +1 h 40 min.`
+            :`🛞 Another flat, already on the donut, and no money for the tow. A neighbor with a compressor and a plug kit gets you rolling after a long wait. +2 h 30 min.`);if(!ok)c.spare='on';else c.spare='ok';return}
+    if(c)c.spare='on';ctx.add(20);adj('stress',6);say(`🛞 Thump-thump-thump. A flat. You change the ${c?carShortName(c):'car'} over to its donut spare on the gravel shoulder. +20 minutes. Get a new tire before the next one.`)}});
 defEvent({id:'stranded_neighbor',hook:'tripMid',priority:3,max:1,cond:ctx=>islandCar(ctx)&&!S.friends.walt,chance:0.07,
   run(ctx){
     modal('🚩 Someone’s waving you down',`<p>An older man in an American Legion cap stands next to a pickup with the hood up.</p><p>“Battery’s dead. Got cables?”</p>`,[

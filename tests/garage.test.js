@@ -21,7 +21,7 @@ module.exports = [
     r = await page.evaluate(() => ({ car: carHere().id, drive: S.drive, take: actions().filter(a => /^Take the .* instead/.test(a.l)).map(a => a.l) }));
     assert.deepStrictEqual(r, { car: 'beat', drive: 'beat', take: ['Take the Subaru instead'] });
     // leaving home drives the chosen car; the other one stays in the garage
-    r = await page.evaluate(clr => { eval(clr)(); S.battery = 'ok'; Math.random = () => 0.99; go('food', { m: 'car', l: 'car', min: 8 }); eval(clr)();
+    r = await page.evaluate(clr => { eval(clr)(); S.cars.forEach(c => { c.bat = 'ok'; }); Math.random = () => 0.99; go('food', { m: 'car', l: 'car', min: 8 }); eval(clr)();
       return { loc: S.loc, beat: S.cars.find(c => c.id === 'beat').loc, isl: S.cars.find(c => c.id === 'isl').loc }; }, `(${clear})`);
     assert.deepStrictEqual(r, { loc: 'food', beat: 'food', isl: 'home' });
     // with one car here, there's nothing to choose
@@ -32,7 +32,7 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await newGame(page);
     await twoAtHome(page);
-    const r = await page.evaluate(() => { S.battery = 'weak'; const e = EV.find(e => e.id === 'dead_battery'); const car = S.cars.find(c => c.id === 'isl');
+    const r = await page.evaluate(() => { const car = S.cars.find(c => c.id === 'isl'); car.bat = 'weak'; const e = EV.find(e => e.id === 'dead_battery');
       const home = e.chance({ from: 'home', car }); car.loc = 'food'; S.loc = 'food'; const away = e.chance({ from: 'food', car }); return { home, away }; });
     assert.deepStrictEqual(r, { home: 0.15, away: 0.3 });
     noErrors(errors);

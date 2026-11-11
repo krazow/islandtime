@@ -62,7 +62,7 @@ function rentNight(notes,d){
 // Fires the 'carStart' event hook from go(): once per car per day, 4 AM to noon, on either side of the water.
 // The beater (241,000 miles) is twice as likely to act up as the Subaru or the diesel pickup.
 function carTroubleP(car){const lv=LV('carTrouble')||0;if(!(lv>0)||!car)return 0;return CAR_P*lv*(car.id==='beat'?2:1)}
-const carTroubleOk=ctx=>LV('carTrouble')>0&&ctx.mode==='car'&&!!ctx.car&&dayKey()-HL().car.last>=CAR_COOL;
+const carTroubleOk=ctx=>LV('carTrouble')>0&&ctx.mode==='car'&&!!ctx.car&&dayKey()-(ctx.car.troubleLast??-99)>=CAR_COOL;   // each car keeps its own cooldown
 Object.assign(TILE_META,{hl_battery:['🔋','Car won’t start','bad'],hl_flat:['🛞','Flat tire','bad']});
 function carTroubleLeave(ctx,btns){
   const dest=ctx.to,base=dist(ctx.from,dest),isl=L[ctx.from].side==='I',name=L[dest].name;
@@ -74,7 +74,7 @@ function carTroubleLeave(ctx,btns){
 }
 function carTroubleResume(ctx,extra,msg){S.t+=extra;phoneTick();if(msg)say(msg);go(ctx.to,Object.assign({},ctx.o,{started:true,hlDone:true}))}
 function carBattery(ctx){
-  const isl=L[ctx.from].side==='I',car=ctx.car,btns=[];HL().car.last=dayKey();S.stats.carTrouble=(S.stats.carTrouble||0)+1;
+  const isl=L[ctx.from].side==='I',car=ctx.car,btns=[];HL().car.last=dayKey();car.troubleLast=dayKey();setCarBat(car,'weak');S.stats.carTrouble=(S.stats.carTrouble||0)+1;
   if(isl&&S.friends.sam&&ctx.from==='home')btns.push({l:'Text Sam for a jump',s:'About 15 minutes.',fn:()=>carTroubleResume(ctx,15,'🔋 Sam shuffles over with cables and a mug of coffee. Two tries and it catches.')});
   btns.push({l:isl?(ctx.from==='home'?'Knock on a neighbor’s door for a jump':'Flag down a neighbor for a jump'):'Ask around the lot for a jump',s:'About 30 minutes.',
     fn:()=>carTroubleResume(ctx,30,isl?'🔋 A neighbor in muck boots pulls up nose-to-nose with jumper cables. “Cold mornings,” he says, like that explains everything. It does.'
@@ -84,16 +84,16 @@ function carBattery(ctx){
   modal('🔋 The car won’t start',`<p>Click. Click. Nothing. You turn the key in the ${car.name.split(' (')[0].toLowerCase()} and the dash lights flicker. Dead battery.</p><p>${isl?'No tow truck, no parts store and no jump service on the island. Somebody’s cables, or your feet.':'Somebody in the lot has cables. Probably.'}</p>`,btns);
   return {block:true}}
 function carFlat(ctx){
-  const isl=L[ctx.from].side==='I',btns=[],tow=isl?TOW_ISL:TOW_MAIN,hurt=!!(S.injury&&!S.injury.treated);HL().car.last=dayKey();S.stats.carTrouble=(S.stats.carTrouble||0)+1;
-  btns.push({l:'Change it to the spare: 45 min',s:hurt?'Not on that ankle.':'Jack, lug wrench, donut spare. Stress +3.',dis:hurt,fn:()=>{adj('stress',3);carTroubleResume(ctx,45,'🛞 Forty-five minutes on the wet gravel with the jack and the lug wrench. Your knees are soaked, but the donut spare is on.')}});
+  const isl=L[ctx.from].side==='I',btns=[],tow=isl?TOW_ISL:TOW_MAIN,hurt=!!(S.injury&&!S.injury.treated),donut=carMech(ctx.car).spare==='on';HL().car.last=dayKey();ctx.car.troubleLast=dayKey();S.stats.carTrouble=(S.stats.carTrouble||0)+1;
+  btns.push({l:'Change it to the spare: 45 min',s:donut?'The donut’s already on. There’s no second spare.':hurt?'Not on that ankle.':'Jack, lug wrench, donut spare. Stress +3.',dis:hurt||donut,fn:()=>{ctx.car.spare='on';adj('stress',3);carTroubleResume(ctx,45,'🛞 Forty-five minutes on the wet gravel with the jack and the lug wrench. Your knees are soaked, but the donut spare is on.')}});
   btns.push({l:isl?`Call the tow from the mainland: ${$(tow)}`:`Call Lakewood Tire & Auto: ${$(tow)}`,s:isl?'The truck rides the ferry over and fixes it on the spot. About 1 h 40 min.':'Mobile tire service plugs it where it sits. About 40 min.',dis:!canEssential(tow),
     fn:()=>{money(-tow);carTroubleResume(ctx,isl?100:40,isl?`🛞 The tow truck from Lakewood rolls off the ferry, the driver plugs your tire in ten minutes and charges you ${$(tow)} for the boat ride. Island prices.`:`🛞 The Lakewood Tire & Auto van shows up, plugs the tire and takes ${$(tow)}. At least you didn’t kneel in a puddle.`)}});
   carTroubleLeave(ctx,btns);
   buzz(120);adj('stress',6);
   modal('🛞 Flat tire',`<p>You walk out to the ${ctx.car.name.split(' (')[0].toLowerCase()} and the front tire is pancaked on the ${isl?'gravel':'pavement'}. ${isl?'There’s no tire shop on the island.':'Lakewood Tire & Auto does mobile repair, for a price.'}</p>`,btns);
   return {block:true}}
-defEvent({id:'hl_battery',hook:'carStart',priority:10,cooldown:CAR_COOL,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.55,run:carBattery});
-defEvent({id:'hl_flat',hook:'carStart',priority:9,cooldown:CAR_COOL,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.45,run:carFlat});
+defEvent({id:'hl_battery',hook:'carStart',priority:10,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.55,run:carBattery});
+defEvent({id:'hl_flat',hook:'carStart',priority:9,cond:carTroubleOk,chance:ctx=>carTroubleP(ctx.car)*0.45,run:carFlat});
 {const _go=go;go=function(dest,o){
   try{if(o&&o.m==='car'&&!o.started&&!o.midDone&&!o.hlDone&&LV('carTrouble')>0){const car=carHere(),m=tod(),C=HL().car;
     if(car&&m>=240&&m<720&&C.rolled[car.id]!==dayKey()){C.rolled[car.id]=dayKey();

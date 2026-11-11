@@ -60,7 +60,7 @@ module.exports = [
     assert.ok(r.cancels > 0, 'ice can cancel sailings');
     // icy road + king tide during an island drive
     const ev = await page.evaluate(() => {
-      S.battery = 'ok'; S.week.sea.snow = day(); S.week.sea.tide = { day: day(), start: S.t - 10, end: S.t + 200 }; S.t = Math.max(S.t, 400);
+      S.cars.forEach(c => { c.bat = 'ok'; }); S.week.sea.snow = day(); S.week.sea.tide = { day: day(), start: S.t - 10, end: S.t + 200 }; S.t = Math.max(S.t, 400);
       S.week.sea.tide.start = S.t - 10; S.week.sea.tide.end = S.t + 200; S.ev.flags.garage = -1;
       forceEvent('icy_road'); forceEvent('king_tide');
       const t0 = S.t; go('store', { m: 'car', min: 7 }); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove());

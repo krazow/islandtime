@@ -11,11 +11,11 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await newGame(page);
     await at(page, 'dale', 720);
-    await page.evaluate(() => { S.battery = 'weak'; });
+    await page.evaluate(() => { S.cars.find(c => c.id === 'isl').bat = 'weak'; });
     let a = await act(page, /^Buy a new car battery from Dale/);
     assert.ok(a && !a.dis, JSON.stringify(a)); assert.match(a.l, /\$189/); assert.match(a.s, /jump-starts/);
     await press(page, /^Buy a new car battery from Dale/);
-    const r = await page.evaluate(() => ({ m: S.money, b: S.battery, t: tod() }));
+    const r = await page.evaluate(() => ({ m: S.money, b: S.cars.find(c => c.id === 'isl').bat, t: tod() }));
     assert.deepStrictEqual(r, { m: 311, b: 'ok', t: 740 });
     a = await act(page, /^Buy a new car battery from Dale/);
     assert.ok(a.dis && /Try tomorrow/.test(a.s), 'sold out after one: ' + JSON.stringify(a));

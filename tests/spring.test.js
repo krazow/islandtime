@@ -173,7 +173,7 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await seasonGame(page, 'spring', 'month');
     const r = await page.evaluate(() => {
-      S.battery = 'ok'; S.t = Math.max(S.t, 600); S.ev.flags.garage = -1; S.week.sea.pollen = [];
+      S.cars.forEach(c => { c.bat = 'ok'; }); S.t = Math.max(S.t, 600); S.ev.flags.garage = -1; S.week.sea.pollen = [];
       const ev = EV.find(e => e.id === 'mud_road');
       const out = { mud: S.week.sea.mud, chance: ev.chance };
       forceEvent('mud_road'); const t0 = S.t; go('store', { m: 'car', min: 7 }); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove());

@@ -1,7 +1,7 @@
 // ---------------- ferry engine ----------------
 function sailing(side,d,dep,mode,knownOnly){
   const abs=d*1440+dep;
-  if(d===0&&!ferryHoliday(d)&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (hazmat: crew & tanker driver only)',known:true};
+  if(d===0&&!ferryHoliday(d)&&FUEL_CANCEL[side].includes(dep)) return {abs,dep,d,cancel:true,reason:'Monday fuel run (a propane tanker: crew & driver only)',known:true};
   for(const b of S.week.b){
     if(knownOnly&&b.start>S.t) continue;
     if(abs>=b.start&&abs<b.end){

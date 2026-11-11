@@ -9,7 +9,7 @@ const daleOpen=()=>{const m=tod();return m>=420&&m<1260&&!(typeof npcJailed==='f
 const daleBatStock=()=>{const d=day();S.daleBat=S.daleBat||{};if(S.daleBat[d]===undefined)S.daleBat[d]=chWith('dalebat:'+d,()=>Math.random()<0.8?1:0);return S.daleBat[d]};
 const daleBought=()=>{const d=day();S.daleBought=S.daleBought||{};return S.daleBought[d]||0};
 function daleBattery(){const car=carHere();if(!car||!daleBatStock()||!canEssential(DALE_BATTERY))return;
-  money(-DALE_BATTERY);S.daleBat[day()]=0;S.battery='ok';S.t+=20;S.stats.daleBattery=(S.stats.daleBattery||0)+1;
+  money(-DALE_BATTERY);S.daleBat[day()]=0;setCarBat(car,'ok');S.t+=20;S.stats.daleBattery=(S.stats.daleBattery||0)+1;
   if(S.hl&&S.hl.car)S.hl.car.last=dayKey();       // Ferry Hell's car trouble: a fresh battery buys you a few calm mornings
   say(`🔋 Dale pops the hood, swaps in a new battery from the stack behind his shed and hands you the old one “for the core charge, which I’m keeping.” ${DALE_BATTERY>165?`It’s ${$(DALE_BATTERY-165)} more than the mainland, and no ferry.`:''}`);
   afterAction()}
@@ -22,7 +22,7 @@ function daleSell(g){const c=S.cargo;if(!(c[g]>0)||daleBought()>=DALE_BUY_MAX)re
   afterAction()}
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
   if(S.loc==='dale'&&daleOpen()){
-    const car=carHere(),bs=daleBatStock(),bad=S.battery&&S.battery!=='ok';
+    const car=carHere(),bs=daleBatStock(),bad=!!car&&carBat(car)!=='ok';
     a.push({ic:'🔋',l:`Buy a new car battery from Dale: ${$(DALE_BATTERY)}`,cls:bad?'primary':'',
       s:!car?'Bring the car: he installs it in the driveway.':!bs?'“Sold my last one Tuesday. Try tomorrow.”':bad?'No more morning jump-starts. Installed in 20 min, no ferry.':'Yours tests fine, but he’ll sell you one anyway. Installed in 20 min.',
       dis:!car||!bs||S.money<DALE_BATTERY,fn:daleBattery});

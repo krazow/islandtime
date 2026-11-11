@@ -75,7 +75,7 @@ function irOpen(m){m=m==null?tod():m;return m>=300&&m<1380}   // no drivers 11 P
 function irLive(){const R=IR();return !!R&&S.t<R.until&&L[S.loc].side==='I'}
 function irCarWhy(){const c=S.cars.find(x=>x.id==='isl')||S.cars[0],here=carHere();
   if(here&&here.fuel<1)return '⛽ Your car is out of gas.';
-  if(S.battery==='weak'||S.battery==='dead')return '🔋 Your car battery is a gamble.';
+  {const w=S.cars.find(c=>carBat(c)!=='ok');if(w)return `🔋 The ${carShortName(w)}’s battery is a gamble.`}
   if(!here&&c&&L[c.loc]&&L[c.loc].side==='M')return '🚗 Your car is on the mainland.';
   if(!here)return '🚗 Your car isn’t here.';
   return '';}
