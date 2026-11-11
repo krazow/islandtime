@@ -39,7 +39,12 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
-### New in 1.19: visit the island
+### New in 1.19: visit the island, and go out on the mainland
+
+- 🎟️ **Going out:** 15 real places on the mainland, in a **Going out** group in the travel list. Residents spend time and money to unwind (stress drops once per place per day, and a restaurant meal counts as dinner). Visitors score points for each different place they go out to, up to five.
+  - **Steilacoom:** Topside Bar &amp; Grill (waterfront pub), The Bair (breakfast and lunch at the old soda fountain), Steilacoom Pub &amp; Grill (pool, karaoke, live music), the Steilacoom Historical Museum (spring and summer weekends) and Sunnyside Beach Park.
+  - **Lakewood:** Yi's Traditional Korean Beef Soup, Hess Bakery &amp; Deli (German), Lakewood Playhouse, Lakewold Gardens and Fort Steilacoom Park.
+  - **Tacoma:** Duke's Seafood on Ruston Way, Cactus in Proctor (Mexican), Point Defiance Zoo &amp; Aquarium, the Museum of Glass and The Grand Cinema.
 
 - 🧳 **Visitor mode.** Tap **Visit the island** on the title screen to play a visitor instead of a resident. Pick a **day trip** (Saturday), a **weekend** (Friday evening to Sunday) or **a week**, and where you live: **Seattle** (about 55 miles), **Tacoma** (15) or **Olympia** (25). Then pick a difficulty.
 - 🚗 **Getting there:** pack a cooler at home (there's no grocery store on the island), bring your bike if you like, and drive to the Steilacoom ferry. **I-5 traffic** can slow you down, worst at rush hour, on Friday afternoons and on summer Saturdays, and a crash can add up to an hour. Drive on, or walk on for less.

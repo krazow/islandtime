@@ -13,7 +13,7 @@ const FUN={};                                    // id -> definition
 const FUN_VISIT_PTS=60, FUN_VISIT_MAX=5;
 function defFun(f){
   FUN[f.id]=f;
-  L[f.id]={name:f.name,side:'M',ic:f.ic,desc:f.desc,hours:f.hours,fun:true,town:f.town};
+  L[f.id]={name:f.name.includes(f.town)?f.name:`${f.name} (${f.town})`,side:'M',ic:f.ic,desc:f.desc,hours:f.hours,fun:true,town:f.town};
   MP[f.id]=f.pos;
 }
 const funLog=()=>{S.fun=S.fun||{days:{},went:{}};return S.fun};

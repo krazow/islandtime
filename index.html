@@ -2410,10 +2410,14 @@ function actView(){
   const dests=Object.keys(L).filter(k=>k!==S.loc&&L[k].side===L[S.loc].side&&(k!=='vhome'||visitorOn()));
   const pOpen=prefs().goOpen,goOpen=pOpen===null||pOpen===undefined?acts.length<=5:pOpen;
   h+=`<details class="go" ${goOpen?'open':''} ontoggle="setPref('goOpen',this.open)"><summary>🧭 Go somewhere${L[S.loc].side==='I'?' on the island':' on the mainland'} (${dests.length})</summary>`;
-  dests.forEach(k=>{
+  const destRow=k=>{
     const opts=travelOpts(k);
     h+=`<div class="dest compact"><div class="dn"><b>${L[k].ic} ${L[k].name}</b><span>${L[k].hours?hoursTxt(k):''}</span></div><div class="chips">${opts.map(o=>{const i=ACTS.push(()=>go(k,o))-1;return `<button class="chip" ${o.dis||(o.cost&&o.m==='bus'&&S.money<o.cost)?'disabled':''} onclick="ACT(${i})">${o.l}</button>`}).join('')}</div>${(()=>{const n=opts.find(o=>o.s);return n?`<div class="small-note" style="color:var(--mute);margin:2px 0 0">${n.s}</div>`:''})()}</div>`;
-  });
+  };
+  // restaurants and entertainment (40-fun.js) sit in their own collapsible group, closed until opened
+  const plain=dests.filter(k=>!L[k].fun),fun=dests.filter(k=>L[k].fun);
+  plain.forEach(destRow);
+  if(fun.length){h+=`<details class="go fun" ${prefs().funOpen?'open':''} ontoggle="setPref('funOpen',this.open)"><summary>🎟️ Going out: restaurants and things to do (${fun.length})</summary>`;fun.forEach(destRow);h+='</details>'}
   h+='</details>';
   if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">To reach the mainland, go to the ferry landing.</p>`;
   if(L[S.loc].side==='M'&&S.loc!=='stDock') h+=`<p class="small-note" style="color:var(--mute)">To get home, head back to the Steilacoom terminal.</p>`;
@@ -6991,7 +6995,7 @@ const FUN={};                                    // id -> definition
 const FUN_VISIT_PTS=60, FUN_VISIT_MAX=5;
 function defFun(f){
   FUN[f.id]=f;
-  L[f.id]={name:f.name,side:'M',ic:f.ic,desc:f.desc,hours:f.hours,fun:true,town:f.town};
+  L[f.id]={name:f.name.includes(f.town)?f.name:`${f.name} (${f.town})`,side:'M',ic:f.ic,desc:f.desc,hours:f.hours,fun:true,town:f.town};
   MP[f.id]=f.pos;
 }
 const funLog=()=>{S.fun=S.fun||{days:{},went:{}};return S.fun};
