@@ -39,6 +39,13 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.22
+- 🚗 **Car deals are for islanders:** visitors and Weekend regulars are no longer offered the mainland beater or the diesel pickup at the Steilacoom terminal.
+- 🏡 **Your city car moves with you:** when a Weekend regular buys the house, the car comes along (fuel, battery, spare tire) and is parked at the cabin. Or sell it right then for $2,500 and drive the old island Subaru.
+- 💵 **Selling and swapping:** sell the mainland beater back at the terminal for $350, or trade the diesel pickup back for an old Subaru and get $600 back. The garage copes when a car leaves.
+- ⛵ **Skiff gas:** shed gas fills the skiff only when it is at home; at the marina or Sunnyside, pour in a gas can you carry.
+- 🔥 **Propane rides the Monday fuel run:** order it and it arrives on Monday (that day if you order before the run, otherwise next Monday).
+
 ### New in 1.21.1: small fixes
 
 - ⚖️ **Fines, bail and reputation losses follow the level:** half on Islander, 50% steeper on Ferry Hell (Normal unchanged). Gains are the same on every level.
