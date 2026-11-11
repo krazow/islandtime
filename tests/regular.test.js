@@ -360,6 +360,7 @@ module.exports = [
     assert.ok(r.met.all); assert.ok(r.offered); assert.match(r.modal, /A house in the Island Group/); assert.ok(r.btns.some(b => /Buy it/.test(b)) && r.btns.some(b => /Not yet/.test(b)));
     assert.strictEqual(r.stillOver, false); assert.ok(r.action, 'the offer stays up');
     await page.evaluate(() => { actions().find(a => /^Buy the house in the Island Group/.test(a.l)).fn(); });
+    await pick(page, /Yes, buy it/);   // 🛡️ the "Are you sure?" prompt
     const end = await page.textContent('.end');
     assert.match(end, /you moved to the island/); assert.match(end, /Moved to the island/); assert.match(end, /Start life on the island/); assert.match(end, /Island reputation/); assert.match(end, /Savings after rent and bills/);
     const s = await page.evaluate(() => ({ over: S.over, res: VS().result, end: S.ending, money: S.money }));
@@ -374,6 +375,7 @@ module.exports = [
       for (const id of ['walt', 'bev', 'sam']) meet(id, id + ' (friend)', 'test');
       friendPts('walt', 4); regGoalCheck(); MBTN(0); MQ = [];
     });
+    await pick(page, /Yes, buy it/);   // 🛡️ the "Are you sure?" prompt
     assert.match(await page.textContent('.end'), /you moved to the island/);
     await page.click('button:has-text("Start life on the island")');
     const r = await page.evaluate(() => ({ visitor: !!S.visitor, on: visitorOn(), over: S.over, money: S.money, friends: Object.keys(S.friends).sort(), lvl: S.friends.walt.lvl, rep: S.rep, diff: S.diff, mode: S.mode, loc: S.loc, emp: S.emp, hud: document.querySelector('.hud-sub').textContent, rent: typeof rentOn === 'function' && rentOn() }));

@@ -7751,6 +7751,298 @@ function regLongTake(){const R=REG(),V=VS(),Rn=vRental();if(!regLongCan())return
 {const _t=regTick;regTick=function(){const R=REG();
   try{if(R.long&&R.long.W&&day()===0&&L[S.loc].side==='M'&&R.W.on&&!R.W.done){regWeekendEnd()}}catch(e){console.error(e)}
   return _t.apply(this,arguments)}}
+// ---- 🗺️ an island map you can tap (50-map.js) ----
+// A drawn map of Anderson Island and of the mainland, as an alternative to the "Go somewhere" list. It wraps actView(): the list stays
+// (hidden) and the player's choice is remembered with setPref('mapView'). Tapping a place shows its travel options (travelOpts) and goes there.
+// MAPI = island positions (400x340 map), mainland positions come from MP (≈ miles, Steilacoom terminal [0,0]).
+const MAPI={aiDock:[326,78],store:[272,122],lake:[240,152],home:[186,102],school:[160,152],food:[100,156],marina:[78,202],legion:[236,204],
+  dale:[150,238],farm:[292,222],andys:[214,264],jacobs:[96,272]};
+const MAPW=400,MAPH={I:340,M:380};
+let MAPSEL=null,MAPSIDE=null,MAPSIDE_FOR=null;
+const mapSide=()=>{const cur=L[S.loc].side;if(MAPSIDE_FOR!==cur){MAPSIDE=null;MAPSIDE_FOR=cur}return MAPSIDE||cur};
+const mpx=x=>20+(x+5.5)*19, mpy=y=>30+(9-y)*20;
+function mapMainPos(k){
+  if(MP[k])return [mpx(MP[k][0]),mpy(MP[k][1])];
+  const city={seattle:[12.5,9],tacoma:[11,5.6],olympia:[-3,-6.6]};
+  let h=[11,5.6];try{h=city[VS().home]||h}catch(e){}
+  if(k==='vhome')return [mpx(h[0]),mpy(h[1])];
+  if(k==='rwork')return [mpx(h[0]+1.2),mpy(h[1]-0.9)];
+  if(k==='rmarket')return [mpx(h[0]-1.2),mpy(h[1]-0.9)];
+  let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return [mpx(2+n%9),mpy(-1-(n%5))];
+}
+function mapPlaces(side){
+  return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn()));
+}
+// push overlapping markers apart (deterministic), keeping them near where they belong
+function mapSpread(pts,min,w,h){
+  const ks=Object.keys(pts),o={};ks.forEach(k=>o[k]=pts[k].slice());
+  for(let it=0;it<260;it++){
+    for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){
+      const a=pts[ks[i]],b=pts[ks[j]];let dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy);
+      if(d>=min)continue;if(d<0.01){dx=(i%2?1:-1);dy=(j%3-1)||1;d=1.4}
+      const p=(min-d)/2,ux=dx/d,uy=dy/d;a[0]-=ux*p;a[1]-=uy*p;b[0]+=ux*p;b[1]+=uy*p}
+    ks.forEach(k=>{const p=pts[k];p[0]+=(o[k][0]-p[0])*0.02;p[1]+=(o[k][1]-p[1])*0.02;p[0]=Math.max(24,Math.min(w-24,p[0]));p[1]=Math.max(26,Math.min(h-26,p[1]))})}
+  return pts;
+}
+function mapPositions(side){
+  const pts={},ks=mapPlaces(side),extra=[[60,40],[110,70],[280,60],[190,40]];let e=0;
+  ks.forEach(k=>{pts[k]=side==='I'?(MAPI[k]?MAPI[k].slice():extra[e++%extra.length].slice()):mapMainPos(k)});
+  return mapSpread(pts,side==='I'?34:32,MAPW,MAPH[side]);
+}
+// the boat on the water right now, from the timetable: {side it left, f:0..1 across, dep}
+function mapFerry(){
+  const d=day();
+  for(const side of ['I','M'])for(const dep of deps(side,d)){
+    const s=sailing(side,d,dep,'walk',true);if(s.cancel)continue;
+    const st=s.abs+(s.delay||0),dur=20+(s.ketron?10:0);
+    if(S.t>=st&&S.t<st+dur)return {side,f:(S.t-st)/dur,dep};
+  }
+  return null;
+}
+function mapSVG(side,pts,fer,out){
+  const H=MAPH[side],water='#2c5f6e',land='#d9d3bc',tree='#2f5d4a';
+  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/><path d="M0 ${H*0.3} h${MAPW} M0 ${H*0.6} h${MAPW}" stroke="#fff" stroke-opacity=".07"/>`;
+  let dock,edge;
+  if(side==='I'){
+    s+=`<path d="M120 40 C170 22 260 28 320 52 C345 70 340 100 330 125 C322 160 335 190 322 225 C312 255 285 285 240 298 C200 308 160 300 130 296 C90 290 60 262 55 230 C50 200 70 185 60 160 C50 130 70 100 85 78 C95 60 105 48 120 40 Z" fill="${tree}" stroke="#e8dcc0" stroke-width="3"/>`
+     +`<path d="M150 70 C190 60 250 70 290 90 M120 120 C160 130 200 120 240 130 M110 230 C160 220 220 240 280 250" stroke="#e8dcc0" stroke-opacity=".28" stroke-width="2" fill="none" stroke-dasharray="5 4"/>`
+     +`<ellipse cx="240" cy="152" rx="30" ry="19" fill="${water}" opacity=".9"/><ellipse cx="186" cy="212" rx="22" ry="13" fill="${water}" opacity=".9"/>`
+     +`<g font-size="9" fill="#e8dcc0" font-family="DM Sans" opacity=".8" text-anchor="middle"><text x="240" y="178">Lake Josephine</text><text x="186" y="236">Florence Lake</text><text x="40" y="150" font-style="italic" fill="#9fc0c8">Amsterdam Bay</text><text x="352" y="118" font-style="italic" fill="#9fc0c8">Yoman Pt.</text></g>`;
+    dock=pts.aiDock||[326,78];edge=[392,30];
+  } else {
+    const co=[[-0.5,9.5],[-1.2,6],[-0.9,2.5],[-0.6,0.4],[-0.8,-1],[-2,-2.2],[-5,-3.6],[-6,-4.2]];
+    s+=`<polygon points="${co.concat([[-6,-8],[16,-8],[16,10]]).map(p=>mpx(p[0])+','+mpy(p[1])).join(' ')}" fill="${land}"/>`
+      +`<path d="M${mpx(-0.6)} ${mpy(0.4)} C${mpx(2)} ${mpy(2)} ${mpx(5)} ${mpy(2)} ${mpx(8)} ${mpy(6.5)} L${mpx(13)} ${mpy(9.5)}" stroke="#b9b08f" stroke-width="3" fill="none"/>`
+      +`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle" opacity=".9"><text x="${mpx(0.3)}" y="${mpy(-1.5)}">Steilacoom</text><text x="${mpx(-3.6)}" y="${mpy(-4.4)}">DuPont</text><text x="${mpx(8.4)}" y="${mpy(1.6)}">Lakewood</text><text x="${mpx(12)}" y="${mpy(7.4)}">Tacoma</text><text x="${mpx(-4)}" y="${mpy(3)}" fill="#9fc0c8">Puget Sound</text></g>`;
+    dock=pts.stDock||[mpx(0),mpy(0)];edge=[20,mpy(1.2)];
+  }
+  // the ferry route across the water
+  s+=`<line x1="${dock[0]}" y1="${dock[1]}" x2="${edge[0]}" y2="${edge[1]}" stroke="#f4f1ea" stroke-width="2" stroke-dasharray="6 5" opacity="${out?0.25:0.7}"/><text x="${(dock[0]+edge[0])/2}" y="${(dock[1]+edge[1])/2-6}" font-size="9.5" fill="#f4f1ea" font-family="DM Sans" text-anchor="middle">⛴️ ${side==='I'?'to Steilacoom':'to Anderson Is.'}</text>`;
+  if(fer&&!out){ // the boat: the half of the trip nearest this panel
+    let t=null;if(fer.side===side&&fer.f<0.5)t=fer.f*2;else if(fer.side!==side&&fer.f>=0.5)t=(1-fer.f)*2;
+    if(t!=null){const x=dock[0]+(edge[0]-dock[0])*(0.25+t*0.7),y=dock[1]+(edge[1]-dock[1])*(0.25+t*0.7);
+      s+=`<g class="mapferry" aria-label="The ferry"><rect x="${x-14}" y="${y-6}" width="28" height="12" rx="3" fill="#f4f1ea"/><rect x="${x-14}" y="${y+2}" width="28" height="4" fill="#2f5d4a"/><rect x="${x-5}" y="${y-12}" width="10" height="7" fill="#f4f1ea"/><rect x="${x-1.5}" y="${y-17}" width="3" height="6" fill="#e3642e"/></g>`}}
+  // markers
+  const here=S.loc;
+  for(const k of Object.keys(pts)){
+    const p=pts[k],sel=MAPSEL===k,open=(()=>{try{return isOpen(k)}catch(e){return true}})();
+    s+=`<g class="mpin${sel?' sel':''}${open?'':' closed'}" tabindex="0" role="button" aria-label="${esc(L[k].name)}${k===here?' (you are here)':''}" onclick="MAPTAP('${k}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();MAPTAP('${k}')}">`
+      +`<circle cx="${p[0]}" cy="${p[1]}" r="${sel?17:15}" fill="#fff" stroke="${sel?'#e3642e':'#2f5d4a'}" stroke-width="${sel?3:1.8}"/><text x="${p[0]}" y="${p[1]+6}" font-size="16" text-anchor="middle">${L[k].ic}</text></g>`;
+  }
+  const here2=pts[here];
+  if(here2)s+=`<circle cx="${here2[0]}" cy="${here2[1]}" r="21" fill="none" stroke="#e3642e" stroke-width="3" stroke-dasharray="4 3" pointer-events="none"/><g pointer-events="none"><rect x="${here2[0]-14}" y="${here2[1]+22}" width="28" height="13" rx="6" fill="#e3642e"/><text x="${here2[0]}" y="${here2[1]+32}" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="DM Sans">YOU</text></g>`;
+  for(const c of S.cars){
+    if(L[c.loc]&&L[c.loc].side!==side)continue;const p=pts[c.loc];if(!p)continue;
+    s+=`<g pointer-events="none"><circle cx="${p[0]+13}" cy="${p[1]-13}" r="9" fill="#f3ecdc" stroke="#2f5d4a"/><text x="${p[0]+13}" y="${p[1]-9}" font-size="11" text-anchor="middle">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'}</text></g>`;
+  }
+  return s+'</svg>';
+}
+window.MAPTAP=k=>{MAPSEL=MAPSEL===k?null:k;sfx('tap');render()};
+window.MAPTAB=s=>{MAPSIDE=s;MAPSIDE_FOR=L[S.loc].side;MAPSEL=null;render()};
+window.MAPPREF=v=>{setPref('mapView',!!v);render()};
+function mapDetail(k){
+  const cur=L[S.loc].side,here=k===S.loc;let h=`<div class="dest compact mapdet"><div class="dn"><b>${L[k].ic} ${L[k].name}</b><span>${L[k].hours?hoursTxt(k):''}</span></div>`;
+  if(here)return h+`<div class="small-note" style="flex-basis:100%;color:var(--mute);font-size:12.5px">📍 You’re here. ${L[k].desc||''}</div></div>`;
+  if(L[k].side!==cur){
+    const dock=cur==='I'?'aiDock':'stDock',w=L[dock].name.replace(' Ferry Terminal',' terminal').replace(' Ferry Landing',' landing');
+    return h+`<div class="small-note" style="flex-basis:100%;color:var(--mute);font-size:12.5px">${L[k].desc||''}<br>🌊 It’s across the water. Go to the ${w} and take the ferry first.</div>`
+      +(S.loc!==dock?`<div class="chips">${travelOpts(dock).map(o=>{const i=ACTS.push(()=>{MAPSEL=null;go(dock,o)})-1;return `<button class="chip" ${o.dis||(o.cost&&o.m==='bus'&&S.money<o.cost)?'disabled':''} onclick="ACT(${i})">${esc(L[dock].ic)} ${o.l}</button>`}).join('')}</div>`:'')+'</div>';
+  }
+  const opts=travelOpts(k);
+  return h+`<div class="chips">${opts.map(o=>{const i=ACTS.push(()=>{MAPSEL=null;go(k,o)})-1;return `<button class="chip" ${o.dis||(o.cost&&o.m==='bus'&&S.money<o.cost)?'disabled':''} onclick="ACT(${i})">${o.l}</button>`}).join('')}</div>`
+    +`<div class="small-note" style="flex-basis:100%;color:var(--mute);font-size:12.5px">${L[k].desc||''}</div></div>`;
+}
+function mapView(){
+  const cur=L[S.loc].side,side=mapSide(),pts=mapPositions(side),fer=mapFerry(),out=activeOutage();
+  if(MAPSEL&&(!L[MAPSEL]||(L[MAPSEL].side!=='I'&&L[MAPSEL].side!=='M')))MAPSEL=null;
+  if(MAPSEL&&!pts[MAPSEL])MAPSEL=null;
+  let h=`<div class="mapwrap"><div class="maptabs" role="tablist">`
+    +['I','M'].map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
+  h+=mapSVG(side,pts,fer,out);
+  h+=`<div class="mapcap">${out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
+  h+=MAPSEL?mapDetail(MAPSEL):'';
+  return h+'</div>';
+}
+// the toggle, and the map in place of the list
+{const _av=actView;actView=function(){
+  const h=_av.apply(this,arguments);
+  try{
+    const a=h.indexOf('<details class="go" ');if(a<0)return h;
+    const sIdx=h.indexOf('<summary>🧭',a);if(sIdx<0)return h;
+    const sEnd=h.indexOf('</summary>',sIdx)+10,end=h.lastIndexOf('</details>');if(end<sEnd)return h;
+    const on=!!prefs().mapView;
+    const tog=`<div class="maptog" role="group" aria-label="Show places as"><button class="${on?'':'on'}" onclick="MAPPREF(false)">📋 List</button><button class="${on?'on':''}" onclick="MAPPREF(true)">🗺️ Map</button></div>`;
+    const list=h.slice(sEnd,end);
+    return h.slice(0,sEnd)+tog+(on?mapView():'')+`<div class="golist" ${on?'hidden':''}>${list}</div>`+h.slice(end);
+  }catch(e){console.error(e);return h}
+}}
+{const st=document.createElement('style');st.id='mapcss';st.textContent=`.maptog{display:flex;gap:6px;margin:2px 0 10px}.maptog button{flex:1;border:1.5px solid var(--fir);background:#fff;color:var(--fir);border-radius:999px;padding:7px 10px;font-size:13.5px;font-weight:700}.maptog button.on{background:var(--fir);color:#fff}
+.mapwrap{margin-bottom:10px}.maptabs{display:flex;gap:6px;margin-bottom:6px}.maptabs button{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:6px 4px;font-size:12.5px;font-weight:700;color:var(--mute)}.maptabs button.on{border-color:var(--fir);color:var(--fir);background:#e3eee5}
+.mapsvg{display:block;width:100%;height:auto;border-radius:12px;border:1.5px solid var(--line);touch-action:manipulation}.mpin{cursor:pointer;outline:none}.mpin.closed{opacity:.6}.mpin:focus-visible circle{stroke:#e3642e;stroke-width:3}
+.mapcap{font-size:12.5px;color:var(--mute);margin:6px 2px 8px}.mapdet{margin-top:2px}.golist[hidden]{display:none}`;document.head.appendChild(st)}
+// ---- ⏩ less waiting (51-waiting.js) ----
+// 1) at a ferry landing, "⏩ Wait for the 2:15 boat (35 min)": one tap skips ahead and boards (it reuses waitFerry, so outages, fog and full boats still apply).
+// 2) a heads-up 60 and 20 minutes before the last sailing of the night from your side, when you're away from the terminal and need that boat to get home.
+const lbMin=n=>n>=60?`${Math.floor(n/60)} h${n%60?' '+n%60+' min':''}`:`${n} min`;
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
+  if(S.over||(S.loc!=='aiDock'&&S.loc!=='stDock'))return a;
+  const side=L[S.loc].side,car=carHere(),d=day();
+  const kD=car&&car.fuel>=0.1?findNext(side,'drive',true):null,kW=findNext(side,'walk',true);
+  let s=null,mode=null;
+  if(kD&&kD.d===d){s=kD;mode='drive'}else if(kW&&kW.d===d&&canWalkCarry()){s=kW;mode='walk'}
+  if(!s)return a;
+  const min=Math.max(0,Math.round(s.abs-S.t)),late=s.delay?` It’s running ${s.delay} min late.`:'';
+  const item={ic:'⏩',cat:'ferry',l:`Wait for the ${fmt(s.dep)} boat (${lbMin(min)})`,s:`Skips ahead and boards. ${mode==='drive'?'Drive on with your car':'Walk on'}${s.passenger?' (passenger-only boat)':''}${side==='M'?' · '+fareTxt(mode):''}.${late}`,fn:()=>waitFerry(mode)};
+  const i=a.map((x,j)=>/^Walk on the next sailing/.test(x.l||'')?j:-1).filter(j=>j>=0)[0];
+  if(i===undefined)return a;
+  a.splice(i+1,0,item);
+}catch(e){console.error(e)}return a}}
+
+// who needs which side tonight: the island for a resident, the mainland for a day-tripper or a visitor on their last day, none when it doesn't matter
+function lbHomeSide(){
+  if(typeof visitorOn!=='function'||!visitorOn())return 'I';
+  const V=VS(),d=day();
+  if(V.len==='regular')return (d>=4&&d<=5)?null:'M';
+  if(V.len==='day'||d>=V.last)return 'M';
+  const R=V.rental;return R&&R.checkedIn&&!R.checkedOut?'I':null;
+}
+function lbLastSailing(side,d){
+  let best=null;
+  for(const dep of deps(side,d)){const s=sailing(side,d,dep,'walk',true);if(s.cancel)continue;if(!best||s.abs>best.abs)best=s}
+  return best;
+}
+phoneOnTime(()=>{try{
+  if(!S||S.over||!S.week||!L[S.loc]||!phoneCan())return;
+  const need=lbHomeSide(),side=L[S.loc].side;
+  if(!need||side===need||(side!=='I'&&side!=='M'))return;
+  const dock=side==='I'?'aiDock':'stDock';if(S.loc===dock)return;
+  const d=day(),last=lbLastSailing(side,d);if(!last)return;
+  const left=Math.round(last.abs-S.t);if(left<=0||left>60)return;
+  const lvl=left<=20?20:60,W=S.lbWarn=S.lbWarn||{},key=`${S.weekNo||0}:${d}:${side}`;
+  if(W[key]!=null&&W[key]<=lvl)return;
+  // Easy mode's outage heads-up (34-easy-help.js) already covers a boat that's about to be cancelled
+  if((S.easyWarn||[]).some(k=>{const p=String(k).split(':');return +p[0]===(S.weekNo||0)&&+p[1]>=S.t-30&&+p[1]<=last.abs+20}))return;
+  W[key]=lvl;const ks=Object.keys(W);if(ks.length>12)delete W[ks[0]];
+  const home=need==='I'?'home':'off the island',tm=dist(S.loc,dock),ld=fmt(last.dep%1440);
+  phoneNotify('⏰',`Last boat ${home}: ${ld}`,`${left} min. You’re ${tm} min from the ${side==='I'?'landing':'terminal'}.`);
+  say(`📱 ⏰ <b>Last boat ${home} tonight</b> (${fmt(S.t)}): the ${ld} sailing leaves in ${left} minutes. You’re about ${tm} min from the ${side==='I'?'ferry landing':'Steilacoom terminal'}, and you need to be in line 20 minutes early. After it, ${need==='I'?'you’re on the mainland until morning':'there’s no way off the island until morning'}.`);
+}catch(e){console.error(e)}});
+// ---- 🛡️ "Are you sure?" prompts (52-safety.js) ----
+// For choices that can't be undone and are likely mistakes: leaving your car behind, walking on after the last car boat, going to bed hungry
+// when food is within reach, missing a visit's last boat home, buying the house in Weekend regular. Settings can turn them all off (pref safeOff).
+const SAFE={skip:false};
+const safeOn=()=>prefs().safeOff!==true;
+function safeAsk(title,body,yes,fn){
+  if(!safeOn()){fn();return}
+  modal(title,body,[{l:'↩️ Go back',s:'Nothing changes.',fn:()=>{}},{l:yes,fn}]);
+}
+const safeSkip=f=>function(){SAFE.skip=true;try{return f.apply(this,arguments)}finally{SAFE.skip=false}};
+
+// 1) walking on and leaving your car behind (and 2) after the last car sailing)
+{const _w=waitFerry;waitFerry=function(mode){
+  try{
+    if(mode==='walk'&&!SAFE.skip&&safeOn()&&!S.over){
+      const car=carHere(),side=L[S.loc].side;
+      if(car&&car.fuel>=0.1&&canWalkCarry()&&!S.cars.some(c=>L[c.loc]&&L[c.loc].side!==side)&&!(typeof visitorOn==='function'&&visitorOn()&&VS().bike)){
+        const kD=findNext(side,'drive',true),gone=!kD||kD.d>day(),there=side==='I'?'the mainland':'the island',where=L[S.loc].name.replace(' Ferry Terminal',' terminal').replace(' Ferry Landing',' landing');
+        return safeAsk(gone?'🌙 The last car sailing has gone':'🚗 Leave your car behind?',
+          `<p>${gone?'There are no more boats that take cars tonight. ':''}If you walk on, your car stays parked at the ${where}. You’d have no car on ${there}, and nothing there to get you around.</p><p>${gone?'The next car sailing is '+(kD?DAYS[kD.d]+' at '+fmt(kD.dep):'a way off')+'.':'Drive on instead if you’ll need the car.'}</p>`,
+          'Walk on, leave the car',safeSkip(()=>_w.call(this,mode)));
+      }}
+  }catch(e){console.error(e)}
+  return _w.apply(this,arguments)}}
+// the "No more car sailings tonight" window already says it: its Walk on button is the confirmation
+{const _m=modal;modal=function(title,body,btns,noClose){
+  try{if(/No more car sailings tonight/.test(title)&&btns&&btns[0]&&!btns[0]._safe){const f=btns[0].fn;btns[0]._safe=1;btns[0].fn=safeSkip(f)}}catch(e){}
+  return _m.apply(this,arguments)}}
+
+// 3) travel: ride/walk/bus/hitch with a car here that could drive you, and a visit's last boat home
+{const _g=go;go=function(dest,o){
+  try{
+    if(o&&!o._ok&&!o.midDone&&!o.started&&safeOn()&&!S.over&&L[dest]){
+      const car=carHere(),from=S.loc,side=L[from].side,safeGo=()=>_g.call(this,dest,Object.assign({},o,{_ok:true}));
+      if(car&&['ride','walk','bus','hitch'].includes(o.m)&&L[dest].side===side&&car.fuel>=fuelFor(car,dist(from,dest)||0)&&car.fuel>=0.1){
+        return safeAsk('🚗 Leave your car behind?',`<p>Your car is right here with enough gas, and you’d go to ${L[dest].name} without it. It stays parked at ${L[from].name}, and you’ll need a way back to it.</p>`,'Go without the car',safeGo)}
+      if(typeof visitorOn==='function'&&visitorOn()&&!regOn()&&vFinalDay()&&side==='I'&&L[dest].side==='I'){
+        const last=lbLastSailing('I',day());
+        if(last){const must=last.abs-20,toDock=a=>a==='aiDock'?0:(dist(a,'aiDock')||0);
+          if(S.t+toDock(from)<=must&&S.t+(o.min||0)+toDock(dest)>must)
+            return safeAsk('⛴️ You’d miss the last boat home',`<p>It’s the last day of your visit. The last boat off the island is the <b>${fmt(last.dep%1440)}</b> (be in line by ${fmt(must%1440)}). Going to ${L[dest].name} takes about ${o.min} minutes, and getting back to the landing takes longer. You’d be stuck on the island.</p>`,'Go anyway',safeGo)}}
+    }
+  }catch(e){console.error(e)}
+  return _g.apply(this,arguments)}}
+
+// 4) going to bed hungry, or sleeping through a visit's last boat
+function safeFood(){
+  if(S.pantry>0||(S.carried||0)>0||S.ateOut===day())return null;
+  const o=[],m=tod(),here=L[S.loc].side;
+  try{if(here==='I'&&L.food&&L.food.side==='I'&&S.money>=27&&isOpen('food',S.t+(dist(S.loc,'food')||0)+5))o.push('takeout at the Riv ($27)')}catch(e){}
+  try{if(here==='I'&&typeof pantryOn==='function'&&pantryOn()&&pantryBroke()&&!pantryUsed()&&m+(dist(S.loc,'legion')||0)<PANTRY_OPEN[1]&&m>=PANTRY_OPEN[0])o.push('the Legion food pantry (free)')}catch(e){}
+  try{if(here==='M'&&typeof regOn==='function'&&regOn()&&L.rmarket&&S.money>=20&&isOpen('rmarket',S.t+10))o.push('the supermarket near home')}catch(e){}
+  return o.length?o:null;
+}
+function safeBoatLeft(){
+  try{if(!visitorOn()||regOn()||!vFinalDay()||L[S.loc].side!=='I')return null;
+    const last=lbLastSailing('I',day());return last&&S.t<last.abs?last:null}catch(e){return null}
+}
+{const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{
+  if(!safeOn()||S.over)return a;
+  a.forEach(x=>{
+    if(!x.fn||x.dis)return;
+    const bed=/^(Go to bed|Turn in early|Sleep in your own bed)/.test(x.l||''),camp=/^Sleep (in your car|on the bench)/.test(x.l||'')||bed,f=x.fn;
+    if(!camp)return;
+    x.fn=function(){
+      const fo=bed?safeFood():null,bo=safeBoatLeft();
+      const go2=()=>{ if(bo)return safeAsk('⛴️ Skip the last boat home?',`<p>It’s the last day of your visit. The last boat off the island is the <b>${fmt(bo.dep%1440)}</b>, and it hasn’t left yet. If you end the day here, you miss it.</p>`,'Stay on the island',()=>f.apply(this,arguments));return f.apply(this,arguments)};
+      if(fo)return safeAsk('🍽️ Go to bed hungry?',`<p>The pantry is empty, so you’d go to bed hungry (health −15, stress +10). You can still get food: ${fo.join(', ')}.</p>`,'Go to bed hungry',go2);
+      return go2()};
+  });
+}catch(e){console.error(e)}return a}}
+
+// 5) buying the house (Weekend regular): it ends the month
+if(typeof regBuy==='function'){const _b=regBuy;regBuy=function(){
+  if(SAFE.skip||!safeOn()||S.over)return _b.apply(this,arguments);
+  const self=this;
+  return safeAsk('🏡 Buy the house?',`<p>You’d put <b>${$(regDown())}</b> down on the cedar house and move to the island for good. <b>That ends your month</b> and there’s no taking it back.</p>`,`Yes, buy it for ${$(regDown())}`,safeSkip(()=>_b.apply(self,[])))}}
+
+// ⚙️ Settings row
+{const _t=tutSettingRows;tutSettingRows=function(){
+  return [{l:`🛡️ “Are you sure?” prompts: ${safeOn()?'On':'Off'}`,s:safeOn()?'Asks first before choices you can’t undo, like leaving your car behind or going to bed hungry. Tap to turn off.':'No confirmations. Tap to turn them back on.',fn:()=>{setPref('safeOff',safeOn());openSettings()}},..._t.apply(this,arguments)]}}
+// ---- ↩️ one-step Undo (53-undo.js) ----
+// Before each tap on a main-screen action (ACT) the game state is copied. If the action turned out to be simple (only time, place, money,
+// the car, the phone battery and the log changed) the copy is kept and an "↩️ Undo" button shows at the top of the Here tab.
+// Not offered after a day ends, a modal or an event fired, a ferry crossing started, or once anything else has happened.
+const UNDO={str:null,fp:null,label:''};
+const UNDO_KEYS=new Set(['t','phoneT','phone','loc','cars','money','log','stress','health','stats','pantry','carried','cargo','ph','up','tips','home','homeGas','homeDiesel','lbWarn','fun','ateOut','ateOutAt','delivery','rx','nextHide','lastBoatNote','easyWarn','hh','eco','daily']);
+const undoFp=()=>S?`${S.t}|${S.loc}|${Math.round(S.money*100)}|${S.log.length}|${S.phone}|${S.cur}|${S.over?1:0}`:'';
+function undoAvail(){return !!(UNDO.str&&S&&!S.over&&UNDO.fp===undoFp())}
+function undoClear(){UNDO.str=null;UNDO.fp=null}
+{const _A=window.ACT;window.ACT=function(i){
+  let str=null;try{if(S&&!S.over&&!prefs().noUndo)str=JSON.stringify(S)}catch(e){}
+  const ev=window.event,btn=ev&&ev.target&&ev.target.closest?ev.target.closest('button'):null;
+  const label=btn?btn.textContent.replace(/\s+/g,' ').trim().slice(0,44):'last action';
+  const s0=S;
+  try{return _A.apply(this,arguments)}finally{
+    try{
+      UNDO.str=null;UNDO.fp=null;
+      if(str&&S===s0&&!S.over&&!document.getElementById('mbg')&&!document.querySelector('.cross,.title,.end')&&(typeof MQ==='undefined'||!MQ.length)){
+        const b=JSON.parse(str);let simple=b.cur===S.cur&&(b.ev&&b.ev.history&&S.ev&&S.ev.history?b.ev.history.length===S.ev.history.length:true);
+        if(simple)for(const k of new Set([...Object.keys(b),...Object.keys(S)])){if(UNDO_KEYS.has(k))continue;if(JSON.stringify(b[k])!==JSON.stringify(S[k])){simple=false;break}}
+        if(simple&&str!==JSON.stringify(S)){UNDO.str=str;UNDO.fp=undoFp();UNDO.label=label;if(tab==='act'&&!document.getElementById('mbg')){const el=document.querySelector('.undoslot');if(el)el.innerHTML=undoBtn()}}
+      }
+    }catch(e){console.error(e)}
+  }}}
+// anything that is not a main-screen action invalidates it
+{const _M=window.MBTN;window.MBTN=function(){undoClear();return _M.apply(this,arguments)}}
+{const _P=window.PHA;window.PHA=function(){undoClear();return _P.apply(this,arguments)}}
+const undoBtn=()=>undoAvail()?`<button class="undobtn" onclick="UNDO_GO()" aria-label="Undo the last action">↩️ Undo: ${esc(UNDO.label)}</button>`:'';
+window.UNDO_GO=()=>{
+  if(!undoAvail())return;
+  const s=JSON.parse(UNDO.str),label=UNDO.label;undoClear();
+  S=s;uiNarr=[];say(`↩️ Undid: ${label}.`);sfx('tap');tab='act';render();
+};
+{const _av=actView;actView=function(){const h=_av.apply(this,arguments);return `<div class="undoslot">${undoBtn()}</div>`+h}}
+{const st=document.createElement('style');st.textContent=`.undoslot:empty{display:none}.undobtn{display:block;width:100%;text-align:left;margin:0 0 8px;padding:7px 12px;border:1.5px dashed var(--mute);background:#fff;color:var(--ink);border-radius:10px;font-size:13.5px;font-weight:700}.undobtn:active{background:#eee}`;document.head.appendChild(st)}
 // ---------------- 🔨 upgrading your cabin over time (resident game: week, month, story) ----------------
 // State: S.cabin={own:{id:true},bill:0,carry:0}. An order is a UP().jobs entry {k:'cabin',id,due}: a contractor who
 // comes over on the ferry (so a ferry outage delays them, see processTimed). Story chapters install every pending order
