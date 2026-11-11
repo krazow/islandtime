@@ -6079,19 +6079,19 @@ function challengeResult(){
 // Share code: "IT1-" + base64url(UTF-8 JSON [1,id,name,score,money,grade,workdays,stranded,rep]) + "-" + 4-char base36 checksum.
 const CH_KEY='islandtime.challenge',CH_LINK='https://krazow.github.io/islandtime/?c=';
 const chHas=n=>typeof window[n]==='function';
-function chHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h.toString(36).padStart(4,'0').slice(-4)}
+function chuiHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h.toString(36).padStart(4,'0').slice(-4)}
 function chB64u(str){const b=new TextEncoder().encode(str);let s='';b.forEach(c=>s+=String.fromCharCode(c));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function chUnb64u(t){let s=atob(t.replace(/-/g,'+').replace(/_/g,'/'));const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return new TextDecoder('utf-8',{fatal:true}).decode(b)}
 function chClean(n){return String(n==null?'':n).replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,20)||'Islander'}
 function chEncode(r){const a=[1,String(r.id),chClean(r.name),Math.round(r.score)|0,Math.round(r.money)|0,String(r.grade||'').slice(0,3),(r.workdays|0),(r.stranded|0),Math.round(r.rep||0)|0];
-  const p=chB64u(JSON.stringify(a));return 'IT1-'+p+'-'+chHash(p)}
+  const p=chB64u(JSON.stringify(a));return 'IT1-'+p+'-'+chuiHash(p)}
 // returns {ok:true,r} or {ok:false,err}
 function chDecode(code){
   code=String(code||'').trim().replace(/^.*[?&]c=/,'').replace(/\s+/g,'');
   if(!code)return {ok:false,err:'Paste a code first.'};
   const m=/^IT1-([A-Za-z0-9_-]+)-([0-9a-z]{4})$/.exec(code);
   if(!m)return {ok:false,err:'That doesn’t look like an Island Time challenge code. Check that you copied the whole thing.'};
-  if(chHash(m[1])!==m[2])return {ok:false,err:'That code has a typo or got cut off (the checksum doesn’t match). Try copying it again.'};
+  if(chuiHash(m[1])!==m[2])return {ok:false,err:'That code has a typo or got cut off (the checksum doesn’t match). Try copying it again.'};
   try{const a=JSON.parse(chUnb64u(m[1]));
     if(!Array.isArray(a)||a[0]!==1||a.length<9||typeof a[1]!=='string'||!/^[\w-]{3,16}$/.test(a[1])||typeof a[2]!=='string'||a.slice(3,5).concat(a.slice(6)).some(x=>typeof x!=='number'||!isFinite(x)))throw 0;
     return {ok:true,r:{id:a[1],name:chClean(a[2]),score:a[3],money:a[4],grade:String(a[5]).slice(0,3),workdays:a[6],stranded:a[7],rep:a[8]}}
@@ -6106,8 +6106,8 @@ function chAdd(r){const d=chLoad(),b=d.boards[r.id]=d.boards[r.id]||[];
 function chBoard(id){const d=chLoad(),m=d.mine[id],b=(d.boards[id]||[]).map(e=>({...e,me:false}));
   if(m)b.push({...m,me:true});return b.sort((x,y)=>y.score-x.score||y.money-x.money||(x.name<y.name?-1:1))}
 function chRemove(id,name,score){const d=chLoad();if(d.boards[id])d.boards[id]=d.boards[id].filter(e=>!(e.name===name&&e.score===score));chSave(d)}
-function chMonday(){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
-function chMondayText(){return chMonday().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function chuiMonday(){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
+function chMondayText(){return chuiMonday().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
 function chThisWeek(){try{return chHas('challengeWeekId')?challengeWeekId(new Date()):null}catch(e){return null}}
 function chCopy(text,btn){
   const done=ok=>{if(btn){const b=btn.querySelector('b')||btn;b.dataset.o=b.dataset.o||b.textContent;b.textContent=ok?'✅ Copied':'Selected: press Ctrl+C / Copy';setTimeout(()=>{b.textContent=b.dataset.o},2500)}};
