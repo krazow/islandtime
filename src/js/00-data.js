@@ -73,11 +73,13 @@ const JOBS={
 };
 const COOP_GOAL=2500;
 const DIFFS={
-  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,d:'More money, fewer breakdowns and storms, emptier boats. For learning the island.'},
-  normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,d:'The game as designed: November on Anderson Island.'},
-  hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,d:'Summer tourists pack every boat, the boat breaks down constantly, and money is tight. Score ×1.25.'},
+  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0},d:'More money, fewer breakdowns and storms, emptier boats. For learning the island.'},
+  normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0},d:'The game as designed: November on Anderson Island.'},
+  hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.20,raccoon:1.6,rent:1,carTrouble:1},d:'Summer tourists pack every boat, the boat breaks down constantly, and money is tight. Score ×1.25.'},
 };
+// lv: what each level turns on. Read it with LV('key'): it falls back to Normal for anything missing.
 const DF=()=>DIFFS[(typeof S!=='undefined'&&S&&S.diff)||'normal']||DIFFS.normal;
+const LV=k=>{const v=(DF().lv||{})[k];return v===undefined?DIFFS.normal.lv[k]:v};
 const CAUSES=['generator failure','propulsion control fault','steering hydraulic leak','no relief captain available (crew shortage)','transfer span stuck at the Steilacoom landing'];
 
 const L={
