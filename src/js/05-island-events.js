@@ -289,7 +289,8 @@ defEvent({id:'arc_hendersons',hook:'wake',priority:2,max:3,chance:0.6,cond:ctx=>
 defEvent({id:'dead_battery',hook:'tripStart',priority:10,max:3,
   cond:ctx=>ctx.mode==='car'&&ctx.from==='home'&&ctx.car&&!ctx.o.started,
   // the car's own battery: a weak one is a gamble; an old island car is more likely to die on a cold, dark morning than a newer one
-  chance:ctx=>{const c=ctx.car,old=!(typeof visitorOn==='function'&&visitorOn())&&(c.id==='isl'||c.id==='beat');   // a visitor's or regular's own car is newerreturn carBat(c)==='weak'?0.3:(S.power?(old?0.2:0.08):(old?(c.id==='beat'?0.08:0.06):0.015))},
+  chance:ctx=>{const c=ctx.car,old=!(typeof visitorOn==='function'&&visitorOn())&&(c.id==='isl'||c.id==='beat');   // a visitor's or regular's own car is newer
+    return carBat(c)==='weak'?0.3:(S.power?(old?0.2:0.08):(old?(c.id==='beat'?0.08:0.06):0.015))},
   run(ctx){deadBattery(ctx,false);return {block:true}}});
 function deadBattery(ctx,triedNeighbor){
   const dest=ctx.to,base=dist(ctx.from,dest);S.stats.deadBattery=(S.stats.deadBattery||0)+1;
