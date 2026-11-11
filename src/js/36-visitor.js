@@ -260,7 +260,7 @@ function vEndScreen(h1,sub,lost){const V=VS();
 
 // ======== title screen: 🧳 Visit the island → length → where you live → difficulty ========
 function visitLenModal(then){
-  modal('🧳 How long is your visit?','<p>You live on the mainland. Pick a visit: you get a spending budget instead of a job, and the island’s ferry decides the rest.</p>',
+  modal('🧳 How long is your visit?','<p>You live on the mainland. A short visit gives you a spending budget and no job; as a <b>Weekend regular</b> you keep your job and come over every weekend for a month. The island’s ferry decides the rest.</p>',
     Object.keys(VISIT_LENS).map(k=>{const V=VISIT_LENS[k],c=V.nights*(VISIT_RATE[k]||0);return {l:`${V.ic} ${V.n}${k==='regular'?': a month':''}`,s:k==='regular'?V.d:`${V.d} Budget ${$(VISIT_BUDGET[k])}${c?`, cabin ${$(c)}`:''}.`,fn:()=>then(k)}})
     .concat([{l:'Never mind',fn:()=>{}}]))}
 function visitHomeModal(then){
