@@ -7,7 +7,7 @@ function vgCarRequest(c,id){
   if(!k)return say('📱 No sailing in sight to put a car on.');
   money(-fare);S.stats.fares+=fare;friendPts(id,-1);
   const f=S.friends[id].name.split(',')[0];S.t+=5;phoneTick();
-  VG().runs.push({id:c.id,from,to,abs:k.abs+(k.delay||0)+20,who:id});
+  VG().runs.push({id:c.id,from,to,abs:k.abs+(k.delay||0)+20,who:id,side,d:k.d,dep:k.dep});
   say(`📱 You text ${f}: “Any chance you could run the ${carShortName(c)} across?” ${f} sends a thumbs-up. It goes on the ${fmt(k.dep)} sailing. ${$(fare)} car fare, and you owe ${f} one.`);
   afterAction();
 }
@@ -15,6 +15,9 @@ phoneOnTime(()=>{
   if(!S.vg||!S.vg.runs||!S.vg.runs.length)return;
   for(const r of S.vg.runs.slice()){
     if(S.t<r.abs)continue;
+    if(r.d!=null){const sv=sailing(r.side,r.d,r.dep,'drive',false);   // that sailing got cancelled after they agreed: put it on the next one
+      if(sv.cancel||sv.passenger){const k=findNext(r.side,'drive',false),f=S.friends[r.who]?S.friends[r.who].name.split(',')[0]:'Your friend';
+        if(k){r.d=k.d;r.dep=k.dep;r.abs=k.abs+(k.delay||0)+20;say(`📱 ${f}: “The ${fmt(sv.dep)} didn’t run. I’ll bring the car on the ${fmt(k.dep)}.”`);continue}}}
     S.vg.runs=S.vg.runs.filter(x=>x!==r);
     const c=S.cars.find(c=>c.id===r.id);if(!c||c.loc!==r.from)continue;   // you moved it yourself
     c.loc=r.to;const f=S.friends[r.who]?S.friends[r.who].name.split(',')[0]:'Your friend';

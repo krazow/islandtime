@@ -9,7 +9,7 @@ const BX_LOT=15000, BX_BAY=12000, BX_HOME_SERVE=25, BX_WOOD_CAP=22;
 function garageBay(){return !!(typeof S!=='undefined'&&S&&S.bx&&S.bx.bay)}
 window.garageBay=garageBay;
 const bxLotJob=()=>UP().jobs.find(j=>j.k==='bay');
-const bxLotOk=()=>boatOwn()&&!S.over&&!S.challenge&&!visitorOn();
+const bxLotOk=()=>boatOwn()&&!S.over&&!S.challenge&&!visitorOn()&&S.mode!=='week';   // a one-week game can't finish a 1–2 week build
 // ---- the listing ----
 defEvent({id:'bx_lot',hook:'wake',priority:1,max:1,cooldown:0,chance:0.12,cond:()=>bxLotOk()&&S.loc==='home'&&!BX().lot.seen&&((S.weekNo||0)>=1||day()>=2),
   run(){const X=BX();X.lot.seen=true;
@@ -39,8 +39,8 @@ function bxLotActions(a){
 }
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxLotActions(a);
   // the garage card (69-garage.js): three slots once the bay is built
-  if(garageBay()&&S.loc==='home'&&!visitorOn()){const g=a.find(x=>x&&/^Garage:/.test(x.l||''));
+  if(garageBay()&&S.loc==='home'&&!visitorOn()){const g=a.find(x=>x&&(x.id==='garage'||/^Garage:/.test(x.l||'')));
     const sk=bxGaraged()?'⛵ skiff':'⛵ (bay free for the skiff)';
     if(g){g.l=g.l.replace(/\(\d+\/\d+\)\s*$/,'')+'· '+sk+' (3 bays)';g.s=(g.s||'')+' The third bay is built for the boat.'}
-    else a.push({ic:'🏠',l:`Garage: ${sk} (3 bays)`,cat:'here',s:'A third bay, built for the boat.',dis:true})}
+    else a.push({id:'garage',ic:'🏠',l:`Garage: ${sk} (3 bays)`,cat:'here',s:'A third bay, built for the boat.',dis:true})}
 }catch(e){console.error(e)}return a}}

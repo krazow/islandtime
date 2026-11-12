@@ -68,6 +68,7 @@ function boatStoreOpts(){const dock=boatDockOk(),o=[
 function boatStoreTable(){const td='style="padding:3px 5px;border-top:1px solid var(--line,#ccc);vertical-align:top"';
   return `<table style="width:100%;font-size:12px;border-collapse:collapse;margin:6px 0"><tr><th ${td}></th><th ${td}>Cost</th><th ${td}>Launch</th><th ${td}>Risk</th></tr>`+
     boatStoreOpts().map(o=>`<tr style="${o.ok?'':'opacity:.55'}"><td ${td}><b>${o.n}</b></td><td ${td}>${o.cost}</td><td ${td}>${o.launch}</td><td ${td}>${o.risk}</td></tr>`).join('')+'</table>'}
+function boatHomeOk(B){if(B.store==='slip')return B.on==='water'&&B.at==='marina';if(B.store==='buoy')return B.at==='home'&&B.on!=='trailer';return B.on==='trailer'&&!B.hitch&&B.trLoc==='home'}   // is the boat where its storage plan says?
 function boatStoreSet(id){
   const B=S.boat,was=B.store;if(id===was)return;
   B.store=id;S.t+=5;
@@ -100,9 +101,9 @@ function boatNight(where,notes,d){
     else if(r<0.75){B.cond=Math.max(0,B.cond-40);B.swamped=true;
       notes.push('🌊 The gale swamped your skiff on the buoy. In the morning it’s riding low, full to the gunwales, the outboard half underwater. Bail it out before it goes anywhere.')}
     else notes.push('🌊 Your skiff rode out the gale on the buoy, bucking all night. You checked twice from the window.')}
-  const outside=B.on==='trailer'&&!(B.at==='home'&&B.store==='garage'&&boatBay());
+  const outside=!(B.on==='trailer'&&B.at==='home'&&B.store==='garage'&&boatBay());   // an open skiff fills with rain anywhere but the garage bay
   if(rain&&outside&&!B.cover){const was=B.rain;B.rain=Math.min(100,B.rain+(storm?60:35));
-    if(was<50&&B.rain>=50)notes.push('🌧️ Rain has been filling the uncovered skiff on its trailer. Bail it out (or get a cover).')}
+    if(was<50&&B.rain>=50)notes.push(`🌧️ Rain has been filling the uncovered skiff (${boatWhere()}). Bail it out (or get a cover).`)}
   if(B.rain>=100&&outside){B.cond=Math.max(0,B.cond-2)}
   const exposed=B.at==='home'&&!(B.on==='trailer'&&B.store==='garage'&&boatBay());
   if(winter&&exposed&&(!B.cover||B.on!=='trailer'||dayKey()%2===0))B.cond=Math.max(0,B.cond-1);
@@ -120,12 +121,13 @@ function boatStoreActions(a,loc){
   }
   if(here&&B.swamped)a.push({cat:'ferry',ic:'🪣',l:'Bail out the swamped skiff',s:'45 min with a bucket, then coax the outboard. It can’t go anywhere until you do.',cls:'primary',fn:boatBail});
   else if(here&&B.rain>=50)a.push({cat:'ferry',ic:'🪣',l:'Bail the rainwater out of the skiff',s:`It’s ${B.rain>=100?'full':'half full'} of rain. 15 min.${B.cover?'':` A cover ($${BOAT_COVER}) stops it.`}`,fn:boatBail});
-  if((loc==='depot'||loc==='gas')&&!B.cover&&B.store!=='slip'&&isOpen(loc))a.push({cat:'fuel',ic:'🧥',l:`Buy a boat cover for the skiff: $${BOAT_COVER}`,s:'Keeps the rain out while it sits on the trailer.',dis:S.money<BOAT_COVER,fn:boatCoverBuy});
+  if((loc==='depot'||loc==='gas')&&!B.cover&&isOpen(loc))a.push({cat:'fuel',ic:'🧥',l:`Buy a boat cover for the skiff: $${BOAT_COVER}`,s:'Keeps the rain out while it sits, on the trailer or tied up.',dis:S.money<BOAT_COVER,fn:boatCoverBuy});
 }
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{boatStoreActions(a,S.loc)}catch(e){console.error(e)}return a}}
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);try{if(boatOwn()&&!visitorOn()){const B=S.boat;
   if(B.swamped)it.push({ok:false,fail:false,l:'Bail out the swamped skiff',s:`🪣 It’s ${boatWhere()}, full of water.`,urgent:true});
   else if(B.rain>=50)it.push({ok:false,fail:false,l:'Bail the rain out of the skiff',s:`🪣 It’s ${boatWhere()}, ${B.rain>=100?'full':'half full'} of rainwater.`,urgent:false});
+  const home=boatHomeOk(B);if(!home&&!B.hitch)it.push({ok:false,fail:false,l:`Move the skiff to ${({slip:'its slip at the Riv',buoy:'your buoy',yard:'your yard',garage:'the garage bay'})[B.store]}`,s:`🗂️ You changed where you keep it. It’s ${boatWhere()}.`,urgent:false});
   if(B.on==='water'&&B.at==='home'&&boatGaleSoon())it.push({ok:false,fail:false,l:'Haul the skiff up the beach before the gale',s:'🌊 On the buoy, a gale can swamp or sink it.',urgent:true});
 }}catch(e){}return it}}
 // old saves: a 'trailer' boat loads as a 'yard' boat

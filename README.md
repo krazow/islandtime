@@ -47,7 +47,7 @@
 - 🛟 **The buoy keeps its promise:** the skiff lives off your own beach. Row out (about 10 minutes) and cross straight to Sunnyside and back home, no marina needed. A gale night can swamp it (outboard −40 and a bailing chore) or sink it ($350 salvage), unless you **haul it up the beach** first.
 - 🚙 **Towing:** a $250 tow hitch per car at the Steilacoom gas station or Home Depot (the diesel pickup already has one; the Subaru can tow the skiff; the old Corolla can't). **Tow it to the Riv ramp and launch**, **haul out and tow it home**, or launch and haul at Sunnyside. At low tide the ramp is too shallow: wait or come back.
 - ⛴️ **A trailer on the ferry** pays the vehicle-length fare for car plus trailer (30 to under 40 ft with the skiff aboard, $77.96 / $107.10 peak; over 22 to under 30 ft with an empty trailer behind the Subaru), and the skiff travels with that car until you launch it or park the trailer at the cabin, the Riv lot or the Sunnyside lot.
-- 🌧️ **Yard upkeep:** rain fills an uncovered skiff on its trailer (bail it, or buy an $80 cover), and winter wears the outboard a little while it sits outside.
+- 🌧️ **Yard upkeep:** rain fills an uncovered open skiff wherever it sits outside the garage bay, in the yard, a slip or on the buoy (bail it, or buy an $80 cover), and winter wears the outboard a little while it sits outside.
 - 🚗 **Car deals are for islanders:** visitors and Weekend regulars are no longer offered the mainland beater or the diesel pickup at the Steilacoom terminal.
 - 🏡 **Your city car moves with you:** when a Weekend regular buys the house, the car comes along (fuel, battery, spare tire) and is parked at the cabin. Or sell it right then for $2,500 and drive the old island Subaru.
 - 💵 **Selling and swapping:** sell the mainland beater back at the terminal for $350, or trade the diesel pickup back for an old Subaru and get $600 back. The garage copes when a car leaves.
@@ -63,9 +63,16 @@
 - **Boat extras:** your skiff can carry up to two 5-gallon gas cans (the ferry bans them), a cooler and a few bags of groceries. In choppy water with cans aboard you choose: slow down (+10 min) or toss a can over the side.
 - **Boater Education Card:** Washington requires one to run a motor of 15 hp or more (anyone born after Jan 1, 1955). Your bill of sale covers 60 days; after that, take the online course at home (2 hours, $10) for a card that is good for life, or risk an $87 marine patrol ticket.
 - **Boat upkeep:** a yearly registration ($40), winterizing the outboard before the freeze (do it yourself in an hour or pay the marina $120), a hull cleaning each season for a slip boat ($60), and optional insurance ($15 a month) that covers storm damage and theft at the Sunnyside float.
-- **The lot next door and a third garage bay:** once you own a boat, the neighboring lot comes up for sale (about $15,000: a long-term savings goal). Then a contractor, who rides the ferry, builds a third bay ($12,000, one to two weeks). A garaged skiff doesn't wear, can't be hit by a storm or stolen; service the outboard at home for less; stack more firewood. The garage card shows three bays.
+- **The lot next door and a third garage bay** (month-long games and longer): once you own a boat, the neighboring lot comes up for sale (about $15,000: a long-term savings goal). Then a contractor, who rides the ferry, builds a third bay ($12,000, one to two weeks). A garaged skiff doesn't wear, can't be hit by a storm or stolen; service the outboard at home for less; stack more firewood. The garage card shows three bays.
 - **Upgrades and resale at the marina:** navigation lights (no darkness risk), a fog horn and handheld GPS, a 25 hp outboard (faster, thirstier), and a fair resale by condition and upgrades.
 - **On the water:** fish and crab from your own skiff with better odds than the dock, take a friend out for friendship and stress relief, and two story beats use the boat: Sam's becalmed sailboat and the Hendersons' shoreline photos.
+- ⛽ **Late on the mainland with a low tank:** a Weekend regular can fill up and drive home instead of leaving the car at the terminal and paying for rideshares. A car that can't make a trip now says how much gas is left and where to get more, instead of "Out of gas".
+- 🛞 **Gentler on the donut:** a car on its spare is half as likely to get another flat, and the "new tire" to-do is marked urgent.
+- 🚶 **No false "stuck" message:** when the car boats are done but a walk-on (or passenger-only backup) boat still runs and you're carrying too much, the game says so instead of telling you you're stuck.
+- 🗂️ **Boat storage follow-through:** after you change where the skiff lives, a to-do says where to move it; the map shows the skiff; the vehicles card knows a boat on the road and says how it's kept; selling it names the right empty spot; a car at Sunnyside stays reachable after the skiff is sold.
+- 🦌 **Towing is still driving:** island trip events (deer, flats, trees down) can happen on a tow.
+- 🤝 **A friend's car run survives a cancelled sailing:** they bring it on the next boat.
+- The Weekend regular's moved car is "Your car (city car)"; the visitor terminal hint also shows as a tile.
 
 ### New in 1.21.1: small fixes
 

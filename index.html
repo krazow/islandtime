@@ -783,6 +783,8 @@ function waitFerry(mode){
   if(known.d>day()){
     if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&canWalkCarry())
       return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+fareTxt('walk'):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
+    if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&!canWalkCarry())   // walk-on exists, but too much to carry
+      return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>The ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''} still takes walk-ons, but on foot you can carry 4 days of groceries and ${CAP_FOOT} items. You have ${S.carried} days and ${cargoN()} items. Lighten the load and walk on, or stay the night.</p>`,[{l:'OK',fn:()=>render()}])}
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
       return modal('🌙 No more boats tonight',`<p>The next sailing you could make is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You’re stuck on the mainland for the night. Sleep in the terminal, get a motel in Lakewood, or ask a friend for a couch.</p>`,[{l:'OK',fn:()=>render()}]);}
@@ -1676,12 +1678,14 @@ function playBingo(cards,price){
     {l:'Nothing, thanks',fn:()=>order(null,0)}]);
 }
 
+function lowGasOpt(car,side){const f=Math.round(car.fuel*10)/10;   // say how much is left and where to get more, not just "out of gas"
+  return {m:'car',l:f<0.1?'🚗 Out of gas':`🚗 Not enough gas (${f} gal)`,s:side==='M'?'Fill up at a gas station first (Steilacoom’s is 10 min from the ferry).':'No gas station on the island: Dale sells it by the gallon, or use your shed gas.',dis:true}}
 function travelOpts(dest){
   const base=dist(S.loc,dest), side=L[S.loc].side, car=carHere(), o=[];
   const inj=S.injury&&!S.injury.treated?1.5:1;
   const fueled=car&&car.fuel>=fuelFor(car,base,side);
   if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
-  else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
+  else if(car) o.push(lowGasOpt(car,side));
   if(side==='I'){
     if(S.friends.sam&&S.loc==='home'&&dest==='aiDock'&&S.ev.flags.samRide===day()) o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
     if(!fueled){o.push({m:'walk',l:`🚶 ${Math.round(base*4*inj)} min`,min:Math.round(base*4*inj),dis:!canWalkCarry()});
@@ -6904,7 +6908,7 @@ travelOpts=function(dest){
   const from=S.loc,side=L[from].side,car=carHere(),vs=VS();
   if(vtTrip(from,dest)){
     const base=dist(from,dest),e=vtTraffic(from,dest,S.t),need=car?vtFuel(car,base):0;
-    const i=o.findIndex(x=>x.m==='car'),opt=car&&car.fuel>=need?{m:'car',l:`🚗 ${base}${e.min>5?'+'+e.min:''} min`,min:base+e.min,s:e.txt,traffic:e.min}:car?{m:'car',l:'🚗 Out of gas',dis:true}:null;
+    const i=o.findIndex(x=>x.m==='car'),opt=car&&car.fuel>=need?{m:'car',l:`🚗 ${base}${e.min>5?'+'+e.min:''} min`,min:base+e.min,s:e.txt,traffic:e.min}:car?lowGasOpt(car,side):null;
     if(i>=0)o.splice(i,1);
     if(opt)o.unshift(opt);
     if(opt&&opt.dis&&!o.some(x=>x.m==='ride')){const c=Math.round(8+base*0.8);o.push({m:'ride',l:S.phone>0?`📱 Rideshare ${base+8}m · $${c}`:'📵 Rideshare (phone dead)',min:base+8,cost:c,dis:S.phone<=0})}
@@ -7525,7 +7529,9 @@ function regMainlandLate(){const car=carHere();
   render();
   const base=dist(S.loc,'vhome'),btns=[];
   if(car&&car.fuel>=vtFuel(car,base))btns.push({l:'🚗 Drive home in the dark',s:`${base} min. You’ll be home after midnight. Stress +4.`,fn:()=>{car.loc='vhome';car.fuel=Math.max(0,Math.round((car.fuel-vtFuel(car,base))*100)/100);S.loc='vhome';adj('stress',4);say('🚗 The roads are empty and the radio plays something sad. You’re home, finally.');endDay('vhome')}});
-  else{const c=Math.round(8+base*0.8);btns.push({l:`📱 Rideshare home: $${c}`,s:`${base+8} min.`,dis:!phoneCan()||!canEssential(c),fn:()=>{money(-c);S.loc='vhome';say('📱 A rideshare driver takes you home. Your car will be fine where it is.');endDay('vhome')}})}
+  else{if(car&&vtFuel(car,base)<=car.tank){const pr=car.diesel?DIESEL_PRICE:GAS_PRICE,g=Math.round((car.tank-car.fuel)*10)/10,gc=Math.round(g*pr);   // low tank: gas up on the way instead of abandoning the car
+      btns.push({l:`⛽ Fill up, then drive home: $${gc}`,s:`${g} gal at $${pr}/gal, then ${base} min. Home after midnight. Stress +4.`,cls:'primary',dis:!canEssential(gc),fn:()=>{money(-gc);car.fuel=Math.max(0,Math.round((car.tank-vtFuel(car,base))*100)/100);car.loc='vhome';S.loc='vhome';adj('stress',4);say(`⛽ You fill the tank at a late-night station and drive home on empty roads.`);endDay('vhome')}})}
+    const c=Math.round(8+base*0.8);btns.push({l:`📱 Rideshare home: $${c}`,s:`${base+8} min.`,dis:!phoneCan()||!canEssential(c),fn:()=>{money(-c);S.loc='vhome';say('📱 A rideshare driver takes you home. Your car will be fine where it is.');endDay('vhome')}})}
   btns.push({l:carHere()?'🚗 Sleep in your car in the ferry lot':'🪑 The bench outside the Steilacoom terminal',s:'Free. The waiting room locks after the last boat.',fn:()=>{S.loc='stDock';endDay('terminal')}});
   btns.push({l:'🏨 Motel in Lakewood',s:'$115. Real bed.',fn:()=>endDay('motel')});
   modal('Late on the mainland','<p>It’s late and you’re not at home. Where do you sleep?</p>',btns,true);return true}
@@ -7868,10 +7874,10 @@ function mapSVG(side,pts,fer,out){
   }
   const here2=pts[here];
   if(here2)s+=`<circle cx="${here2[0]}" cy="${here2[1]}" r="21" fill="none" stroke="#e3642e" stroke-width="3" stroke-dasharray="4 3" pointer-events="none"/><g pointer-events="none"><rect x="${here2[0]-14}" y="${here2[1]+22}" width="28" height="13" rx="6" fill="#e3642e"/><text x="${here2[0]}" y="${here2[1]+32}" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="DM Sans">YOU</text></g>`;
-  for(const c of S.cars){
-    if(L[c.loc]&&L[c.loc].side!==side)continue;const p=pts[c.loc];if(!p)continue;
-    s+=`<g pointer-events="none"><circle cx="${p[0]+13}" cy="${p[1]-13}" r="9" fill="#f3ecdc" stroke="#2f5d4a"/><text x="${p[0]+13}" y="${p[1]-9}" font-size="11" text-anchor="middle">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'}</text></g>`;
-  }
+  const nAt={},badge=(k,ic)=>{if(L[k]&&L[k].side!==side)return;const p=pts[k];if(!p)return;const i=nAt[k]=(nAt[k]||0)+1,x=p[0]+13+(i-1)*19;   // side by side when several vehicles share a spot
+    s+=`<g pointer-events="none"><circle cx="${x}" cy="${p[1]-13}" r="9" fill="#f3ecdc" stroke="#2f5d4a"/><text x="${x}" y="${p[1]-9}" font-size="11" text-anchor="middle">${ic}</text></g>`};
+  for(const c of S.cars)badge(c.loc,c.diesel?'🛻':c.id==='isl'?'🚗':'🚙');
+  try{if(typeof boatOwn==='function'&&boatOwn()&&!visitorOn()){const B=S.boat,k=B.at==='road'&&typeof boatTrailerLoc==='function'?boatTrailerLoc():B.at;badge(k,'🚤')}}catch(e){}
   return s+'</svg>';
 }
 window.MAPTAP=k=>{MAPSEL=MAPSEL===k?null:k;sfx('tap');render()};
@@ -8324,7 +8330,7 @@ const BOAT_SUNNY={name:'Sunnyside Beach boat launch (Steilacoom)',side:'M',ic:'�
 Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:false,configurable:true,writable:true});   // hidden from the travel list until you own a boat
 MP.sunny=[-0.9,0.9];
 const boatOwn=()=>!!(typeof S!=='undefined'&&S&&S.boat&&S.boat.own);
-function boatSync(){try{if(boatOwn())boatFix()}catch(e){console.error(e)}try{Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:boatOwn()&&!visitorOn(),configurable:true,writable:true})}catch(e){}}
+function boatSync(){try{if(boatOwn())boatFix()}catch(e){console.error(e)}try{Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:(boatOwn()||(S&&S.cars||[]).some(c=>c.loc==='sunny'))&&!visitorOn(),configurable:true,writable:true})}catch(e){}}
 {const _r=render;render=function(){boatSync();return _r.apply(this,arguments)}}
 const boatGal=g=>Math.round(g*10)/10;
 function boatFuelBtn(){const B=S.boat;return `${boatGal(B.fuel)}/${BOAT_TANK} gal`}
@@ -9370,7 +9376,7 @@ function driveChoose(id){const c=S.cars.find(c=>c.id===id);if(!c)return;S.drive=
     for(const c of here)if(c!==cur)a.push({ic:'🔑',l:`Take the ${carShort(c)} instead`,cat:'here',
       s:`You’re set to drive the ${carShort(cur)}. ${c.diesel?'Diesel':'Gas'}: ${c.fuel}/${c.tank} gal${S.loc==='home'?' · both in the garage':''}.`,fn:()=>driveChoose(c.id)})}
   if(S.loc==='home'&&!visitorOn()){const g=S.cars.filter(c=>c.loc==='home');
-    a.push({ic:'🏠',l:`Garage: ${g.length?g.map(c=>`${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${carShort(c)}`).join(' · '):'empty'} (${Math.min(g.length,GARAGE_CAP)}/${GARAGE_CAP})`,cat:'here',
+    a.push({id:'garage',ic:'🏠',l:`Garage: ${g.length?g.map(c=>`${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${carShort(c)}`).join(' · '):'empty'} (${Math.min(g.length,GARAGE_CAP)}/${GARAGE_CAP})`,cat:'here',
       s:g.length?'Out of the weather: cold mornings are half as hard on the battery.':'Room for two cars. Out of the weather, easier on batteries.',dis:true})}
 }catch(e){console.error(e)}return a}}
 // a garaged car starts better on cold, dark mornings
@@ -9387,8 +9393,11 @@ const TIRE_PRICE=140;
       fn:()=>{money(-TIRE_PRICE);car.spare='ok';S.t+=40;phoneTick();say(`🛞 A new tire on the ${carShortName(car)}, and the donut goes back under the floor.`);afterAction()}});
 }catch(e){console.error(e)}return a}}
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);try{
-  S.cars.filter(c=>carMech(c).spare==='on').forEach(c=>it.push({ok:false,fail:false,l:`Get a new tire for the ${carShortName(c)}`,s:`🛞 It’s on the donut. Another flat means a tow. Gas station in Steilacoom: ${$(TIRE_PRICE)}.`,urgent:false}));
+  S.cars.filter(c=>carMech(c).spare==='on').forEach(c=>it.push({ok:false,fail:false,l:`Get a new tire for the ${carShortName(c)}`,s:`🛞 It’s on the donut. Another flat means a tow. Gas station in Steilacoom: ${$(TIRE_PRICE)}.`,urgent:true}));
 }catch(e){}return it}}
+
+// You drive gently on a donut: half the chance of another flat while it's on (1.22 fix: the second-flat tow hit too often).
+EV.filter(e=>e.id==='flat_tire'||e.id==='hl_flat').forEach(e=>{const _c=e.chance;e.chance=function(ctx){const p=typeof _c==='function'?_c.apply(this,arguments):_c;return ctx&&ctx.car&&carMech(ctx.car).spare==='on'?p*0.5:p}});
 // ---- 🚗 1.22 car-storage fixes: moving with your city car, selling/swapping the island cars, Monday propane ----
 const CAR_SELL_BEATER=350, CAR_SELL_CITY=2500, TRUCK_BACK=600;
 // 2. Weekend regular move-in: your city car comes with you (fuel, battery, spare), parked at home. Choice: sell it for $2,500 and use the old Subaru.
@@ -9399,7 +9408,7 @@ const CAR_SELL_BEATER=350, CAR_SELL_CITY=2500, TRUCK_BACK=600;
     const r=_rs.apply(this,arguments);
     try{if(old){
       const car=S.cars.find(c=>c.id==='isl');
-      if(car){Object.assign(car,{name:`Your car (${city})`,loc:'home',fuel:old.fuel,tank:old.tank,diesel:old.diesel,bat:old.bat,spare:old.spare});S.battery=old.bat;S.cityCarKept=true}
+      if(car){Object.assign(car,{name:'Your car (city car)',loc:'home',fuel:old.fuel,tank:old.tank,diesel:old.diesel,bat:old.bat,spare:old.spare});S.battery=old.bat;S.cityCarKept=true}
       modal('🚗 Your car',`<p>Your ${esc(city)} car made the move with you and is parked at the cabin (${old.fuel} of ${old.tank} gal${old.bat==='weak'?', battery a little tired':''}).</p><p>You can keep it, or sell it now for ${$(CAR_SELL_CITY)} toward the down payment and the moving truck, and drive the old island Subaru that came with the house.</p>`,[
         {l:'Keep my car',s:'It becomes your island car.',fn:()=>{}},
         {l:`Sell it for ${$(CAR_SELL_CITY)}`,s:'Take the old Subaru instead.',fn:()=>{
@@ -9438,8 +9447,8 @@ const PARK_FEE=8;
 const VG=()=>{if(!S.vg)S.vg={tip:0,runs:[],paid:0,hint:0};return S.vg};
 const vgShort=k=>L[k]?L[k].name.replace(' Ferry Terminal',' terminal').replace(' Ferry Landing',' landing').replace(/ \(Steilacoom\)/,''):'somewhere';
 const vgIc=c=>c.diesel?'🛻':c.id==='isl'?'🚗':'🚙';
-const vgBoatSide=()=>boatOwn()&&S.boat.at==='sunny'?'M':'I';
-const vgBoatWhere=()=>{const a=S.boat.at;return a==='sunny'?'the Sunnyside launch':a==='home'?'home (on the trailer)':'the Riv marina'};
+const vgBoatSide=()=>{if(!boatOwn())return 'I';const a=S.boat.at;if(a==='road'){const l=typeof boatTrailerLoc==='function'?boatTrailerLoc():null;return l&&L[l]?L[l].side:'I'}return a==='sunny'?'M':'I'};   // 'road': wherever the trailer is
+const vgBoatWhere=()=>{if(typeof boatWhere==='function'){const w=boatWhere();if(w)return w}const a=S.boat.at;return a==='sunny'?'the Sunnyside launch':a==='home'?'home (on the trailer)':'the Riv marina'};
 // is your boat waiting on the other side of the water from where you stand (a way home if you walk on)?
 function boatWaitingFar(side){return boatOwn()&&!visitorOn()&&vgBoatSide()!==(side||L[S.loc].side)}
 const vgCarsAt=k=>S.cars.filter(c=>c.loc===k);
@@ -9474,7 +9483,7 @@ function vehiclesHTML(){
       <div class="vct"><span>⛽ ${c.fuel}/${c.tank} gal ${c.diesel?'diesel':'gas'}</span><span class="${m.bat==='weak'?'bad':''}">🔋 ${m.bat==='weak'?'weak':'ok'}</span><span class="${m.spare==='on'?'bad':''}">🛞 ${m.spare==='on'?'on the spare':'good tires'}</span></div></div>`;
   }
   if(boatOwn()&&!visitorOn()){const B=S.boat;
-    h+=`<div class="vc ${B.cond<40||B.fuel<1.3?'bad':''}"><b>🚤 Your skiff</b><div class="vcw">🅿️ ${esc(vgBoatWhere())} · ${B.store==='slip'?'in a slip':B.store==='trailer'?'on the trailer':'stored'}${B.store==='slip'?` · moorage paid through day ${B.paidThru-dayKey()<=0?'(due now)':'in '+(B.paidThru-dayKey())+' d'}`:''}</div>
+    h+=`<div class="vc ${B.cond<40||B.fuel<1.3?'bad':''}"><b>🚤 Your skiff</b><div class="vcw">🅿️ ${esc(vgBoatWhere())} · ${({slip:'kept in a slip',yard:'kept in the yard',buoy:'kept on the buoy',garage:'kept in the garage bay'})[B.store]||'stored'}${B.store==='slip'?` · moorage paid through day ${B.paidThru-dayKey()<=0?'(due now)':'in '+(B.paidThru-dayKey())+' d'}`:''}</div>
       <div class="vct"><span>⛽ ${boatGal(B.fuel)}/${BOAT_TANK} gal</span><span>🔧 outboard ${B.cond>=70?'good':B.cond>=40?'rough':'ailing'} (${Math.round(B.cond)}%)</span></div></div>`}
   const due=vgDue();
   h+='</div>'+(due.length?`<div class="vdue"><b>Due:</b> ${due.map(esc).join(' · ')}</div>`:'<div class="vdue">Nothing due. Everything’s in order.</div>');
@@ -9565,7 +9574,7 @@ function backlogNext(side){
 // ---- 👋 visitors at the terminal: drive on or walk on? (once per visit) ----
 {const _r=render;render=function(){
   try{if(!S.over&&visitorOn()&&S.loc==='stDock'&&!VG().hint){const c=S.cars.find(c=>c.loc==='stDock'&&c.id==='isl');
-    if(c){VG().hint=1;
+    if(c){VG().hint=1;try{showTile('💡','Drive on or walk on?',`Walking on is cheaper. The car can wait in the paid lot (${$(PARK_FEE)} a night).`)}catch(e){}
       const walkers=Object.keys(L).filter(k=>L[k].side==='I'&&k!=='aiDock'&&k!=='vhome'&&!L[k].fun&&!destHidden(k)&&(dist('aiDock',k)||99)*4<=45).map(k=>L[k].name.replace(/^Anderson Island /,''));
       say(`💡 At the terminal: driving on costs ${$(fareCar())} each way with the car and the island is spread out (a few miles end to end). Walking on is ${$(typeof fareWalk==='function'?fareWalk():FARE_WALK)} and the car can wait in the paid lot (${$(PARK_FEE)} a night, cash, limited spaces). Without a car you can walk from the landing to ${walkers.length?walkers.slice(0,4).join(', '):'not much'}; the rest is too far to walk.`)}}}catch(e){}
   return _r.apply(this,arguments)}}
@@ -9579,7 +9588,7 @@ function vgCarRequest(c,id){
   if(!k)return say('📱 No sailing in sight to put a car on.');
   money(-fare);S.stats.fares+=fare;friendPts(id,-1);
   const f=S.friends[id].name.split(',')[0];S.t+=5;phoneTick();
-  VG().runs.push({id:c.id,from,to,abs:k.abs+(k.delay||0)+20,who:id});
+  VG().runs.push({id:c.id,from,to,abs:k.abs+(k.delay||0)+20,who:id,side,d:k.d,dep:k.dep});
   say(`📱 You text ${f}: “Any chance you could run the ${carShortName(c)} across?” ${f} sends a thumbs-up. It goes on the ${fmt(k.dep)} sailing. ${$(fare)} car fare, and you owe ${f} one.`);
   afterAction();
 }
@@ -9587,6 +9596,9 @@ phoneOnTime(()=>{
   if(!S.vg||!S.vg.runs||!S.vg.runs.length)return;
   for(const r of S.vg.runs.slice()){
     if(S.t<r.abs)continue;
+    if(r.d!=null){const sv=sailing(r.side,r.d,r.dep,'drive',false);   // that sailing got cancelled after they agreed: put it on the next one
+      if(sv.cancel||sv.passenger){const k=findNext(r.side,'drive',false),f=S.friends[r.who]?S.friends[r.who].name.split(',')[0]:'Your friend';
+        if(k){r.d=k.d;r.dep=k.dep;r.abs=k.abs+(k.delay||0)+20;say(`📱 ${f}: “The ${fmt(sv.dep)} didn’t run. I’ll bring the car on the ${fmt(k.dep)}.”`);continue}}}
     S.vg.runs=S.vg.runs.filter(x=>x!==r);
     const c=S.cars.find(c=>c.id===r.id);if(!c||c.loc!==r.from)continue;   // you moved it yourself
     c.loc=r.to;const f=S.friends[r.who]?S.friends[r.who].name.split(',')[0]:'Your friend';
@@ -9671,6 +9683,7 @@ function boatStoreOpts(){const dock=boatDockOk(),o=[
 function boatStoreTable(){const td='style="padding:3px 5px;border-top:1px solid var(--line,#ccc);vertical-align:top"';
   return `<table style="width:100%;font-size:12px;border-collapse:collapse;margin:6px 0"><tr><th ${td}></th><th ${td}>Cost</th><th ${td}>Launch</th><th ${td}>Risk</th></tr>`+
     boatStoreOpts().map(o=>`<tr style="${o.ok?'':'opacity:.55'}"><td ${td}><b>${o.n}</b></td><td ${td}>${o.cost}</td><td ${td}>${o.launch}</td><td ${td}>${o.risk}</td></tr>`).join('')+'</table>'}
+function boatHomeOk(B){if(B.store==='slip')return B.on==='water'&&B.at==='marina';if(B.store==='buoy')return B.at==='home'&&B.on!=='trailer';return B.on==='trailer'&&!B.hitch&&B.trLoc==='home'}   // is the boat where its storage plan says?
 function boatStoreSet(id){
   const B=S.boat,was=B.store;if(id===was)return;
   B.store=id;S.t+=5;
@@ -9703,9 +9716,9 @@ function boatNight(where,notes,d){
     else if(r<0.75){B.cond=Math.max(0,B.cond-40);B.swamped=true;
       notes.push('🌊 The gale swamped your skiff on the buoy. In the morning it’s riding low, full to the gunwales, the outboard half underwater. Bail it out before it goes anywhere.')}
     else notes.push('🌊 Your skiff rode out the gale on the buoy, bucking all night. You checked twice from the window.')}
-  const outside=B.on==='trailer'&&!(B.at==='home'&&B.store==='garage'&&boatBay());
+  const outside=!(B.on==='trailer'&&B.at==='home'&&B.store==='garage'&&boatBay());   // an open skiff fills with rain anywhere but the garage bay
   if(rain&&outside&&!B.cover){const was=B.rain;B.rain=Math.min(100,B.rain+(storm?60:35));
-    if(was<50&&B.rain>=50)notes.push('🌧️ Rain has been filling the uncovered skiff on its trailer. Bail it out (or get a cover).')}
+    if(was<50&&B.rain>=50)notes.push(`🌧️ Rain has been filling the uncovered skiff (${boatWhere()}). Bail it out (or get a cover).`)}
   if(B.rain>=100&&outside){B.cond=Math.max(0,B.cond-2)}
   const exposed=B.at==='home'&&!(B.on==='trailer'&&B.store==='garage'&&boatBay());
   if(winter&&exposed&&(!B.cover||B.on!=='trailer'||dayKey()%2===0))B.cond=Math.max(0,B.cond-1);
@@ -9723,12 +9736,13 @@ function boatStoreActions(a,loc){
   }
   if(here&&B.swamped)a.push({cat:'ferry',ic:'🪣',l:'Bail out the swamped skiff',s:'45 min with a bucket, then coax the outboard. It can’t go anywhere until you do.',cls:'primary',fn:boatBail});
   else if(here&&B.rain>=50)a.push({cat:'ferry',ic:'🪣',l:'Bail the rainwater out of the skiff',s:`It’s ${B.rain>=100?'full':'half full'} of rain. 15 min.${B.cover?'':` A cover ($${BOAT_COVER}) stops it.`}`,fn:boatBail});
-  if((loc==='depot'||loc==='gas')&&!B.cover&&B.store!=='slip'&&isOpen(loc))a.push({cat:'fuel',ic:'🧥',l:`Buy a boat cover for the skiff: $${BOAT_COVER}`,s:'Keeps the rain out while it sits on the trailer.',dis:S.money<BOAT_COVER,fn:boatCoverBuy});
+  if((loc==='depot'||loc==='gas')&&!B.cover&&isOpen(loc))a.push({cat:'fuel',ic:'🧥',l:`Buy a boat cover for the skiff: $${BOAT_COVER}`,s:'Keeps the rain out while it sits, on the trailer or tied up.',dis:S.money<BOAT_COVER,fn:boatCoverBuy});
 }
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{boatStoreActions(a,S.loc)}catch(e){console.error(e)}return a}}
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);try{if(boatOwn()&&!visitorOn()){const B=S.boat;
   if(B.swamped)it.push({ok:false,fail:false,l:'Bail out the swamped skiff',s:`🪣 It’s ${boatWhere()}, full of water.`,urgent:true});
   else if(B.rain>=50)it.push({ok:false,fail:false,l:'Bail the rain out of the skiff',s:`🪣 It’s ${boatWhere()}, ${B.rain>=100?'full':'half full'} of rainwater.`,urgent:false});
+  const home=boatHomeOk(B);if(!home&&!B.hitch)it.push({ok:false,fail:false,l:`Move the skiff to ${({slip:'its slip at the Riv',buoy:'your buoy',yard:'your yard',garage:'the garage bay'})[B.store]}`,s:`🗂️ You changed where you keep it. It’s ${boatWhere()}.`,urgent:false});
   if(B.on==='water'&&B.at==='home'&&boatGaleSoon())it.push({ok:false,fail:false,l:'Haul the skiff up the beach before the gale',s:'🌊 On the buoy, a gale can swamp or sink it.',urgent:true});
 }}catch(e){}return it}}
 // old saves: a 'trailer' boat loads as a 'yard' boat
@@ -9761,7 +9775,11 @@ if(typeof fpUseRide==='function'){const _u=fpUseRide;fpUseRide=function(mode){if
 // towing burns more fuel
 {const _f=fuelFor;fuelFor=function(car){const g=_f.apply(this,arguments);try{if(towCar(car))return g*(car.diesel?1.2:1.4)}catch(e){}return g}}
 // ---- moving the car and the trailer together (island legs: home ⇄ the Riv) ----
-function boatTowDrive(car,dest){const m=dist(S.loc,dest)+5;S.t+=m;phoneTick();car.fuel=Math.max(0,Math.round((car.fuel-fuelFor(car,m))*100)/100);car.loc=dest;S.loc=dest;S.boat.lastLoc=dest;return m}
+function boatTowDrive(car,dest){let m=dist(S.loc,dest)+5;
+  if(L[S.loc].side==='I'&&L[dest]&&L[dest].side==='I'){let extra=0;   // towing is still a drive on island roads: deer, flats, trees down
+    try{fireHook('tripMid',{from:S.loc,to:dest,mode:'car',o:{m:'car'},car,add:n=>{extra+=n},finish:n=>{S.t+=(n||0);render()}})}catch(e){console.error(e)}
+    m+=extra}
+  S.t+=m;phoneTick();car.fuel=Math.max(0,Math.round((car.fuel-fuelFor(car,m))*100)/100);car.loc=dest;S.loc=dest;S.boat.lastLoc=dest;return m}
 // launch / haul at the ramp here (marina or sunny), with the tide check; then() runs after
 function boatRamp(kind,then){
   const B=S.boat,where=S.loc==='marina'?'the Riv ramp':'the Sunnyside ramp',done=()=>{
@@ -9974,7 +9992,7 @@ const BX_LOT=15000, BX_BAY=12000, BX_HOME_SERVE=25, BX_WOOD_CAP=22;
 function garageBay(){return !!(typeof S!=='undefined'&&S&&S.bx&&S.bx.bay)}
 window.garageBay=garageBay;
 const bxLotJob=()=>UP().jobs.find(j=>j.k==='bay');
-const bxLotOk=()=>boatOwn()&&!S.over&&!S.challenge&&!visitorOn();
+const bxLotOk=()=>boatOwn()&&!S.over&&!S.challenge&&!visitorOn()&&S.mode!=='week';   // a one-week game can't finish a 1–2 week build
 // ---- the listing ----
 defEvent({id:'bx_lot',hook:'wake',priority:1,max:1,cooldown:0,chance:0.12,cond:()=>bxLotOk()&&S.loc==='home'&&!BX().lot.seen&&((S.weekNo||0)>=1||day()>=2),
   run(){const X=BX();X.lot.seen=true;
@@ -10004,10 +10022,10 @@ function bxLotActions(a){
 }
 {const _a=actions;actions=function(){const a=_a.apply(this,arguments);try{bxLotActions(a);
   // the garage card (69-garage.js): three slots once the bay is built
-  if(garageBay()&&S.loc==='home'&&!visitorOn()){const g=a.find(x=>x&&/^Garage:/.test(x.l||''));
+  if(garageBay()&&S.loc==='home'&&!visitorOn()){const g=a.find(x=>x&&(x.id==='garage'||/^Garage:/.test(x.l||'')));
     const sk=bxGaraged()?'⛵ skiff':'⛵ (bay free for the skiff)';
     if(g){g.l=g.l.replace(/\(\d+\/\d+\)\s*$/,'')+'· '+sk+' (3 bays)';g.s=(g.s||'')+' The third bay is built for the boat.'}
-    else a.push({ic:'🏠',l:`Garage: ${sk} (3 bays)`,cat:'here',s:'A third bay, built for the boat.',dis:true})}
+    else a.push({id:'garage',ic:'🏠',l:`Garage: ${sk} (3 bays)`,cat:'here',s:'A third bay, built for the boat.',dis:true})}
 }catch(e){console.error(e)}return a}}
 // ---------------- 🚤 boat extras, part 4: upgrades at the marina, and a fair resale ----------------
 // S.bx.up = {lights, fog, eng25}. Navigation lights: crossings after dark lose the darkness risk. Fog horn + handheld GPS: most of the
@@ -10027,7 +10045,7 @@ function bxUpActions(a){
 function bxSellValue(){const B=S.boat,X=BX();let p=900+B.cond*8;if(X.up.lights)p+=40;if(X.up.fog)p+=90;if(X.up.eng25)p+=1100;p-=Math.min(250,(B.trips||0)*6);return Math.max(500,Math.round(p/10)*10)}
 boatSell=function(){const B=S.boat,p=bxSellValue(),ups=Object.keys(BX().up).filter(k=>BX().up[k]).length;
   modal('🚤 Sell the skiff?',`<p>A guy on the dock offers <b>${bxD(p)}</b> cash. ${B.cond<50?'He winces at the outboard.':'He looks the hull over and nods.'}${ups?` He reads your upgrades off like a checklist and adds a little for them.`:''}</p><p style="font-size:12px;color:var(--mute)">Based on condition (${Math.round(B.cond)}%)${ups?', your upgrades':''} and how many trips it’s made. Your boater card stays yours.</p>`,[
-    {l:`Sell for ${bxD(p)}`,fn:()=>{money(p);const X=BX();X.up={};X.ins=false;X.insThru=-1;X.bought=-999;S.boat=null;boatSync();S.t+=20;say(`🚤 Handshake, cash, and an empty slip. ${p<2000?'You lost a little':'Not bad'} on the deal.`);afterAction()}},
+    {l:`Sell for ${bxD(p)}`,fn:()=>{money(p);const X=BX();X.up={};X.ins=false;X.insThru=-1;X.bought=-999;S.boat=null;boatSync();S.t+=20;say(`🚤 Handshake, cash, and ${({slip:'an empty slip',buoy:'an empty buoy',garage:'an empty garage bay'})[B.store]||'an empty spot in the yard'}. ${p<2000?'You lost a little':'Not bad'} on the deal.`);afterAction()}},
     {l:'Keep it',fn:()=>{}}])};
 // ---------------- 🎣 boat extras, part 5: fishing, crabbing and friends from your own boat ----------------
 // Your own boat gets you to the fish: better odds than the dock (crab pots set from the skiff come up fuller; the hook-set odds for

@@ -43,7 +43,7 @@ travelOpts=function(dest){
   const from=S.loc,side=L[from].side,car=carHere(),vs=VS();
   if(vtTrip(from,dest)){
     const base=dist(from,dest),e=vtTraffic(from,dest,S.t),need=car?vtFuel(car,base):0;
-    const i=o.findIndex(x=>x.m==='car'),opt=car&&car.fuel>=need?{m:'car',l:`🚗 ${base}${e.min>5?'+'+e.min:''} min`,min:base+e.min,s:e.txt,traffic:e.min}:car?{m:'car',l:'🚗 Out of gas',dis:true}:null;
+    const i=o.findIndex(x=>x.m==='car'),opt=car&&car.fuel>=need?{m:'car',l:`🚗 ${base}${e.min>5?'+'+e.min:''} min`,min:base+e.min,s:e.txt,traffic:e.min}:car?lowGasOpt(car,side):null;
     if(i>=0)o.splice(i,1);
     if(opt)o.unshift(opt);
     if(opt&&opt.dis&&!o.some(x=>x.m==='ride')){const c=Math.round(8+base*0.8);o.push({m:'ride',l:S.phone>0?`📱 Rideshare ${base+8}m · $${c}`:'📵 Rideshare (phone dead)',min:base+8,cost:c,dis:S.phone<=0})}

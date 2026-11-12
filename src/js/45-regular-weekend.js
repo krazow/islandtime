@@ -76,7 +76,9 @@ function regMainlandLate(){const car=carHere();
   render();
   const base=dist(S.loc,'vhome'),btns=[];
   if(car&&car.fuel>=vtFuel(car,base))btns.push({l:'🚗 Drive home in the dark',s:`${base} min. You’ll be home after midnight. Stress +4.`,fn:()=>{car.loc='vhome';car.fuel=Math.max(0,Math.round((car.fuel-vtFuel(car,base))*100)/100);S.loc='vhome';adj('stress',4);say('🚗 The roads are empty and the radio plays something sad. You’re home, finally.');endDay('vhome')}});
-  else{const c=Math.round(8+base*0.8);btns.push({l:`📱 Rideshare home: $${c}`,s:`${base+8} min.`,dis:!phoneCan()||!canEssential(c),fn:()=>{money(-c);S.loc='vhome';say('📱 A rideshare driver takes you home. Your car will be fine where it is.');endDay('vhome')}})}
+  else{if(car&&vtFuel(car,base)<=car.tank){const pr=car.diesel?DIESEL_PRICE:GAS_PRICE,g=Math.round((car.tank-car.fuel)*10)/10,gc=Math.round(g*pr);   // low tank: gas up on the way instead of abandoning the car
+      btns.push({l:`⛽ Fill up, then drive home: $${gc}`,s:`${g} gal at $${pr}/gal, then ${base} min. Home after midnight. Stress +4.`,cls:'primary',dis:!canEssential(gc),fn:()=>{money(-gc);car.fuel=Math.max(0,Math.round((car.tank-vtFuel(car,base))*100)/100);car.loc='vhome';S.loc='vhome';adj('stress',4);say(`⛽ You fill the tank at a late-night station and drive home on empty roads.`);endDay('vhome')}})}
+    const c=Math.round(8+base*0.8);btns.push({l:`📱 Rideshare home: $${c}`,s:`${base+8} min.`,dis:!phoneCan()||!canEssential(c),fn:()=>{money(-c);S.loc='vhome';say('📱 A rideshare driver takes you home. Your car will be fine where it is.');endDay('vhome')}})}
   btns.push({l:carHere()?'🚗 Sleep in your car in the ferry lot':'🪑 The bench outside the Steilacoom terminal',s:'Free. The waiting room locks after the last boat.',fn:()=>{S.loc='stDock';endDay('terminal')}});
   btns.push({l:'🏨 Motel in Lakewood',s:'$115. Real bed.',fn:()=>endDay('motel')});
   modal('Late on the mainland','<p>It’s late and you’re not at home. Where do you sleep?</p>',btns,true);return true}

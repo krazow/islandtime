@@ -15,7 +15,7 @@ function driveChoose(id){const c=S.cars.find(c=>c.id===id);if(!c)return;S.drive=
     for(const c of here)if(c!==cur)a.push({ic:'🔑',l:`Take the ${carShort(c)} instead`,cat:'here',
       s:`You’re set to drive the ${carShort(cur)}. ${c.diesel?'Diesel':'Gas'}: ${c.fuel}/${c.tank} gal${S.loc==='home'?' · both in the garage':''}.`,fn:()=>driveChoose(c.id)})}
   if(S.loc==='home'&&!visitorOn()){const g=S.cars.filter(c=>c.loc==='home');
-    a.push({ic:'🏠',l:`Garage: ${g.length?g.map(c=>`${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${carShort(c)}`).join(' · '):'empty'} (${Math.min(g.length,GARAGE_CAP)}/${GARAGE_CAP})`,cat:'here',
+    a.push({id:'garage',ic:'🏠',l:`Garage: ${g.length?g.map(c=>`${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'} ${carShort(c)}`).join(' · '):'empty'} (${Math.min(g.length,GARAGE_CAP)}/${GARAGE_CAP})`,cat:'here',
       s:g.length?'Out of the weather: cold mornings are half as hard on the battery.':'Room for two cars. Out of the weather, easier on batteries.',dis:true})}
 }catch(e){console.error(e)}return a}}
 // a garaged car starts better on cold, dark mornings

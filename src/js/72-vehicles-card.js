@@ -5,8 +5,8 @@ const PARK_FEE=8;
 const VG=()=>{if(!S.vg)S.vg={tip:0,runs:[],paid:0,hint:0};return S.vg};
 const vgShort=k=>L[k]?L[k].name.replace(' Ferry Terminal',' terminal').replace(' Ferry Landing',' landing').replace(/ \(Steilacoom\)/,''):'somewhere';
 const vgIc=c=>c.diesel?'🛻':c.id==='isl'?'🚗':'🚙';
-const vgBoatSide=()=>boatOwn()&&S.boat.at==='sunny'?'M':'I';
-const vgBoatWhere=()=>{const a=S.boat.at;return a==='sunny'?'the Sunnyside launch':a==='home'?'home (on the trailer)':'the Riv marina'};
+const vgBoatSide=()=>{if(!boatOwn())return 'I';const a=S.boat.at;if(a==='road'){const l=typeof boatTrailerLoc==='function'?boatTrailerLoc():null;return l&&L[l]?L[l].side:'I'}return a==='sunny'?'M':'I'};   // 'road': wherever the trailer is
+const vgBoatWhere=()=>{if(typeof boatWhere==='function'){const w=boatWhere();if(w)return w}const a=S.boat.at;return a==='sunny'?'the Sunnyside launch':a==='home'?'home (on the trailer)':'the Riv marina'};
 // is your boat waiting on the other side of the water from where you stand (a way home if you walk on)?
 function boatWaitingFar(side){return boatOwn()&&!visitorOn()&&vgBoatSide()!==(side||L[S.loc].side)}
 const vgCarsAt=k=>S.cars.filter(c=>c.loc===k);
@@ -41,7 +41,7 @@ function vehiclesHTML(){
       <div class="vct"><span>⛽ ${c.fuel}/${c.tank} gal ${c.diesel?'diesel':'gas'}</span><span class="${m.bat==='weak'?'bad':''}">🔋 ${m.bat==='weak'?'weak':'ok'}</span><span class="${m.spare==='on'?'bad':''}">🛞 ${m.spare==='on'?'on the spare':'good tires'}</span></div></div>`;
   }
   if(boatOwn()&&!visitorOn()){const B=S.boat;
-    h+=`<div class="vc ${B.cond<40||B.fuel<1.3?'bad':''}"><b>🚤 Your skiff</b><div class="vcw">🅿️ ${esc(vgBoatWhere())} · ${B.store==='slip'?'in a slip':B.store==='trailer'?'on the trailer':'stored'}${B.store==='slip'?` · moorage paid through day ${B.paidThru-dayKey()<=0?'(due now)':'in '+(B.paidThru-dayKey())+' d'}`:''}</div>
+    h+=`<div class="vc ${B.cond<40||B.fuel<1.3?'bad':''}"><b>🚤 Your skiff</b><div class="vcw">🅿️ ${esc(vgBoatWhere())} · ${({slip:'kept in a slip',yard:'kept in the yard',buoy:'kept on the buoy',garage:'kept in the garage bay'})[B.store]||'stored'}${B.store==='slip'?` · moorage paid through day ${B.paidThru-dayKey()<=0?'(due now)':'in '+(B.paidThru-dayKey())+' d'}`:''}</div>
       <div class="vct"><span>⛽ ${boatGal(B.fuel)}/${BOAT_TANK} gal</span><span>🔧 outboard ${B.cond>=70?'good':B.cond>=40?'rough':'ailing'} (${Math.round(B.cond)}%)</span></div></div>`}
   const due=vgDue();
   h+='</div>'+(due.length?`<div class="vdue"><b>Due:</b> ${due.map(esc).join(' · ')}</div>`:'<div class="vdue">Nothing due. Everything’s in order.</div>');
@@ -132,7 +132,7 @@ function backlogNext(side){
 // ---- 👋 visitors at the terminal: drive on or walk on? (once per visit) ----
 {const _r=render;render=function(){
   try{if(!S.over&&visitorOn()&&S.loc==='stDock'&&!VG().hint){const c=S.cars.find(c=>c.loc==='stDock'&&c.id==='isl');
-    if(c){VG().hint=1;
+    if(c){VG().hint=1;try{showTile('💡','Drive on or walk on?',`Walking on is cheaper. The car can wait in the paid lot (${$(PARK_FEE)} a night).`)}catch(e){}
       const walkers=Object.keys(L).filter(k=>L[k].side==='I'&&k!=='aiDock'&&k!=='vhome'&&!L[k].fun&&!destHidden(k)&&(dist('aiDock',k)||99)*4<=45).map(k=>L[k].name.replace(/^Anderson Island /,''));
       say(`💡 At the terminal: driving on costs ${$(fareCar())} each way with the car and the island is spread out (a few miles end to end). Walking on is ${$(typeof fareWalk==='function'?fareWalk():FARE_WALK)} and the car can wait in the paid lot (${$(PARK_FEE)} a night, cash, limited spaces). Without a car you can walk from the landing to ${walkers.length?walkers.slice(0,4).join(', '):'not much'}; the rest is too far to walk.`)}}}catch(e){}
   return _r.apply(this,arguments)}}

@@ -8,7 +8,7 @@ const CAR_SELL_BEATER=350, CAR_SELL_CITY=2500, TRUCK_BACK=600;
     const r=_rs.apply(this,arguments);
     try{if(old){
       const car=S.cars.find(c=>c.id==='isl');
-      if(car){Object.assign(car,{name:`Your car (${city})`,loc:'home',fuel:old.fuel,tank:old.tank,diesel:old.diesel,bat:old.bat,spare:old.spare});S.battery=old.bat;S.cityCarKept=true}
+      if(car){Object.assign(car,{name:'Your car (city car)',loc:'home',fuel:old.fuel,tank:old.tank,diesel:old.diesel,bat:old.bat,spare:old.spare});S.battery=old.bat;S.cityCarKept=true}
       modal('🚗 Your car',`<p>Your ${esc(city)} car made the move with you and is parked at the cabin (${old.fuel} of ${old.tank} gal${old.bat==='weak'?', battery a little tired':''}).</p><p>You can keep it, or sell it now for ${$(CAR_SELL_CITY)} toward the down payment and the moving truck, and drive the old island Subaru that came with the house.</p>`,[
         {l:'Keep my car',s:'It becomes your island car.',fn:()=>{}},
         {l:`Sell it for ${$(CAR_SELL_CITY)}`,s:'Take the old Subaru instead.',fn:()=>{

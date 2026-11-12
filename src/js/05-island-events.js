@@ -385,12 +385,14 @@ function playBingo(cards,price){
     {l:'Nothing, thanks',fn:()=>order(null,0)}]);
 }
 
+function lowGasOpt(car,side){const f=Math.round(car.fuel*10)/10;   // say how much is left and where to get more, not just "out of gas"
+  return {m:'car',l:f<0.1?'🚗 Out of gas':`🚗 Not enough gas (${f} gal)`,s:side==='M'?'Fill up at a gas station first (Steilacoom’s is 10 min from the ferry).':'No gas station on the island: Dale sells it by the gallon, or use your shed gas.',dis:true}}
 function travelOpts(dest){
   const base=dist(S.loc,dest), side=L[S.loc].side, car=carHere(), o=[];
   const inj=S.injury&&!S.injury.treated?1.5:1;
   const fueled=car&&car.fuel>=fuelFor(car,base,side);
   if(fueled) o.push({m:'car',l:`🚗 ${base} min`,min:base});
-  else if(car) o.push({m:'car',l:'🚗 Out of gas',dis:true});
+  else if(car) o.push(lowGasOpt(car,side));
   if(side==='I'){
     if(S.friends.sam&&S.loc==='home'&&dest==='aiDock'&&S.ev.flags.samRide===day()) o.unshift({m:'friend',l:`🤝 Ride with Sam ${base} min`,min:base});
     if(!fueled){o.push({m:'walk',l:`🚶 ${Math.round(base*4*inj)} min`,min:Math.round(base*4*inj),dis:!canWalkCarry()});

@@ -26,7 +26,11 @@ if(typeof fpUseRide==='function'){const _u=fpUseRide;fpUseRide=function(mode){if
 // towing burns more fuel
 {const _f=fuelFor;fuelFor=function(car){const g=_f.apply(this,arguments);try{if(towCar(car))return g*(car.diesel?1.2:1.4)}catch(e){}return g}}
 // ---- moving the car and the trailer together (island legs: home ⇄ the Riv) ----
-function boatTowDrive(car,dest){const m=dist(S.loc,dest)+5;S.t+=m;phoneTick();car.fuel=Math.max(0,Math.round((car.fuel-fuelFor(car,m))*100)/100);car.loc=dest;S.loc=dest;S.boat.lastLoc=dest;return m}
+function boatTowDrive(car,dest){let m=dist(S.loc,dest)+5;
+  if(L[S.loc].side==='I'&&L[dest]&&L[dest].side==='I'){let extra=0;   // towing is still a drive on island roads: deer, flats, trees down
+    try{fireHook('tripMid',{from:S.loc,to:dest,mode:'car',o:{m:'car'},car,add:n=>{extra+=n},finish:n=>{S.t+=(n||0);render()}})}catch(e){console.error(e)}
+    m+=extra}
+  S.t+=m;phoneTick();car.fuel=Math.max(0,Math.round((car.fuel-fuelFor(car,m))*100)/100);car.loc=dest;S.loc=dest;S.boat.lastLoc=dest;return m}
 // launch / haul at the ramp here (marina or sunny), with the tide check; then() runs after
 function boatRamp(kind,then){
   const B=S.boat,where=S.loc==='marina'?'the Riv ramp':'the Sunnyside ramp',done=()=>{

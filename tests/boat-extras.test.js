@@ -115,7 +115,7 @@ module.exports = [
     const { page, errors } = await open(ctx);
     await setup(page, { loc: 'home', money: 100 });
     assert.strictEqual(await page.evaluate(() => garageBay()), false);
-    await page.evaluate(() => { S.weekNo = 1; S.week.b = []; });
+    await page.evaluate(() => { S.weekNo = 1; S.mode = 'month'; S.week.b = []; });
     const seen = await page.evaluate(() => { const e = EV.find(x => x.id === 'bx_lot'); const c = e.cond(); e.run({ notes: [] }); return [c, BX().lot.seen]; });
     assert.deepStrictEqual(seen, [true, true]);
     await page.evaluate(() => { render(); });

@@ -9,5 +9,8 @@ const TIRE_PRICE=140;
       fn:()=>{money(-TIRE_PRICE);car.spare='ok';S.t+=40;phoneTick();say(`🛞 A new tire on the ${carShortName(car)}, and the donut goes back under the floor.`);afterAction()}});
 }catch(e){console.error(e)}return a}}
 {const _t=todoItems;todoItems=function(){const it=_t.apply(this,arguments);try{
-  S.cars.filter(c=>carMech(c).spare==='on').forEach(c=>it.push({ok:false,fail:false,l:`Get a new tire for the ${carShortName(c)}`,s:`🛞 It’s on the donut. Another flat means a tow. Gas station in Steilacoom: ${$(TIRE_PRICE)}.`,urgent:false}));
+  S.cars.filter(c=>carMech(c).spare==='on').forEach(c=>it.push({ok:false,fail:false,l:`Get a new tire for the ${carShortName(c)}`,s:`🛞 It’s on the donut. Another flat means a tow. Gas station in Steilacoom: ${$(TIRE_PRICE)}.`,urgent:true}));
 }catch(e){}return it}}
+
+// You drive gently on a donut: half the chance of another flat while it's on (1.22 fix: the second-flat tow hit too often).
+EV.filter(e=>e.id==='flat_tire'||e.id==='hl_flat').forEach(e=>{const _c=e.chance;e.chance=function(ctx){const p=typeof _c==='function'?_c.apply(this,arguments):_c;return ctx&&ctx.car&&carMech(ctx.car).spare==='on'?p*0.5:p}});

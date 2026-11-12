@@ -16,7 +16,7 @@ const BOAT_SUNNY={name:'Sunnyside Beach boat launch (Steilacoom)',side:'M',ic:'ð
 Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:false,configurable:true,writable:true});   // hidden from the travel list until you own a boat
 MP.sunny=[-0.9,0.9];
 const boatOwn=()=>!!(typeof S!=='undefined'&&S&&S.boat&&S.boat.own);
-function boatSync(){try{if(boatOwn())boatFix()}catch(e){console.error(e)}try{Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:boatOwn()&&!visitorOn(),configurable:true,writable:true})}catch(e){}}
+function boatSync(){try{if(boatOwn())boatFix()}catch(e){console.error(e)}try{Object.defineProperty(L,'sunny',{value:BOAT_SUNNY,enumerable:(boatOwn()||(S&&S.cars||[]).some(c=>c.loc==='sunny'))&&!visitorOn(),configurable:true,writable:true})}catch(e){}}
 {const _r=render;render=function(){boatSync();return _r.apply(this,arguments)}}
 const boatGal=g=>Math.round(g*10)/10;
 function boatFuelBtn(){const B=S.boat;return `${boatGal(B.fuel)}/${BOAT_TANK} gal`}

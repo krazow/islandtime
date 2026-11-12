@@ -78,10 +78,10 @@ function mapSVG(side,pts,fer,out){
   }
   const here2=pts[here];
   if(here2)s+=`<circle cx="${here2[0]}" cy="${here2[1]}" r="21" fill="none" stroke="#e3642e" stroke-width="3" stroke-dasharray="4 3" pointer-events="none"/><g pointer-events="none"><rect x="${here2[0]-14}" y="${here2[1]+22}" width="28" height="13" rx="6" fill="#e3642e"/><text x="${here2[0]}" y="${here2[1]+32}" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="DM Sans">YOU</text></g>`;
-  for(const c of S.cars){
-    if(L[c.loc]&&L[c.loc].side!==side)continue;const p=pts[c.loc];if(!p)continue;
-    s+=`<g pointer-events="none"><circle cx="${p[0]+13}" cy="${p[1]-13}" r="9" fill="#f3ecdc" stroke="#2f5d4a"/><text x="${p[0]+13}" y="${p[1]-9}" font-size="11" text-anchor="middle">${c.diesel?'🛻':c.id==='isl'?'🚗':'🚙'}</text></g>`;
-  }
+  const nAt={},badge=(k,ic)=>{if(L[k]&&L[k].side!==side)return;const p=pts[k];if(!p)return;const i=nAt[k]=(nAt[k]||0)+1,x=p[0]+13+(i-1)*19;   // side by side when several vehicles share a spot
+    s+=`<g pointer-events="none"><circle cx="${x}" cy="${p[1]-13}" r="9" fill="#f3ecdc" stroke="#2f5d4a"/><text x="${x}" y="${p[1]-9}" font-size="11" text-anchor="middle">${ic}</text></g>`};
+  for(const c of S.cars)badge(c.loc,c.diesel?'🛻':c.id==='isl'?'🚗':'🚙');
+  try{if(typeof boatOwn==='function'&&boatOwn()&&!visitorOn()){const B=S.boat,k=B.at==='road'&&typeof boatTrailerLoc==='function'?boatTrailerLoc():B.at;badge(k,'🚤')}}catch(e){}
   return s+'</svg>';
 }
 window.MAPTAP=k=>{MAPSEL=MAPSEL===k?null:k;sfx('tap');render()};

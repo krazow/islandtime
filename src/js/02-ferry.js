@@ -64,6 +64,8 @@ function waitFerry(mode){
   if(known.d>day()){
     if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&canWalkCarry())
       return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You can still <b>walk on</b> the ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''}. Your car would stay here.</p>`,[{l:`Walk on the ${fmt(kw.dep)}`,s:side==='M'?'Walk-on fare '+fareTxt('walk'):'Free from the island',fn:()=>waitFerry('walk')},{l:'Not yet',fn:()=>render()}]);}
+    if(mode==='drive'){const kw=findNext(side,'walk',true);if(kw&&kw.d===day()&&!canWalkCarry())   // walk-on exists, but too much to carry
+      return modal('🚗 No more car sailings tonight',`<p>The next boat that takes cars is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>The ${fmt(kw.dep)}${kw.passenger?' (passenger-only boat)':''} still takes walk-ons, but on foot you can carry 4 days of groceries and ${CAP_FOOT} items. You have ${S.carried} days and ${cargoN()} items. Lighten the load and walk on, or stay the night.</p>`,[{l:'OK',fn:()=>render()}])}
     const first=S.lastBoatNote!==S.weekNo*7+day();S.lastBoatNote=S.weekNo*7+day();
     if(side==='M'){if(first){say(`The last boat has gone. The next one you could make is ${DAYS[known.d]} at ${fmt(known.dep)}.`);adj('stress',8)}
       return modal('🌙 No more boats tonight',`<p>The next sailing you could make is <b>${DAYS[known.d]} at ${fmt(known.dep)}</b>.</p><p>You’re stuck on the mainland for the night. Sleep in the terminal, get a motel in Lakewood, or ask a friend for a couch.</p>`,[{l:'OK',fn:()=>render()}]);}

@@ -22,7 +22,7 @@ module.exports = [
     const r = await page.evaluate(clr => { visitorNew('regular', 'tacoma', 'normal'); eval(clr)(); const c = S.cars[0]; c.fuel = 7.5; c.bat = 'weak'; c.spare = 'on'; VS().result = 'moved';
       regStartResident(); const car = S.cars.find(c => c.id === 'isl'); const modalText = document.querySelector('#mbg') ? document.body.textContent : '';
       return { n: S.cars.length, car: { name: car.name, loc: car.loc, fuel: car.fuel, bat: car.bat, spare: car.spare }, visitor: visitorOn() }; }, `(${clear})`);
-    assert.deepStrictEqual(r, { n: 1, car: { name: 'Your car (Tacoma)', loc: 'home', fuel: 7.5, bat: 'weak', spare: 'on' }, visitor: false });
+    assert.deepStrictEqual(r, { n: 1, car: { name: 'Your car (city car)', loc: 'home', fuel: 7.5, bat: 'weak', spare: 'on' }, visitor: false });
     // the move-in modal offers to sell it instead: $2,500 and the old Subaru
     const s = await page.evaluate(clr => { const m0 = S.money; const i = MB.findIndex(b => /Sell it/.test(b.l)); if (i < 0) { /* the welcome modal is first */ MBTN(0); }
       const j = MB.findIndex(b => /Sell it/.test(b.l)); MBTN(j); const car = S.cars.find(c => c.id === 'isl'); eval(clr)(); return { gain: S.money - m0, name: car.name, fuel: car.fuel, bat: car.bat, n: S.cars.length }; }, `(${clear})`);

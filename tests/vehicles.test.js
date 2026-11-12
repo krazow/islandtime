@@ -68,4 +68,37 @@ module.exports = [
     assert.match(src, /propane tanker/);
     noErrors(errors);
   } },
+  { name: 'vehicles: late on the mainland with a low tank, a weekend regular can fill up and drive home', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(clr => { eval(clr)(); visitorNew('regular', 'seattle', 'normal'); eval(clr)();
+      S.loc = 'stDock'; const c = S.cars[0]; c.loc = 'stDock'; c.fuel = 0.5; S.money = 300; S.cur = 6; S.t = 6 * 1440 + 1300;
+      regMainlandLate(); const m = MQ.length ? MQ[0] : null; const btns = [...document.querySelectorAll('.modal-bg button')].map(b => b.textContent);
+      const b = [...document.querySelectorAll('.modal-bg button')].find(b => /Fill up/.test(b.textContent)); if (b) b.click();
+      return { btns, loc: c.loc, fuel: c.fuel }; }, `(${clear})`);
+    assert.ok(r.btns.some(t => /Fill up, then drive home/.test(t)), r.btns.join(' | '));
+    assert.strictEqual(r.loc, 'vhome');
+    assert.ok(r.fuel > 0);
+    noErrors(errors);
+  } },
+  { name: 'vehicles: on the donut, a flat is half as likely; the new-tire to-do is urgent', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(() => { const c = S.cars[0]; const e = EV.find(e => e.id === 'flat_tire'); const ctx = { car: c, from: 'store' };
+      c.spare = 'ok'; const p0 = e.chance(ctx); c.spare = 'on'; const p1 = e.chance(ctx);
+      return { p0, p1, urgent: todoItems().find(i => /new tire/.test(i.l)).urgent }; });
+    assert.ok(Math.abs(r.p1 - r.p0 / 2) < 1e-9, JSON.stringify(r));
+    assert.strictEqual(r.urgent, true);
+    noErrors(errors);
+  } },
+  { name: 'vehicles: drive-on gone but a walk-on still runs with too much to carry: says so, not "stuck"', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(clr => { eval(clr)(); S.loc = 'stDock'; S.cars[0].loc = 'stDock'; S.cars[0].fuel = 10; S.cur = 2; S.t = 2 * 1440 + 19 * 60;
+      S.week.b.push({ start: S.t - 1100, end: S.t + 1000, cause: 'Engine trouble' }); S.carried = 9; render(); eval(clr)();
+      waitFerry('drive'); return [...document.querySelectorAll('.modal-bg')].map(m => m.textContent).join(' '); }, `(${clear})`);
+    assert.match(r, /No more car sailings tonight/);
+    assert.match(r, /still takes walk-ons/);
+    noErrors(errors);
+  } },
 ];
