@@ -1,112 +1,112 @@
 1
-00:00:00,000 --> 00:00:05,980
+00:00:00,000 --> 00:00:05,950
 A tour of Island Time 1.22, shown with mock game data.
 
 2
-00:00:05,980 --> 00:00:11,740
+00:00:05,950 --> 00:00:11,590
 Island Time is a life sim about Anderson Island, Washington.
 
 3
-00:00:11,740 --> 00:00:17,540
+00:00:11,590 --> 00:00:17,400
 There is no bridge: one county ferry connects you to everything.
 
 4
-00:00:17,540 --> 00:00:22,040
+00:00:17,400 --> 00:00:21,909
 Each morning starts at your cabin in the woods.
 
 5
-00:00:22,040 --> 00:00:28,180
+00:00:21,909 --> 00:00:27,929
 Balance cash, food, health, stress, your job and your home.
 
 6
-00:00:28,180 --> 00:00:33,140
+00:00:27,929 --> 00:00:33,190
 The Ferry tab shows every sailing and plans your trip.
 
 7
-00:00:33,140 --> 00:00:38,350
+00:00:33,190 --> 00:00:38,610
 Miss the 7:35 and you are late for work in Lakewood.
 
 8
-00:00:38,350 --> 00:00:44,050
+00:00:38,610 --> 00:00:44,350
 Sailings get cancelled, and the boats after them fill up fast.
 
 9
-00:00:44,050 --> 00:00:49,520
+00:00:44,350 --> 00:00:49,510
 Wait it out, walk on, or find another way home.
 
 10
-00:00:49,520 --> 00:00:54,020
+00:00:49,510 --> 00:00:54,170
 Get around the island by car or on foot.
 
 11
-00:00:54,020 --> 00:00:58,780
+00:00:54,170 --> 00:00:59,070
 Your vehicles appear on the map right where you left them.
 
 12
-00:00:58,780 --> 00:01:04,239
+00:00:59,070 --> 00:01:04,349
 Your phone holds just five apps, so choose carefully.
 
 13
-00:01:04,239 --> 00:01:09,820
+00:01:04,349 --> 00:01:10,039
 Island signal is one bar: installs and calls are slow.
 
 14
-00:01:09,820 --> 00:01:14,539
+00:01:10,039 --> 00:01:15,009
 The Your vehicles card lists every car and your boat.
 
 15
-00:01:14,539 --> 00:01:19,630
+00:01:15,009 --> 00:01:20,600
 A weak battery or a flat on one car never touches another.
 
 16
-00:01:19,630 --> 00:01:24,890
+00:01:20,600 --> 00:01:26,000
 The To-do tab collects your shifts, bills and repairs.
 
 17
-00:01:24,890 --> 00:01:29,450
+00:01:26,000 --> 00:01:30,940
 Each car’s problems show up as their own items.
 
 18
-00:01:29,450 --> 00:01:35,570
+00:01:30,940 --> 00:01:36,480
 Choose where your skiff lives, and weigh cost, launch and risk.
 
 19
-00:01:35,570 --> 00:01:40,790
+00:01:36,480 --> 00:01:41,660
 Tow it with a hitch, or row out to your buoy and cross.
 
 20
-00:01:40,790 --> 00:01:45,770
+00:01:41,660 --> 00:01:46,800
 Your skiff can carry you to the mainland when the ferry can’t.
 
 21
-00:01:45,770 --> 00:01:50,480
+00:01:46,800 --> 00:01:51,820
 Watch the tide, the weather and the gas in the tank.
 
 22
-00:01:50,480 --> 00:01:55,660
+00:01:51,820 --> 00:01:56,860
 Visitor modes flip the game: the mainland is home.
 
 23
-00:01:55,660 --> 00:02:01,229
+00:01:56,860 --> 00:02:02,480
 Weekend regulars can save up, move over and bring the car.
 
 24
-00:02:01,229 --> 00:02:06,880
+00:02:02,480 --> 00:02:08,170
 The island has no gas station, so you plan every gallon.
 
 25
-00:02:06,880 --> 00:02:11,620
+00:02:08,170 --> 00:02:12,920
 Neighbors like Dale help out, for a price.
 
 26
-00:02:11,620 --> 00:02:16,150
+00:02:12,920 --> 00:02:17,720
 Each game ends with a summary of how your stay went.
 
 27
-00:02:16,150 --> 00:02:22,150
+00:02:17,720 --> 00:02:23,340
 Try a harder level, a longer season, or a new home city.
 
 28
-00:02:22,150 --> 00:02:29,020
+00:02:23,340 --> 00:02:30,060
 Play free in your browser at krazow.github.io/islandtime
 

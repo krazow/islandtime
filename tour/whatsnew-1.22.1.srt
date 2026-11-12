@@ -1,56 +1,56 @@
 1
-00:00:00,000 --> 00:00:06,650
+00:00:00,000 --> 00:00:06,580
 What’s new in Island Time 1.22.1, shown with mock game data.
 
 2
-00:00:06,650 --> 00:00:11,770
+00:00:06,580 --> 00:00:11,980
 The island map now has Anderson Island’s true outline.
 
 3
-00:00:11,770 --> 00:00:17,240
+00:00:11,980 --> 00:00:17,670
 The ferry landing, the store and the lakes are where you’d find them.
 
 4
-00:00:17,240 --> 00:00:22,479
+00:00:17,670 --> 00:00:23,090
 The mainland map runs from DuPont up to Point Defiance.
 
 5
-00:00:22,479 --> 00:00:28,009
+00:00:23,090 --> 00:00:28,510
 Both landings are in view, so you can watch the boat cross.
 
 6
-00:00:28,009 --> 00:00:33,000
+00:00:28,510 --> 00:00:33,720
 Visitors from Seattle get a map tab for their home city.
 
 7
-00:00:33,000 --> 00:00:38,800
+00:00:33,720 --> 00:00:39,290
 Your place, your job and the store, on the real shoreline.
 
 8
-00:00:38,800 --> 00:00:44,269
+00:00:39,290 --> 00:00:44,760
 Olympia gets its own tab as well, around Budd Inlet.
 
 9
-00:00:44,269 --> 00:00:48,769
+00:00:44,760 --> 00:00:49,260
 Tap any place to see the ways to get there.
 
 10
-00:00:48,769 --> 00:00:53,269
+00:00:49,260 --> 00:00:53,760
 The title screen now has a What’s new button.
 
 11
-00:00:53,269 --> 00:00:57,769
+00:00:53,760 --> 00:00:58,260
 It shows a “new” tag until you’ve read it.
 
 12
-00:00:57,769 --> 00:01:02,860
+00:00:58,260 --> 00:01:03,680
 Each release lists its changes and plays a short video.
 
 13
-00:01:02,860 --> 00:01:07,360
+00:01:03,680 --> 00:01:08,180
 Earlier releases are listed underneath.
 
 14
-00:01:07,360 --> 00:01:14,230
+00:01:08,180 --> 00:01:14,900
 Play free in your browser at krazow.github.io/islandtime
 
