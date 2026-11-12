@@ -41,6 +41,13 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.22.1: real maps
+
+- 🗺️ **The tappable maps are drawn from real shorelines.** Anderson Island has its true outline (Amsterdam Bay, Oro Bay, Yoman Point), with McNeil Island and Balch Passage to the north. The mainland map runs from DuPont to Point Defiance and shows Steilacoom, Lakewood, Tacoma, University Place, American Lake, the Narrows and the islands.
+- 📍 **Every place sits where it really is** (Geographic Names Information System points where they exist: the ferry landing, the old store, the schoolhouse, Lake Josephine, Florence Lake, Oro Bay). The cabin and Dale's place are fictional, so they sit somewhere plausible. Seattle and Olympia are off the map, so a visitor's home is pinned at the edge with the distance.
+- ⛴️ On the mainland map both landings are in view, so the boat crosses the whole way.
+- Shoreline data: [GSHHG](https://github.com/GenericMappingTools/gshhg-gmt) full resolution (P. Wessel and W. H. F. Smith, LGPL), generated into `src/js/49-geo.js` by `tools/make-geo.py`.
+
 ### New in 1.22: a fleet of your own (cars and a boat, each with its own parts)
 
 - 🔋 **Every vehicle has its own parts:** each car has its own battery, tires and trouble history; a weak battery or a flat on one car never touches another. A flat puts that car on its donut spare until you buy a new tire at the Steilacoom gas station ($140); a second flat on the donut means a tow. Old saves give the shared battery to the island car. A visitor's or regular's newer car rarely has a dead battery.

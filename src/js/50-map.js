@@ -1,21 +1,40 @@
 // ---- 🗺️ an island map you can tap (50-map.js) ----
 // A drawn map of Anderson Island and of the mainland, as an alternative to the "Go somewhere" list. It wraps actView(): the list stays
 // (hidden) and the player's choice is remembered with setPref('mapView'). Tapping a place shows its travel options (travelOpts) and goes there.
-// MAPI = island positions (400x340 map), mainland positions come from MP (≈ miles, Steilacoom terminal [0,0]).
-const MAPI={aiDock:[326,78],store:[272,122],lake:[240,152],home:[186,102],school:[160,152],food:[100,156],marina:[78,202],legion:[236,204],
-  dale:[150,238],farm:[292,222],andys:[214,264],jacobs:[96,272]};
-const MAPW=400,MAPH={I:340,M:380};
+// Both panels are drawn from real shorelines (GEO, 49-geo.js) in a lon/lat box; every place sits at its real spot (MAPLL, lat/lon),
+// except the fictional ones (home, Dale's), which sit where they plausibly could. MP (miles) still drives travel times; the map only draws.
+const MAPLL={
+  // Anderson Island (GNIS points where they exist)
+  aiDock:[47.1783,-122.6778],store:[47.1652,-122.6999],school:[47.1569,-122.7052],lake:[47.1569,-122.6828],food:[47.1574,-122.6866],
+  marina:[47.1445,-122.6905],legion:[47.1612,-122.6955],home:[47.1712,-122.7125],dale:[47.1420,-122.7085],farm:[47.1765,-122.7045],
+  andys:[47.1500,-122.7095],jacobs:[47.1372,-122.6962],
+  // Steilacoom
+  stDock:[47.1716,-122.6030],gas:[47.1662,-122.5935],st_topside:[47.1676,-122.6008],st_bair:[47.1699,-122.6022],st_pub:[47.1706,-122.5988],
+  st_museum:[47.1688,-122.5972],st_beach:[47.1795,-122.5890],sunny:[47.1787,-122.5898],
+  // Lakewood
+  lw_fsp:[47.1760,-122.5560],work:[47.1630,-122.5140],lw_playhouse:[47.1612,-122.5122],market:[47.1722,-122.5130],pharmacy:[47.1782,-122.5182],
+  dispensary:[47.1688,-122.5232],lw_hess:[47.1578,-122.5182],depot:[47.1530,-122.5048],wholesale:[47.1478,-122.4978],ponders:[47.1380,-122.4950],
+  motel:[47.1430,-122.5002],lw_yis:[47.1660,-122.4950],lw_lakewold:[47.1395,-122.5420],
+  // Tacoma
+  office:[47.2590,-122.4530],clinic:[47.2500,-122.4470],hilltop:[47.2520,-122.4560],warehouse:[47.2170,-122.4700],tc_dukes:[47.2905,-122.4850],
+  tc_cactus:[47.2690,-122.4815],tc_zoo:[47.3050,-122.5200],tc_glass:[47.2460,-122.4340],tc_grand:[47.2560,-122.4410],
+  // DuPont
+  whse:[47.1080,-122.6400],urgent:[47.0990,-122.6310]};
+const MAPCITY={tacoma:[47.2400,-122.4800],seattle:[47.6062,-122.3321],olympia:[47.0379,-122.9007]};
+const MAPW=400,MAPH={I:GEO.I.h,M:GEO.M.h};
 let MAPSEL=null,MAPSIDE=null,MAPSIDE_FOR=null;
 const mapSide=()=>{const cur=L[S.loc].side;if(MAPSIDE_FOR!==cur){MAPSIDE=null;MAPSIDE_FOR=cur}return MAPSIDE||cur};
-const mpx=x=>20+(x+5.5)*19, mpy=y=>30+(9-y)*20;
+function mapXY(side,lat,lon){const [x0,x1,y0,y1]=GEO[side].bb;return [(lon-x0)/(x1-x0)*MAPW,(y1-lat)/(y1-y0)*MAPH[side]]}
+const mapIn=(side,p)=>p[0]>=0&&p[0]<=MAPW&&p[1]>=0&&p[1]<=MAPH[side];
 function mapMainPos(k){
-  if(MP[k])return [mpx(MP[k][0]),mpy(MP[k][1])];
-  const city={seattle:[12.5,9],tacoma:[11,5.6],olympia:[-3,-6.6]};
-  let h=[11,5.6];try{h=city[VS().home]||h}catch(e){}
-  if(k==='vhome')return [mpx(h[0]),mpy(h[1])];
-  if(k==='rwork')return [mpx(h[0]+1.2),mpy(h[1]-0.9)];
-  if(k==='rmarket')return [mpx(h[0]-1.2),mpy(h[1]-0.9)];
-  let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return [mpx(2+n%9),mpy(-1-(n%5))];
+  if(MAPLL[k])return mapXY('M',...MAPLL[k]);
+  let home='tacoma';try{home=VS().home||home}catch(e){}
+  const h=mapXY('M',...(MAPCITY[home]||MAPCITY.tacoma));
+  const hp=[Math.max(24,Math.min(MAPW-24,h[0])),Math.max(26,Math.min(MAPH.M-26,h[1]))];   // Seattle and Olympia are off this map: pinned at its edge
+  if(k==='vhome')return hp;
+  if(k==='rwork')return [hp[0]+22,hp[1]+18];
+  if(k==='rmarket')return [hp[0]-22,hp[1]+18];
+  let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return mapXY('M',47.15+(n%5)*0.006,-122.53+(n%9)*0.006);   // anything new: somewhere in Lakewood
 }
 function mapPlaces(side){
   return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
@@ -32,8 +51,8 @@ function mapSpread(pts,min,w,h){
   return pts;
 }
 function mapPositions(side){
-  const pts={},ks=mapPlaces(side),extra=[[60,40],[110,70],[280,60],[190,40]];let e=0;
-  ks.forEach(k=>{pts[k]=side==='I'?(MAPI[k]?MAPI[k].slice():extra[e++%extra.length].slice()):mapMainPos(k)});
+  const pts={},ks=mapPlaces(side),extra=[[47.170,-122.700],[47.150,-122.700],[47.160,-122.715],[47.165,-122.690]];let e=0;
+  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):mapMainPos(k)});
   return mapSpread(pts,side==='I'?34:32,MAPW,MAPH[side]);
 }
 // the boat on the water right now, from the timetable: {side it left, f:0..1 across, dep}
@@ -48,26 +67,35 @@ function mapFerry(){
 }
 function mapSVG(side,pts,fer,out){
   const H=MAPH[side],water='#2c5f6e',land='#d9d3bc',tree='#2f5d4a';
-  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/><path d="M0 ${H*0.3} h${MAPW} M0 ${H*0.6} h${MAPW}" stroke="#fff" stroke-opacity=".07"/>`;
+  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
+  const G=GEO[side],lbl=(lat,lon,t,o)=>{const [x,y]=mapXY(side,lat,lon);return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}"${o||''}>${t}</text>`};
+  for(const sh of G.shapes)s+=`<path d="${sh.d}" fill="${sh.k==='lake'?water:side==='I'&&sh.k==='ai'?tree:land}"${sh.k==='lake'?'':` stroke="${side==='I'&&sh.k==='ai'?'#e8dcc0':'#b9b08f'}" stroke-width="${side==='I'&&sh.k==='ai'?2.5:1}" stroke-linejoin="round"`}/>`;
   let dock,edge;
   if(side==='I'){
-    s+=`<path d="M120 40 C170 22 260 28 320 52 C345 70 340 100 330 125 C322 160 335 190 322 225 C312 255 285 285 240 298 C200 308 160 300 130 296 C90 290 60 262 55 230 C50 200 70 185 60 160 C50 130 70 100 85 78 C95 60 105 48 120 40 Z" fill="${tree}" stroke="#e8dcc0" stroke-width="3"/>`
-     +`<path d="M150 70 C190 60 250 70 290 90 M120 120 C160 130 200 120 240 130 M110 230 C160 220 220 240 280 250" stroke="#e8dcc0" stroke-opacity=".28" stroke-width="2" fill="none" stroke-dasharray="5 4"/>`
-     +`<ellipse cx="240" cy="152" rx="30" ry="19" fill="${water}" opacity=".9"/><ellipse cx="186" cy="212" rx="22" ry="13" fill="${water}" opacity=".9"/>`
-     +`<g font-size="9" fill="#e8dcc0" font-family="DM Sans" opacity=".8" text-anchor="middle"><text x="240" y="178">Lake Josephine</text><text x="186" y="236">Florence Lake</text><text x="40" y="150" font-style="italic" fill="#9fc0c8">Amsterdam Bay</text><text x="352" y="118" font-style="italic" fill="#9fc0c8">Yoman Pt.</text></g>`;
-    dock=pts.aiDock||[326,78];edge=[392,30];
+    const lake=(lat,lon,rx,ry,r)=>{const [x,y]=mapXY('I',lat,lon);return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${rx}" ry="${ry}" transform="rotate(${r} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${water}"/>`};
+    s+=lake(47.1569,-122.6828,15,9,-30)+lake(47.1672,-122.6874,11,7,20)   // Lake Josephine, Florence Lake (GNIS)
+     +`<g font-size="9" fill="#e8dcc0" font-family="DM Sans" opacity=".85" text-anchor="middle">${lbl(47.1528,-122.6828,'Lake Josephine')}${lbl(47.1700,-122.6874,'Florence Lake')}</g>`
+     +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1585,-122.7385,'Amsterdam Bay')}${lbl(47.1292,-122.7030,'Oro Bay')}${lbl(47.1735,-122.6640,'Yoman Pt.')}${lbl(47.1935,-122.7270,'Balch Passage')}${lbl(47.1240,-122.7380,'Nisqually Reach')}</g>`
+     +`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1945,-122.6800,'McNeil Is.')}</g>`;
+    dock=pts.aiDock||mapXY('I',...MAPLL.aiDock);
+    const far=mapXY('I',...MAPLL.stDock),dx=far[0]-dock[0],dy=far[1]-dock[1],t=(MAPW-8-dock[0])/dx;edge=[MAPW-8,dock[1]+dy*t];   // toward Steilacoom, to the map's edge
   } else {
-    const co=[[-0.5,9.5],[-1.2,6],[-0.9,2.5],[-0.6,0.4],[-0.8,-1],[-2,-2.2],[-5,-3.6],[-6,-4.2]];
-    s+=`<polygon points="${co.concat([[-6,-8],[16,-8],[16,10]]).map(p=>mpx(p[0])+','+mpy(p[1])).join(' ')}" fill="${land}"/>`
-      +`<path d="M${mpx(-0.6)} ${mpy(0.4)} C${mpx(2)} ${mpy(2)} ${mpx(5)} ${mpy(2)} ${mpx(8)} ${mpy(6.5)} L${mpx(13)} ${mpy(9.5)}" stroke="#b9b08f" stroke-width="3" fill="none"/>`
-      +`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle" opacity=".9"><text x="${mpx(0.3)}" y="${mpy(-1.5)}">Steilacoom</text><text x="${mpx(-3.6)}" y="${mpy(-4.4)}">DuPont</text><text x="${mpx(8.4)}" y="${mpy(1.6)}">Lakewood</text><text x="${mpx(12)}" y="${mpy(7.4)}">Tacoma</text><text x="${mpx(-4)}" y="${mpy(3)}" fill="#9fc0c8">Puget Sound</text></g>`;
-    dock=pts.stDock||[mpx(0),mpy(0)];edge=[20,mpy(1.2)];
+    s+=`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle" opacity=".95">${lbl(47.1600,-122.5880,'Steilacoom')}${lbl(47.1520,-122.5300,'Lakewood')}${lbl(47.2330,-122.4520,'Tacoma')}${lbl(47.2270,-122.5420,'University Place')}${lbl(47.0930,-122.6560,'DuPont')}</g>`
+     +`<g font-size="9" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle" opacity=".8">${lbl(47.1600,-122.7060,'Anderson Is.')}${lbl(47.2120,-122.6880,'McNeil Is.')}${lbl(47.2500,-122.6250,'Fox Is.')}${lbl(47.1450,-122.6320,'Ketron Is.')}</g>`
+     +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1900,-122.6400,'Puget Sound')}${lbl(47.2700,-122.5600,'Tacoma Narrows')}${lbl(47.2930,-122.4380,'Commencement Bay')}${lbl(47.1230,-122.5640,'American Lake')}</g>`;
+    let home='tacoma';try{home=VS().home||home}catch(e){}
+    if(visitorOn()&&home!=='tacoma'){const c=MAPCITY[home];if(c){const p=mapXY('M',...c),q=[Math.max(24,Math.min(MAPW-24,p[0])),Math.max(26,Math.min(MAPH.M-26,p[1]))];
+      s+=`<text x="${(q[0]+(p[0]>MAPW/2?-26:26)).toFixed(1)}" y="${(q[1]+(p[1]<0?-6:18)).toFixed(1)}" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="${p[0]>MAPW/2?'end':'start'}">${home==='seattle'?'↑ Seattle, 30 mi':'↙ Olympia, 20 mi'}</text>`}}
+    dock=pts.stDock||mapXY('M',...MAPLL.stDock);edge=mapXY('M',...MAPLL.aiDock);
   }
+  s+=`<g font-size="8" fill="#f4f1ea" font-family="DM Sans" opacity=".55"><text x="${MAPW-6}" y="${MAPH[side]-6}" text-anchor="end">Shoreline: GSHHG</text><text x="10" y="18" font-size="11" font-weight="700">N ↑</text></g>`;
   // the ferry route across the water
   s+=`<line x1="${dock[0]}" y1="${dock[1]}" x2="${edge[0]}" y2="${edge[1]}" stroke="#f4f1ea" stroke-width="2" stroke-dasharray="6 5" opacity="${out?0.25:0.7}"/><text x="${(dock[0]+edge[0])/2}" y="${(dock[1]+edge[1])/2-6}" font-size="9.5" fill="#f4f1ea" font-family="DM Sans" text-anchor="middle">⛴️ ${side==='I'?'to Steilacoom':'to Anderson Is.'}</text>`;
-  if(fer&&!out){ // the boat: the half of the trip nearest this panel
-    let t=null;if(fer.side===side&&fer.f<0.5)t=fer.f*2;else if(fer.side!==side&&fer.f>=0.5)t=(1-fer.f)*2;
-    if(t!=null){const x=dock[0]+(edge[0]-dock[0])*(0.25+t*0.7),y=dock[1]+(edge[1]-dock[1])*(0.25+t*0.7);
+  if(fer&&!out){ // the boat: on the island panel, while it's on the island half of the trip; on the mainland panel (both landings in view), all the way
+    let t=null;
+    if(side==='M')t=fer.side==='M'?fer.f:1-fer.f;
+    else if(fer.side==='I'&&fer.f<0.5)t=fer.f*2;else if(fer.side==='M'&&fer.f>=0.5)t=(1-fer.f)*2;
+    if(t!=null){const x=dock[0]+(edge[0]-dock[0])*t,y=dock[1]+(edge[1]-dock[1])*t;
       s+=`<g class="mapferry" aria-label="The ferry"><rect x="${x-14}" y="${y-6}" width="28" height="12" rx="3" fill="#f4f1ea"/><rect x="${x-14}" y="${y+2}" width="28" height="4" fill="#2f5d4a"/><rect x="${x-5}" y="${y-12}" width="10" height="7" fill="#f4f1ea"/><rect x="${x-1.5}" y="${y-17}" width="3" height="6" fill="#e3642e"/></g>`}}
   // markers
   const here=S.loc;
