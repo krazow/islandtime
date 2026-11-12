@@ -27,6 +27,8 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (url.origin !== location.origin) return;
+  // The tour video page and its files live outside the game: never cache them, and never let them replace the game shell.
+  if (url.pathname.includes('/tour/')) return;
   // Pages: network first (picks up updates), fall back to cached shell offline.
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put('index.html', copy)); return r; })

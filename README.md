@@ -13,6 +13,8 @@
 | 📱 **As a phone app** | Open the browser link. **Android:** tap *Install as an app* on the title screen. **iPhone:** Share → *Add to Home Screen*. It works offline after the first visit. |
 | 🪟 **Windows** | Download `IslandTime-Setup.exe` from [Releases](../../releases). Installs per-user, no admin needed. Windows SmartScreen may warn about an unrecognized app (it isn't code-signed): *More info → Run anyway*. |
 
+🎬 [**Watch the 2-minute tour (1.22)**](https://krazow.github.io/islandtime/tour/): the features and how to play, with subtitles.
+
 📲 [**Install on your phone**](https://krazow.github.io/islandtime/install.html): QR code and step-by-step *Add to Home Screen* instructions.
 
 ## The game
