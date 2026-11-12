@@ -2,15 +2,19 @@
 // A "What's new" button on the title screen (and in the update pop-up) lists what changed in each release, newest first, and plays that
 // release's what's-new video. Videos live on the game's website (tour/), so they need internet; offline the window says so.
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
-const WN_SITE='https://krazow.github.io/islandtime/';
+const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
-  {v:'1.22.1',date:'Nov 12, 2026',title:'Real maps, and this window',video:'tour/whatsnew-1.22.1.mp4',items:[
+  {v:'1.22.2',date:'Nov 12, 2026',title:'A video tutorial',video:WN_TUTORIAL,items:[
+    'A subtitled video tutorial that walks through the whole game: starting out, the screen, the ferry, work and money, food and gas, the phone, your house, friends, vehicles, the boat, visiting, and how a game ends.',
+    'Watch it from this window, or at krazow.github.io/islandtime/tour.',
+    'The older demo videos are retired in favour of the tutorial.']},
+  {v:'1.22.1',date:'Nov 12, 2026',title:'Real maps, and this window',items:[
     'The tappable maps are drawn from real shorelines: Anderson Island has its true outline (Amsterdam Bay, Oro Bay, Yoman Point), and the mainland map runs from DuPont to Point Defiance.',
     'Every place sits where it really is: the ferry landing, the old store, the schoolhouse, Lake Josephine, Florence Lake, and the restaurants and shops on the mainland.',
     'Visitors from Seattle or Olympia get a third map tab for their home city, on its real shoreline.',
     'On the mainland map both landings are in view, so you can watch the boat cross the whole way.',
-    'A What’s new button on the title screen, with a short narrated video for each release.']},
-  {v:'1.22.0',date:'Nov 11, 2026',title:'A fleet of your own',video:'tour/IslandTime-1.22-tour.mp4',items:[
+    'A What’s new button on the title screen.']},
+  {v:'1.22.0',date:'Nov 11, 2026',title:'A fleet of your own',items:[
     'Every car has its own battery, spare tire and trouble history; a Your vehicles card shows them all.',
     'Car storage: the mainland beater waits at the Steilacoom terminal ($8 a night), Weekend regulars bring their city car when they move in, and you can sell or trade cars back.',
     'Boat ownership: keep the skiff in a slip, on a trailer in your yard or on your mooring buoy; tow it, register it, upgrade it, fish and crab from it, and buy the lot next door for a third garage bay.',
@@ -41,13 +45,14 @@ function wnVideoHTML(e){
   if(!e.video)return '';
   const online=typeof navigator==='undefined'||navigator.onLine!==false;
   const src=WN_SITE+e.video;
-  return `<div class="wnvid">${online?`<video controls playsinline preload="metadata" poster="${WN_SITE}tour/poster.jpg" src="${src}" onerror="this.parentNode.innerHTML='<p class=small-note>📶 The video needs an internet connection. Watch it later at krazow.github.io/islandtime/tour</p>'"></video>`
+  return `<div class="wnvid">${online?`<video controls playsinline preload="metadata" poster="${WN_SITE}tour/tutorial-poster.jpg" src="${src}" onerror="this.parentNode.innerHTML='<p class=small-note>📶 The video needs an internet connection. Watch it later at krazow.github.io/islandtime/tour</p>'"></video>`
     :`<p class="small-note">📶 The ${esc(e.v)} video needs an internet connection. Watch it later at krazow.github.io/islandtime/tour</p>`}</div>`;
 }
 function wnItems(e){return `<ul class="wnlist">${e.items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`}
 function whatsNew(){
   const [cur,...old]=WHATSNEW;
   let h=`<p class="wnhead"><b>${esc(cur.v)}</b> · ${esc(cur.date)} · ${esc(cur.title)}</p>`+wnVideoHTML(cur)+wnItems(cur);
+  if(cur.video!==WN_TUTORIAL)h=`<details class="wnv"><summary>🎓 Watch the tutorial (how to play)</summary>${wnVideoHTML({v:'tutorial',video:WN_TUTORIAL})}</details>`+h;
   if(old.length)h+=`<details class="wnold"><summary>Earlier releases</summary>${old.map(e=>`<p class="wnhead"><b>${esc(e.v)}</b> · ${esc(e.date)} · ${esc(e.title)}</p>${e.video?`<details class="wnv"><summary>▶ Watch the ${esc(e.v)} video</summary>${wnVideoHTML(e)}</details>`:''}${wnItems(e)}`).join('')}</details>`;
   modal('✨ What’s new in Island Time',h,[{l:'Close',fn:()=>{try{const ls=store();ls&&ls.setItem('islandtime-wn-seen',APP_VERSION)}catch(e){}const d=document.querySelector('#wnBtn .wndot');if(d)d.remove()}}]);
 }

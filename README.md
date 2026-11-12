@@ -13,7 +13,7 @@
 | 📱 **As a phone app** | Open the browser link. **Android:** tap *Install as an app* on the title screen. **iPhone:** Share → *Add to Home Screen*. It works offline after the first visit. |
 | 🪟 **Windows** | Download `IslandTime-Setup.exe` from [Releases](../../releases). Installs per-user, no admin needed. Windows SmartScreen may warn about an unrecognized app (it isn't code-signed): *More info → Run anyway*. |
 
-🎬 [**Watch the 2-minute tour (1.22)**](https://krazow.github.io/islandtime/tour/): the features and how to play, with subtitles.
+🎬 [**Watch the tutorial**](https://krazow.github.io/islandtime/tour/): six minutes on how to play, with subtitles.
 
 📲 [**Install on your phone**](https://krazow.github.io/islandtime/install.html): QR code and step-by-step *Add to Home Screen* instructions.
 
@@ -41,13 +41,18 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.22.2: a video tutorial
+
+- 🎓 **How to play, in six minutes:** a subtitled video tutorial covers starting out, the screen, the ferry, work and money, food and gas, the phone, friends and the house, your cars and boat, bedtime, visiting, and how a game ends. Watch it from **What's new** on the title screen, or at [krazow.github.io/islandtime/tour](https://krazow.github.io/islandtime/tour/).
+- The older demo videos are retired in favour of the tutorial.
+
 ### New in 1.22.1: real maps
 
 - 🗺️ **The tappable maps are drawn from real shorelines.** Anderson Island has its true outline (Amsterdam Bay, Oro Bay, Yoman Point), with McNeil Island and Balch Passage to the north. The mainland map runs from DuPont to Point Defiance and shows Steilacoom, Lakewood, Tacoma, University Place, American Lake, the Narrows and the islands.
 - 📍 **Every place sits where it really is** (Geographic Names Information System points where they exist: the ferry landing, the old store, the schoolhouse, Lake Josephine, Florence Lake, Oro Bay). The cabin and Dale's place are fictional, so they sit somewhere plausible. Seattle and Olympia are off the map, so a visitor's home is pinned at the edge with the distance.
 - ⛴️ On the mainland map both landings are in view, so the boat crosses the whole way.
 - 🏙️ **Visitors from Seattle or Olympia get a home-city map tab** on that city's real shoreline, with their place, job and store.
-- ✨ **What's new, on the title screen:** a button lists what changed in each release (newest first, earlier ones below) and plays that release's short narrated what's-new video ([1.22.1 video](https://krazow.github.io/islandtime/tour/whatsnew-1.22.1.mp4)). After an update, the update pop-up offers it too. Videos stream from the website, so they need internet.
+- ✨ **What's new, on the title screen:** a button lists what changed in each release (newest first, earlier ones below) and plays that release's video. After an update, the update pop-up offers it too. Videos stream from the website, so they need internet.
 - Shoreline data: [GSHHG](https://github.com/GenericMappingTools/gshhg-gmt) full resolution (P. Wessel and W. H. F. Smith, LGPL), generated into `src/js/49-geo.js` by `tools/make-geo.py`.
 
 ### New in 1.22: a fleet of your own (cars and a boat, each with its own parts)
