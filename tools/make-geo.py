@@ -7,6 +7,8 @@ region = json.load(open(sys.argv[1] if len(sys.argv) > 1 else 'region.json'))
 VIEWS = {  # lon0, lon1, lat0, lat1, width
     'I': (-122.752, -122.655, 47.119, 47.196, 400),
     'M': (-122.740, -122.400, 47.080, 47.320, 400),
+    'S': (-122.440, -122.240, 47.555, 47.685, 400),   # Seattle (a visitor's home city)
+    'O': (-122.990, -122.800, 47.005, 47.135, 400),   # Olympia
 }
 NAMES = {3695: 'ai', 4067: 'mcneil', 4805: 'fox', 20322: 'ketron', 2: 'main'}
 def proj(v):

@@ -21,11 +21,18 @@ const MAPLL={
   // DuPont
   whse:[47.1080,-122.6400],urgent:[47.0990,-122.6310]};
 const MAPCITY={tacoma:[47.2400,-122.4800],seattle:[47.6062,-122.3321],olympia:[47.0379,-122.9007]};
-const MAPW=400,MAPH={I:GEO.I.h,M:GEO.M.h};
+const MAPW=400,MAPH={I:GEO.I.h,M:GEO.M.h,S:GEO.S.h,O:GEO.O.h};
+// A visitor who lives in Seattle or Olympia gets a third panel ('H') for home: their place, job and store on that city's real shoreline.
+const MAPHOMEK=['vhome','rwork','rmarket'],MAPHOMELL={
+  seattle:{vhome:[47.6235,-122.3170],rwork:[47.6060,-122.3360],rmarket:[47.6180,-122.3260]},   // Capitol Hill, downtown
+  olympia:{vhome:[47.0440,-122.8840],rwork:[47.0380,-122.9010],rmarket:[47.0475,-122.8960]}};  // east side, downtown
+function mapHome(){try{if(!visitorOn())return null;const h=VS().home;return h==='seattle'?'S':h==='olympia'?'O':null}catch(e){return null}}
+const mapGK=side=>side==='H'?(mapHome()||'M'):side;
+const mapCur=()=>{const c=L[S.loc].side;return c==='M'&&mapHome()&&MAPHOMEK.includes(S.loc)?'H':c};
 let MAPSEL=null,MAPSIDE=null,MAPSIDE_FOR=null;
-const mapSide=()=>{const cur=L[S.loc].side;if(MAPSIDE_FOR!==cur){MAPSIDE=null;MAPSIDE_FOR=cur}return MAPSIDE||cur};
-function mapXY(side,lat,lon){const [x0,x1,y0,y1]=GEO[side].bb;return [(lon-x0)/(x1-x0)*MAPW,(y1-lat)/(y1-y0)*MAPH[side]]}
-const mapIn=(side,p)=>p[0]>=0&&p[0]<=MAPW&&p[1]>=0&&p[1]<=MAPH[side];
+const mapSide=()=>{const cur=mapCur();if(MAPSIDE_FOR!==cur){MAPSIDE=null;MAPSIDE_FOR=cur}return MAPSIDE||cur};
+function mapXY(side,lat,lon){const g=mapGK(side),[x0,x1,y0,y1]=GEO[g].bb;return [(lon-x0)/(x1-x0)*MAPW,(y1-lat)/(y1-y0)*MAPH[g]]}
+const mapIn=(side,p)=>p[0]>=0&&p[0]<=MAPW&&p[1]>=0&&p[1]<=MAPH[mapGK(side)];
 function mapMainPos(k){
   if(MAPLL[k])return mapXY('M',...MAPLL[k]);
   let home='tacoma';try{home=VS().home||home}catch(e){}
@@ -37,7 +44,8 @@ function mapMainPos(k){
   let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return mapXY('M',47.15+(n%5)*0.006,-122.53+(n%9)*0.006);   // anything new: somewhere in Lakewood
 }
 function mapPlaces(side){
-  return Object.keys(L).filter(k=>L[k].side===side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
+  const hk=mapHome(),real=side==='H'?'M':side;
+  return Object.keys(L).filter(k=>L[k].side===real&&(k!=='vhome'||visitorOn())&&!destHidden(k)&&(!hk||real!=='M'||(side==='H')===MAPHOMEK.includes(k)));
 }
 // push overlapping markers apart (deterministic), keeping them near where they belong
 function mapSpread(pts,min,w,h){
@@ -52,8 +60,9 @@ function mapSpread(pts,min,w,h){
 }
 function mapPositions(side){
   const pts={},ks=mapPlaces(side),extra=[[47.170,-122.700],[47.150,-122.700],[47.160,-122.715],[47.165,-122.690]];let e=0;
-  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):mapMainPos(k)});
-  return mapSpread(pts,side==='I'?34:32,MAPW,MAPH[side]);
+  const hl=side==='H'?MAPHOMELL[VS().home]:null;
+  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):hl?mapXY('H',...(hl[k]||hl.vhome)):mapMainPos(k)});
+  return mapSpread(pts,side==='I'?34:32,MAPW,MAPH[mapGK(side)]);
 }
 // the boat on the water right now, from the timetable: {side it left, f:0..1 across, dep}
 function mapFerry(){
@@ -66,9 +75,9 @@ function mapFerry(){
   return null;
 }
 function mapSVG(side,pts,fer,out){
-  const H=MAPH[side],water='#2c5f6e',land='#d9d3bc',tree='#2f5d4a';
-  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
-  const G=GEO[side],lbl=(lat,lon,t,o)=>{const [x,y]=mapXY(side,lat,lon);return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}"${o||''}>${t}</text>`};
+  const gk=mapGK(side),H=MAPH[gk],water='#2c5f6e',land='#d9d3bc',tree='#2f5d4a';
+  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':side==='H'?'Map of '+(gk==='S'?'Seattle':'Olympia'):'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
+  const G=GEO[gk],lbl=(lat,lon,t,o)=>{const [x,y]=mapXY(side,lat,lon);return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}"${o||''}>${t}</text>`};
   for(const sh of G.shapes)s+=`<path d="${sh.d}" fill="${sh.k==='lake'?water:side==='I'&&sh.k==='ai'?tree:land}"${sh.k==='lake'?'':` stroke="${side==='I'&&sh.k==='ai'?'#e8dcc0':'#b9b08f'}" stroke-width="${side==='I'&&sh.k==='ai'?2.5:1}" stroke-linejoin="round"`}/>`;
   let dock,edge;
   if(side==='I'){
@@ -79,6 +88,12 @@ function mapSVG(side,pts,fer,out){
      +`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1945,-122.6800,'McNeil Is.')}</g>`;
     dock=pts.aiDock||mapXY('I',...MAPLL.aiDock);
     const far=mapXY('I',...MAPLL.stDock),dx=far[0]-dock[0],dy=far[1]-dock[1],t=(MAPW-8-dock[0])/dx;edge=[MAPW-8,dock[1]+dy*t];   // toward Steilacoom, to the map's edge
+  } else if(side==='H'){
+    s+=gk==='S'
+      ?`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.6020,-122.3300,'Downtown')}${lbl(47.6300,-122.3150,'Capitol Hill')}${lbl(47.5700,-122.3870,'West Seattle')}${lbl(47.6660,-122.3800,'Ballard')}${lbl(47.6600,-122.3130,'U District')}</g>`
+       +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.6020,-122.3650,'Elliott Bay')}${lbl(47.6400,-122.3340,'Lake Union')}${lbl(47.6150,-122.2600,'Lake Washington')}${lbl(47.6250,-122.4200,'Puget Sound')}</g>`
+      :`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.0420,-122.9000,'Downtown')}${lbl(47.0450,-122.9350,'West Olympia')}${lbl(47.0330,-122.8230,'Lacey')}${lbl(47.0350,-122.9050,'State Capitol')}</g>`
+       +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.0750,-122.9050,'Budd Inlet')}${lbl(47.1000,-122.9600,'Eld Inlet')}${lbl(47.1100,-122.8380,'Henderson Inlet')}</g>`;
   } else {
     s+=`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle" opacity=".95">${lbl(47.1600,-122.5880,'Steilacoom')}${lbl(47.1520,-122.5300,'Lakewood')}${lbl(47.2330,-122.4520,'Tacoma')}${lbl(47.2270,-122.5420,'University Place')}${lbl(47.0930,-122.6560,'DuPont')}</g>`
      +`<g font-size="9" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle" opacity=".8">${lbl(47.1600,-122.7060,'Anderson Is.')}${lbl(47.2120,-122.6880,'McNeil Is.')}${lbl(47.2500,-122.6250,'Fox Is.')}${lbl(47.1450,-122.6320,'Ketron Is.')}</g>`
@@ -88,10 +103,10 @@ function mapSVG(side,pts,fer,out){
       s+=`<text x="${(q[0]+(p[0]>MAPW/2?-26:26)).toFixed(1)}" y="${(q[1]+(p[1]<0?-6:18)).toFixed(1)}" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="${p[0]>MAPW/2?'end':'start'}">${home==='seattle'?'↑ Seattle, 30 mi':'↙ Olympia, 20 mi'}</text>`}}
     dock=pts.stDock||mapXY('M',...MAPLL.stDock);edge=mapXY('M',...MAPLL.aiDock);
   }
-  s+=`<g font-size="8" fill="#f4f1ea" font-family="DM Sans" opacity=".55"><text x="${MAPW-6}" y="${MAPH[side]-6}" text-anchor="end">Shoreline: GSHHG</text><text x="10" y="18" font-size="11" font-weight="700">N ↑</text></g>`;
+  s+=`<g font-size="8" fill="#f4f1ea" font-family="DM Sans" opacity=".55"><text x="${MAPW-6}" y="${H-6}" text-anchor="end">Shoreline: GSHHG</text><text x="10" y="18" font-size="11" font-weight="700">N ↑</text></g>`;
   // the ferry route across the water
-  s+=`<line x1="${dock[0]}" y1="${dock[1]}" x2="${edge[0]}" y2="${edge[1]}" stroke="#f4f1ea" stroke-width="2" stroke-dasharray="6 5" opacity="${out?0.25:0.7}"/><text x="${(dock[0]+edge[0])/2}" y="${(dock[1]+edge[1])/2-6}" font-size="9.5" fill="#f4f1ea" font-family="DM Sans" text-anchor="middle">⛴️ ${side==='I'?'to Steilacoom':'to Anderson Is.'}</text>`;
-  if(fer&&!out){ // the boat: on the island panel, while it's on the island half of the trip; on the mainland panel (both landings in view), all the way
+  if(dock)s+=`<line x1="${dock[0]}" y1="${dock[1]}" x2="${edge[0]}" y2="${edge[1]}" stroke="#f4f1ea" stroke-width="2" stroke-dasharray="6 5" opacity="${out?0.25:0.7}"/><text x="${(dock[0]+edge[0])/2}" y="${(dock[1]+edge[1])/2-6}" font-size="9.5" fill="#f4f1ea" font-family="DM Sans" text-anchor="middle">⛴️ ${side==='I'?'to Steilacoom':'to Anderson Is.'}</text>`;
+  if(dock&&fer&&!out){ // the boat: on the island panel, while it's on the island half of the trip; on the mainland panel (both landings in view), all the way
     let t=null;
     if(side==='M')t=fer.side==='M'?fer.f:1-fer.f;
     else if(fer.side==='I'&&fer.f<0.5)t=fer.f*2;else if(fer.side==='M'&&fer.f>=0.5)t=(1-fer.f)*2;
@@ -106,14 +121,14 @@ function mapSVG(side,pts,fer,out){
   }
   const here2=pts[here];
   if(here2)s+=`<circle cx="${here2[0]}" cy="${here2[1]}" r="21" fill="none" stroke="#e3642e" stroke-width="3" stroke-dasharray="4 3" pointer-events="none"/><g pointer-events="none"><rect x="${here2[0]-14}" y="${here2[1]+22}" width="28" height="13" rx="6" fill="#e3642e"/><text x="${here2[0]}" y="${here2[1]+32}" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="DM Sans">YOU</text></g>`;
-  const nAt={},badge=(k,ic)=>{if(L[k]&&L[k].side!==side)return;const p=pts[k];if(!p)return;const i=nAt[k]=(nAt[k]||0)+1,x=p[0]+13+(i-1)*19;   // side by side when several vehicles share a spot
+  const nAt={},badge=(k,ic)=>{const p=pts[k];if(!p)return;const i=nAt[k]=(nAt[k]||0)+1,x=p[0]+13+(i-1)*19;   // side by side when several vehicles share a spot
     s+=`<g pointer-events="none"><circle cx="${x}" cy="${p[1]-13}" r="9" fill="#f3ecdc" stroke="#2f5d4a"/><text x="${x}" y="${p[1]-9}" font-size="11" text-anchor="middle">${ic}</text></g>`};
   for(const c of S.cars)badge(c.loc,c.diesel?'🛻':c.id==='isl'?'🚗':'🚙');
   try{if(typeof boatOwn==='function'&&boatOwn()&&!visitorOn()){const B=S.boat,k=B.at==='road'&&typeof boatTrailerLoc==='function'?boatTrailerLoc():B.at;badge(k,'🚤')}}catch(e){}
   return s+'</svg>';
 }
 window.MAPTAP=k=>{MAPSEL=MAPSEL===k?null:k;sfx('tap');render()};
-window.MAPTAB=s=>{MAPSIDE=s;MAPSIDE_FOR=L[S.loc].side;MAPSEL=null;render()};
+window.MAPTAB=s=>{MAPSIDE=s;MAPSIDE_FOR=mapCur();MAPSEL=null;render()};
 window.MAPPREF=v=>{setPref('mapView',!!v);render()};
 function mapDetail(k){
   const cur=L[S.loc].side,here=k===S.loc;let h=`<div class="dest compact mapdet"><div class="dn"><b>${L[k].ic} ${L[k].name}</b><span>${L[k].hours?hoursTxt(k):''}</span></div>`;
@@ -128,13 +143,13 @@ function mapDetail(k){
     +`<div class="small-note" style="flex-basis:100%;color:var(--mute);font-size:12.5px">${L[k].desc||''}</div></div>`;
 }
 function mapView(){
-  const cur=L[S.loc].side,side=mapSide(),pts=mapPositions(side),fer=mapFerry(),out=activeOutage();
+  const cur=mapCur(),side=mapSide(),pts=mapPositions(side),fer=mapFerry(),out=activeOutage();
   if(MAPSEL&&(!L[MAPSEL]||(L[MAPSEL].side!=='I'&&L[MAPSEL].side!=='M')))MAPSEL=null;
   if(MAPSEL&&!pts[MAPSEL])MAPSEL=null;
   let h=`<div class="mapwrap"><div class="maptabs" role="tablist">`
-    +['I','M'].map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
+    +['I','M'].concat(mapHome()?['H']:[]).map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':x==='H'?(mapHome()==='S'?'🏙️ Seattle':'🏛️ Olympia'):'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
   h+=mapSVG(side,pts,fer,out);
-  h+=`<div class="mapcap">${out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
+  h+=`<div class="mapcap">${side==='H'?'Tap a place to see how to get there.':out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
   h+=MAPSEL?mapDetail(MAPSEL):'';
   return h+'</div>';
 }

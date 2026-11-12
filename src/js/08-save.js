@@ -115,7 +115,7 @@ function updateNotice(){if(updateShown)return null;const ls=store();if(!ls)retur
     let h=`<p>You’re now on version ${esc(APP_VERSION)}${seen?` (from version ${esc(seen)})`:''}.</p>`;
     if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`slot ${u.n} (was ${esc(u.was)})`).join(', ')}.</p>`;
     if(bad.length)h+=`<p>${bad.map(n=>`Slot ${n} couldn’t be updated`).join('; ')}.</p>`;
-    modal('🎉 Island Time updated',h,[{l:'Got it',fn:mark}],true)}}
+    modal('🎉 Island Time updated',h,[{l:'✨ See what’s new',s:'The changes, and a short video',fn:()=>{mark();setTimeout(()=>{if(typeof whatsNew==='function')whatsNew()},0)}},{l:'Got it',fn:mark}],true)}}
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;chSync(); // challenge: seeded Math.random on or off
   render();

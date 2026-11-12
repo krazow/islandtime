@@ -89,4 +89,21 @@ module.exports = [
     assert.ok((await pins(page)).some(x => /Your place/.test(x)), 'visitor home on the mainland');
     noErrors(errors);
   } },
+  { name: 'a visitor from Seattle or Olympia gets a home-city tab with a real shoreline; Tacoma does not', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    for (const [city, tab] of [['seattle', 'Seattle'], ['olympia', 'Olympia']]) {
+      await page.evaluate(c => { visitorNew('regular', c, 'normal'); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); S.loc = 'vhome'; MAPSIDE = null; setPref('goOpen', true); MAPPREF(true); }, city);
+      assert.match(await page.textContent('.maptabs'), new RegExp(tab + ' · you'));
+      const p = await pins(page);
+      assert.ok(p.some(x => /Your place/.test(x)) && p.length === 3, p.join('|'));
+      assert.ok(await page.evaluate(() => document.querySelectorAll('svg.mapsvg path[d^="M"]').length >= 1), 'shoreline drawn');
+      await page.click('.maptabs button:has-text("Mainland")');
+      assert.ok(!(await pins(page)).some(x => /Your place/.test(x)), 'home is on its own tab, not the mainland map');
+      assert.ok((await pins(page)).some(x => /Steilacoom Ferry Terminal/.test(x)));
+    }
+    await page.evaluate(() => { visitorNew('regular', 'tacoma', 'normal'); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); S.loc = 'vhome'; MAPSIDE = null; render(); });
+    assert.strictEqual(await page.evaluate(() => document.querySelectorAll('.maptabs button').length), 2, 'Tacoma is on the mainland map');
+    noErrors(errors);
+  } },
 ];

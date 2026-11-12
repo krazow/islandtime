@@ -2,7 +2,7 @@
 """Cut the south Puget Sound out of GSHHG full-resolution shorelines (github.com/GenericMappingTools/gshhg-gmt, GSHHS/res_f/*.txt)
 into region.json for tools/make-geo.py. Usage: gshhg-extract.py GSHHS_f_NAmerica.txt GSHHS_f_Level_1a.txt GSHHS_f_Level_1b.txt GSHHS_f_Level_2.txt"""
 import re,json,sys
-BB=(237.15,237.65,47.05,47.34)
+BB=(237.0,237.8,46.95,47.75)   # south Puget Sound up to Seattle, and Olympia
 def polys(fn):
     cur=None;keep=False
     for line in open(fn):
