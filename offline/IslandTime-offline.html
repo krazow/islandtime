@@ -533,7 +533,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.22.2', SAVE_SCHEMA=7;
+const APP_VERSION='1.22.3', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -10156,6 +10156,10 @@ Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_pho
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.22.3',date:'Nov 12, 2026',title:'Start a new game, any way you like',video:'tour/whatsnew-1.22.3.mp4',items:[
+    'The title screen’s Start a new week button is now Start a new game.',
+    'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',
+    'The separate Visit the island button is gone; it’s one of the choices now.']},
   {v:'1.22.2',date:'Nov 12, 2026',title:'A video tutorial',video:WN_TUTORIAL,items:[
     'A subtitled video tutorial that walks through the whole game: starting out, the screen, the ferry, work and money, food and gas, the phone, your house, friends, vehicles, the boat, visiting, and how a game ends.',
     'Watch it from this window, or at krazow.github.io/islandtime/tour.',
@@ -10216,6 +10220,29 @@ function wnInject(){try{const b=document.querySelector('.title .body button[oncl
 {const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);wnInject();return r}}
 wnInject();
 {const st=document.createElement('style');st.textContent=`.wnvid video{width:100%;border-radius:10px;background:#000;margin:4px 0 8px}.wnlist{margin:4px 0 10px;padding-left:18px}.wnlist li{margin:3px 0}.wnhead{margin:10px 0 2px}.wnold summary,.wnv summary{cursor:pointer;font-weight:700;margin:8px 0}.wndot{background:#e3642e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:4px}`;document.head.appendChild(st)}
+// ---- ⛴️ Start a new game: one button on the title screen, then pick the game mode (84-new-game.js) ----
+// Replaces "Start a new week" / "Start Monday". Each mode goes on to its own questions (length, season, home city, difficulty).
+window.startRegular=()=>{const go=()=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));
+  if(!profileName())nameModal({first:true,then:go});else go()};
+function newGameModal(){
+  const has=f=>typeof window[f]==='function'||typeof globalThis[f]==='function';
+  const opts=[
+    {l:'🏝️ Live on the island',s:'Work in Lakewood, keep food in the pantry and gas in the car. A week, a month, or a whole year in story mode.',fn:()=>startNewWeek()},
+    {l:'🧳 Visit the island',s:'A day trip, a weekend or a week from Seattle, Tacoma or Olympia. See the sights and catch the last boat home.',fn:()=>startVisit()},
+    {l:'🏙️ Weekend regular',s:'A month with a city job, every weekend on the island. Save up and you might move over.',fn:()=>startRegular()}];
+  if(has('chStartModal'))opts.push({l:'🏆 Weekly challenge',s:'The same week for everyone. Share your code and compare scores.',fn:()=>chStartModal()});
+  if(has('dailyStartModal'))opts.push({l:'☀️ Daily challenge',s:'Today’s one-day game, the same for everyone.',fn:()=>dailyStartModal()});
+  opts.push({l:'Never mind',fn:()=>{}});
+  const d=loadSave();
+  modal('⛴️ Start a new game',`<p>Choose how you want to play.${d?' Your saved game stays in its save slot; a new game uses the current slot.':''}</p>`,opts);
+}
+window.newGameModal=newGameModal;
+// the title-screen button(s): "Start a new game", and the separate Visit button goes (it's one of the modes now)
+function ngTitle(){const t=document.querySelector('.title .body');if(!t)return;
+  t.querySelectorAll('button[onclick="startNewWeek()"]').forEach(b=>{b.setAttribute('onclick','newGameModal()');b.textContent=b.classList.contains('big')?'Start a new game ⛴️':'⛴️ Start a new game'});
+  const v=t.querySelector('#visitBtn');if(v)v.remove()}
+{const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);try{ngTitle()}catch(e){console.error(e)}return r}}
+ngTitle();
 </script>
 </body>
 </html>

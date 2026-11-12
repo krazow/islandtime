@@ -1,0 +1,32 @@
+1
+00:00:00,000 --> 00:00:04,500
+What’s new in Island Time 1.22.3, shown with mock game data.
+
+2
+00:00:04,500 --> 00:00:09,000
+The title screen’s Start a new week button is now Start a new game.
+
+3
+00:00:09,000 --> 00:00:13,500
+Your saved game stays in its save slot.
+
+4
+00:00:13,500 --> 00:00:18,000
+It asks how you want to play: live on the island, visit, or be a weekend regular.
+
+5
+00:00:18,000 --> 00:00:22,500
+The weekly and daily challenges are in the list too.
+
+6
+00:00:22,500 --> 00:00:27,000
+Each choice then asks its own questions, like how long you’ll stay.
+
+7
+00:00:27,000 --> 00:00:31,500
+The separate Visit the island button is gone; it’s one of the choices now.
+
+8
+00:00:31,500 --> 00:00:37,000
+Play free in your browser at krazow.github.io/islandtime
+

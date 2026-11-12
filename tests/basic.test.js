@@ -5,7 +5,7 @@ module.exports = [
     const { page, errors } = await open(ctx);
     const t = await page.textContent('.title');
     assert.match(t, /Island Time/);
-    assert.match(t, /Start Monday/);
+    assert.match(t, /Start a new game/);
     const v = await page.evaluate(() => APP_VERSION);
     assert.ok(t.includes('Version ' + v), 'version shown on title');
     noErrors(errors);
@@ -30,6 +30,17 @@ module.exports = [
     const t = await page.textContent('.end');
     assert.match(t, /Sunday night/);
     assert.match(t, /Play another week/);
+    noErrors(errors);
+  } },
+  { name: 'start a new game: one title button opens a mode chooser (island, visit, weekend regular, challenges)', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await page.evaluate(() => { MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); titleScreen(); });
+    assert.strictEqual(await page.$('.title button[onclick="startNewWeek()"]'), null, 'no Start a new week / Start Monday');
+    await page.click('.title button:has-text("Start a new game")');
+    const t = await page.textContent('#mbg');
+    for (const m of ['Live on the island', 'Visit the island', 'Weekend regular', 'Weekly challenge', 'Daily challenge']) assert.ok(t.includes(m), m);
+    await page.click('#mbg >> text=Weekend regular');
+    assert.match(await page.textContent('#mbg'), /Where do you live|name/i);
     noErrors(errors);
   } },
 ];

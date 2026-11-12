@@ -14,7 +14,7 @@ const at = (page, d, m, loc) => page.evaluate(([d, m, loc]) => { S.cur = d; S.t 
 module.exports = [
   { name: 'title: Weekend regular is the 4th length; then where you live and difficulty', fn: async ctx => {
     const { page, errors } = await open(ctx);
-    await page.click('#visitBtn');
+    await page.evaluate(() => newGameModal()); await page.click('#mbg >> text=Visit the island');
     assert.match(await page.textContent('#mbg'), /How long is your visit/);
     assert.match(await page.textContent('#mbg'), /Weekend regular: a month/);
     assert.strictEqual((await page.$$('#mbg .act')).length, 5, 'day, weekend, week, regular, never mind');

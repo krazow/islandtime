@@ -4,6 +4,10 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.22.3',date:'Nov 12, 2026',title:'Start a new game, any way you like',video:'tour/whatsnew-1.22.3.mp4',items:[
+    'The title screen’s Start a new week button is now Start a new game.',
+    'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',
+    'The separate Visit the island button is gone; it’s one of the choices now.']},
   {v:'1.22.2',date:'Nov 12, 2026',title:'A video tutorial',video:WN_TUTORIAL,items:[
     'A subtitled video tutorial that walks through the whole game: starting out, the screen, the ferry, work and money, food and gas, the phone, your house, friends, vehicles, the boat, visiting, and how a game ends.',
     'Watch it from this window, or at krazow.github.io/islandtime/tour.',

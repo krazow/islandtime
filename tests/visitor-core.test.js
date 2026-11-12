@@ -13,8 +13,8 @@ const RESIDENT = /^Work:|Find a job|Interview|Doctor|prescription|Pay rent|bill|
 module.exports = [
   { name: 'title button → length → home → difficulty starts a visit', fn: async ctx => {
     const { page, errors } = await open(ctx);
-    assert.match(await page.textContent('#visitBtn'), /Visit the island/);
-    await page.click('#visitBtn');
+    assert.strictEqual(await page.$('#visitBtn'), null, 'Visit is one of the new-game modes now');
+    await page.evaluate(() => newGameModal()); await page.click('#mbg >> text=Visit the island');
     assert.match(await page.textContent('#mbg'), /How long is your visit/);
     await pick(page, /Weekend/);
     assert.match(await page.textContent('#mbg'), /Where do you live/);

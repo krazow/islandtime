@@ -41,6 +41,10 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.22.3: start a new game, any way you like
+
+- ⛴️ **Start a new game:** the title screen's *Start a new week* button is now *Start a new game*, and it asks how you want to play: 🏝️ live on the island (a week, a month or story mode), 🧳 visit the island, 🏙️ be a weekend regular, or take the 🏆 weekly or ☀️ daily challenge. The separate *Visit the island* button is gone; it's one of the choices now.
+
 ### New in 1.22.2: a video tutorial
 
 - 🎓 **How to play, in six minutes:** a subtitled video tutorial covers starting out, the screen, the ferry, work and money, food and gas, the phone, friends and the house, your cars and boat, bedtime, visiting, and how a game ends. Watch it from **What's new** on the title screen, or at [krazow.github.io/islandtime/tour](https://krazow.github.io/islandtime/tour/).
