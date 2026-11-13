@@ -41,7 +41,8 @@ phoneOnTime(()=>{try{
   // Easy mode's outage heads-up (34-easy-help.js) already covers a boat that's about to be cancelled
   if((S.easyWarn||[]).some(k=>{const p=String(k).split(':');return +p[0]===(S.weekNo||0)&&+p[1]>=S.t-30&&+p[1]<=last.abs+20}))return;
   W[key]=lvl;const ks=Object.keys(W);if(ks.length>12)delete W[ks[0]];
-  const home=need==='I'?'home':'off the island',tm=dist(S.loc,dock),ld=fmt(last.dep%1440);
+  const vis=typeof visitorOn==='function'&&visitorOn();   // a visitor's home is on the mainland: the island boat takes them back to the cabin, not home
+  const home=vis?(need==='M'?'home':'back to the island'):(need==='I'?'home':'off the island'),tm=dist(S.loc,dock),ld=fmt(last.dep%1440);
   phoneNotify('⏰',`Last boat ${home}: ${ld}`,`${left} min. You’re ${tm} min from the ${side==='I'?'landing':'terminal'}.`);
-  say(`📱 ⏰ <b>Last boat ${home} tonight</b> (${fmt(S.t)}): the ${ld} sailing leaves in ${left} minutes. You’re about ${tm} min from the ${side==='I'?'ferry landing':'Steilacoom terminal'}, and you need to be in line 20 minutes early. After it, ${need==='I'?'you’re on the mainland until morning':'there’s no way off the island until morning'}.`);
+  say(`📱 ⏰ <b>Last boat ${home} tonight</b> (${fmt(S.t)}): the ${ld} sailing leaves in ${left} minutes. You’re about ${tm} min from the ${side==='I'?'ferry landing':'Steilacoom terminal'}, and you need to be in line 20 minutes early. After it, ${need==='I'?(vis?'you can’t get back to your cabin until morning':'you’re on the mainland until morning'):'there’s no way off the island until morning'}.`);
 }catch(e){console.error(e)}});

@@ -44,6 +44,7 @@
 ### New in 1.22.3: start a new game, any way you like
 
 - ⛴️ **Start a new game:** the title screen's *Start a new week* button is now *Start a new game*, and it asks how you want to play: 🏝️ live on the island (a week, a month or story mode), 🧳 visit the island, 🏙️ be a weekend regular, or take the 🏆 weekly or ☀️ daily challenge. The separate *Visit the island* button is gone; it's one of the choices now.
+- 🐛 **Fixed:** a visitor staying at the rental cabin was warned about the "last boat home" when the boat they needed went to the island. A visitor's home is on the mainland, so it now says "last boat back to the island", and the hints under *Go somewhere* point a visitor home to the mainland.
 
 ### New in 1.22.2: a video tutorial
 

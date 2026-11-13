@@ -2441,8 +2441,9 @@ function actView(){
   plain.forEach(destRow);
   if(fun.length){h+=`<details class="go fun" ${prefs().funOpen?'open':''} ontoggle="setPref('funOpen',this.open)"><summary>🎟️ Going out: restaurants and things to do (${fun.length})</summary>`;fun.forEach(destRow);h+='</details>'}
   h+='</details>';
-  if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">To reach the mainland, go to the ferry landing.</p>`;
-  if(L[S.loc].side==='M'&&S.loc!=='stDock') h+=`<p class="small-note" style="color:var(--mute)">To get home, head back to the Steilacoom terminal.</p>`;
+  const vis=typeof visitorOn==='function'&&visitorOn();   // a visitor lives on the mainland, so "home" is that way
+  if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">${vis?'To head home, go to the ferry landing.':'To reach the mainland, go to the ferry landing.'}</p>`;
+  if(L[S.loc].side==='M'&&S.loc!=='stDock') h+=`<p class="small-note" style="color:var(--mute)">${vis?'To reach the island, head to the Steilacoom terminal.':'To get home, head back to the Steilacoom terminal.'}</p>`;
   return h;
 }
 window.ACT=i=>{uiNarr=[];sfx('tap');ACTS[i]&&ACTS[i]()};
@@ -8012,9 +8013,10 @@ phoneOnTime(()=>{try{
   // Easy mode's outage heads-up (34-easy-help.js) already covers a boat that's about to be cancelled
   if((S.easyWarn||[]).some(k=>{const p=String(k).split(':');return +p[0]===(S.weekNo||0)&&+p[1]>=S.t-30&&+p[1]<=last.abs+20}))return;
   W[key]=lvl;const ks=Object.keys(W);if(ks.length>12)delete W[ks[0]];
-  const home=need==='I'?'home':'off the island',tm=dist(S.loc,dock),ld=fmt(last.dep%1440);
+  const vis=typeof visitorOn==='function'&&visitorOn();   // a visitor's home is on the mainland: the island boat takes them back to the cabin, not home
+  const home=vis?(need==='M'?'home':'back to the island'):(need==='I'?'home':'off the island'),tm=dist(S.loc,dock),ld=fmt(last.dep%1440);
   phoneNotify('⏰',`Last boat ${home}: ${ld}`,`${left} min. You’re ${tm} min from the ${side==='I'?'landing':'terminal'}.`);
-  say(`📱 ⏰ <b>Last boat ${home} tonight</b> (${fmt(S.t)}): the ${ld} sailing leaves in ${left} minutes. You’re about ${tm} min from the ${side==='I'?'ferry landing':'Steilacoom terminal'}, and you need to be in line 20 minutes early. After it, ${need==='I'?'you’re on the mainland until morning':'there’s no way off the island until morning'}.`);
+  say(`📱 ⏰ <b>Last boat ${home} tonight</b> (${fmt(S.t)}): the ${ld} sailing leaves in ${left} minutes. You’re about ${tm} min from the ${side==='I'?'ferry landing':'Steilacoom terminal'}, and you need to be in line 20 minutes early. After it, ${need==='I'?(vis?'you can’t get back to your cabin until morning':'you’re on the mainland until morning'):'there’s no way off the island until morning'}.`);
 }catch(e){console.error(e)}});
 // ---- 🛡️ "Are you sure?" prompts (52-safety.js) ----
 // For choices that can't be undone and are likely mistakes: leaving your car behind, walking on after the last car boat, going to bed hungry
@@ -10159,7 +10161,8 @@ const WHATSNEW=[
   {v:'1.22.3',date:'Nov 12, 2026',title:'Start a new game, any way you like',video:'tour/whatsnew-1.22.3.mp4',items:[
     'The title screen’s Start a new week button is now Start a new game.',
     'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',
-    'The separate Visit the island button is gone; it’s one of the choices now.']},
+    'The separate Visit the island button is gone; it’s one of the choices now.',
+    'Fixed: visitors staying at the rental cabin were warned about the “last boat home” to the island. Their home is on the mainland, so the warning now says “last boat back to the island”.']},
   {v:'1.22.2',date:'Nov 12, 2026',title:'A video tutorial',video:WN_TUTORIAL,items:[
     'A subtitled video tutorial that walks through the whole game: starting out, the screen, the ferry, work and money, food and gas, the phone, your house, friends, vehicles, the boat, visiting, and how a game ends.',
     'Watch it from this window, or at krazow.github.io/islandtime/tour.',

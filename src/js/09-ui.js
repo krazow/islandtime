@@ -101,8 +101,9 @@ function actView(){
   plain.forEach(destRow);
   if(fun.length){h+=`<details class="go fun" ${prefs().funOpen?'open':''} ontoggle="setPref('funOpen',this.open)"><summary>🎟️ Going out: restaurants and things to do (${fun.length})</summary>`;fun.forEach(destRow);h+='</details>'}
   h+='</details>';
-  if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">To reach the mainland, go to the ferry landing.</p>`;
-  if(L[S.loc].side==='M'&&S.loc!=='stDock') h+=`<p class="small-note" style="color:var(--mute)">To get home, head back to the Steilacoom terminal.</p>`;
+  const vis=typeof visitorOn==='function'&&visitorOn();   // a visitor lives on the mainland, so "home" is that way
+  if(L[S.loc].side==='I'&&S.loc!=='aiDock') h+=`<p class="small-note" style="color:var(--mute)">${vis?'To head home, go to the ferry landing.':'To reach the mainland, go to the ferry landing.'}</p>`;
+  if(L[S.loc].side==='M'&&S.loc!=='stDock') h+=`<p class="small-note" style="color:var(--mute)">${vis?'To reach the island, head to the Steilacoom terminal.':'To get home, head back to the Steilacoom terminal.'}</p>`;
   return h;
 }
 window.ACT=i=>{uiNarr=[];sfx('tap');ACTS[i]&&ACTS[i]()};

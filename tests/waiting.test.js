@@ -76,7 +76,10 @@ module.exports = [
     assert.strictEqual(r, 0, 'Easy already warned about this stretch');
     await page.evaluate(() => { crossing = (a, b, c, done) => done(); visitorNew('weekend', 'tacoma', 'normal'); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); });
     const v = await page.evaluate(() => { const V = VS(); S.week.b = []; S.cur = V.last; S.t = V.last * 1440 + 1330; S.phoneT = S.t; S.phone = 100; S.loc = 'lake'; const n = S.log.length; processTimed(); return S.log.slice(n).filter(x => /Last boat/.test(x.s)).map(x => x.s); });
-    assert.strictEqual(v.length, 1); assert.match(v[0], /off the island/);
+    assert.strictEqual(v.length, 1); assert.match(v[0], /Last boat home/, 'a visitor lives on the mainland: leaving the island is going home');
+    // a visitor staying at the rental cabin who is over on the mainland: the boat goes back to the island, not home
+    const w = await page.evaluate(() => { const V = VS(); V.rental = V.rental || {}; V.rental.checkedIn = true; V.rental.checkedOut = false; S.lbWarn = {}; S.week.b = []; S.cur = V.arr; S.t = V.arr * 1440 + 1290; S.phoneT = S.t; S.phone = 100; S.loc = 'market'; const n = S.log.length; processTimed(); return S.log.slice(n).filter(x => /Last boat/.test(x.s)).map(x => x.s); });
+    assert.strictEqual(w.length, 1, JSON.stringify(w)); assert.match(w[0], /back to the island/); assert.doesNotMatch(w[0], /Last boat home/); assert.match(w[0], /cabin/);
     noErrors(errors);
   } },
 ];
