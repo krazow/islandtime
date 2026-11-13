@@ -29,7 +29,7 @@
 - **Trading:** import food, medical supplies and fuel to the island and sell at island prices, which spike when the ferry is down. Or take a much bigger risk with illicit drugs, where a deputy's K-9 on the car deck or an undercover buyer means arrest.
 
 ### New in 1.8
-- **Difficulty:** 🌲 *Islander* (easier), ⛴️ *Normal*, or 🔥 *Ferry Hell* (summer tourists, constant breakdowns, score ×1.25).
+- **Difficulty:** islanders pick 🌲 *Old-timer* (easier), ⛴️ *Normal*, or 🔥 *Ferry Hell* (summer tourists, constant breakdowns, score ×1.25); visitors pick 🌤️ *Easy Sunday*, 📸 *Tourist* or 🌧️ *Missed the Boat*.
 - **One week or a whole month:** the month carries everything over, week to week. Help the islanders raise $2,500 and the old store reopens as the **AI Food Co-op**, with groceries and gas pumps on the island.
 - **Jobs:** getting fired no longer ends the game. Hunt for work on your phone or the bulletin board, interview, and get hired. Options: line cook at the Riv (no ferry!), a Tacoma records clerk (best pay), or an early warehouse shift in DuPont.
 - **Friendships grow:** friends level up (💛 → 💛💛💛) through favors you do for them, and they ask favors back. Perks include Sam's morning rides, Walt's job references, a Legion fish fry, and the Hendersons' pot roast.
@@ -40,6 +40,14 @@
 - **Daily review** in the night summary: money, crossings, ferry waits and events.
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
+
+### New in 1.23.0: Islander or Visitor, right from the start
+
+- 🏝️🧳 **Two cards on the title screen**, one for each way to play. Each has its own *Continue*, *Start a new game* and *Saves*. Islander covers living on the island (a week, a month, story mode) and the challenges; Visitor covers visits and the weekend regular.
+- 💾 **Three save slots for each**, six in all. Saves from the old three shared slots are sorted onto the right card on update; nothing is lost. A weekend regular who buys the house moves to a free Islander slot, and challenges always start in an Islander slot.
+- 🎚️ **Visitor difficulty levels:** 🌤️ *Easy Sunday* (20% more spending money, 40% less I-5 traffic, no crashes, emptier boats, a heads-up an hour before the last boat), 📸 *Tourist* (as before) and 🌧️ *Missed the Boat* (15% less money, 30% more traffic, fuller boats, more fog, no last-boat warning).
+- 🌲 Islander's easy level is renamed *Old-timer* so it doesn't clash with the Islander card; *Normal* and *Ferry Hell* are unchanged.
+- 🏷️ **Always know what you're playing:** the top of the game screen shows the way and the level, for example "🏝️ Islander · ⛴️ Normal" or "🧳 Visitor · 📸 Tourist".
 
 ### New in 1.22.3: start a new game, any way you like, and a day out in Seattle
 
@@ -148,7 +156,7 @@
 
 The three levels now change more than the numbers, and the title screen says what each one includes.
 
-- 🌲 **Easy (Islander):** more money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, and a house that wears slower and recovers faster.
+- 🌲 **Easy (Islander, now called Old-timer):** more money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, and a house that wears slower and recovers faster.
 - ⛴️ **Normal:** the game as designed, with no extras either way. The weekly challenge is always played on Normal so scores compare.
 - 🔥 **Hard (Ferry Hell):** summer crowds, constant breakdowns, tight money, weekly rent ($125), car trouble, more lost packages (20% instead of 10%) and more raccoons, and no warming shelter. If you go broke, the Legion food pantry gives you a 5-day food box and your prescription once a week. Score ×1.25.
 - Story mode uses the level you pick, and saved games keep the level they started on.

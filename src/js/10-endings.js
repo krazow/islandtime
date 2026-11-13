@@ -96,27 +96,29 @@ window.achModal=achModal;
 
 // ---------------- save slots UI ----------------
 function slotInfo(n){const r=rawSave(n);if(!r)return null;
-  try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=DIFFS[x.diff]||DIFFS.normal;
+  try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=typeof diffOf==='function'?diffOf(x):DIFFS[x.diff]||DIFFS.normal;
     return {name:x.name||currentName(),diff:`${D.ic} ${D.n} · ${seasonBadge(x)}`,txt:`${x.story?storyWeekTxt(x,true)+' · ':x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}} // season
   catch(e){return {broken:true,name:'Unreadable save',diff:'',txt:''}}}
 const slotLine=i=>i?(i.broken?'Unreadable save':`${esc(i.name)} · ${i.diff} · ${i.txt}`):'Empty';
+const slotName=n=>`${SIDES[slotSide(n)].n} slot ${slotNo(n)}`;
 const SLOTBTN='flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink)';
-window.slotsModal=()=>{const cur=curSlot();
-  modal('💾 Save slots',`<p style="font-size:13px;color:var(--mute)">Keep up to three games going. Continue, a new week, Exit and transfer codes all use the current slot.</p>`+[1,2,3].map(n=>{const i=slotInfo(n);
-    return `<div class="slot" style="background:#fff;border:1.5px solid ${n===cur?'var(--buoy)':'var(--line)'};border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>Slot ${n}</b>${n===cur?' <span style="font-size:12px;color:var(--buoy);font-weight:700">· current</span>':''}<div style="font-size:13px;color:var(--mute);margin-top:2px">${slotLine(i)}</div>
+// one group's three slots (85-sides.js): 🏝️ islander slots 1-3 or 🧳 visitor slots 1-3
+window.slotsModal=(side,note)=>{const cur=curSlot();side=side==='I'||side==='V'?side:slotSide(cur);const o=side==='I'?'V':'I',G=SIDES[side];
+  modal(`💾 ${G.ic} ${G.n} saves`,`<p style="font-size:13px;color:var(--mute)">${note?esc(note):`Keep up to three ${G.n.toLowerCase()} games going. Exit and transfer codes use the game you’re playing.`}</p>`+G.slots.map(n=>{const i=slotInfo(n);
+    return `<div class="slot" style="background:#fff;border:1.5px solid ${n===cur?'var(--buoy)':'var(--line)'};border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>Slot ${slotNo(n)}</b>${n===cur?' <span style="font-size:12px;color:var(--buoy);font-weight:700">· current</span>':''}<div style="font-size:13px;color:var(--mute);margin-top:2px">${slotLine(i)}</div>
     <div style="display:flex;gap:6px;margin-top:8px">${i&&!i.broken?`<button style="${SLOTBTN};background:var(--buoy);color:#fff;border-color:var(--buoy)" onclick="slotAct(${n},'cont')">Continue</button>`:''}<button style="${SLOTBTN}" onclick="slotAct(${n},'new')">Start new here</button>${i?`<button style="${SLOTBTN};color:var(--bad)" onclick="slotAct(${n},'del')">Delete</button>`:''}</div></div>`}).join(''),
-  [{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
+  [{l:`${SIDES[o].ic} ${SIDES[o].n} saves`,fn:()=>slotsModal(o)},{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
 };
-window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n);
+window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n),side=slotSide(n);
   if(a==='cont'){setSlot(n);return resumeGame()}
-  if(a==='new'){const go=()=>{setSlot(n);titleScreen();startNewWeek()};
-    return i?modal(`Start over in slot ${n}?`,`<p>The saved week in slot ${n} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new week here',fn:go},{l:'Cancel',fn:()=>slotsModal()}]):go()}
-  if(a==='del') modal(`🗑️ Delete slot ${n}?`,`<p>This erases the saved week in slot ${n} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal()}},{l:'Cancel',fn:()=>slotsModal()}]);
+  if(a==='new'){const go=()=>{setSlot(n);titleScreen();newGameModal(side)};
+    return i?modal(`Start over in ${slotName(n).toLowerCase()}?`,`<p>The saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new game here',fn:go},{l:'Cancel',fn:()=>slotsModal(side)}]):go()}
+  if(a==='del') modal(`🗑️ Delete ${slotName(n).toLowerCase()}?`,`<p>This erases the saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal(side)}},{l:'Cancel',fn:()=>slotsModal(side)}]);
 };
 function slotSwitchModal(){const cur=curSlot();
-  modal('💾 Save slot',`<p>You’re playing in <b>slot ${cur}</b>. Your week is saved before you switch.</p>`,[
-    ...[1,2,3].map(n=>{const i=n===cur?null:slotInfo(n);return {l:`Slot ${n}${n===cur?' (this game)':''}`,s:n===cur?'You’re here.':i&&!i.broken?'Continue: '+slotLine(i):i?'Unreadable save: manage it from the title screen.':'Empty: start a new week here',dis:n===cur||!!(i&&i.broken),
-      fn:()=>{saveGame();MQ=[];clearTiles();setSlot(n);if(i)return resumeGame();S=null;titleScreen();startNewWeek()}}}),
+  modal('💾 Save slot',`<p>You’re playing in <b>${SIDES[slotSide(cur)].ic} ${slotName(cur).toLowerCase()}</b>. Your game is saved before you switch.</p>`,[
+    ...Array.from({length:SLOT_N},(_,k)=>k+1).map(n=>{const i=n===cur?null:slotInfo(n);return {l:`${SIDES[slotSide(n)].ic} ${slotName(n)}${n===cur?' (this game)':''}`,s:n===cur?'You’re here.':i&&!i.broken?'Continue: '+slotLine(i):i?'Unreadable save: manage it from the title screen.':'Empty: start a new game here',dis:n===cur||!!(i&&i.broken),
+      fn:()=>{saveGame();MQ=[];clearTiles();setSlot(n);if(i)return resumeGame();S=null;titleScreen();newGameModal(slotSide(n))}}}),
     {l:'Back to settings',fn:()=>openSettings()}]);
 }
 
@@ -130,7 +132,7 @@ function titleScreen(){clearTiles();const showUpdate=updateNotice();
    <path d="M0 210 h480 M0 230 h480" stroke="#fff" stroke-opacity=".1"/></svg></div>
   <div class="body"><h1>Island Time<span>Life on Anderson Island, WA, one ferry at a time</span></h1>
   <p>There’s no bridge. One small county ferry connects Anderson Island to the jobs, groceries, gas and doctors on the mainland. Live there for a week, a month or a whole year, or come over as a visitor and try to make the last boat home.</p>
-  <ul><li><b>Live on the island:</b> work in Lakewood, keep food in the pantry and gas in the car (there’s no store or gas on the island, and gas cans are banned on the ferry), make your doctor’s appointment, and be in the ferry line 20 minutes early.</li><li><b>Story mode:</b> a year in four chapters: the ferry levy, the storm of the decade, and the co-op that wants to reopen the store.</li><li><b>Visit the island:</b> a day trip, a weekend or a week from Seattle, Tacoma or Olympia. Beat I-5 traffic, see the sights, and catch the last boat home.</li><li><b>Weekly challenge:</b> the same week for everyone. Share your code and compare scores.</li><li><b>Islander, Normal or Ferry Hell:</b> from a forgiving boss and a warming shelter to weekly rent and car trouble.</li><li>Make friends (and the odd enemy), go out in Steilacoom, Lakewood and Tacoma, or trade on the side.</li></ul>
+  <ul><li><b>Live on the island:</b> work in Lakewood, keep food in the pantry and gas in the car (there’s no store or gas on the island, and gas cans are banned on the ferry), make your doctor’s appointment, and be in the ferry line 20 minutes early.</li><li><b>Story mode:</b> a year in four chapters: the ferry levy, the storm of the decade, and the co-op that wants to reopen the store.</li><li><b>Visit the island:</b> a day trip, a weekend or a week from Seattle, Tacoma or Olympia. Beat I-5 traffic, see the sights, and catch the last boat home.</li><li><b>Weekly challenge:</b> the same week for everyone. Share your code and compare scores.</li><li><b>Each way to play has its own levels:</b> islanders pick Old-timer, Normal or Ferry Hell (from a forgiving boss to weekly rent and car trouble); visitors pick Easy Sunday, Tourist or Missed the Boat (from light traffic to fog, full boats and no last-boat warning).</li><li>Make friends (and the odd enemy), go out in Steilacoom, Lakewood and Tacoma, or trade on the side.</li></ul>
   ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${seasonBadge(d.S)} · ${d.S.story?`Chapter ${(d.S.story.ch|0)+1} of 4 · `:''}${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
   <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>

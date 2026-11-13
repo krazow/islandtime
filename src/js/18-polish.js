@@ -19,7 +19,7 @@ function cardData(){
   const ach=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
   const friends=Object.values(S.friends||{}).map(f=>String(f.name||'').split(',')[0].split(' from')[0]).filter(Boolean);
   const season=typeof seasonId==='function'?seasonId():null;
-  return {name:currentName(),season:season?(SEASON_TXT[season]||season):null,diff:`${D.ic} ${D.n}`,
+  return {name:currentName(),season:season?(SEASON_TXT[season]||season):null,diff:(()=>{const E=typeof diffOf==='function'?diffOf(S):D;return `${E.ic} ${E.n}`})(),
     span:month?(lost?`A month · game over in week ${(S.weekNo||0)+1}`:'A whole month on the island'):(lost?`One week · game over on ${DAYS[S.cur]}`:'One week on the island'),
     grade:g[0],title:g[1],blurb:g[2],score:sc,lost,month,
     stats:[['💵 Cash',`${S.money<0?'−':''}$${Math.abs(Math.round(S.money)).toLocaleString('en-US')}`],['❤️ Health',String(S.health)],

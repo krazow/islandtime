@@ -19,7 +19,7 @@ module.exports = [
     await pick(page, /Weekend/);
     assert.match(await page.textContent('#mbg'), /Where do you live/);
     await pick(page, /Seattle/);
-    await pick(page, /Normal/);
+    await pick(page, /Tourist/);
     assert.match(await page.textContent('#mbg'), /Your visit: .*Weekend/);
     const r = await page.evaluate(() => ({ on: visitorOn(), len: VS().len, home: VS().home, diff: S.diff, tips: (S.tips || {}).seen }));
     assert.ok(r.on); assert.strictEqual(r.len, 'weekend'); assert.strictEqual(r.home, 'seattle'); assert.strictEqual(r.diff, 'normal');
@@ -139,7 +139,7 @@ module.exports = [
     await visit(page, 'weekend', 'seattle');
     await page.evaluate(() => { S.loc = 'home'; S.t = VS().rental.in; vCheckIn(); VS().rep = -2; saveGame(); });
     await reload(page);
-    assert.match(await page.textContent('.title button.big'), /Weekend visit/);
+    assert.match(await page.textContent('#sideV button.big'), /Weekend visit/);
     await page.evaluate(() => { resumeGame(); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); });
     const r = await page.evaluate(() => ({ on: visitorOn(), V: VS(), name: L.home.name, emp: S.emp, todo: todoItems().map(x => x.l), hud: document.querySelector('.hud-sub').textContent }));
     assert.ok(r.on); assert.strictEqual(r.V.len, 'weekend'); assert.strictEqual(r.V.home, 'seattle'); assert.ok(r.V.rental.checkedIn); assert.strictEqual(r.V.rep, -2);

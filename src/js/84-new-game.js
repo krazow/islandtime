@@ -1,6 +1,6 @@
 // ---- ⛴️ Start a new game: one button on the title screen, then pick the game mode (84-new-game.js) ----
 // Replaces "Start a new week" / "Start Monday". Each mode goes on to its own questions (length, season, home city, difficulty).
-window.startRegular=()=>{const go=()=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));
+window.startRegular=()=>{const go=()=>visitHomeModal(home=>vDiffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));
   if(!profileName())nameModal({first:true,then:go});else go()};
 function newGameModal(){
   const has=f=>typeof window[f]==='function'||typeof globalThis[f]==='function';

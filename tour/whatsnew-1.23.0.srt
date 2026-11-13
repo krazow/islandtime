@@ -1,0 +1,48 @@
+1
+00:00:00,000 --> 00:00:04,500
+What’s new in Island Time 1.23.0, shown with mock game data.
+
+2
+00:00:04,500 --> 00:00:09,000
+The title screen now has a card for each way to play: Islander and Visitor.
+
+3
+00:00:09,000 --> 00:00:13,500
+Each card has its own Continue, Start a new game and Saves.
+
+4
+00:00:13,500 --> 00:00:18,000
+Each way to play keeps up to three games, six in all.
+
+5
+00:00:18,000 --> 00:00:22,500
+Your saved games were moved onto the right card when you updated. Nothing was lost.
+
+6
+00:00:22,500 --> 00:00:27,000
+Visits and weekend regular games live on the Visitor side.
+
+7
+00:00:27,000 --> 00:00:31,500
+A weekend regular who buys the house moves to an Islander slot on their own.
+
+8
+00:00:31,500 --> 00:00:36,000
+Visitors get their own levels: Easy Sunday, Tourist and Missed the Boat.
+
+9
+00:00:36,000 --> 00:00:40,500
+They change your budget, I-5 traffic, crashes, the boats and the last-boat warning.
+
+10
+00:00:40,500 --> 00:00:45,000
+The top of the screen always shows which way you’re playing, and at what level.
+
+11
+00:00:45,000 --> 00:00:49,500
+Islanders keep Normal and Ferry Hell. The easy level is now called Old-timer.
+
+12
+00:00:49,500 --> 00:00:55,000
+Play free in your browser at krazow.github.io/islandtime
+

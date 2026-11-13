@@ -2,9 +2,10 @@
 const SAVE_KEY='islandtime.save', LEGACY_KEYS=['islandtime.save.v2','islandtime.save.v1'], BEST_KEY='islandtime.best';
 let saveNotice='';
 function store(){try{return window.localStorage}catch(e){return null}}
-// Three save slots. Slot 1 is the original key (plus its legacy mirrors); slots 2 and 3 have their own keys.
-const SLOT_KEY='islandtime.slot', SLOT_N=3;
+// Save slots. Slot 1 is the original key (plus its legacy mirrors); the others have their own keys.
+const SLOT_KEY='islandtime.slot', SLOT_N=6;   // 1-3 islander games, 4-6 visitor games (85-sides.js)
 function curSlot(){let n=1;try{n=parseInt(localStorage.getItem(SLOT_KEY)||'1',10)}catch(e){}return n>=1&&n<=SLOT_N?n:1}
+function slotLabel(n){return n>=4?'visitor slot '+(n-3):'islander slot '+n}
 function setSlot(n){try{localStorage.setItem(SLOT_KEY,String(n))}catch(e){}}
 function slotKeys(n){n=n||curSlot();return n===1?[SAVE_KEY,...LEGACY_KEYS]:['islandtime.save.slot'+n]}
 function packSave(){return {schema:SAVE_SCHEMA,app:APP_VERSION,S,uiNarr,tab,at:Date.now()}}
@@ -106,15 +107,15 @@ function upgradeSaves(){const ls=store(),up=[],bad=[];if(!ls)return {up,bad};
 function updateNotice(){if(updateShown)return null;const ls=store();if(!ls)return null;
   let seen=null;try{seen=ls.getItem(SEEN_KEY)}catch(e){}
   if(seen===APP_VERSION)return null;
-  const has=[1,2,3].some(n=>rawSave(n));
+  const has=Array.from({length:SLOT_N},(_,i)=>i+1).some(n=>rawSave(n));
   const mark=()=>{try{ls.setItem(SEEN_KEY,APP_VERSION)}catch(e){}};
   if(!seen&&!has){mark();return null}
   updateShown=true;
   const {up,bad}=upgradeSaves();
   return ()=>{
     let h=`<p>You’re now on version ${esc(APP_VERSION)}${seen?` (from version ${esc(seen)})`:''}.</p>`;
-    if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`slot ${u.n} (was ${esc(u.was)})`).join(', ')}.</p>`;
-    if(bad.length)h+=`<p>${bad.map(n=>`Slot ${n} couldn’t be updated`).join('; ')}.</p>`;
+    if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`${slotLabel(u.n)} (was ${esc(u.was)})`).join(', ')}.</p>`;
+    if(bad.length)h+=`<p>${bad.map(n=>`${slotLabel(n).replace(/^./,c=>c.toUpperCase())} couldn’t be updated`).join('; ')}.</p>`;
     modal('🎉 Island Time updated',h,[{l:'✨ See what’s new',s:'The changes, and a short video',fn:()=>{mark();setTimeout(()=>{if(typeof whatsNew==='function')whatsNew()},0)}},{l:'Got it',fn:mark}],true)}}
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;chSync(); // challenge: seeded Math.random on or off

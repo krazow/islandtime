@@ -20,7 +20,7 @@ module.exports = [
     assert.strictEqual((await page.$$('#mbg .act')).length, 5, 'day, weekend, week, regular, never mind');
     await pick(page, /Weekend regular/);
     assert.match(await page.textContent('#mbg'), /Where do you live/);
-    await pick(page, /Tacoma/); await pick(page, /Normal/);
+    await pick(page, /Tacoma/); await pick(page, /Tourist/);
     assert.match(await page.textContent('#mbg'), /Your month/);
     const r = await page.evaluate(() => ({ on: visitorOn(), len: VS().len, home: VS().home, mode: S.mode, cur: S.cur, t: S.t, loc: S.loc, emp: S.emp, money: S.money, job: S.job, reg: !!VS().reg, rx: S.rx }));
     assert.ok(r.on); assert.strictEqual(r.len, 'regular'); assert.strictEqual(r.mode, 'month'); assert.strictEqual(r.cur, 0); assert.strictEqual(r.loc, 'vhome');

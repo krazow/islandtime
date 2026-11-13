@@ -269,7 +269,7 @@ function visitLenModal(then){
 function visitHomeModal(then){
   modal('🏠 Where do you live?','<p>Your visit starts and ends at home. Everyone takes I-5 to the Steilacoom ferry.</p>',
     Object.keys(VISIT_HOMES).map(k=>({l:`${VISIT_HOMES[k].ic} ${VISIT_HOMES[k].n}`,s:VISIT_HOMES[k].d,fn:()=>then(k)})).concat([{l:'Never mind',fn:()=>{}}]))}
-window.startVisit=()=>{const go=()=>visitLenModal(len=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew(len,home,k);tab='act';render()})));
+window.startVisit=()=>{const go=()=>visitLenModal(len=>visitHomeModal(home=>vDiffModal(k=>{S=null;visitorNew(len,home,k);tab='act';render()})));
   if(!profileName())nameModal({first:true,then:go});else go()};
 function vTitleButton(){const t=document.querySelector('.title .body');if(!t||t.querySelector('#visitBtn'))return;
   const b=document.createElement('button');b.id='visitBtn';b.className='ghost';b.setAttribute('onclick','startVisit()');b.textContent='🧳 Visit the island';

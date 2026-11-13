@@ -1,6 +1,6 @@
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.22.3', SAVE_SCHEMA=7;
+const APP_VERSION='1.23.0', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -9,7 +9,7 @@ function canEssential(c){return S.money>=c||S.money-c>=-CARD_LIMIT}
 function seasonId(){return (typeof S!=='undefined'&&S&&S.season)||'fall'}
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
-const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
+const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',vdiff:'normal',goOpen:null};
 function prefs(){try{return Object.assign({},PREF_DEF,JSON.parse(localStorage.getItem(PREF_KEY)||'{}'))}catch(e){return Object.assign({},PREF_DEF)}}
 function setPref(k,v){const p=prefs();p[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(p))}catch(e){}applyPrefs()}
 function applyPrefs(){const p=prefs(),c=document.documentElement.classList;c.toggle('fs-l',p.fs==='l');c.toggle('fs-xl',p.fs==='xl');c.toggle('hc',!!p.hc);c.toggle('rm',!!p.rm)}
@@ -64,7 +64,7 @@ function nameModal(opts={}){
 }
 function diffModal(then){
   const cur=prefs().diff;
-  modal('🗺️ How hard is island life?',`<p>Pick a difficulty for this week.</p>`,Object.keys(DIFFS).map(k=>({l:`${DIFFS[k].ic} ${DIFFS[k].n}${k===cur?' (last time)':''}`,s:DIFFS[k].d,fn:()=>{setPref('diff',k);then(k)}})));
+  modal('🏝️ How hard is island life?',`<p>Pick a difficulty for this game.</p>`,Object.keys(DIFFS).map(k=>({l:`${DIFFS[k].ic} ${DIFFS[k].n}${k===cur?' (last time)':''}`,s:DIFFS[k].d,fn:()=>{setPref('diff',k);then(k)}})));
 }
 function lengthModal(then){
   modal('📅 How long do you want to stay?','<p>One week is a quick game. A month carries everything over (money, friends, your car, your generator) and gives the island time to reopen its store.</p>',[
@@ -97,7 +97,7 @@ window.openSettings=()=>{
     {l:'📖 How your house works',s:'The Home meter, chores, repairs, Gus and the community group.',fn:()=>houseHelp()},
     {l:'⌨️ Keyboard shortcuts',s:'On a computer: numbers press buttons, P for the phone, ? for the list.',fn:()=>keysModal(openSettings)},
     {l:`🏆 Achievements (${achCount()}/${ACH.length})`,s:'Badges earned on this device, across all your games.',fn:()=>achModal(openSettings)},
-    inGame?{l:`💾 Save slot: ${curSlot()}`,s:'Switch to another save slot. Your week is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:`Current slot: ${curSlot()}. Continue, start or delete games in three slots.`,fn:()=>slotsModal()},
+    inGame?{l:`💾 Save slot: ${SIDES[slotSide(curSlot())].ic} ${SIDES[slotSide(curSlot())].n.toLowerCase()} slot ${slotNo(curSlot())}`,s:'Switch to another save slot. Your game is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:'Three islander and three visitor slots. Continue, start or delete games.',fn:()=>slotsModal()},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
     {l:'Close',fn:()=>{}}]);
 };

@@ -4,6 +4,13 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.23.0',date:'Nov 13, 2026',title:'Islander or Visitor, right from the start',video:'tour/whatsnew-1.23.0.mp4',items:[
+    'The title screen has a card for each way to play: 🏝️ Islander and 🧳 Visitor, each with its own Continue, Start a new game and Saves.',
+    'Three save slots for each, six in all. Your saved games were sorted onto the right card when you updated; nothing was lost.',
+    'Visitors get their own difficulty levels: 🌤️ Easy Sunday (more money, light I-5 traffic, no crashes, a heads-up before the last boat), 📸 Tourist (the visit as designed) and 🌧️ Missed the Boat (a tighter budget, fuller boats and more fog, heavier traffic, no last-boat warning).',
+    'Islanders keep Normal and Ferry Hell; the easy level is now called 🌲 Old-timer, so it doesn’t clash with the Islander card.',
+    'The top of the screen always shows which way you’re playing and at what level, like “🧳 Visitor · 📸 Tourist”.',
+    'A weekend regular who buys the house moves to an Islander slot on their own. Challenges always go in an Islander slot.']},
   {v:'1.22.3',date:'Nov 13, 2026',title:'Start a new game, and a day out in Seattle',video:'tour/whatsnew-1.22.3.mp4',items:[
     'The title screen’s Start a new week button is now Start a new game.',
     'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',

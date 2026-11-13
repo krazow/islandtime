@@ -58,7 +58,7 @@ module.exports = [
     await setSeen(page, '1.15.0');
     await reload(page);
     const t = await modalText(page), v = await VER(page);
-    assert.match(t, /Your saved games were updated: slot 1 \(was 1\.15\.0\), slot 2 \(was 1\.16\.0\)\./);
+    assert.match(t, /Your saved games were updated: islander slot 1 \(was 1\.15\.0\), islander slot 2 \(was 1\.16\.0\)\./);
     for (const n of [1, 2]) {
       const d = await onDisk(page, n);
       assert.strictEqual(d.app, v); assert.strictEqual(d.schema, await page.evaluate(() => SAVE_SCHEMA));
@@ -81,7 +81,7 @@ module.exports = [
     await reload(page);
     const t = await modalText(page);
     assert.match(t, /slot 1 \(was 1\.15\.0\)/);
-    assert.match(t, /Slot 2 couldn’t be updated/);
+    assert.match(t, /Islander slot 2 couldn’t be updated/);
     assert.strictEqual(await page.evaluate(() => localStorage.getItem('islandtime.save.slot2')), '{not json');
     noErrors(errors);
   } },

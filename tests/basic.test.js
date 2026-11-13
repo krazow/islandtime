@@ -32,13 +32,18 @@ module.exports = [
     assert.match(t, /Play another week/);
     noErrors(errors);
   } },
-  { name: 'start a new game: one title button opens a mode chooser (island, visit, weekend regular, challenges)', fn: async ctx => {
+  { name: 'start a new game: each card on the title opens its own chooser (islander: island and challenges; visitor: visit and weekend regular)', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await page.evaluate(() => { MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); titleScreen(); });
     assert.strictEqual(await page.$('.title button[onclick="startNewWeek()"]'), null, 'no Start a new week / Start Monday');
-    await page.click('.title button:has-text("Start a new game")');
-    const t = await page.textContent('#mbg');
-    for (const m of ['Live on the island', 'Visit the island', 'Weekend regular', 'Weekly challenge', 'Daily challenge']) assert.ok(t.includes(m), m);
+    await page.click('#sideI button:has-text("Start a new game")');
+    let t = await page.textContent('#mbg');
+    for (const m of ['Live on the island', 'Weekly challenge', 'Daily challenge']) assert.ok(t.includes(m), m);
+    assert.ok(!t.includes('Visit the island'), 'no visits on the islander side');
+    await page.click('#mbg >> text=Never mind');
+    await page.click('#sideV button:has-text("Start a new game")');
+    t = await page.textContent('#mbg');
+    for (const m of ['Visit the island', 'Weekend regular']) assert.ok(t.includes(m), m);
     await page.click('#mbg >> text=Weekend regular');
     assert.match(await page.textContent('#mbg'), /Where do you live|name/i);
     noErrors(errors);

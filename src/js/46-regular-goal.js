@@ -63,7 +63,7 @@ function regEndScreen(h1,sub,lost){const V=VS(),R=REG();if(lost&&!V.result){V.re
   <button class="${res==='moved'?'act':'big'}" style="width:100%;margin-top:${res==='moved'?10:22}px${res==='moved'?';justify-content:center':''}" onclick="regAgain()">${res==='moved'?'<span class="tx" style="text-align:center"><b>Another month, another city</b></span>':'Another month 📅'}</button><button class="act" style="margin-top:10px;justify-content:center" onclick="titleScreen()"><span class="tx" style="text-align:center"><b>Back to title</b></span></button></div>`);
   try{const end=document.querySelector('.end');if(end&&typeof feedbackOpen==='function'){const p=document.createElement('p');p.className='fb-end';p.innerHTML='<button type="button" id="fbEnd" class="linkbtn" onclick="feedbackOpen()">💬 Send feedback</button>';end.appendChild(p)}}catch(e){}
   window.scrollTo(0,0)}
-window.regAgain=()=>{const go=()=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));go()};
+window.regAgain=()=>{const go=()=>visitHomeModal(home=>vDiffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));go()};
 // ======== the handoff: "Start life on the island" = a resident game with your money, friends and name ========
 function regStartResident(){
   const V=VS(),carry={money:Math.max(250,Math.round(S.money)),friends:JSON.parse(JSON.stringify(S.friends||{})),rep:Math.min(100,15+Math.round(Math.max(0,V.rep)/2)),diff:S.diff,season:S.season,name:S.name};

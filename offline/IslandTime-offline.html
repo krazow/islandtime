@@ -458,7 +458,7 @@ const JOBS={
 };
 const COOP_GOAL=2500;
 const DIFFS={
-  easy:{n:'Islander',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:0.5,fineMul:0.5},d:'More money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, a house that wears slower, half the fines and reputation hits.'},
+  easy:{n:'Old-timer',ic:'🌲',money:1250,major:0.5,minor:0.06,fog:0.3,storm:0.4,full:0.6,score:0.8,lv:{shelter:1,ferryWarn:60,jobGrace:2,firedGraceDays:7,wear:0.7,recover:1.3,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:0.5,fineMul:0.5},d:'More money, fewer breakdowns and storms, emptier boats. A warming shelter at the Legion in storms, ferry warnings an hour ahead, a forgiving boss, a house that wears slower, half the fines and reputation hits.'},
   normal:{n:'Normal',ic:'⛴️',money:850,major:0.9,minor:0.13,fog:0.45,storm:0.65,full:1,score:1,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.10,raccoon:1,rent:0,carTrouble:0,pantry:0,repLoss:1,fineMul:1},d:'The game as designed: November on Anderson Island. No extras either way.'},
   hard:{n:'Ferry Hell',ic:'🔥',money:650,major:1,major2:0.5,minor:0.2,fog:0.6,storm:0.85,full:1.6,score:1.25,lv:{shelter:0,ferryWarn:0,jobGrace:0,firedGraceDays:0,wear:1,recover:1,deliverWrong:0.20,raccoon:1.6,rent:1,carTrouble:1,pantry:1,repLoss:1.5,fineMul:1.5},d:'Summer crowds, constant breakdowns, tight money, weekly rent, car trouble, more lost packages and raccoons, no warming shelter. Fines and reputation hits are 50% steeper. If you go broke, the Legion hands out food. Score ×1.25.'},
 };
@@ -533,7 +533,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.22.3', SAVE_SCHEMA=7;
+const APP_VERSION='1.23.0', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -542,7 +542,7 @@ function canEssential(c){return S.money>=c||S.money-c>=-CARD_LIMIT}
 function seasonId(){return (typeof S!=='undefined'&&S&&S.season)||'fall'}
 // ---------------- preferences (device-wide) ----------------
 const PREF_KEY='islandtime.prefs';
-const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',goOpen:null};
+const PREF_DEF={fs:'n',hc:false,rm:(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})(),sound:true,tips:true,diff:'normal',vdiff:'normal',goOpen:null};
 function prefs(){try{return Object.assign({},PREF_DEF,JSON.parse(localStorage.getItem(PREF_KEY)||'{}'))}catch(e){return Object.assign({},PREF_DEF)}}
 function setPref(k,v){const p=prefs();p[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(p))}catch(e){}applyPrefs()}
 function applyPrefs(){const p=prefs(),c=document.documentElement.classList;c.toggle('fs-l',p.fs==='l');c.toggle('fs-xl',p.fs==='xl');c.toggle('hc',!!p.hc);c.toggle('rm',!!p.rm)}
@@ -597,7 +597,7 @@ function nameModal(opts={}){
 }
 function diffModal(then){
   const cur=prefs().diff;
-  modal('🗺️ How hard is island life?',`<p>Pick a difficulty for this week.</p>`,Object.keys(DIFFS).map(k=>({l:`${DIFFS[k].ic} ${DIFFS[k].n}${k===cur?' (last time)':''}`,s:DIFFS[k].d,fn:()=>{setPref('diff',k);then(k)}})));
+  modal('🏝️ How hard is island life?',`<p>Pick a difficulty for this game.</p>`,Object.keys(DIFFS).map(k=>({l:`${DIFFS[k].ic} ${DIFFS[k].n}${k===cur?' (last time)':''}`,s:DIFFS[k].d,fn:()=>{setPref('diff',k);then(k)}})));
 }
 function lengthModal(then){
   modal('📅 How long do you want to stay?','<p>One week is a quick game. A month carries everything over (money, friends, your car, your generator) and gives the island time to reopen its store.</p>',[
@@ -630,7 +630,7 @@ window.openSettings=()=>{
     {l:'📖 How your house works',s:'The Home meter, chores, repairs, Gus and the community group.',fn:()=>houseHelp()},
     {l:'⌨️ Keyboard shortcuts',s:'On a computer: numbers press buttons, P for the phone, ? for the list.',fn:()=>keysModal(openSettings)},
     {l:`🏆 Achievements (${achCount()}/${ACH.length})`,s:'Badges earned on this device, across all your games.',fn:()=>achModal(openSettings)},
-    inGame?{l:`💾 Save slot: ${curSlot()}`,s:'Switch to another save slot. Your week is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:`Current slot: ${curSlot()}. Continue, start or delete games in three slots.`,fn:()=>slotsModal()},
+    inGame?{l:`💾 Save slot: ${SIDES[slotSide(curSlot())].ic} ${SIDES[slotSide(curSlot())].n.toLowerCase()} slot ${slotNo(curSlot())}`,s:'Switch to another save slot. Your game is saved first.',fn:()=>slotSwitchModal()}:{l:'💾 Save slots',s:'Three islander and three visitor slots. Continue, start or delete games.',fn:()=>slotsModal()},
     {l:'🚪 Exit game',s:inGame?'Saves your week first.':'Close Island Time.',fn:()=>confirmExit(inGame)},
     {l:'Close',fn:()=>{}}]);
 };
@@ -1753,7 +1753,7 @@ function startDay(){
   if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. ${genReady()?(S.homeGas>=3?'Your generator is fueled and ready.':'Your generator needs at least 3 gallons in the shed…'):'No generator? Tonight might be cold.'}`);
   if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
   if(d===0&&S.diff==='hard') say(seasonId()==='winter'?'🔥 <b>Ferry Hell:</b> the boat is a wreck, the lines are long and money is tight. Good luck.':'🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.'); // season
-  if(d===0&&S.diff==='easy') say('🌲 <b>Islander mode:</b> a quieter week on the water. A good time to learn the ropes.');
+  if(d===0&&S.diff==='easy') say('🌲 <b>Old-timer mode:</b> a quieter week on the water. A good time to learn the ropes.');
   if(d===0) say('🔥 Monday fuel run: a propane tanker rides over to refill the island’s tanks (there’s no gas station on the island). With hazmat aboard, only crew and the driver ride, so the 9:30 AM from Steilacoom and the 11:10 AM from the island are canceled.');
   if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(S.mode==='month'&&S.weekNo>0?0.12:(d===4?1:0.3))){ // later weeks of a month: an occasional mishap, not a weekly certainty
     S.injuryRolled=true;
@@ -2181,9 +2181,10 @@ function gossip(){
 const SAVE_KEY='islandtime.save', LEGACY_KEYS=['islandtime.save.v2','islandtime.save.v1'], BEST_KEY='islandtime.best';
 let saveNotice='';
 function store(){try{return window.localStorage}catch(e){return null}}
-// Three save slots. Slot 1 is the original key (plus its legacy mirrors); slots 2 and 3 have their own keys.
-const SLOT_KEY='islandtime.slot', SLOT_N=3;
+// Save slots. Slot 1 is the original key (plus its legacy mirrors); the others have their own keys.
+const SLOT_KEY='islandtime.slot', SLOT_N=6;   // 1-3 islander games, 4-6 visitor games (85-sides.js)
 function curSlot(){let n=1;try{n=parseInt(localStorage.getItem(SLOT_KEY)||'1',10)}catch(e){}return n>=1&&n<=SLOT_N?n:1}
+function slotLabel(n){return n>=4?'visitor slot '+(n-3):'islander slot '+n}
 function setSlot(n){try{localStorage.setItem(SLOT_KEY,String(n))}catch(e){}}
 function slotKeys(n){n=n||curSlot();return n===1?[SAVE_KEY,...LEGACY_KEYS]:['islandtime.save.slot'+n]}
 function packSave(){return {schema:SAVE_SCHEMA,app:APP_VERSION,S,uiNarr,tab,at:Date.now()}}
@@ -2285,15 +2286,15 @@ function upgradeSaves(){const ls=store(),up=[],bad=[];if(!ls)return {up,bad};
 function updateNotice(){if(updateShown)return null;const ls=store();if(!ls)return null;
   let seen=null;try{seen=ls.getItem(SEEN_KEY)}catch(e){}
   if(seen===APP_VERSION)return null;
-  const has=[1,2,3].some(n=>rawSave(n));
+  const has=Array.from({length:SLOT_N},(_,i)=>i+1).some(n=>rawSave(n));
   const mark=()=>{try{ls.setItem(SEEN_KEY,APP_VERSION)}catch(e){}};
   if(!seen&&!has){mark();return null}
   updateShown=true;
   const {up,bad}=upgradeSaves();
   return ()=>{
     let h=`<p>You’re now on version ${esc(APP_VERSION)}${seen?` (from version ${esc(seen)})`:''}.</p>`;
-    if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`slot ${u.n} (was ${esc(u.was)})`).join(', ')}.</p>`;
-    if(bad.length)h+=`<p>${bad.map(n=>`Slot ${n} couldn’t be updated`).join('; ')}.</p>`;
+    if(up.length)h+=`<p>Your saved games were updated: ${up.map(u=>`${slotLabel(u.n)} (was ${esc(u.was)})`).join(', ')}.</p>`;
+    if(bad.length)h+=`<p>${bad.map(n=>`${slotLabel(n).replace(/^./,c=>c.toUpperCase())} couldn’t be updated`).join('; ')}.</p>`;
     modal('🎉 Island Time updated',h,[{l:'✨ See what’s new',s:'The changes, and a short video',fn:()=>{mark();setTimeout(()=>{if(typeof whatsNew==='function')whatsNew()},0)}},{l:'Got it',fn:mark}],true)}}
 function adopt(d){
   S=d.S;uiNarr=d.uiNarr;tab=d.tab;chSync(); // challenge: seeded Math.random on or off
@@ -2801,27 +2802,29 @@ window.achModal=achModal;
 
 // ---------------- save slots UI ----------------
 function slotInfo(n){const r=rawSave(n);if(!r)return null;
-  try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=DIFFS[x.diff]||DIFFS.normal;
+  try{const d=migrate(JSON.parse(r.v));if(d.S.over)return null;const x=d.S,D=typeof diffOf==='function'?diffOf(x):DIFFS[x.diff]||DIFFS.normal;
     return {name:x.name||currentName(),diff:`${D.ic} ${D.n} · ${seasonBadge(x)}`,txt:`${x.story?storyWeekTxt(x,true)+' · ':x.mode==='month'?`Week ${(x.weekNo||0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}`}} // season
   catch(e){return {broken:true,name:'Unreadable save',diff:'',txt:''}}}
 const slotLine=i=>i?(i.broken?'Unreadable save':`${esc(i.name)} · ${i.diff} · ${i.txt}`):'Empty';
+const slotName=n=>`${SIDES[slotSide(n)].n} slot ${slotNo(n)}`;
 const SLOTBTN='flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink)';
-window.slotsModal=()=>{const cur=curSlot();
-  modal('💾 Save slots',`<p style="font-size:13px;color:var(--mute)">Keep up to three games going. Continue, a new week, Exit and transfer codes all use the current slot.</p>`+[1,2,3].map(n=>{const i=slotInfo(n);
-    return `<div class="slot" style="background:#fff;border:1.5px solid ${n===cur?'var(--buoy)':'var(--line)'};border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>Slot ${n}</b>${n===cur?' <span style="font-size:12px;color:var(--buoy);font-weight:700">· current</span>':''}<div style="font-size:13px;color:var(--mute);margin-top:2px">${slotLine(i)}</div>
+// one group's three slots (85-sides.js): 🏝️ islander slots 1-3 or 🧳 visitor slots 1-3
+window.slotsModal=(side,note)=>{const cur=curSlot();side=side==='I'||side==='V'?side:slotSide(cur);const o=side==='I'?'V':'I',G=SIDES[side];
+  modal(`💾 ${G.ic} ${G.n} saves`,`<p style="font-size:13px;color:var(--mute)">${note?esc(note):`Keep up to three ${G.n.toLowerCase()} games going. Exit and transfer codes use the game you’re playing.`}</p>`+G.slots.map(n=>{const i=slotInfo(n);
+    return `<div class="slot" style="background:#fff;border:1.5px solid ${n===cur?'var(--buoy)':'var(--line)'};border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>Slot ${slotNo(n)}</b>${n===cur?' <span style="font-size:12px;color:var(--buoy);font-weight:700">· current</span>':''}<div style="font-size:13px;color:var(--mute);margin-top:2px">${slotLine(i)}</div>
     <div style="display:flex;gap:6px;margin-top:8px">${i&&!i.broken?`<button style="${SLOTBTN};background:var(--buoy);color:#fff;border-color:var(--buoy)" onclick="slotAct(${n},'cont')">Continue</button>`:''}<button style="${SLOTBTN}" onclick="slotAct(${n},'new')">Start new here</button>${i?`<button style="${SLOTBTN};color:var(--bad)" onclick="slotAct(${n},'del')">Delete</button>`:''}</div></div>`}).join(''),
-  [{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
+  [{l:`${SIDES[o].ic} ${SIDES[o].n} saves`,fn:()=>slotsModal(o)},{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
 };
-window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n);
+window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n),side=slotSide(n);
   if(a==='cont'){setSlot(n);return resumeGame()}
-  if(a==='new'){const go=()=>{setSlot(n);titleScreen();startNewWeek()};
-    return i?modal(`Start over in slot ${n}?`,`<p>The saved week in slot ${n} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new week here',fn:go},{l:'Cancel',fn:()=>slotsModal()}]):go()}
-  if(a==='del') modal(`🗑️ Delete slot ${n}?`,`<p>This erases the saved week in slot ${n} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal()}},{l:'Cancel',fn:()=>slotsModal()}]);
+  if(a==='new'){const go=()=>{setSlot(n);titleScreen();newGameModal(side)};
+    return i?modal(`Start over in ${slotName(n).toLowerCase()}?`,`<p>The saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new game here',fn:go},{l:'Cancel',fn:()=>slotsModal(side)}]):go()}
+  if(a==='del') modal(`🗑️ Delete ${slotName(n).toLowerCase()}?`,`<p>This erases the saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal(side)}},{l:'Cancel',fn:()=>slotsModal(side)}]);
 };
 function slotSwitchModal(){const cur=curSlot();
-  modal('💾 Save slot',`<p>You’re playing in <b>slot ${cur}</b>. Your week is saved before you switch.</p>`,[
-    ...[1,2,3].map(n=>{const i=n===cur?null:slotInfo(n);return {l:`Slot ${n}${n===cur?' (this game)':''}`,s:n===cur?'You’re here.':i&&!i.broken?'Continue: '+slotLine(i):i?'Unreadable save: manage it from the title screen.':'Empty: start a new week here',dis:n===cur||!!(i&&i.broken),
-      fn:()=>{saveGame();MQ=[];clearTiles();setSlot(n);if(i)return resumeGame();S=null;titleScreen();startNewWeek()}}}),
+  modal('💾 Save slot',`<p>You’re playing in <b>${SIDES[slotSide(cur)].ic} ${slotName(cur).toLowerCase()}</b>. Your game is saved before you switch.</p>`,[
+    ...Array.from({length:SLOT_N},(_,k)=>k+1).map(n=>{const i=n===cur?null:slotInfo(n);return {l:`${SIDES[slotSide(n)].ic} ${slotName(n)}${n===cur?' (this game)':''}`,s:n===cur?'You’re here.':i&&!i.broken?'Continue: '+slotLine(i):i?'Unreadable save: manage it from the title screen.':'Empty: start a new game here',dis:n===cur||!!(i&&i.broken),
+      fn:()=>{saveGame();MQ=[];clearTiles();setSlot(n);if(i)return resumeGame();S=null;titleScreen();newGameModal(slotSide(n))}}}),
     {l:'Back to settings',fn:()=>openSettings()}]);
 }
 
@@ -2835,7 +2838,7 @@ function titleScreen(){clearTiles();const showUpdate=updateNotice();
    <path d="M0 210 h480 M0 230 h480" stroke="#fff" stroke-opacity=".1"/></svg></div>
   <div class="body"><h1>Island Time<span>Life on Anderson Island, WA, one ferry at a time</span></h1>
   <p>There’s no bridge. One small county ferry connects Anderson Island to the jobs, groceries, gas and doctors on the mainland. Live there for a week, a month or a whole year, or come over as a visitor and try to make the last boat home.</p>
-  <ul><li><b>Live on the island:</b> work in Lakewood, keep food in the pantry and gas in the car (there’s no store or gas on the island, and gas cans are banned on the ferry), make your doctor’s appointment, and be in the ferry line 20 minutes early.</li><li><b>Story mode:</b> a year in four chapters: the ferry levy, the storm of the decade, and the co-op that wants to reopen the store.</li><li><b>Visit the island:</b> a day trip, a weekend or a week from Seattle, Tacoma or Olympia. Beat I-5 traffic, see the sights, and catch the last boat home.</li><li><b>Weekly challenge:</b> the same week for everyone. Share your code and compare scores.</li><li><b>Islander, Normal or Ferry Hell:</b> from a forgiving boss and a warming shelter to weekly rent and car trouble.</li><li>Make friends (and the odd enemy), go out in Steilacoom, Lakewood and Tacoma, or trade on the side.</li></ul>
+  <ul><li><b>Live on the island:</b> work in Lakewood, keep food in the pantry and gas in the car (there’s no store or gas on the island, and gas cans are banned on the ferry), make your doctor’s appointment, and be in the ferry line 20 minutes early.</li><li><b>Story mode:</b> a year in four chapters: the ferry levy, the storm of the decade, and the co-op that wants to reopen the store.</li><li><b>Visit the island:</b> a day trip, a weekend or a week from Seattle, Tacoma or Olympia. Beat I-5 traffic, see the sights, and catch the last boat home.</li><li><b>Weekly challenge:</b> the same week for everyone. Share your code and compare scores.</li><li><b>Each way to play has its own levels:</b> islanders pick Old-timer, Normal or Ferry Hell (from a forgiving boss to weekly rent and car trouble); visitors pick Easy Sunday, Tourist or Missed the Boat (from light traffic to fog, full boats and no last-boat warning).</li><li>Make friends (and the odd enemy), go out in Steilacoom, Lakewood and Tacoma, or trade on the side.</li></ul>
   ${(()=>{const d=loadSave(),sl=d&&(curSlot()>1||[2,3].some(k=>slotInfo(k)))?` (slot ${curSlot()})`:'';return d?`<button class="big" onclick="resumeGame()">Continue as ${esc(d.S.name||currentName())}: ${seasonBadge(d.S)} · ${d.S.story?`Chapter ${(d.S.story.ch|0)+1} of 4 · `:''}${DAYS[d.S.cur]} ${fmt(d.S.t)}${sl} ⛴️</button><button class="ghost" onclick="startNewWeek()">Start a new week</button>`:`<button class="big" onclick="startNewWeek()">Start Monday ⛴️</button>`})()}
   <button class="ghost" onclick="slotsModal()">💾 Save slots</button>
   <button class="ghost" onclick="openTransfer()">🔁 Transfer a saved game</button>
@@ -4007,7 +4010,7 @@ function cardData(){
   const ach=(S.achGame||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean);
   const friends=Object.values(S.friends||{}).map(f=>String(f.name||'').split(',')[0].split(' from')[0]).filter(Boolean);
   const season=typeof seasonId==='function'?seasonId():null;
-  return {name:currentName(),season:season?(SEASON_TXT[season]||season):null,diff:`${D.ic} ${D.n}`,
+  return {name:currentName(),season:season?(SEASON_TXT[season]||season):null,diff:(()=>{const E=typeof diffOf==='function'?diffOf(S):D;return `${E.ic} ${E.n}`})(),
     span:month?(lost?`A month · game over in week ${(S.weekNo||0)+1}`:'A whole month on the island'):(lost?`One week · game over on ${DAYS[S.cur]}`:'One week on the island'),
     grade:g[0],title:g[1],blurb:g[2],score:sc,lost,month,
     stats:[['💵 Cash',`${S.money<0?'−':''}$${Math.abs(Math.round(S.money)).toLocaleString('en-US')}`],['❤️ Health',String(S.health)],
@@ -6714,7 +6717,7 @@ function visitLenModal(then){
 function visitHomeModal(then){
   modal('🏠 Where do you live?','<p>Your visit starts and ends at home. Everyone takes I-5 to the Steilacoom ferry.</p>',
     Object.keys(VISIT_HOMES).map(k=>({l:`${VISIT_HOMES[k].ic} ${VISIT_HOMES[k].n}`,s:VISIT_HOMES[k].d,fn:()=>then(k)})).concat([{l:'Never mind',fn:()=>{}}]))}
-window.startVisit=()=>{const go=()=>visitLenModal(len=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew(len,home,k);tab='act';render()})));
+window.startVisit=()=>{const go=()=>visitLenModal(len=>visitHomeModal(home=>vDiffModal(k=>{S=null;visitorNew(len,home,k);tab='act';render()})));
   if(!profileName())nameModal({first:true,then:go});else go()};
 function vTitleButton(){const t=document.querySelector('.title .body');if(!t||t.querySelector('#visitBtn'))return;
   const b=document.createElement('button');b.id='visitBtn';b.className='ghost';b.setAttribute('onclick','startVisit()');b.textContent='🧳 Visit the island';
@@ -7753,7 +7756,7 @@ function regEndScreen(h1,sub,lost){const V=VS(),R=REG();if(lost&&!V.result){V.re
   <button class="${res==='moved'?'act':'big'}" style="width:100%;margin-top:${res==='moved'?10:22}px${res==='moved'?';justify-content:center':''}" onclick="regAgain()">${res==='moved'?'<span class="tx" style="text-align:center"><b>Another month, another city</b></span>':'Another month 📅'}</button><button class="act" style="margin-top:10px;justify-content:center" onclick="titleScreen()"><span class="tx" style="text-align:center"><b>Back to title</b></span></button></div>`);
   try{const end=document.querySelector('.end');if(end&&typeof feedbackOpen==='function'){const p=document.createElement('p');p.className='fb-end';p.innerHTML='<button type="button" id="fbEnd" class="linkbtn" onclick="feedbackOpen()">💬 Send feedback</button>';end.appendChild(p)}}catch(e){}
   window.scrollTo(0,0)}
-window.regAgain=()=>{const go=()=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));go()};
+window.regAgain=()=>{const go=()=>visitHomeModal(home=>vDiffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));go()};
 // ======== the handoff: "Start life on the island" = a resident game with your money, friends and name ========
 function regStartResident(){
   const V=VS(),carry={money:Math.max(250,Math.round(S.money)),friends:JSON.parse(JSON.stringify(S.friends||{})),rep:Math.min(100,15+Math.round(Math.max(0,V.rep)/2)),diff:S.diff,season:S.season,name:S.name};
@@ -10251,6 +10254,13 @@ Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_pho
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.23.0',date:'Nov 13, 2026',title:'Islander or Visitor, right from the start',video:'tour/whatsnew-1.23.0.mp4',items:[
+    'The title screen has a card for each way to play: 🏝️ Islander and 🧳 Visitor, each with its own Continue, Start a new game and Saves.',
+    'Three save slots for each, six in all. Your saved games were sorted onto the right card when you updated; nothing was lost.',
+    'Visitors get their own difficulty levels: 🌤️ Easy Sunday (more money, light I-5 traffic, no crashes, a heads-up before the last boat), 📸 Tourist (the visit as designed) and 🌧️ Missed the Boat (a tighter budget, fuller boats and more fog, heavier traffic, no last-boat warning).',
+    'Islanders keep Normal and Ferry Hell; the easy level is now called 🌲 Old-timer, so it doesn’t clash with the Islander card.',
+    'The top of the screen always shows which way you’re playing and at what level, like “🧳 Visitor · 📸 Tourist”.',
+    'A weekend regular who buys the house moves to an Islander slot on their own. Challenges always go in an Islander slot.']},
   {v:'1.22.3',date:'Nov 13, 2026',title:'Start a new game, and a day out in Seattle',video:'tour/whatsnew-1.22.3.mp4',items:[
     'The title screen’s Start a new week button is now Start a new game.',
     'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',
@@ -10319,7 +10329,7 @@ wnInject();
 {const st=document.createElement('style');st.textContent=`.wnvid video{width:100%;border-radius:10px;background:#000;margin:4px 0 8px}.wnlist{margin:4px 0 10px;padding-left:18px}.wnlist li{margin:3px 0}.wnhead{margin:10px 0 2px}.wnold summary,.wnv summary{cursor:pointer;font-weight:700;margin:8px 0}.wndot{background:#e3642e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:4px}`;document.head.appendChild(st)}
 // ---- ⛴️ Start a new game: one button on the title screen, then pick the game mode (84-new-game.js) ----
 // Replaces "Start a new week" / "Start Monday". Each mode goes on to its own questions (length, season, home city, difficulty).
-window.startRegular=()=>{const go=()=>visitHomeModal(home=>diffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));
+window.startRegular=()=>{const go=()=>visitHomeModal(home=>vDiffModal(k=>{S=null;visitorNew('regular',home,k);tab='act';render()}));
   if(!profileName())nameModal({first:true,then:go});else go()};
 function newGameModal(){
   const has=f=>typeof window[f]==='function'||typeof globalThis[f]==='function';
@@ -10340,6 +10350,99 @@ function ngTitle(){const t=document.querySelector('.title .body');if(!t)return;
   const v=t.querySelector('#visitBtn');if(v)v.remove()}
 {const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);try{ngTitle()}catch(e){console.error(e)}return r}}
 ngTitle();
+// ---- 🏝️ Islander / 🧳 Visitor: two ways to play, each with its own difficulty levels and three save slots (85-sides.js) ----
+// Slots 1-3 hold islander games (live on the island, story, challenges), slots 4-6 visitor games (visits, weekend regular).
+// A save in the wrong group (older versions had three shared slots) moves to a free slot of its own group.
+//   saveSide(x)  'I' | 'V'      slotSide(n)  the group of slot n     slotNo(n)  1-3 within its group
+//   diffOf(x)    {ic,n,d} for that game's difficulty, with the visitor names for a visit
+//   sideBadge(x) "🏝️ Islander · ⛴️ Normal"      sideNew(side)  start a game in a free slot of that group
+const SIDES={I:{ic:'🏝️',n:'Islander',slots:[1,2,3],d:'Live on Anderson Island: work, the ferry, the house. A week, a month, or a year in story mode.'},
+  V:{ic:'🧳',n:'Visitor',slots:[4,5,6],d:'Come over from Seattle, Tacoma or Olympia for a day, a weekend, a week, or every weekend.'}};
+const slotSide=n=>n>=4?'V':'I';
+const slotNo=n=>((n-1)%3)+1;
+const saveSide=x=>x&&x.visitor?'V':'I';
+const VDIFFS={
+  easy:{n:'Easy Sunday',ic:'🌤️',d:'More spending money, emptier boats, light I-5 traffic and no crashes, and a heads-up before the last boat.'},
+  normal:{n:'Tourist',ic:'📸',d:'The visit as designed: real traffic, the odd crash on I-5, and the last boat waits for no one.'},
+  hard:{n:'Missed the Boat',ic:'🌧️',d:'A tighter budget, fuller boats and more fog, heavier I-5 traffic, and no warning before the last boat.'}};
+function diffOf(x){x=x||(typeof S!=='undefined'?S:null);const k=(x&&x.diff)||'normal';return saveSide(x)==='V'?(VDIFFS[k]||VDIFFS.normal):(DIFFS[k]||DIFFS.normal)}
+function sideBadge(x){x=x||S;const s=SIDES[saveSide(x)],D=diffOf(x);return `${s.ic} ${s.n} · ${D.ic} ${D.n}`}
+function vDiffModal(then){const cur=prefs().vdiff||'normal';
+  modal('🧳 How hard is the visit?','<p>Pick a difficulty for this visit.</p>',Object.keys(VDIFFS).map(k=>({l:`${VDIFFS[k].ic} ${VDIFFS[k].n}${k===cur?' (last time)':''}`,s:VDIFFS[k].d,fn:()=>{setPref('vdiff',k);then(k)}})))}
+window.vDiffModal=vDiffModal;
+
+// ---- visitor difficulty: I-5 traffic, crashes, the last-boat heads-up ----
+const VT_MUL={easy:0.6,normal:1,hard:1.3};
+function vtScale(e){try{const m=visitorOn()?VT_MUL[S.diff]||1:1;if(m!==1&&e&&typeof e.min==='number'&&e.min>5){const n=Math.round(e.min*m);e.txt=String(e.txt||'').replace(/\+\d+ min/,'+'+n+' min');e.min=n}}catch(x){}return e}
+{const _t=vtTraffic;vtTraffic=function(){return vtScale(_t.apply(this,arguments))}}
+{const _t=seaTraffic;seaTraffic=function(){return vtScale(_t.apply(this,arguments))}}
+{const _r=vtTrafficRoll;vtTrafficRoll=function(from,to){const r=_r.apply(this,arguments);
+  if(r&&r.crash&&visitorOn()&&S.diff==='easy')return {min:Math.round(vtTraffic(from,to,S.t).min*(0.5+Math.random())),crash:false};return r}}
+{const _h=lbHomeSide;lbHomeSide=function(){if(visitorOn()&&S.diff==='hard')return null;return _h.apply(this,arguments)}}
+
+// ---- saves: three per group ----
+function sortSlots(){const ls=store(),moved=[];if(!ls)return moved;
+  for(let n=1;n<=SLOT_N;n++){const r=rawSave(n);if(!r)continue;let x=null;try{x=JSON.parse(r.v).S}catch(e){continue}
+    if(!x||x.over||slotSide(n)===saveSide(x))continue;
+    const to=SIDES[saveSide(x)].slots.find(k=>!rawSave(k));if(!to)continue;
+    try{slotKeys(to).forEach(k=>ls.setItem(k,r.v));slotKeys(n).forEach(k=>ls.removeItem(k))}catch(e){continue}
+    if(curSlot()===n)setSlot(to);moved.push([n,to])}
+  return moved}
+// a game that changes group (a weekend regular who buys the house) moves to a free slot of its new group as it saves
+{const _s=saveGame;saveGame=function(){try{if(S&&!S.over&&slotSide(curSlot())!==saveSide(S)){const ls=store(),from=curSlot(),to=SIDES[saveSide(S)].slots.find(k=>!rawSave(k));
+    if(ls&&to){slotKeys(from).forEach(k=>ls.removeItem(k));setSlot(to)}}}catch(e){console.error(e)}return _s.apply(this,arguments)}}
+function sideSaves(side){return SIDES[side].slots.filter(n=>{const i=slotInfo(n);return i&&!i.broken})}
+function sideLatest(side){const c=curSlot();if(slotSide(c)===side&&rawSave(c)&&slotInfo(c)&&!slotInfo(c).broken){const d=loadSave(c);if(d&&saveSide(d.S)===side)return {n:c,at:rawSave(c).at,d}}
+  let best=null;for(const n of SIDES[side].slots){const r=rawSave(n),i=r&&slotInfo(n);if(!r||!i||i.broken)continue;const d=loadSave(n);if(d&&saveSide(d.S)===side&&(!best||r.at>best.at))best={n,at:r.at,d}}return best}
+window.sideCont=side=>{const b=sideLatest(side);if(!b)return titleScreen();setSlot(b.n);resumeGame()};
+// start in the first free slot of the group; when all three are in use, pick the one to replace
+window.sideNew=(side,then)=>{const free=SIDES[side].slots.find(n=>!slotInfo(n));
+  if(free){setSlot(free);return then?then():newGameModal(side)}
+  slotsModal(side,'All three '+SIDES[side].n.toLowerCase()+' slots are in use. Pick one to start over in.')};
+
+// every way to start a game makes sure it lands in a slot of its own group (the title's challenge buttons, Play again, …)
+function sideGuard(side,fn){return function(){const a=arguments,self=this;if(slotSide(curSlot())===side)return fn.apply(self,a);
+  return sideNew(side,()=>fn.apply(self,a))}}
+for(const [k,side] of [['startNewWeek','I'],['startVisit','V'],['startRegular','V'],['regAgain','V']])if(typeof window[k]==='function')window[k]=sideGuard(side,window[k]);
+if(typeof chStartModal==='function')chStartModal=sideGuard('I',chStartModal);
+if(typeof dailyStartModal==='function')dailyStartModal=sideGuard('I',dailyStartModal);
+
+// ---- the new-game chooser for one group ----
+{const _n=newGameModal;newGameModal=function(side){if(side!=='I'&&side!=='V')return _n.apply(this,arguments);
+  const has=f=>typeof window[f]==='function';
+  const opts=side==='I'?[
+    {l:'🏝️ Live on the island',s:'Work in Lakewood, keep food in the pantry and gas in the car. A week, a month, or a whole year in story mode.',fn:()=>startNewWeek()}]:[
+    {l:'🧳 Visit the island',s:'A day trip, a weekend or a week from Seattle, Tacoma or Olympia. See the sights and catch the last boat home.',fn:()=>startVisit()},
+    {l:'🏙️ Weekend regular',s:'A month with a city job, every weekend on the island. Save up and you might move over.',fn:()=>startRegular()}];
+  if(side==='I'&&has('chStartModal'))opts.push({l:'🏆 Weekly challenge',s:'The same week for everyone. Share your code and compare scores.',fn:()=>chStartModal()});
+  if(side==='I'&&has('dailyStartModal'))opts.push({l:'☀️ Daily challenge',s:'Today’s one-day game, the same for everyone.',fn:()=>dailyStartModal()});
+  opts.push({l:'Never mind',fn:()=>{}});
+  modal(`${SIDES[side].ic} New ${SIDES[side].n.toLowerCase()} game`,`<p>${SIDES[side].d} It goes in ${SIDES[side].n.toLowerCase()} slot ${slotNo(curSlot())}.</p>`,opts)};
+ window.newGameModal=newGameModal}
+
+// ---- title screen: a card for each group ----
+function sideCard(side){const s=SIDES[side],b=sideLatest(side),n=sideSaves(side).length;
+  const cont=b?(()=>{const x=b.d.S;return `<button class="big" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button>`})():'';
+  return `<div class="side" id="side${side}"><div class="sh">${s.ic} ${s.n}</div><div class="sd">${s.d}</div>${cont}
+    <button class="${b?'ghost':'big'}" onclick="sideNew('${side}')">⛴️ Start a new game</button>
+    <button class="ghost" onclick="slotsModal('${side}')">💾 Saves (${n} of 3)</button></div>`}
+function sideTitle(){const t=document.querySelector('.title .body');if(!t||t.querySelector('.sides'))return;
+  sortSlots();
+  t.querySelectorAll('button.big,button[onclick="newGameModal()"],button[onclick="startNewWeek()"],button[onclick="slotsModal()"]').forEach(b=>b.remove());
+  const at=t.querySelector('h1+p')||t.querySelector('ul');
+  const h=`<div class="sides">${sideCard('I')}${sideCard('V')}</div>`;
+  if(at)at.insertAdjacentHTML('afterend',h);else t.insertAdjacentHTML('beforeend',h)}
+{const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);try{sideTitle()}catch(e){console.error(e)}return r}}
+
+// ---- in the game: which way you're playing, and at what level ----
+{const _h=hud;hud=function(){const r=_h.apply(this,arguments);try{if(!S)return r;return r.replace('<div class="hud-day">',`<div class="hud-side">${sideBadge(S)}</div><div class="hud-day">`)}catch(e){return r}}}
+
+{const st=document.createElement('style');st.textContent=`.sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:12px 0 6px}
+.side{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.28);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.side .sh{font-family:var(--disp,inherit);font-weight:700;font-size:19px}.side .sd{font-size:13px;opacity:.8;margin-bottom:2px}
+.side button{margin:0!important;width:100%}#sideV{border-color:#d9bf87}#sideI{border-color:#8fc4a4}
+.hud-side{font-size:11px;font-weight:700;letter-spacing:.02em;opacity:.85;margin-bottom:1px}`;document.head.appendChild(st)}
+sideTitle();
 </script>
 </body>
 </html>

@@ -28,7 +28,7 @@ function startDay(){
   if(S.week.storm&&S.week.storm.day===d) say(`🌬️ Gale warning for this afternoon and tonight. Expect the ferry to stop and the island’s power to go out. ${genReady()?(S.homeGas>=3?'Your generator is fueled and ready.':'Your generator needs at least 3 gallons in the shed…'):'No generator? Tonight might be cold.'}`);
   if(S.week.fog[d]) say(`🌫️ Fog advisory: expect morning sailings to run ${S.week.fog[d]}+ minutes late.`);
   if(d===0&&S.diff==='hard') say(seasonId()==='winter'?'🔥 <b>Ferry Hell:</b> the boat is a wreck, the lines are long and money is tight. Good luck.':'🔥 <b>Ferry Hell:</b> summer tourists with kayaks on their roofs are lined up for every boat. Good luck.'); // season
-  if(d===0&&S.diff==='easy') say('🌲 <b>Islander mode:</b> a quieter week on the water. A good time to learn the ropes.');
+  if(d===0&&S.diff==='easy') say('🌲 <b>Old-timer mode:</b> a quieter week on the water. A good time to learn the ropes.');
   if(d===0) say('🔥 Monday fuel run: a propane tanker rides over to refill the island’s tanks (there’s no gas station on the island). With hazmat aboard, only crew and the driver ride, so the 9:30 AM from Steilacoom and the 11:10 AM from the island are canceled.');
   if(S.loc==='home'&&!S.injuryRolled&&d>=1&&d<=4&&Math.random()<(S.mode==='month'&&S.weekNo>0?0.12:(d===4?1:0.3))){ // later weeks of a month: an occasional mishap, not a weekly certainty
     S.injuryRolled=true;
