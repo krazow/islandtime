@@ -18,17 +18,22 @@ const MAPLL={
   // Tacoma
   office:[47.2590,-122.4530],clinic:[47.2500,-122.4470],hilltop:[47.2520,-122.4560],warehouse:[47.2170,-122.4700],tc_dukes:[47.2905,-122.4850],
   tc_cactus:[47.2690,-122.4815],tc_zoo:[47.3050,-122.5200],tc_glass:[47.2460,-122.4340],tc_grand:[47.2560,-122.4410],
+  // Seattle (going out; 44-fun-seattle.js)
+  sea_ivars:[47.6035,-122.3385],sea_pike:[47.6097,-122.3422],sea_needle:[47.6205,-122.3493],sea_mopop:[47.6215,-122.3481],sea_dicks:[47.6192,-122.3210],
   // DuPont
   whse:[47.1080,-122.6400],urgent:[47.0990,-122.6310]};
 const MAPCITY={tacoma:[47.2400,-122.4800],seattle:[47.6062,-122.3321],olympia:[47.0379,-122.9007]};
 const MAPW=400,MAPH={I:GEO.I.h,M:GEO.M.h,S:GEO.S.h,O:GEO.O.h};
-// A visitor who lives in Seattle or Olympia gets a third panel ('H') for home: their place, job and store on that city's real shoreline.
+// Panels: 'I' the island, 'M' the South Sound mainland, 'S' Seattle (its places to go out, and home for a visitor who lives there),
+// and 'O' Olympia for a visitor who lives there. Each is drawn on that area's real shoreline.
 const MAPHOMEK=['vhome','rwork','rmarket'],MAPHOMELL={
   seattle:{vhome:[47.6235,-122.3170],rwork:[47.6060,-122.3360],rmarket:[47.6180,-122.3260]},   // Capitol Hill, downtown
   olympia:{vhome:[47.0440,-122.8840],rwork:[47.0380,-122.9010],rmarket:[47.0475,-122.8960]}};  // east side, downtown
 function mapHome(){try{if(!visitorOn())return null;const h=VS().home;return h==='seattle'?'S':h==='olympia'?'O':null}catch(e){return null}}
-const mapGK=side=>side==='H'?(mapHome()||'M'):side;
-const mapCur=()=>{const c=L[S.loc].side;return c==='M'&&mapHome()&&MAPHOMEK.includes(S.loc)?'H':c};
+const mapGK=side=>side==='H'?(mapHome()||'S'):side;   // 'H' (older saves' tab) = the home city
+function mapPanel(k){const l=L[k];if(!l)return 'M';if(l.side!=='M')return l.side;
+  if(l.town==='Seattle')return 'S';const hk=mapHome();if(hk&&MAPHOMEK.includes(k))return hk;return 'M'}
+const mapCur=()=>mapPanel(S.loc);
 let MAPSEL=null,MAPSIDE=null,MAPSIDE_FOR=null;
 const mapSide=()=>{const cur=mapCur();if(MAPSIDE_FOR!==cur){MAPSIDE=null;MAPSIDE_FOR=cur}return MAPSIDE||cur};
 function mapXY(side,lat,lon){const g=mapGK(side),[x0,x1,y0,y1]=GEO[g].bb;return [(lon-x0)/(x1-x0)*MAPW,(y1-lat)/(y1-y0)*MAPH[g]]}
@@ -44,8 +49,8 @@ function mapMainPos(k){
   let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return mapXY('M',47.15+(n%5)*0.006,-122.53+(n%9)*0.006);   // anything new: somewhere in Lakewood
 }
 function mapPlaces(side){
-  const hk=mapHome(),real=side==='H'?'M':side;
-  return Object.keys(L).filter(k=>L[k].side===real&&(k!=='vhome'||visitorOn())&&!destHidden(k)&&(!hk||real!=='M'||(side==='H')===MAPHOMEK.includes(k)));
+  side=mapGK(side);
+  return Object.keys(L).filter(k=>mapPanel(k)===side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
 }
 // push overlapping markers apart (deterministic), keeping them near where they belong
 function mapSpread(pts,min,w,h){
@@ -60,8 +65,8 @@ function mapSpread(pts,min,w,h){
 }
 function mapPositions(side){
   const pts={},ks=mapPlaces(side),extra=[[47.170,-122.700],[47.150,-122.700],[47.160,-122.715],[47.165,-122.690]];let e=0;
-  const hl=side==='H'?MAPHOMELL[VS().home]:null;
-  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):hl?mapXY('H',...(hl[k]||hl.vhome)):mapMainPos(k)});
+  side=mapGK(side);const city=side==='S'||side==='O',hl=city&&mapHome()===side?MAPHOMELL[VS().home]:null;
+  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):city?mapXY(side,...(MAPLL[k]||(hl&&(hl[k]||hl.vhome))||[47.61,-122.33])):mapMainPos(k)});
   return mapSpread(pts,side==='I'?34:32,MAPW,MAPH[mapGK(side)]);
 }
 // the boat on the water right now, from the timetable: {side it left, f:0..1 across, dep}
@@ -76,7 +81,7 @@ function mapFerry(){
 }
 function mapSVG(side,pts,fer,out){
   const gk=mapGK(side),H=MAPH[gk],water='#2c5f6e',land='#d9d3bc',tree='#2f5d4a';
-  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':side==='H'?'Map of '+(gk==='S'?'Seattle':'Olympia'):'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
+  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':gk==='S'?'Map of Seattle':gk==='O'?'Map of Olympia':'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
   const G=GEO[gk],lbl=(lat,lon,t,o)=>{const [x,y]=mapXY(side,lat,lon);return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}"${o||''}>${t}</text>`};
   for(const sh of G.shapes)s+=`<path d="${sh.d}" fill="${sh.k==='lake'?water:side==='I'&&sh.k==='ai'?tree:land}"${sh.k==='lake'?'':` stroke="${side==='I'&&sh.k==='ai'?'#e8dcc0':'#b9b08f'}" stroke-width="${side==='I'&&sh.k==='ai'?2.5:1}" stroke-linejoin="round"`}/>`;
   let dock,edge;
@@ -88,7 +93,7 @@ function mapSVG(side,pts,fer,out){
      +`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1945,-122.6800,'McNeil Is.')}</g>`;
     dock=pts.aiDock||mapXY('I',...MAPLL.aiDock);
     const far=mapXY('I',...MAPLL.stDock),dx=far[0]-dock[0],dy=far[1]-dock[1],t=(MAPW-8-dock[0])/dx;edge=[MAPW-8,dock[1]+dy*t];   // toward Steilacoom, to the map's edge
-  } else if(side==='H'){
+  } else if(gk==='S'||gk==='O'){
     s+=gk==='S'
       ?`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.6020,-122.3300,'Downtown')}${lbl(47.6300,-122.3150,'Capitol Hill')}${lbl(47.5700,-122.3870,'West Seattle')}${lbl(47.6660,-122.3800,'Ballard')}${lbl(47.6600,-122.3130,'U District')}</g>`
        +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.6020,-122.3650,'Elliott Bay')}${lbl(47.6400,-122.3340,'Lake Union')}${lbl(47.6150,-122.2600,'Lake Washington')}${lbl(47.6250,-122.4200,'Puget Sound')}</g>`
@@ -101,6 +106,7 @@ function mapSVG(side,pts,fer,out){
     let home='tacoma';try{home=VS().home||home}catch(e){}
     if(visitorOn()&&home!=='tacoma'){const c=MAPCITY[home];if(c){const p=mapXY('M',...c),q=[Math.max(24,Math.min(MAPW-24,p[0])),Math.max(26,Math.min(MAPH.M-26,p[1]))];
       s+=`<text x="${(q[0]+(p[0]>MAPW/2?-26:26)).toFixed(1)}" y="${(q[1]+(p[1]<0?-6:18)).toFixed(1)}" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="${p[0]>MAPW/2?'end':'start'}">${home==='seattle'?'↑ Seattle, 30 mi':'↙ Olympia, 20 mi'}</text>`}}
+    if(!(visitorOn()&&home==='seattle'))s+=`<text x="${MAPW-10}" y="20" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="end">↑ Seattle, 30 mi (its own tab)</text>`;
     dock=pts.stDock||mapXY('M',...MAPLL.stDock);edge=mapXY('M',...MAPLL.aiDock);
   }
   s+=`<g font-size="8" fill="#f4f1ea" font-family="DM Sans" opacity=".55"><text x="${MAPW-6}" y="${H-6}" text-anchor="end">Shoreline: GSHHG</text><text x="10" y="18" font-size="11" font-weight="700">N ↑</text></g>`;
@@ -147,9 +153,9 @@ function mapView(){
   if(MAPSEL&&(!L[MAPSEL]||(L[MAPSEL].side!=='I'&&L[MAPSEL].side!=='M')))MAPSEL=null;
   if(MAPSEL&&!pts[MAPSEL])MAPSEL=null;
   let h=`<div class="mapwrap"><div class="maptabs" role="tablist">`
-    +['I','M'].concat(mapHome()?['H']:[]).map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':x==='H'?(mapHome()==='S'?'🏙️ Seattle':'🏛️ Olympia'):'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
+    +['I','M','S'].concat(mapHome()==='O'?['O']:[]).map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':x==='S'?'🏙️ Seattle':x==='O'?'🏛️ Olympia':'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
   h+=mapSVG(side,pts,fer,out);
-  h+=`<div class="mapcap">${side==='H'?'Tap a place to see how to get there.':out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
+  h+=`<div class="mapcap">${side==='S'||side==='O'||side==='H'?'Tap a place to see how to get there.':out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
   h+=MAPSEL?mapDetail(MAPSEL):'';
   return h+'</div>';
 }

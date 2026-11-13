@@ -96,14 +96,29 @@ module.exports = [
       await page.evaluate(c => { visitorNew('regular', c, 'normal'); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); S.loc = 'vhome'; MAPSIDE = null; setPref('goOpen', true); MAPPREF(true); }, city);
       assert.match(await page.textContent('.maptabs'), new RegExp(tab + ' · you'));
       const p = await pins(page);
-      assert.ok(p.some(x => /Your place/.test(x)) && p.length === 3, p.join('|'));
+      assert.ok(p.some(x => /Your place/.test(x)) && p.length === (city === 'seattle' ? 8 : 3), p.join('|'));   // Seattle's tab also has its 5 places to go out
       assert.ok(await page.evaluate(() => document.querySelectorAll('svg.mapsvg path[d^="M"]').length >= 1), 'shoreline drawn');
       await page.click('.maptabs button:has-text("Mainland")');
       assert.ok(!(await pins(page)).some(x => /Your place/.test(x)), 'home is on its own tab, not the mainland map');
       assert.ok((await pins(page)).some(x => /Steilacoom Ferry Terminal/.test(x)));
     }
     await page.evaluate(() => { visitorNew('regular', 'tacoma', 'normal'); MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); S.loc = 'vhome'; MAPSIDE = null; render(); });
-    assert.strictEqual(await page.evaluate(() => document.querySelectorAll('.maptabs button').length), 2, 'Tacoma is on the mainland map');
+    assert.strictEqual(await page.evaluate(() => document.querySelectorAll('.maptabs button').length), 3, 'Tacoma is on the mainland map; the Seattle tab is always there');
+    noErrors(errors);
+  } },
+  { name: 'Seattle places to go out: on everyone’s Seattle tab, about 70 minutes from the Steilacoom ferry', fn: async ctx => {
+    const { page, errors } = await open(ctx);
+    await newGame(page);
+    const r = await page.evaluate(() => { S.loc = 'stDock'; S.cars[0].loc = 'stDock'; S.cars[0].fuel = 10;
+      const ks = Object.keys(FUN).filter(k => FUN[k].town === 'Seattle');
+      return { n: ks.length, rest: ks.filter(k => FUN[k].kind === 'restaurant').length, panels: ks.map(mapPanel), drive: dist('stDock', 'sea_pike') }; });
+    assert.strictEqual(r.n, 5); assert.strictEqual(r.rest, 2); assert.ok(r.panels.every(p => p === 'S'), r.panels.join());
+    assert.ok(r.drive >= 60 && r.drive <= 85, 'drive ' + r.drive);
+    await page.evaluate(() => { setPref('goOpen', true); MAPPREF(true); });
+    assert.match(await page.textContent('.maptabs'), /Seattle/);
+    await page.click('.maptabs button:has-text("Seattle")');
+    const p = await pins(page);
+    for (const n of ['Pike Place Market', 'Space Needle', 'MOPOP', 'Ivar', 'Dick']) assert.ok(p.some(x => x.includes(n)), n + ' in ' + p.join('|'));
     noErrors(errors);
   } },
 ];

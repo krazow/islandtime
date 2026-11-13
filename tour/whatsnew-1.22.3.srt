@@ -27,6 +27,22 @@ Each choice then asks its own questions, like how long you’ll stay.
 The separate Visit the island button is gone; it’s one of the choices now.
 
 8
-00:00:31,500 --> 00:00:37,000
+00:00:31,500 --> 00:00:36,000
+Seattle gets its own map tab, on the real shoreline.
+
+9
+00:00:36,000 --> 00:00:40,500
+It’s about seventy minutes from the Steilacoom ferry, so for an islander it’s a day out.
+
+10
+00:00:40,500 --> 00:00:45,000
+Eat at Ivar’s on the waterfront or Dick’s Drive-In on Capitol Hill.
+
+11
+00:00:45,000 --> 00:00:49,500
+Then wander Pike Place Market, go up the Space Needle, or visit MOPOP.
+
+12
+00:00:49,500 --> 00:00:55,000
 Play free in your browser at krazow.github.io/islandtime
 

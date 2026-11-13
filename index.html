@@ -7176,6 +7176,51 @@ defFun({id:'tc_grand',town:'Tacoma',kind:'fun',name:'The Grand Cinema',ic:'🎬'
   acts:[
     {l:'See a film',s:'Adult ticket $13. Stress −10.',min:130,cost:13,stress:-10,done:'You see an indie film that is subtitled and mostly about a lighthouse. You enjoy it'},
     {l:'Film, popcorn and a soda',s:'Adult ticket $13 plus snacks. Stress −11.',min:135,cost:20,stress:-11,done:'A film, a big bucket of popcorn and a soda, in the dark where nobody can find you'}]});
+// ---- 🎟️ going out in Seattle: two restaurants (waterfront seafood, a late-night burger stand) + Pike Place Market, the Space Needle and MOPOP ----
+// Uses defFun() from 40-fun.js. Seattle is a long drive from the Steilacoom ferry (about 35 miles), so for an islander it's a day out;
+// for a visitor who lives in Seattle it's close to home. Hours are rough 2026 hours (d: 0 Mon … 6 Sun); prices are 2026 dollars.
+// On the map these sit on the Seattle tab (50-map.js). pos is in drive-time miles (dist() in 00-data.js), so it's squeezed to
+// give about 70 minutes from the Steilacoom ferry, roughly I-5 without a jam.
+defFun({id:'sea_ivars',town:'Seattle',kind:'restaurant',name:'Ivar’s Acres of Clams (Pier 54)',ic:'🐚',
+  desc:'Seattle’s waterfront seafood institution since 1938, on Pier 54 over Elliott Bay. Washington State ferries slide past the windows, and outside at the Fish Bar people still feed fries to the gulls.',
+  pos:[9.6,23.2],
+  hours:d=>[660,d===4||d===5?1380:1320],
+  acts:[
+    {l:'Cioppino and a view of the ferries',s:'A real sit-down seafood dinner. Counts as tonight’s food. Stress −8.',min:80,cost:48,stress:-8,sat:1,done:'You eat cioppino by the window while a big green-and-white state ferry backs out of Colman Dock. Nobody makes you line up for this one'},
+    {l:'Fish ’n chips from the Fish Bar',s:'Walk-up window, eat outside. Counts as tonight’s food. Stress −5.',min:30,cost:18,stress:-5,sat:1,done:'Fish ’n chips at the outdoor Fish Bar. A gull watches every fry you eat, and you give it one'}]});
+
+defFun({id:'sea_dicks',town:'Seattle',kind:'restaurant',name:'Dick’s Drive-In (Broadway)',ic:'🍔',
+  desc:'The walk-up burger window on Capitol Hill, open since 1954 and open late (until 2 AM). A Deluxe, hand-cut fries and a hand-dipped shake, cheap and fast. A very different meal from the waterfront.',
+  pos:[10.3,24.1],
+  hours:()=>[630,1440],
+  acts:[
+    {l:'A Deluxe, fries and a shake',s:'Fast, cheap and filling. Counts as tonight’s food. Stress −5.',min:25,cost:12,stress:-5,sat:1,done:'A Dick’s Deluxe, a sleeve of fries and a chocolate shake, eaten standing up under the orange sign'},
+    {l:'Just a shake',s:'Hand-dipped. Stress −3.',min:10,cost:4,stress:-3,done:'A hand-dipped vanilla shake on Broadway. It is gone in four minutes'}]});
+
+defFun({id:'sea_pike',town:'Seattle',kind:'fun',name:'Pike Place Market',ic:'🐟',
+  desc:'The public market above the waterfront, open since 1907: fishmongers throwing salmon, flower stalls, the first Starbucks, the Gum Wall, and the stairs down to the Overlook Walk. Free to wander. Closed Thanksgiving and Christmas.',
+  pos:[9.6,23.4],
+  hours:()=>[540,1080],
+  acts:[
+    {l:'Wander the market',s:'Free. Watch the fish fly. Stress −8.',min:90,cost:0,stress:-8,done:'You watch a whole salmon sail over the counter, buy nothing, and enjoy every minute of it'},
+    {l:'Graze your way through: chowder, a piroshky, mini doughnuts',s:'Counts as tonight’s food. Stress −9.',min:75,cost:24,stress:-9,sat:1,done:'Chowder, a warm piroshky and a paper bag of tiny doughnuts. You are full and smell faintly of cinnamon'},
+    {l:'Buy a bouquet at the flower stalls',s:'For the kitchen table. Stress −4.',min:20,cost:20,stress:-4,done:'An armful of flowers for twenty dollars. It will look great on the kitchen table, if it survives the trip'}]});
+
+defFun({id:'sea_needle',town:'Seattle',kind:'fun',name:'Space Needle',ic:'🗼',
+  desc:'The 1962 World’s Fair tower at Seattle Center, with a glass floor and floor-to-ceiling windows 520 feet up. On a clear day you can see Mount Rainier and, if you squint south, the water you cross every day. Tickets run about $35–55 by time of day.',
+  pos:[9.4,24.1],
+  hours:d=>[600,d===4||d===5?1320:1260],
+  acts:[
+    {l:'Go up to the top',s:'General admission about $49. Stress −10.',min:75,cost:49,stress:-10,done:'You stand on the glass floor 500 feet up and try not to look down, then look down anyway'},
+    {l:'Go up at sunset',s:'Same ticket, better light. Stress −12.',min:90,cost:49,stress:-12,done:'The sun goes down behind the Olympics and the whole city turns gold. Worth every dollar'}]});
+
+defFun({id:'sea_mopop',town:'Seattle',kind:'fun',name:'MOPOP (Museum of Pop Culture)',ic:'🎸',
+  desc:'Frank Gehry’s crumpled red-and-gold building at Seattle Center, full of music, sci-fi, video games and horror. Hendrix and Nirvana guitars, a guitar sculpture two stories tall, and sound booths where you can play the drums. Open 10 AM to 5 PM daily.',
+  pos:[9.4,24.2],
+  hours:()=>[600,1020],
+  acts:[
+    {l:'See the whole museum',s:'Adult admission about $32. Stress −11.',min:150,cost:32,stress:-11,done:'Guitars, starships and a hallway of horror-movie props. You lose an hour in the sound lab playing drums badly'},
+    {l:'Just the music galleries and the sound lab',s:'Same ticket, shorter visit. Stress −8.',min:80,cost:32,stress:-8,done:'You stand under the giant guitar sculpture, then play a song on a real stage with nobody listening'}]});
 // ---- 📅 Weekend regular: a month living on the mainland, working weekdays, spending weekends on the island ----
 // A visit mode (S.visitor is set, VS().len==='regular') that is also a month (S.mode==='month', 4 weeks, S.weekNo 0..3).
 // Files: 44 core (state, start, city places and commute, the job, rent, bills, chores, paycheck, vacation days, the month's end)
@@ -7820,17 +7865,22 @@ const MAPLL={
   // Tacoma
   office:[47.2590,-122.4530],clinic:[47.2500,-122.4470],hilltop:[47.2520,-122.4560],warehouse:[47.2170,-122.4700],tc_dukes:[47.2905,-122.4850],
   tc_cactus:[47.2690,-122.4815],tc_zoo:[47.3050,-122.5200],tc_glass:[47.2460,-122.4340],tc_grand:[47.2560,-122.4410],
+  // Seattle (going out; 44-fun-seattle.js)
+  sea_ivars:[47.6035,-122.3385],sea_pike:[47.6097,-122.3422],sea_needle:[47.6205,-122.3493],sea_mopop:[47.6215,-122.3481],sea_dicks:[47.6192,-122.3210],
   // DuPont
   whse:[47.1080,-122.6400],urgent:[47.0990,-122.6310]};
 const MAPCITY={tacoma:[47.2400,-122.4800],seattle:[47.6062,-122.3321],olympia:[47.0379,-122.9007]};
 const MAPW=400,MAPH={I:GEO.I.h,M:GEO.M.h,S:GEO.S.h,O:GEO.O.h};
-// A visitor who lives in Seattle or Olympia gets a third panel ('H') for home: their place, job and store on that city's real shoreline.
+// Panels: 'I' the island, 'M' the South Sound mainland, 'S' Seattle (its places to go out, and home for a visitor who lives there),
+// and 'O' Olympia for a visitor who lives there. Each is drawn on that area's real shoreline.
 const MAPHOMEK=['vhome','rwork','rmarket'],MAPHOMELL={
   seattle:{vhome:[47.6235,-122.3170],rwork:[47.6060,-122.3360],rmarket:[47.6180,-122.3260]},   // Capitol Hill, downtown
   olympia:{vhome:[47.0440,-122.8840],rwork:[47.0380,-122.9010],rmarket:[47.0475,-122.8960]}};  // east side, downtown
 function mapHome(){try{if(!visitorOn())return null;const h=VS().home;return h==='seattle'?'S':h==='olympia'?'O':null}catch(e){return null}}
-const mapGK=side=>side==='H'?(mapHome()||'M'):side;
-const mapCur=()=>{const c=L[S.loc].side;return c==='M'&&mapHome()&&MAPHOMEK.includes(S.loc)?'H':c};
+const mapGK=side=>side==='H'?(mapHome()||'S'):side;   // 'H' (older saves' tab) = the home city
+function mapPanel(k){const l=L[k];if(!l)return 'M';if(l.side!=='M')return l.side;
+  if(l.town==='Seattle')return 'S';const hk=mapHome();if(hk&&MAPHOMEK.includes(k))return hk;return 'M'}
+const mapCur=()=>mapPanel(S.loc);
 let MAPSEL=null,MAPSIDE=null,MAPSIDE_FOR=null;
 const mapSide=()=>{const cur=mapCur();if(MAPSIDE_FOR!==cur){MAPSIDE=null;MAPSIDE_FOR=cur}return MAPSIDE||cur};
 function mapXY(side,lat,lon){const g=mapGK(side),[x0,x1,y0,y1]=GEO[g].bb;return [(lon-x0)/(x1-x0)*MAPW,(y1-lat)/(y1-y0)*MAPH[g]]}
@@ -7846,8 +7896,8 @@ function mapMainPos(k){
   let n=0;for(const c of k)n=(n*31+c.charCodeAt(0))%97;return mapXY('M',47.15+(n%5)*0.006,-122.53+(n%9)*0.006);   // anything new: somewhere in Lakewood
 }
 function mapPlaces(side){
-  const hk=mapHome(),real=side==='H'?'M':side;
-  return Object.keys(L).filter(k=>L[k].side===real&&(k!=='vhome'||visitorOn())&&!destHidden(k)&&(!hk||real!=='M'||(side==='H')===MAPHOMEK.includes(k)));
+  side=mapGK(side);
+  return Object.keys(L).filter(k=>mapPanel(k)===side&&(k!=='vhome'||visitorOn())&&!destHidden(k));
 }
 // push overlapping markers apart (deterministic), keeping them near where they belong
 function mapSpread(pts,min,w,h){
@@ -7862,8 +7912,8 @@ function mapSpread(pts,min,w,h){
 }
 function mapPositions(side){
   const pts={},ks=mapPlaces(side),extra=[[47.170,-122.700],[47.150,-122.700],[47.160,-122.715],[47.165,-122.690]];let e=0;
-  const hl=side==='H'?MAPHOMELL[VS().home]:null;
-  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):hl?mapXY('H',...(hl[k]||hl.vhome)):mapMainPos(k)});
+  side=mapGK(side);const city=side==='S'||side==='O',hl=city&&mapHome()===side?MAPHOMELL[VS().home]:null;
+  ks.forEach(k=>{pts[k]=side==='I'?mapXY('I',...(MAPLL[k]||extra[e++%extra.length])):city?mapXY(side,...(MAPLL[k]||(hl&&(hl[k]||hl.vhome))||[47.61,-122.33])):mapMainPos(k)});
   return mapSpread(pts,side==='I'?34:32,MAPW,MAPH[mapGK(side)]);
 }
 // the boat on the water right now, from the timetable: {side it left, f:0..1 across, dep}
@@ -7878,7 +7928,7 @@ function mapFerry(){
 }
 function mapSVG(side,pts,fer,out){
   const gk=mapGK(side),H=MAPH[gk],water='#2c5f6e',land='#d9d3bc',tree='#2f5d4a';
-  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':side==='H'?'Map of '+(gk==='S'?'Seattle':'Olympia'):'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
+  let s=`<svg class="mapsvg" viewBox="0 0 ${MAPW} ${H}" role="group" aria-label="${side==='I'?'Map of Anderson Island':gk==='S'?'Map of Seattle':gk==='O'?'Map of Olympia':'Map of the mainland'}"><rect width="${MAPW}" height="${H}" fill="${water}"/>`;
   const G=GEO[gk],lbl=(lat,lon,t,o)=>{const [x,y]=mapXY(side,lat,lon);return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}"${o||''}>${t}</text>`};
   for(const sh of G.shapes)s+=`<path d="${sh.d}" fill="${sh.k==='lake'?water:side==='I'&&sh.k==='ai'?tree:land}"${sh.k==='lake'?'':` stroke="${side==='I'&&sh.k==='ai'?'#e8dcc0':'#b9b08f'}" stroke-width="${side==='I'&&sh.k==='ai'?2.5:1}" stroke-linejoin="round"`}/>`;
   let dock,edge;
@@ -7890,7 +7940,7 @@ function mapSVG(side,pts,fer,out){
      +`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1945,-122.6800,'McNeil Is.')}</g>`;
     dock=pts.aiDock||mapXY('I',...MAPLL.aiDock);
     const far=mapXY('I',...MAPLL.stDock),dx=far[0]-dock[0],dy=far[1]-dock[1],t=(MAPW-8-dock[0])/dx;edge=[MAPW-8,dock[1]+dy*t];   // toward Steilacoom, to the map's edge
-  } else if(side==='H'){
+  } else if(gk==='S'||gk==='O'){
     s+=gk==='S'
       ?`<g font-size="9.5" fill="#6b7478" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.6020,-122.3300,'Downtown')}${lbl(47.6300,-122.3150,'Capitol Hill')}${lbl(47.5700,-122.3870,'West Seattle')}${lbl(47.6660,-122.3800,'Ballard')}${lbl(47.6600,-122.3130,'U District')}</g>`
        +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.6020,-122.3650,'Elliott Bay')}${lbl(47.6400,-122.3340,'Lake Union')}${lbl(47.6150,-122.2600,'Lake Washington')}${lbl(47.6250,-122.4200,'Puget Sound')}</g>`
@@ -7903,6 +7953,7 @@ function mapSVG(side,pts,fer,out){
     let home='tacoma';try{home=VS().home||home}catch(e){}
     if(visitorOn()&&home!=='tacoma'){const c=MAPCITY[home];if(c){const p=mapXY('M',...c),q=[Math.max(24,Math.min(MAPW-24,p[0])),Math.max(26,Math.min(MAPH.M-26,p[1]))];
       s+=`<text x="${(q[0]+(p[0]>MAPW/2?-26:26)).toFixed(1)}" y="${(q[1]+(p[1]<0?-6:18)).toFixed(1)}" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="${p[0]>MAPW/2?'end':'start'}">${home==='seattle'?'↑ Seattle, 30 mi':'↙ Olympia, 20 mi'}</text>`}}
+    if(!(visitorOn()&&home==='seattle'))s+=`<text x="${MAPW-10}" y="20" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="end">↑ Seattle, 30 mi (its own tab)</text>`;
     dock=pts.stDock||mapXY('M',...MAPLL.stDock);edge=mapXY('M',...MAPLL.aiDock);
   }
   s+=`<g font-size="8" fill="#f4f1ea" font-family="DM Sans" opacity=".55"><text x="${MAPW-6}" y="${H-6}" text-anchor="end">Shoreline: GSHHG</text><text x="10" y="18" font-size="11" font-weight="700">N ↑</text></g>`;
@@ -7949,9 +8000,9 @@ function mapView(){
   if(MAPSEL&&(!L[MAPSEL]||(L[MAPSEL].side!=='I'&&L[MAPSEL].side!=='M')))MAPSEL=null;
   if(MAPSEL&&!pts[MAPSEL])MAPSEL=null;
   let h=`<div class="mapwrap"><div class="maptabs" role="tablist">`
-    +['I','M'].concat(mapHome()?['H']:[]).map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':x==='H'?(mapHome()==='S'?'🏙️ Seattle':'🏛️ Olympia'):'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
+    +['I','M','S'].concat(mapHome()==='O'?['O']:[]).map(x=>`<button role="tab" aria-selected="${x===side}" class="${x===side?'on':''}" onclick="MAPTAB('${x}')">${x==='I'?'🏝️ Anderson Island':x==='S'?'🏙️ Seattle':x==='O'?'🏛️ Olympia':'🌆 Mainland'}${x===cur?' · you':''}</button>`).join('')+`</div>`;
   h+=mapSVG(side,pts,fer,out);
-  h+=`<div class="mapcap">${side==='H'?'Tap a place to see how to get there.':out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
+  h+=`<div class="mapcap">${side==='S'||side==='O'||side==='H'?'Tap a place to see how to get there.':out?'🚨 Ferry service suspended.':fer?`⛴️ The ${fmt(fer.dep)} boat is crossing now.`:'Tap a place to see how to get there.'}</div>`;
   h+=MAPSEL?mapDetail(MAPSEL):'';
   return h+'</div>';
 }
@@ -10160,10 +10211,11 @@ Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_pho
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
-  {v:'1.22.3',date:'Nov 12, 2026',title:'Start a new game, any way you like',video:'tour/whatsnew-1.22.3.mp4',items:[
+  {v:'1.22.3',date:'Nov 13, 2026',title:'Start a new game, and a day out in Seattle',video:'tour/whatsnew-1.22.3.mp4',items:[
     'The title screen’s Start a new week button is now Start a new game.',
     'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',
     'The separate Visit the island button is gone; it’s one of the choices now.',
+    'Going out in Seattle: Ivar’s Acres of Clams on the waterfront, Dick’s Drive-In on Capitol Hill, Pike Place Market, the Space Needle and MOPOP. About 70 minutes from the Steilacoom ferry, on a new Seattle map tab.',
     'Fixed: visitors staying at the rental cabin were warned about the “last boat home” to the island. Their home is on the mainland, so the warning now says “last boat back to the island”.']},
   {v:'1.22.2',date:'Nov 12, 2026',title:'A video tutorial',video:WN_TUTORIAL,items:[
     'A subtitled video tutorial that walks through the whole game: starting out, the screen, the ferry, work and money, food and gas, the phone, your house, friends, vehicles, the boat, visiting, and how a game ends.',

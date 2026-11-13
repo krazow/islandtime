@@ -41,9 +41,10 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
-### New in 1.22.3: start a new game, any way you like
+### New in 1.22.3: start a new game, any way you like, and a day out in Seattle
 
 - ⛴️ **Start a new game:** the title screen's *Start a new week* button is now *Start a new game*, and it asks how you want to play: 🏝️ live on the island (a week, a month or story mode), 🧳 visit the island, 🏙️ be a weekend regular, or take the 🏆 weekly or ☀️ daily challenge. The separate *Visit the island* button is gone; it's one of the choices now.
+- 🏙️ **Going out in Seattle:** five real places, for residents and visitors alike: 🐚 Ivar's Acres of Clams on Pier 54 (waterfront seafood), 🍔 Dick's Drive-In on Broadway (late-night burgers), 🐟 Pike Place Market, 🗼 the Space Needle and 🎸 MOPOP, with real hours and 2026 prices. Seattle is about 70 minutes' drive from the Steilacoom ferry, so for an islander it's a day out. They sit on a new 🏙️ Seattle map tab, drawn on the real shoreline.
 - 🐛 **Fixed:** a visitor staying at the rental cabin was warned about the "last boat home" when the boat they needed went to the island. A visitor's home is on the mainland, so it now says "last boat back to the island", and the hints under *Go somewhere* point a visitor home to the mainland.
 
 ### New in 1.22.2: a video tutorial
