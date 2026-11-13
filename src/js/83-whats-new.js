@@ -2,8 +2,11 @@
 // A "What's new" button on the title screen (and in the update pop-up) lists what changed in each release, newest first, and plays that
 // release's what's-new video. Videos live on the game's website (tour/), so they need internet; offline the window says so.
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
-const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/IslandTime-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
+const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.23.1',date:'Nov 13, 2026',title:'A new tutorial, and Island Time spelled right',video:'tour/whatsnew-1.23.1.mp4',items:[
+    'A rebuilt video tutorial (4½ minutes, subtitled) that starts from the new Islander and Visitor cards, the three saves each, and both sets of difficulty levels. Watch it from this window.',
+    'The downloads now say Island Time: Island-Time-Setup.exe, Island-Time-offline.html, the Island-Time-web zip and the tutorial video. Old links still work.']},
   {v:'1.23.0',date:'Nov 13, 2026',title:'Islander or Visitor, right from the start',video:'tour/whatsnew-1.23.0.mp4',items:[
     'The title screen has a card for each way to play: 🏝️ Islander and 🧳 Visitor, each with its own Continue, Start a new game and Saves.',
     'Three save slots for each, six in all. Your saved games were sorted onto the right card when you updated; nothing was lost.',

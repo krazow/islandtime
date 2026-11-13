@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build offline/IslandTime-offline.html: the whole game in ONE file that runs
+"""Build offline/Island-Time-offline.html (also copied to the old name, IslandTime-offline.html, so old links keep working): the whole game in ONE file that runs
 by double-clicking it, with no server and no internet.
 
 Usage:  python3 tools/build-offline.py
@@ -25,7 +25,8 @@ html = html.replace("if('serviceWorker' in navigator&&/^https?:$/.test(location.
 for leftover in ('fonts/', 'icons/', 'manifest.webmanifest', "register('sw.js')"):
     assert leftover not in html or leftover == "register('sw.js')", leftover
 
-out = root / "offline" / "IslandTime-offline.html"
+out = root / "offline" / "Island-Time-offline.html"
 out.parent.mkdir(exist_ok=True)
 out.write_text(html, encoding="utf-8")
+(root / "offline" / "IslandTime-offline.html").write_text(html, encoding="utf-8")   # old name: same file, kept for old links
 print(f"wrote {out.relative_to(root)} ({out.stat().st_size // 1024} KB)")

@@ -1,0 +1,24 @@
+1
+00:00:00,000 --> 00:00:04,500
+What’s new in Island Time 1.23.1, shown with mock game data.
+
+2
+00:00:04,500 --> 00:00:09,000
+The video tutorial has been rebuilt for the new title screen.
+
+3
+00:00:09,000 --> 00:00:13,500
+It covers the Islander and Visitor cards, the saves, and both sets of difficulty levels. Watch it from What’s new.
+
+4
+00:00:13,500 --> 00:00:18,000
+The downloads now say Island Time: the Windows installer, the offline file, the web zip and the tutorial.
+
+5
+00:00:18,000 --> 00:00:22,500
+Links to the old file names keep working.
+
+6
+00:00:22,500 --> 00:00:28,000
+Play free in your browser at krazow.github.io/islandtime
+

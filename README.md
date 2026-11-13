@@ -9,9 +9,9 @@
 | How | What to do |
 |---|---|
 | 🌐 **In a browser** | Open **https://krazow.github.io/islandtime/** on any phone or computer. |
-| 📴 **Offline, no install** | Download [`offline/IslandTime-offline.html`](offline/IslandTime-offline.html) (or grab it from [Releases](../../releases)) and double-click it. It's one file with everything inside, so it needs no internet or server. |
+| 📴 **Offline, no install** | Download [`offline/Island-Time-offline.html`](offline/Island-Time-offline.html) (or grab it from [Releases](../../releases)) and double-click it. It's one file with everything inside, so it needs no internet or server. |
 | 📱 **As a phone app** | Open the browser link. **Android:** tap *Install as an app* on the title screen. **iPhone:** Share → *Add to Home Screen*. It works offline after the first visit. |
-| 🪟 **Windows** | Download `IslandTime-Setup.exe` from [Releases](../../releases). Installs per-user, no admin needed. Windows SmartScreen may warn about an unrecognized app (it isn't code-signed): *More info → Run anyway*. |
+| 🪟 **Windows** | Download `Island-Time-Setup.exe` from [Releases](../../releases). Installs per-user, no admin needed. Windows SmartScreen may warn about an unrecognized app (it isn't code-signed): *More info → Run anyway*. |
 
 🎬 [**Watch the tutorial**](https://krazow.github.io/islandtime/tour/): six minutes on how to play, with subtitles.
 
@@ -40,6 +40,11 @@
 - **Daily review** in the night summary: money, crossings, ferry waits and events.
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
+
+### New in 1.23.1: a new tutorial, and the downloads say Island Time
+
+- 🎓 **A rebuilt video tutorial** (4½ minutes, subtitled): it starts from the Islander and Visitor cards, the three saves each and both sets of difficulty levels. Watch it from What's new or at [krazow.github.io/islandtime/tour](https://krazow.github.io/islandtime/tour/).
+- 📦 **Downloads renamed:** `Island-Time-Setup.exe`, `Island-Time-offline.html`, `Island-Time-web-<version>.zip` and `Island-Time-tutorial.mp4` (a hyphen, since a space breaks links). The old `IslandTime-` addresses on the website still work.
 
 ### New in 1.23.0: Islander or Visitor, right from the start
 
@@ -510,7 +515,7 @@ tools/build.py          builds index.html from src/  (--check: fail if out of da
 tests/                  Playwright test suite: npm test  (runs on every push)
 sw.js, manifest.webmanifest, icons/   installable offline web app (PWA)
 fonts/                  Fraunces heading font + its license (SIL OFL 1.1)
-offline/IslandTime-offline.html       single-file offline build (generated)
+offline/Island-Time-offline.html       single-file offline build (generated)
 tools/build-offline.py  regenerates the offline file from index.html
 windows/                Windows installer source (Go) + build.sh
 screenshots/

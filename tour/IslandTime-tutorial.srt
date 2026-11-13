@@ -1,224 +1,240 @@
 1
-00:00:00,000 --> 00:00:08,900
+00:00:00,000 --> 00:00:04,500
 Welcome to Island Time. This tutorial shows you how to play, from your first morning to the end of your stay.
 
 2
-00:00:08,900 --> 00:00:15,450
-Island Time is about living on Anderson Island, in the south of Puget Sound.
+00:00:04,500 --> 00:00:09,000
+Island Time is about living on Anderson Island, in the south of Puget Sound. There’s no bridge, just one small county ferry.
 
 3
-00:00:15,450 --> 00:00:24,229
-There’s no bridge. One small county ferry connects you to work, groceries, gas and doctors.
+00:00:09,000 --> 00:00:13,500
+The title screen has a card for each way to play: live there as an Islander, or come over as a Visitor.
 
 4
-00:00:24,229 --> 00:00:31,379
-From the title screen you can start a new life on the island, visit it, or try a challenge.
+00:00:13,500 --> 00:00:18,000
+Each card has its own Continue, Start a new game, and Saves.
 
 5
-00:00:31,379 --> 00:00:35,919
-Start by telling your neighbors what to call you.
+00:00:18,000 --> 00:00:22,500
+You can keep up to three Islander games and three Visitor games going.
 
 6
-00:00:35,919 --> 00:00:40,429
-You can change your name any time in Settings.
+00:00:22,500 --> 00:00:27,000
+Open Saves to continue one, start over in a slot, or delete it.
 
 7
-00:00:40,429 --> 00:00:48,129
-Then pick a difficulty. Islander is forgiving, and Normal is the game as designed.
+00:00:27,000 --> 00:00:31,500
+Start by telling your neighbors what to call you.
 
 8
-00:00:48,129 --> 00:00:55,330
-Ferry Hell brings summer crowds, constant breakdowns, weekly rent and car trouble.
+00:00:31,500 --> 00:00:36,000
+You can change your name any time in Settings.
 
 9
-00:00:55,330 --> 00:01:01,949
-Next you choose a week, a month, or a whole year in story mode, and a season.
+00:00:36,000 --> 00:00:40,500
+Then pick a difficulty. Old-timer is forgiving, and Normal is the game as designed.
 
 10
-00:01:01,949 --> 00:01:10,330
-At the top are the day, the time, and six numbers: cash, food, health, stress, job and home.
+00:00:40,500 --> 00:00:45,000
+Ferry Hell brings summer crowds, constant breakdowns, weekly rent and car trouble.
 
 11
-00:01:10,330 --> 00:01:17,870
-Food is the days of groceries in your pantry. Health and stress follow how your days go.
+00:00:45,000 --> 00:00:49,500
+Next you choose a week, a month, or a whole year in story mode, and a season.
 
 12
-00:01:17,870 --> 00:01:23,820
-The Next up card always shows the one thing that matters most right now.
+00:00:49,500 --> 00:00:54,000
+At the top are the day, the time, and six numbers: cash, food, health, stress, job and home.
 
 13
-00:01:23,820 --> 00:01:29,700
-Below that is everything you can do where you are, grouped into sections.
+00:00:54,000 --> 00:00:58,500
+Food is the days of groceries in your pantry. Health and stress follow how your days go.
 
 14
-00:01:29,700 --> 00:01:36,230
-Every action takes time on the clock, and most of them cost or earn something.
+00:00:58,500 --> 00:01:03,000
+The Next up card always shows the one thing that matters most right now.
 
 15
-00:01:36,230 --> 00:01:43,210
-Open Go somewhere to travel. You can switch between a list and a real map.
+00:01:03,000 --> 00:01:07,500
+Below that is everything you can do where you are, grouped into sections.
 
 16
-00:01:43,210 --> 00:01:49,590
-Tap a place to see how to get there: drive, walk, or ride with a neighbor.
+00:01:07,500 --> 00:01:12,000
+Every action takes time on the clock, and most of them cost or earn something.
 
 17
-00:01:49,590 --> 00:01:55,130
-The Ferry tab shows every sailing, and has a trip planner.
+00:01:12,000 --> 00:01:16,500
+Open Go somewhere to travel. You can switch between a list and a real map.
 
 18
-00:01:55,130 --> 00:02:01,730
-Tell it where you need to be and when, and it tells you which boat to catch and when to leave.
+00:01:16,500 --> 00:01:21,000
+Tap a place to see how to get there: drive, walk, or ride with a neighbor.
 
 19
-00:02:01,730 --> 00:02:07,630
-At the landing, get in line about twenty minutes before the boat leaves.
+00:01:21,000 --> 00:01:25,500
+The Ferry tab shows every sailing, and has a trip planner.
 
 20
-00:02:07,630 --> 00:02:15,260
-Boats fill up at rush hour. If you’re too far back in line, you wait for the next one.
+00:01:25,500 --> 00:01:30,000
+Tell it where you need to be and when, and it tells you which boat to catch and when to leave.
 
 21
-00:02:15,260 --> 00:02:21,740
-Crew shortages, breakdowns, fog and storms can cancel sailings.
+00:01:30,000 --> 00:01:34,500
+At the landing, get in line about twenty minutes before the boat leaves.
 
 22
-00:02:21,740 --> 00:02:28,100
-Rider alerts warn you, and the boats right after an outage fill up fast.
+00:01:34,500 --> 00:01:39,000
+Boats fill up at rush hour. If you’re too far back in line, you wait for the next one.
 
 23
-00:02:28,100 --> 00:02:34,750
-Miss the last boat home, and you’ll need a motel, a friend’s couch, or your car.
+00:01:39,000 --> 00:01:43,500
+Crew shortages, breakdowns, fog and storms can cancel sailings.
 
 24
-00:02:34,750 --> 00:02:39,960
-Your job is in Lakewood, and your shift starts at nine.
+00:01:43,500 --> 00:01:48,000
+Rider alerts warn you, and the boats right after an outage fill up fast.
 
 25
-00:02:39,960 --> 00:02:47,660
-Late arrivals and missed days lower your Job meter. Let it fall too far and you’re fired.
+00:01:48,000 --> 00:01:52,500
+Miss the last boat home, and you’ll need a motel, a friend’s couch, or your car.
 
 26
-00:02:47,660 --> 00:02:52,580
-You can always look for new work in the job listings.
+00:01:52,500 --> 00:01:57,000
+Your job is in Lakewood, and your shift starts at nine.
 
 27
-00:02:52,580 --> 00:02:58,890
-Bills arrive by mail: power, internet, phone and insurance.
+00:01:57,000 --> 00:02:01,500
+Late arrivals and missed days lower your Job meter. Let it fall too far and you’re fired.
 
 28
-00:02:58,890 --> 00:03:07,240
-The credit union app shows what you owe. When cash runs out, essentials can go on your card.
+00:02:01,500 --> 00:02:06,000
+You can always look for new work in the job listings.
 
 29
-00:03:07,240 --> 00:03:13,550
-The island’s only store has closed, so groceries come from the mainland.
+00:02:06,000 --> 00:02:10,500
+Bills arrive by mail: power, internet, phone and insurance.
 
 30
-00:03:13,550 --> 00:03:21,090
-Buy food in Lakewood and keep the pantry stocked. You eat a day of food every night.
+00:02:10,500 --> 00:02:15,000
+The credit union app shows what you owe. When cash runs out, essentials can go on your card.
 
 31
-00:03:21,090 --> 00:03:27,090
-There’s no gas station on the island either, so fill up on the mainland.
+00:02:15,000 --> 00:02:19,500
+The island’s only store has closed, so groceries come from the mainland.
 
 32
-00:03:27,090 --> 00:03:35,730
-Gas cans aren’t allowed on the ferry. In a pinch, Dale sells gas by the gallon, for a price.
+00:02:19,500 --> 00:02:24,000
+Buy food in Lakewood and keep the pantry stocked. You eat a day of food every night.
 
 33
-00:03:35,730 --> 00:03:42,500
-Your phone has messages, calls, an alarm clock, and five apps you choose.
+00:02:24,000 --> 00:02:28,500
+There’s no gas station on the island either, so fill up on the mainland.
 
 34
-00:03:42,500 --> 00:03:49,680
-Ferry alerts, the weather, rides, the credit union and the Island Group are all useful.
+00:02:28,500 --> 00:02:33,000
+Gas cans aren’t allowed on the ferry. In a pinch, Dale sells gas by the gallon, for a price.
 
 35
-00:03:49,680 --> 00:03:56,090
-The island only gets one bar of signal, so installs and calls are slow.
+00:02:33,000 --> 00:02:37,500
+Your phone has messages, calls, an alarm clock, and five apps you choose.
 
 36
-00:03:56,090 --> 00:04:03,310
-The Island Group is the community board. Ask for help there, or help others.
+00:02:37,500 --> 00:02:42,000
+Ferry alerts, the weather, rides, the credit union and the Island Group are all useful.
 
 37
-00:04:03,310 --> 00:04:09,650
-Helping neighbors builds your reputation, and friends do favors in return.
+00:02:42,000 --> 00:02:46,500
+The island only gets one bar of signal, so installs and calls are slow.
 
 38
-00:04:09,650 --> 00:04:16,300
-The To-do tab tracks your shifts, appointments, bills and repairs for the week.
+00:02:46,500 --> 00:02:51,000
+The Island Group is the community board. Ask for help there, or help others.
 
 39
-00:04:16,300 --> 00:04:21,030
-Pin your own priorities, so nothing slips.
+00:02:51,000 --> 00:02:55,500
+Helping neighbors builds your reputation, and friends do favors in return.
 
 40
-00:04:21,030 --> 00:04:27,890
-Your cabin needs care. Chores and repairs keep the Home meter up.
+00:02:55,500 --> 00:03:00,000
+The To-do tab tracks your shifts, appointments, bills and repairs for the week.
 
 41
-00:04:27,890 --> 00:04:34,130
-Ignored jobs turn into floods, leaks and mice, so check what’s due.
+00:03:00,000 --> 00:03:04,500
+Pin your own priorities, so nothing slips.
 
 42
-00:04:34,130 --> 00:04:41,790
-The Your vehicles card shows each car and your boat: where it is, its fuel, battery and tires.
+00:03:04,500 --> 00:03:09,000
+Your cabin needs care. Chores and repairs keep the Home meter up.
 
 43
-00:04:41,790 --> 00:04:48,610
-Each car has its own parts, so a weak battery on one doesn’t affect the others.
+00:03:09,000 --> 00:03:13,500
+Ignored jobs turn into floods, leaks and mice, so check what’s due.
 
 44
-00:04:48,610 --> 00:04:54,470
-Buy a skiff, and cross on your own schedule when the water is calm.
+00:03:13,500 --> 00:03:18,000
+The Your vehicles card shows each car and your boat: where it is, its fuel, battery and tires.
 
 45
-00:04:54,470 --> 00:05:01,380
-Keep it in a slip at the marina, on a trailer in your yard, or on a buoy off your beach.
+00:03:18,000 --> 00:03:22,500
+Each car has its own parts, so a weak battery on one doesn’t affect the others.
 
 46
-00:05:01,380 --> 00:05:06,300
-Each night you go to bed and see a summary of your day.
+00:03:22,500 --> 00:03:27,000
+Buy a skiff, and cross on your own schedule when the water is calm.
 
 47
-00:05:06,300 --> 00:05:12,350
-Set your alarms first, so you don’t oversleep and miss the morning boat.
+00:03:27,000 --> 00:03:31,500
+Keep it in a slip at the marina, on a trailer in your yard, or on a buoy off your beach.
 
 48
-00:05:12,350 --> 00:05:19,980
-Visitor mode flips the game: you live on the mainland and visit for a day, a weekend or a week.
+00:03:31,500 --> 00:03:36,000
+Each night you go to bed and see a summary of your day.
 
 49
-00:05:19,980 --> 00:05:26,290
-See the sights, spend your budget wisely, and catch the last boat home.
+00:03:36,000 --> 00:03:40,500
+Set your alarms first, so you don’t oversleep and miss the morning boat.
 
 50
-00:05:26,290 --> 00:05:32,750
-As a weekend regular, you work in the city and spend your weekends on the island.
+00:03:40,500 --> 00:03:45,000
+As a Visitor, you live on the mainland and come over for a day, a weekend or a week.
 
 51
-00:05:32,750 --> 00:05:38,890
-Save up and make friends, and you might be able to buy a house and move over.
+00:03:45,000 --> 00:03:49,500
+See the sights, spend your budget wisely, and catch the last boat home.
 
 52
-00:05:38,890 --> 00:05:43,830
-At the end you get a score and a summary of your stay.
+00:03:49,500 --> 00:03:54,000
+Visitors have their own difficulty levels: Easy Sunday, Tourist and Missed the Boat.
 
 53
-00:05:43,830 --> 00:05:49,640
-Then try a harder level, a different season, or the story mode.
+00:03:54,000 --> 00:03:58,500
+The top of the screen always shows whether you’re an Islander or a Visitor, and at what level.
 
 54
-00:05:49,640 --> 00:05:56,070
-After each update, the What’s new button on the title screen shows what changed.
+00:03:58,500 --> 00:04:03,000
+As a weekend regular, you work in the city and spend your weekends on the island.
 
 55
-00:05:56,070 --> 00:06:00,630
-You can watch this tutorial there any time.
+00:04:03,000 --> 00:04:07,500
+Save up and make friends, and you might be able to buy a house and move over.
 
 56
-00:06:00,630 --> 00:06:10,850
+00:04:07,500 --> 00:04:12,000
+At the end you get a score and a summary of your stay.
+
+57
+00:04:12,000 --> 00:04:16,500
+Then try a harder level, a different season, or the story mode.
+
+58
+00:04:16,500 --> 00:04:21,000
+After each update, the What’s new button on the title screen shows what changed.
+
+59
+00:04:21,000 --> 00:04:25,500
+You can watch this tutorial there any time.
+
+60
+00:04:25,500 --> 00:04:31,000
 That’s everything you need. Welcome to the island! Play free at krazow.github.io/islandtime
 

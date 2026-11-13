@@ -57,18 +57,18 @@ jobs:
       - name: Package the web app
         run: |
           mkdir -p out
-          cp offline/IslandTime-offline.html out/
-          cp windows/dist/IslandTime-Setup.exe out/
-          zip -qr "out/IslandTime-web-${TAG#v}.zip" index.html sw.js manifest.webmanifest icons fonts .nojekyll
+          cp offline/Island-Time-offline.html out/
+          cp windows/dist/Island-Time-Setup.exe out/
+          zip -qr "out/Island-Time-web-${TAG#v}.zip" index.html sw.js manifest.webmanifest icons fonts .nojekyll
           ls -la out
 
       - name: Write release notes
         run: |
           cat > notes.md <<NOTES
           **Downloads**
-          - **IslandTime-offline.html**: the whole game in one file. Double-click it to play with no internet, no install and no server.
-          - **IslandTime-Setup.exe**: Windows 10/11 installer (per-user, no admin needed). It isn't code-signed, so if SmartScreen warns, choose *More info → Run anyway*.
-          - **IslandTime-web-${TAG#v}.zip**: the installable web app (PWA) for any static host.
+          - **Island-Time-offline.html**: the whole game in one file. Double-click it to play with no internet, no install and no server.
+          - **Island-Time-Setup.exe**: Windows 10/11 installer (per-user, no admin needed). It isn't code-signed, so if SmartScreen warns, choose *More info → Run anyway*.
+          - **Island-Time-web-${TAG#v}.zip**: the installable web app (PWA) for any static host.
 
           Play in a browser: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           NOTES

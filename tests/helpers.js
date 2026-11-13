@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), assert = require('assert');
 const { pathToFileURL } = require('url');
 
 const TARGETS = [{ name: 'index.html', file: path.resolve(__dirname, '..', 'index.html') }];
-const offline = path.resolve(__dirname, '..', 'offline', 'IslandTime-offline.html');
+const offline = path.resolve(__dirname, '..', 'offline', 'Island-Time-offline.html');
 if (fs.existsSync(offline)) TARGETS.push({ name: 'offline', file: offline });
 
 const APP_VERSION_NOW = (/APP_VERSION='([^']+)'/.exec(fs.readFileSync(path.resolve(__dirname, '..', 'src', 'js', '01-core.js'), 'utf8')) || [])[1];
