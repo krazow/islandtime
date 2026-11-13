@@ -13,10 +13,10 @@ module.exports = [
     assert.ok(await page.evaluate(() => WHATSNEW[0].v === APP_VERSION), 'the newest entry is this version');
     assert.match(t, /Earlier releases/);
     assert.ok(await page.$('#mbg .wnvid'), 'a video (or the offline note) for this release');
-    await page.click('#mbg >> text=Close');
-    assert.strictEqual(await page.$('#wnBtn .wndot'), null, 'the new tag goes once read');
+    await page.click('#mbg button.act:has-text("Close")');
+    assert.strictEqual(await page.$$eval('#wnBtn .wndot', e => e.length), 0, 'the new tag goes once read');
     await page.evaluate(() => titleScreen());
-    assert.strictEqual(await page.$('#wnBtn .wndot'), null, 'and stays gone');
+    assert.strictEqual(await page.$$eval('#wnBtn .wndot', e => e.length), 0, 'and stays gone');
     noErrors(errors);
   } },
   { name: 'whats new: every entry has a version, date, title and items, newest first', fn: async ctx => {

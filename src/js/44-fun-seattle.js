@@ -1,8 +1,7 @@
 // ---- 🎟️ going out in Seattle: two restaurants (waterfront seafood, a late-night burger stand) + Pike Place Market, the Space Needle and MOPOP ----
-// Uses defFun() from 40-fun.js. Seattle is a long drive from the Steilacoom ferry (about 35 miles), so for an islander it's a day out;
+// Uses defFun() from 40-fun.js. Seattle is a long drive from the Steilacoom ferry (about 45 miles of I-5), so for an islander it's a day out;
 // for a visitor who lives in Seattle it's close to home. Hours are rough 2026 hours (d: 0 Mon … 6 Sun); prices are 2026 dollars.
-// On the map these sit on the Seattle tab (50-map.js). pos is in drive-time miles (dist() in 00-data.js), so it's squeezed to
-// give about 70 minutes from the Steilacoom ferry, roughly I-5 without a jam.
+// On the map these sit on the Seattle tab (50-map.js). pos is only a fallback: drives to and from Seattle are worked out below.
 defFun({id:'sea_ivars',town:'Seattle',kind:'restaurant',name:'Ivar’s Acres of Clams (Pier 54)',ic:'🐚',
   desc:'Seattle’s waterfront seafood institution since 1938, on Pier 54 over Elliott Bay. Washington State ferries slide past the windows, and outside at the Fish Bar people still feed fries to the gulls.',
   pos:[9.6,23.2],
@@ -43,3 +42,46 @@ defFun({id:'sea_mopop',town:'Seattle',kind:'fun',name:'MOPOP (Museum of Pop Cult
   acts:[
     {l:'See the whole museum',s:'Adult admission about $32. Stress −11.',min:150,cost:32,stress:-11,done:'Guitars, starships and a hallway of horror-movie props. You lose an hour in the sound lab playing drums badly'},
     {l:'Just the music galleries and the sound lab',s:'Same ticket, shorter visit. Stress −8.',min:80,cost:32,stress:-8,done:'You stand under the giant guitar sculpture, then play a song on a real stage with nobody listening'}]});
+
+// ---- realistic drives to and from Seattle (I-5): about 45 miles and 55 minutes from Steilacoom with clear roads,
+// 75–100 minutes in rush hour or Friday traffic. Trips inside Seattle are short city drives. Overrides dist() and the
+// car/rideshare/bus options for any trip with one end in Seattle and the other elsewhere on the South Sound mainland.
+const SEA_HOME_KEYS=['vhome','rwork','rmarket'];
+function seaHere(k){const l=L[k];if(!l||l.side!=='M')return false;if(l.town==='Seattle')return true;
+  return SEA_HOME_KEYS.includes(k)&&typeof visitorOn==='function'&&visitorOn()&&VS().home==='seattle'}
+function seaLL(k){
+  if(typeof MAPLL!=='undefined'&&MAPLL[k])return MAPLL[k];
+  if(SEA_HOME_KEYS.includes(k)&&typeof visitorOn==='function'&&visitorOn()){const h=VS().home;
+    if(typeof MAPHOMELL!=='undefined'&&MAPHOMELL[h]&&MAPHOMELL[h][k])return MAPHOMELL[h][k];
+    if(typeof MAPCITY!=='undefined'&&MAPCITY[h])return MAPCITY[h]}
+  return [47.160,-122.515]}   // anywhere else: Lakewood
+function seaMiles(a,b){const p=seaLL(a),q=seaLL(b),dy=(p[0]-q[0])*69,dx=(p[1]-q[1])*69*Math.cos(p[0]*Math.PI/180);return Math.hypot(dx,dy)}
+const SEA_FREEWAY=(a,b)=>Math.round(seaMiles(a,b)*1.3/55*60+8);     // road miles ≈ 1.3 × straight line, ~55 mph on I-5, plus city streets and parking
+const SEA_CITY=(a,b)=>Math.round(seaMiles(a,b)*1.4/20*60+6);        // Seattle surface streets, ~20 mph
+{const _d=dist;dist=function(a,b){
+  if(a===b)return 0;
+  try{const A=seaHere(a),B=seaHere(b);
+    if(A&&B)return SEA_CITY(a,b);
+    // a visitor's own commute (home, job, store) keeps the visitor drive model (38-visitor-travel.js), which has its own I-5 traffic and crashes
+    if(SEA_HOME_KEYS.includes(a)||SEA_HOME_KEYS.includes(b))return _d(a,b);
+    if((A||B)&&L[a].side==='M'&&L[b].side==='M')return SEA_FREEWAY(a,b)}catch(e){console.error(e)}
+  return _d(a,b)}}
+// I-5 traffic between the South Sound and Seattle: what WSDOT would tell you before you leave
+function seaTraffic(north,t){
+  const d=Math.floor(t/1440)%7,m=t%1440,wk=d<5;let x=5,why='moving at the speed limit';
+  if(wk&&m>=360&&m<570){x=north?35:12;why=north?'slow with morning commuters into Seattle':'a little slow with morning traffic'}
+  else if(wk&&m>=900&&m<1110){x=north?20:40;why=north?'slow with evening traffic':'slow with evening commuters heading south'}
+  if(d===4&&m>=780&&m<1170&&!north&&x<45){x=45;why='jammed with Friday getaway traffic'}
+  if(!wk&&m>=660&&m<1020&&x<12){x=12;why='busy with weekend traffic'}
+  return {min:x,why,txt:x<=5?`WSDOT: I-5 ${north?'northbound':'southbound'} ${why}.`:`WSDOT: I-5 ${north?'northbound':'southbound'} ${why} through Tacoma and Federal Way, +${x} min`};
+}
+{const _to=travelOpts;travelOpts=function(dest){const o=_to(dest);try{
+  const from=S.loc,A=seaHere(from),B=seaHere(dest);
+  if(A===B||L[from].side!=='M'||!L[dest]||L[dest].side!=='M'||SEA_HOME_KEYS.includes(from)||SEA_HOME_KEYS.includes(dest))return o;
+  const base=dist(from,dest),e=seaTraffic(B,S.t);
+  for(const x of o){
+    if(x.m==='car'&&!x.dis){x.min=base+e.min;x.l=`🚗 ${base}${e.min>5?'+'+e.min:''} min`;x.s=e.txt;x.traffic=e.min}
+    else if(x.m==='ride'){const c=Math.round(25+base*1.1);x.min=base+e.min+8;x.cost=c;x.l=S.phone>0?`📱 Rideshare ${x.min}m · $${c}`:'📵 Rideshare (phone dead)';x.s=e.txt}
+    else if(x.m==='walk'){x.dis=true;x.l='🚶 Too far to walk'}
+    else if(x.m==='bus'){x.min=Math.round(base*1.5+25);x.cost=3;x.l=`🚌 Sound Transit express ${x.min}m · $3.00`;x.s='Express bus up I-5, then a short walk.'}}
+}catch(e){console.error(e)}return o}}

@@ -105,8 +105,8 @@ function mapSVG(side,pts,fer,out){
      +`<g font-size="9.5" fill="#9fc0c8" font-family="DM Sans" font-style="italic" text-anchor="middle">${lbl(47.1900,-122.6400,'Puget Sound')}${lbl(47.2700,-122.5600,'Tacoma Narrows')}${lbl(47.2930,-122.4380,'Commencement Bay')}${lbl(47.1230,-122.5640,'American Lake')}</g>`;
     let home='tacoma';try{home=VS().home||home}catch(e){}
     if(visitorOn()&&home!=='tacoma'){const c=MAPCITY[home];if(c){const p=mapXY('M',...c),q=[Math.max(24,Math.min(MAPW-24,p[0])),Math.max(26,Math.min(MAPH.M-26,p[1]))];
-      s+=`<text x="${(q[0]+(p[0]>MAPW/2?-26:26)).toFixed(1)}" y="${(q[1]+(p[1]<0?-6:18)).toFixed(1)}" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="${p[0]>MAPW/2?'end':'start'}">${home==='seattle'?'↑ Seattle, 30 mi':'↙ Olympia, 20 mi'}</text>`}}
-    if(!(visitorOn()&&home==='seattle'))s+=`<text x="${MAPW-10}" y="20" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="end">↑ Seattle, 30 mi (its own tab)</text>`;
+      s+=`<text x="${(q[0]+(p[0]>MAPW/2?-26:26)).toFixed(1)}" y="${(q[1]+(p[1]<0?-6:18)).toFixed(1)}" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="${p[0]>MAPW/2?'end':'start'}">${home==='seattle'?'↑ Seattle, 45 mi up I-5':'↙ Olympia, 20 mi'}</text>`}}
+    if(!(visitorOn()&&home==='seattle'))s+=`<text x="${MAPW-10}" y="20" font-size="9.5" font-weight="700" fill="#f4f1ea" font-family="DM Sans" text-anchor="end">↑ Seattle, 45 mi up I-5 (its own tab)</text>`;
     dock=pts.stDock||mapXY('M',...MAPLL.stDock);edge=mapXY('M',...MAPLL.aiDock);
   }
   s+=`<g font-size="8" fill="#f4f1ea" font-family="DM Sans" opacity=".55"><text x="${MAPW-6}" y="${H-6}" text-anchor="end">Shoreline: GSHHG</text><text x="10" y="18" font-size="11" font-weight="700">N ↑</text></g>`;

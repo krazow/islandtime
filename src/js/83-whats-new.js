@@ -8,7 +8,7 @@ const WHATSNEW=[
     'The title screen’s Start a new week button is now Start a new game.',
     'It asks how you want to play: live on the island (a week, a month or story mode), visit the island, be a weekend regular, or take the weekly or daily challenge.',
     'The separate Visit the island button is gone; it’s one of the choices now.',
-    'Going out in Seattle: Ivar’s Acres of Clams on the waterfront, Dick’s Drive-In on Capitol Hill, Pike Place Market, the Space Needle and MOPOP. About 70 minutes from the Steilacoom ferry, on a new Seattle map tab.',
+    'Going out in Seattle: Ivar’s Acres of Clams on the waterfront, Dick’s Drive-In on Capitol Hill, Pike Place Market, the Space Needle and MOPOP. It’s a real I-5 drive from the Steilacoom ferry: about 55 minutes with clear roads, closer to an hour and a half in rush hour or Friday traffic. They’re on a new Seattle map tab. A visitor who lives in Seattle also drives about an hour to the ferry now, not 76 minutes.',
     'Fixed: visitors staying at the rental cabin were warned about the “last boat home” to the island. Their home is on the mainland, so the warning now says “last boat back to the island”.']},
   {v:'1.22.2',date:'Nov 12, 2026',title:'A video tutorial',video:WN_TUTORIAL,items:[
     'A subtitled video tutorial that walks through the whole game: starting out, the screen, the ferry, work and money, food and gas, the phone, your house, friends, vehicles, the boat, visiting, and how a game ends.',

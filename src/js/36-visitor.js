@@ -16,7 +16,7 @@ const VISIT_LENS={
   regular:{n:'Weekend regular', ic:'📅', nights:2, d:'A month in your city: job on weekdays, rent on Sundays, the island every weekend. Become an islander.'},   // 44-regular.js
 };
 const VISIT_HOMES={
-  seattle:{n:'Seattle', ic:'🏙️', mi:55, i5:1,    d:'About 55 miles up I-5. The worst traffic.'},
+  seattle:{n:'Seattle', ic:'🏙️', mi:42, i5:1,    d:'About 45 miles up I-5, an hour with clear roads. The worst traffic.'},   // 42 → ~59 min at the 45-mph model
   tacoma: {n:'Tacoma',  ic:'🌉', mi:15, i5:0.5,  d:'About 15 miles. A short drive, some I-5 traffic.'},
   olympia:{n:'Olympia', ic:'🏛️', mi:25, i5:0.35, d:'About 25 miles south. Lighter traffic.'},
 };

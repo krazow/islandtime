@@ -106,14 +106,19 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => document.querySelectorAll('.maptabs button').length), 3, 'Tacoma is on the mainland map; the Seattle tab is always there');
     noErrors(errors);
   } },
-  { name: 'Seattle places to go out: on everyone’s Seattle tab, about 70 minutes from the Steilacoom ferry', fn: async ctx => {
+  { name: 'Seattle places to go out: on everyone’s Seattle tab, a realistic I-5 drive from the Steilacoom ferry', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await newGame(page);
     const r = await page.evaluate(() => { S.loc = 'stDock'; S.cars[0].loc = 'stDock'; S.cars[0].fuel = 10;
       const ks = Object.keys(FUN).filter(k => FUN[k].town === 'Seattle');
       return { n: ks.length, rest: ks.filter(k => FUN[k].kind === 'restaurant').length, panels: ks.map(mapPanel), drive: dist('stDock', 'sea_pike') }; });
     assert.strictEqual(r.n, 5); assert.strictEqual(r.rest, 2); assert.ok(r.panels.every(p => p === 'S'), r.panels.join());
-    assert.ok(r.drive >= 60 && r.drive <= 85, 'drive ' + r.drive);
+    assert.ok(r.drive >= 45 && r.drive <= 65, 'drive ' + r.drive);   // ~45 miles of I-5 with clear roads
+    const t = await page.evaluate(() => { S.week.b = []; S.cars[0].fuel = 12; const at = (d, m, from, to) => { S.loc = from; S.cars[0].loc = from; S.cur = d; S.t = d * 1440 + m; const c = travelOpts(to).find(x => x.m === 'car'); return c && c.min; };
+      return { sunday: at(6, 540, 'stDock', 'sea_pike'), monAM: at(0, 420, 'stDock', 'sea_pike'), friPM: at(4, 960, 'sea_pike', 'stDock'), inCity: at(2, 800, 'sea_pike', 'sea_dicks') }; });
+    assert.ok(t.monAM >= t.sunday + 25, JSON.stringify(t));
+    assert.ok(t.friPM >= 90, JSON.stringify(t));
+    assert.ok(t.inCity <= 20, JSON.stringify(t));
     await page.evaluate(() => { setPref('goOpen', true); MAPPREF(true); });
     assert.match(await page.textContent('.maptabs'), /Seattle/);
     await page.click('.maptabs button:has-text("Seattle")');

@@ -29,7 +29,7 @@ module.exports = [
       }
       return out;
     });
-    assert.ok(r.seattle >= 70 && r.seattle <= 80, 'seattle ' + r.seattle);
+    assert.ok(r.seattle >= 55 && r.seattle <= 65, 'seattle ' + r.seattle);   // about an hour up I-5 with clear roads
     assert.ok(r.tacoma >= 20 && r.tacoma <= 28, 'tacoma ' + r.tacoma);
     assert.ok(r.olympia >= 32 && r.olympia <= 40, 'olympia ' + r.olympia);
     assert.ok(r.seattleFuel > r.olympiaFuel && r.olympiaFuel > r.tacomaFuel && r.tacomaFuel > 0.4);
@@ -59,7 +59,7 @@ module.exports = [
     assert.ok(r.oly < r.am);
     assert.match(r.sub, /WSDOT: I-5 southbound/);
     assert.ok(r.rushSpent > r.calmSpent + 15, JSON.stringify(r));
-    assert.ok(r.crashSpent >= 76 + 30, 'crash ' + r.crashSpent);
+    assert.ok(r.crashSpent >= 59 + 30, 'crash ' + r.crashSpent);
     noErrors(errors);
   } },
   { name: 'visitor travel: packing food adds carried food, capped by visit length', fn: async ctx => {
