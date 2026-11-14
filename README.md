@@ -547,7 +547,17 @@ Don't edit `index.html` directly: the next build overwrites it, and the Tests wo
 
 **Windows installer:** `windows/build.sh` builds it from any OS. It needs Go 1.21+ and Python 3 with Pillow.
 
-**Releases:** push a tag such as `git tag v1.3.2 && git push origin v1.3.2`. The [Release workflow](.github/workflows/release.yml) builds the offline file, the Windows installer and the web-app zip, then publishes them as a GitHub Release.
+**Tests** run on every pull request and push to `main` ([CI](.github/workflows/ci.yml)), using the shared [Krazow release kit](https://github.com/krazow/release-kit).
+
+## Releasing
+
+Type **`/releasenow`** in a Claude chat on this repo. It bumps `VERSION`, writes the `CHANGELOG.md` entry and pushes a beta tag; GitHub then tests and builds everything with the shared [Krazow release kit](https://github.com/krazow/release-kit):
+
+- **Beta:** the game at https://krazow.github.io/islandtime/beta/ (its own saves, so testers' real games are safe), a pre-release with the Android beta APK.
+- **`/releasenow promote`:** the same version goes to https://krazow.github.io/islandtime/ and the Latest release: the Android APK, `Island-Time-Setup.exe`, `Island-Time-offline.html` and the web-app zip.
+- `/releasenow all` does both in one go; `/releasenow status` and `/releasenow rollback` are there too.
+
+Pushing to `main` no longer changes the live game: only a promoted release does. Bump `APP_VERSION` in `src/js/01-core.js` and the What's new entry as before; `/releasenow` keeps `VERSION` in step. See [release.json](release.json) for the platforms this game builds.
 
 ## Credits
 
