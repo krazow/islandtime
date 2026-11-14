@@ -1,82 +1,27 @@
-# Builds the downloads and publishes a GitHub Release whenever a version tag (v1.2.3) is pushed.
-# Can also be run by hand from the Actions tab ("Run workflow") with a tag name.
+# Releases this app with the shared Krazow release kit (github.com/krazow/release-kit).
+# Don't run this by hand: type /releasenow in a Claude chat on this repo. It pushes one of these branches:
+#   release/beta -> the next beta      release/production -> promote that beta      release/rollback/v1.2.3 -> put v1.2.3 back
+# (Pushing tags v1.2.3-beta.1 / v1.2.3 works too.) The pipeline makes the release tags itself.
 name: Release
 
 on:
   push:
+    branches: ['release/**']
     tags: ['v*']
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Tag to release (e.g. v1.3.1)'
+      rollback_to:
+        description: 'Production version to put back, like v1.2.3'
         required: true
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    env:
-      TAG: ${{ github.event.inputs.tag || github.ref_name }}
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Check the tag looks like v1.2.3 and matches the game version
-        run: |
-          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Tag '$TAG' should look like v1.2.3 (three numbers separated by dots)."; exit 1
-          fi
-
-      - uses: actions/checkout@v4
-
-      - name: Make sure the tag matches APP_VERSION in index.html
-        run: |
-          V=$(grep -o "APP_VERSION='[^']*'" index.html | cut -d"'" -f2)
-          if [ "v$V" != "$TAG" ]; then echo "::error::Tag $TAG doesn't match the game version v$V in index.html."; exit 1; fi
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Pillow (for the Windows icon)
-        run: pip install pillow
-
-      - name: Build index.html from src/
-        run: python3 tools/build.py
-
-      - name: Build the single-file offline game
-        run: python3 tools/build-offline.py
-
-      - name: Build the Windows installer
-        run: bash windows/build.sh
-
-      - name: Package the web app
-        run: |
-          mkdir -p out
-          cp offline/Island-Time-offline.html out/
-          cp windows/dist/Island-Time-Setup.exe out/
-          zip -qr "out/Island-Time-web-${TAG#v}.zip" index.html sw.js manifest.webmanifest icons fonts .nojekyll
-          ls -la out
-
-      - name: Write release notes
-        run: |
-          cat > notes.md <<NOTES
-          **Downloads**
-          - **Island-Time-offline.html**: the whole game in one file. Double-click it to play with no internet, no install and no server.
-          - **Island-Time-Setup.exe**: Windows 10/11 installer (per-user, no admin needed). It isn't code-signed, so if SmartScreen warns, choose *More info → Run anyway*.
-          - **Island-Time-web-${TAG#v}.zip**: the installable web app (PWA) for any static host.
-
-          Play in a browser: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
-          NOTES
-
-      - name: Publish release
-        run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" out/* --clobber
-          else
-            gh release create "$TAG" out/* --title "Island Time ${TAG#v}" --notes-file notes.md --target "$GITHUB_SHA"
-          fi
+    uses: krazow/release-kit/.github/workflows/pipeline.yml@v1
+    with:
+      rollback_to: ${{ inputs.rollback_to || '' }}
+    secrets: inherit

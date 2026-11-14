@@ -1,5 +1,7 @@
 // Island Time service worker: offline-first app shell, runtime-cached fonts.
-const VERSION = 'islandtime-1.25.0';
+const CACHE_PREFIX = 'islandtime-';          // the release kit makes this 'islandtimebeta-' in the beta
+const VERSION = CACHE_PREFIX + '1.25.0';       // the release kit stamps the version in
+const FONTS = 'islandtime-fonts';              // kept across versions
 const SHELL = ['./', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
   'icons/apple-touch-icon.png', 'icons/favicon-32.png',
@@ -10,7 +12,7 @@ self.addEventListener('install', e => {
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k.startsWith('islandtime-') && k !== VERSION && k !== 'islandtime-fonts').map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== VERSION && k !== FONTS).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {
@@ -19,7 +21,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Google Fonts: cache after first online load so the game looks right offline.
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    e.respondWith(caches.open('islandtime-fonts').then(async c => {
+    e.respondWith(caches.open(FONTS).then(async c => {
       const hit = await c.match(req);
       const net = fetch(req).then(r => { if (r.ok || r.type === 'opaque') c.put(req, r.clone()); return r; }).catch(() => hit);
       return hit || net;
