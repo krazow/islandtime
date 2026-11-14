@@ -41,6 +41,14 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.25.0: updates find you, and delete from the start page
+
+- ⬆️ **Update notice for downloaded copies:** the offline file and the Windows app check the website's `version.json` when they start (online only). If a newer version is out you get *Download*, *Later* (ask tomorrow) or *Skip this version*, with how to keep your saved games. Turn it off in ⚙️ Settings › *Check for updates*. The website and the app installed from it update themselves, as before.
+- 🪟 **The Windows app stays current:** online, it opens the latest version from the website; the first time it brings every saved game, your name, settings and badges along (in the address's `#` part, which never leaves your computer; nothing already on the website is overwritten). Offline it opens its own copy, which the launcher now updates quietly in the background by running the latest installer with `--quiet`.
+- 🪟 The installer now shows the right version in Windows' Apps list (it always said 1.3.1), and writes `game\version.txt`.
+- 🗑️ **Delete from the start page:** each saved game has a 🗑️ beside its *Continue* button. It asks first.
+- Windows apps installed before 1.25.0 don't have the updater yet: install `Island-Time-Setup.exe` once more over the old one (don't uninstall first, so your games stay).
+
 ### New in 1.24.1: one menu on the start page
 
 - ☰ **One menu:** the start page's extra buttons (the weekly and daily challenges, Collections, Transfer a saved game, About Island Time) are now a single *Menu* button at the bottom. Its list opens upward over the page, so the start page still fits on one screen; tap outside or press Esc to close it. The Islander and Visitor cards keep Continue, Saves and 1 week / 1 month / 1 year.

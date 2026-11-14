@@ -11,5 +11,6 @@ mkdir -p setup/payload dist
 cp ../index.html setup/payload/index.html
 cp ../fonts/fraunces-latin-600-normal.woff2 setup/payload/
 cp icon.ico setup/payload/
-(cd setup && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../dist/Island-Time-Setup.exe .)
-echo "Built windows/dist/Island-Time-Setup.exe"
+VER=$(grep -o "APP_VERSION='[0-9.]*'" ../src/js/01-core.js | grep -o "[0-9][0-9.]*")
+(cd setup && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w -X main.version=$VER" -o ../dist/Island-Time-Setup.exe .)
+echo "Built windows/dist/Island-Time-Setup.exe ($VER)"

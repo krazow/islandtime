@@ -4,6 +4,12 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.25.0',date:'Nov 13, 2026',title:'Updates find you, and delete from the start page',video:'tour/whatsnew-1.25.0.mp4',items:[
+    'Playing a downloaded copy (the offline file or the Windows app)? When a newer version is out, the game tells you when it starts, with a download button, Later, or Skip this version. Turn it off in ⚙️ Settings, Check for updates.',
+    'The Windows app now opens the latest version from the website whenever you’re online, so you don’t need to reinstall again. The first time, it brings all your saved games, your name, settings and badges along.',
+    'Offline, the Windows app opens its own copy, which now updates itself quietly in the background.',
+    'The Windows installer shows the right version in Settings › Apps (it always said 1.3.1).',
+    'Each saved game on the start page has a 🗑️ beside Continue to delete it. It asks first.']},
   {v:'1.24.1',date:'Nov 13, 2026',title:'One menu on the start page',video:'tour/whatsnew-1.24.1.mp4',items:[
     'The start page’s extra buttons are now one ☰ Menu at the bottom: the weekly and daily challenges, Collections, Transfer a saved game, and About Island Time.',
     'The list opens upward over the page, so the start page still fits on one screen. Tap outside it, or press Esc, to close it.',

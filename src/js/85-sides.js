@@ -71,7 +71,7 @@ if(typeof dailyStartModal==='function')dailyStartModal=sideGuard('I',dailyStartM
 // ---- title screen: a card for each group, with Continue, Saves and 1 week / 1 month / 1 year right on it (86-start.js starts them) ----
 const SIDE_LINE={I:'Live on the island: work, the ferry, the house.',V:'Come over from the city: a visit, or weekends.'};
 function sideCard(side){const s=SIDES[side],b=sideLatest(side),n=sideSaves(side).length;
-  const cont=b?(()=>{const x=b.d.S;return `<button class="big scont" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${x.visitor&&x.visitor.year?`Month ${(x.visitor.year.m|0)+1} of 4 · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button>`})():'';
+  const cont=b?(()=>{const x=b.d.S;return `<div class="scrow"><button class="big scont" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${x.visitor&&x.visitor.year?`Month ${(x.visitor.year.m|0)+1} of 4 · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button><button class="sdel" onclick="slotAct(${b.n},'del','title')" aria-label="Delete this saved game" title="Delete this saved game">🗑️</button></div>`})():'';
   return `<div class="side" id="side${side}"><div class="shead"><span class="sh">${s.ic} ${s.n}</span><button class="schip" onclick="slotsModal('${side}')">💾 Saves (${n} of 3)</button></div>
     <div class="sd">${SIDE_LINE[side]}</div>${cont}
     <div class="slen" role="group" aria-label="Start a new ${s.n.toLowerCase()} game">${['week','month','year'].map(k=>`<button onclick="startLen('${side}','${k}')" title="${esc(START_LENS[side][k].d)}"><b>1 ${k}</b><span>${START_LENS[side][k].s}</span></button>`).join('')}</div></div>`}
@@ -109,7 +109,8 @@ document.addEventListener('keydown',e=>{const d=document.getElementById('tmenu')
 .side .shead{display:flex;align-items:center;justify-content:space-between;gap:8px}.side .sh{font-family:var(--disp,inherit);font-weight:700;font-size:18px}
 .side .schip{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;margin:0!important;width:auto}
 .side .sd{font-size:12.5px;opacity:.8;margin-top:-3px}
-.side .scont{margin:0!important;width:100%;font-size:14px;padding:9px 10px;line-height:1.25}
+.side .scrow{display:flex;gap:6px;align-items:stretch}.side .sdel{margin:0;flex:0 0 46px;border-radius:12px;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer}.side .sdel:hover,.side .sdel:focus-visible{background:rgba(200,60,40,.45)}
+.side .scont{margin:0!important;flex:1;width:auto;font-size:14px;padding:9px 10px;line-height:1.25}
 .side .slen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .side .slen button{margin:0;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-height:44px}
 .side .slen button b{font-size:14px}.side .slen button span{font-size:10.5px;opacity:.8;line-height:1.15;text-align:center}

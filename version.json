@@ -1,0 +1,8 @@
+{
+ "version": "1.25.0",
+ "date": "Nov 13, 2026",
+ "title": "Updates find you, and delete from the start page",
+ "installer": "https://github.com/krazow/islandtime/releases/latest/download/Island-Time-Setup.exe",
+ "offline": "https://krazow.github.io/islandtime/offline/Island-Time-offline.html",
+ "web": "https://krazow.github.io/islandtime/"
+}

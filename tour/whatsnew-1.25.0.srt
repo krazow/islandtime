@@ -1,0 +1,40 @@
+1
+00:00:00,000 --> 00:00:04,500
+What’s new in Island Time 1.25.0, shown with mock game data.
+
+2
+00:00:04,500 --> 00:00:09,000
+Playing a downloaded copy? When a newer version is out, the game tells you when it starts.
+
+3
+00:00:09,000 --> 00:00:13,500
+Download it, ask again later, or skip that version. You can turn this off in Settings.
+
+4
+00:00:13,500 --> 00:00:18,000
+The Windows app now opens the latest version whenever you’re online, so you don’t need to reinstall.
+
+5
+00:00:18,000 --> 00:00:22,500
+The first time, your saved games, name and settings come along. Offline, its own copy updates itself.
+
+6
+00:00:22,500 --> 00:00:27,000
+Each saved game on the start page now has a delete button beside Continue.
+
+7
+00:00:27,000 --> 00:00:31,500
+Tap it to delete that game.
+
+8
+00:00:31,500 --> 00:00:36,000
+It always asks first, because a deleted game can’t be brought back.
+
+9
+00:00:36,000 --> 00:00:40,500
+To keep a copy, use Transfer a saved game in the Menu first.
+
+10
+00:00:40,500 --> 00:00:46,000
+Play free in your browser at krazow.github.io/islandtime
+

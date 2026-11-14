@@ -109,11 +109,11 @@ window.slotsModal=(side,note)=>{const cur=curSlot();side=side==='I'||side==='V'?
     <div style="display:flex;gap:6px;margin-top:8px">${i&&!i.broken?`<button style="${SLOTBTN};background:var(--buoy);color:#fff;border-color:var(--buoy)" onclick="slotAct(${n},'cont')">Continue</button>`:''}<button style="${SLOTBTN}" onclick="slotAct(${n},'new')">Start new here</button>${i?`<button style="${SLOTBTN};color:var(--bad)" onclick="slotAct(${n},'del')">Delete</button>`:''}</div></div>`}).join(''),
   [{l:`${SIDES[o].ic} ${SIDES[o].n} saves`,fn:()=>slotsModal(o)},{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}]);
 };
-window.slotAct=(n,a)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n),side=slotSide(n);
+window.slotAct=(n,a,from)=>{const el=document.getElementById('mbg');el&&el.remove();const i=slotInfo(n),side=slotSide(n);
   if(a==='cont'){setSlot(n);return resumeGame()}
   if(a==='new'){const go=()=>{setSlot(n);titleScreen();newGameModal(side)};
     return i?modal(`Start over in ${slotName(n).toLowerCase()}?`,`<p>The saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}) will be replaced when you start.</p>`,[{l:'Start a new game here',fn:go},{l:'Cancel',fn:()=>slotsModal(side)}]):go()}
-  if(a==='del') modal(`🗑️ Delete ${slotName(n).toLowerCase()}?`,`<p>This erases the saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();slotsModal(side)}},{l:'Cancel',fn:()=>slotsModal(side)}]);
+  if(a==='del') modal(`🗑️ Delete ${slotName(n).toLowerCase()}?`,`<p>This erases the saved game in ${slotName(n).toLowerCase()} (${slotLine(i)}). It can’t be undone.</p>`,[{l:'Delete it',fn:()=>{const ls=store();if(ls)slotKeys(n).forEach(k=>ls.removeItem(k));titleScreen();if(from!=='title')slotsModal(side)}},{l:'Cancel',fn:()=>{if(from!=='title')slotsModal(side)}}]);
 };
 function slotSwitchModal(){const cur=curSlot();
   modal('💾 Save slot',`<p>You’re playing in <b>${SIDES[slotSide(cur)].ic} ${slotName(cur).toLowerCase()}</b>. Your game is saved before you switch.</p>`,[

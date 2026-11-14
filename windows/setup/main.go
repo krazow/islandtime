@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -25,11 +26,11 @@ var iconICO []byte
 var fontWOFF2 []byte
 
 const appName = "Island Time Setup"
-const version = "1.3.1"
+var version = "dev" // set by windows/build.sh: -ldflags "-X main.version=<APP_VERSION>"
 
 var msgBox = syscall.NewLazyDLL("user32.dll").NewProc("MessageBoxW")
 
-func box(text string, flags uintptr) int {
+var box = func(text string, flags uintptr) int {
 	t, _ := syscall.UTF16PtrFromString(text)
 	c, _ := syscall.UTF16PtrFromString(appName)
 	r, _, _ := msgBox.Call(0, uintptr(unsafe.Pointer(t)), uintptr(unsafe.Pointer(c)), flags)
@@ -78,7 +79,18 @@ func b64(b []byte) string {
 }
 
 func main() {
-	if box("Install Island Time "+version+"?\n\nA week of living on Anderson Island, WA: ferries, breakdowns, groceries, trading, and no gas on the island.\n\nIt installs for your user account only (no admin needed) and adds Start menu and desktop shortcuts.", 0x4|0x40) != 6 {
+	// --quiet: an update started by the launcher (windows/launcher/update.go). No questions, no "Play now"; it waits for
+	// the launcher to let go of IslandTime.exe, and says nothing if it can't finish (the old copy keeps working).
+	quiet := false
+	for _, a := range os.Args[1:] {
+		if strings.EqualFold(a, "--quiet") {
+			quiet = true
+		}
+	}
+	if quiet {
+		box = func(string, uintptr) int { return 6 }
+	}
+	if !quiet && box("Install Island Time "+version+"?\n\nA week of living on Anderson Island, WA: ferries, breakdowns, groceries, trading, and no gas on the island.\n\nIt installs for your user account only (no admin needed) and adds Start menu and desktop shortcuts.", 0x4|0x40) != 6 {
 		return
 	}
 	la := os.Getenv("LOCALAPPDATA")
@@ -94,13 +106,21 @@ func main() {
 		ico:                                      iconICO,
 		filepath.Join(dir, "game", "index.html"): gameHTML,
 		filepath.Join(dir, "game", "fonts", "fraunces-latin-600-normal.woff2"): fontWOFF2,
+		filepath.Join(dir, "game", "version.txt"):                              []byte(version + "\n"),
 	}
 	for p, data := range files {
 		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 			box("Install failed: "+err.Error(), 0x10)
 			return
 		}
-		if err := os.WriteFile(p, data, 0o755); err != nil {
+		var err error
+		for try := 0; try < 30; try++ { // in an update the launcher may still be closing
+			if err = os.WriteFile(p, data, 0o755); err == nil || !quiet {
+				break
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+		if err != nil {
 			box("Install failed (is Island Time running? Close it and try again):\n"+err.Error(), 0x10)
 			return
 		}
@@ -128,6 +148,9 @@ New-ItemProperty -Path $k -Name EstimatedSize -Value %[7]d -PropertyType DWord -
 		psQuote(exe), psQuote(dir), psQuote(ico), psQuote(reg), psQuote(version), psQuote(`"`+exe+`" --uninstall`), size)
 	if err := runPS(script); err != nil {
 		box("Island Time was installed to:\n"+dir+"\n\nbut the shortcuts couldn't be created. You can start the game by running IslandTime.exe in that folder.", 0x30)
+	}
+	if quiet {
+		return
 	}
 	if box("Island Time is installed!\n\nYou'll find it in the Start menu and on your desktop. To remove it, use Settings > Apps.\n\nPlay now?", 0x4|0x40) == 6 {
 		exec.Command(exe).Start()

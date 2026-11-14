@@ -129,13 +129,15 @@ func main() {
 		box("The game files are missing. Please run the Island Time installer again.", 0x10)
 		return
 	}
-	u := (&url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(page)}).String()
+	// ?app=win tells the game it is the Windows app: online, it moves on to the live website (src/js/87-update.js)
+	u := (&url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(page), RawQuery: "app=win"}).String()
 	if b := findBrowser(); b != "" {
 		profile := filepath.Join(os.Getenv("LOCALAPPDATA"), "IslandTime", "profile")
 		os.MkdirAll(profile, 0o755)
 		cmd := exec.Command(b, "--app="+u, "--user-data-dir="+profile, "--window-size=500,940",
 			"--no-first-run", "--no-default-browser-check", "--disable-features=Translate")
 		if cmd.Start() == nil {
+			selfUpdate(dir) // keep the offline copy current; runs while the game is open, then the launcher exits
 			return
 		}
 	}
