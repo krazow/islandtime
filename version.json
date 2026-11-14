@@ -1,7 +1,7 @@
 {
- "version": "1.25.0",
- "date": "Nov 13, 2026",
- "title": "Updates find you, and delete from the start page",
+ "version": "1.25.1",
+ "date": "Nov 14, 2026",
+ "title": "Island Time for Android, and a beta for testers",
  "installer": "https://github.com/krazow/islandtime/releases/latest/download/Island-Time-Setup.exe",
  "offline": "https://krazow.github.io/islandtime/offline/Island-Time-offline.html",
  "web": "https://krazow.github.io/islandtime/"

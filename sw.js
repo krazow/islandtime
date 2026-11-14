@@ -1,6 +1,6 @@
 // Island Time service worker: offline-first app shell, runtime-cached fonts.
 const CACHE_PREFIX = 'islandtime-';          // the release kit makes this 'islandtimebeta-' in the beta
-const VERSION = CACHE_PREFIX + '1.25.0';       // the release kit stamps the version in
+const VERSION = CACHE_PREFIX + '1.25.1';       // the release kit stamps the version in
 const FONTS = 'islandtime-fonts';              // kept across versions
 const SHELL = ['./', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',

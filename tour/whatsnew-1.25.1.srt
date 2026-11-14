@@ -1,0 +1,24 @@
+1
+00:00:00,000 --> 00:00:04,500
+What’s new in Island Time 1.25.1, shown with mock game data.
+
+2
+00:00:04,500 --> 00:00:09,000
+Island Time now comes as an Android app too.
+
+3
+00:00:09,000 --> 00:00:13,500
+Every release has the APK on its GitHub release page, next to the Windows installer and the offline file.
+
+4
+00:00:13,500 --> 00:00:18,000
+New versions now go to testers first, on a beta page of their own.
+
+5
+00:00:18,000 --> 00:00:22,500
+The beta keeps its own saved games, so trying it never touches your real ones.
+
+6
+00:00:22,500 --> 00:00:28,000
+Play free in your browser at krazow.github.io/islandtime
+

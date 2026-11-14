@@ -4,6 +4,10 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.25.1',date:'Nov 14, 2026',title:'Island Time for Android, and a beta for testers',video:'tour/whatsnew-1.25.1.mp4',items:[
+    'An Android app: every release now has an Android download (APK) on its GitHub release page, next to the Windows installer and the offline file.',
+    'New versions go to testers first, at krazow.github.io/islandtime/beta/. The beta keeps its own saved games, so trying it never touches your real ones.',
+    'Behind the scenes: the game’s offline copy only ever clears its own files, never another app’s.']},
   {v:'1.25.0',date:'Nov 13, 2026',title:'Updates find you, and delete from the start page',video:'tour/whatsnew-1.25.0.mp4',items:[
     'Playing a downloaded copy (the offline file or the Windows app)? When a newer version is out, the game tells you when it starts, with a download button, Later, or Skip this version. Turn it off in ⚙️ Settings, Check for updates.',
     'The Windows app now opens the latest version from the website whenever you’re online, so you don’t need to reinstall again. The first time, it brings all your saved games, your name, settings and badges along.',
