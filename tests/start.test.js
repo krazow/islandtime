@@ -14,6 +14,11 @@ module.exports = [
       const r = await page.evaluate(() => ({ sh: document.scrollingElement.scrollHeight, ih: innerHeight, conts: document.querySelectorAll('.side .scont').length, lens: document.querySelectorAll('.side .slen button').length, ul: !!document.querySelector('.title ul') }));
       assert.ok(r.sh <= r.ih, `${w}x${h}: ${r.sh} > ${r.ih}`);
       assert.strictEqual(r.conts, 2); assert.strictEqual(r.lens, 6); assert.ok(!r.ul, 'the long description moved to About');
+      await page.click('#menuBtn');
+      const m = await page.evaluate(() => ({ sh: document.scrollingElement.scrollHeight, items: [...document.querySelectorAll('#tmenu .tlist button')].filter(b => b.offsetParent).map(b => b.id) }));
+      assert.ok(m.sh <= r.ih, 'the open menu drops up over the page');
+      for (const id of ['chBtn', 'dayBtn', 'colBtn', 'trBtn', 'aboutBtn']) assert.ok(m.items.includes(id), id + ' in the menu');
+      await page.click('#menuBtn');
     }
     noErrors(errors);
   } },

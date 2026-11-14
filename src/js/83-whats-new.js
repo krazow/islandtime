@@ -4,6 +4,10 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.24.1',date:'Nov 13, 2026',title:'One menu on the start page',video:'tour/whatsnew-1.24.1.mp4',items:[
+    'The start page’s extra buttons are now one ☰ Menu at the bottom: the weekly and daily challenges, Collections, Transfer a saved game, and About Island Time.',
+    'The list opens upward over the page, so the start page still fits on one screen. Tap outside it, or press Esc, to close it.',
+    'The Islander and Visitor cards keep their Continue, Saves and 1 week / 1 month / 1 year buttons.']},
   {v:'1.24.0',date:'Nov 13, 2026',title:'Pick how long you play, right on the start page',video:'tour/whatsnew-1.24.0.mp4',items:[
     'The start page fits on one screen. Each card, 🏝️ Islander and 🧳 Visitor, has Continue, Saves, and three buttons to start a new game: 1 week, 1 month or 1 year.',
     'Islander: a week, a month (the co-op drive), or a year in story mode.',

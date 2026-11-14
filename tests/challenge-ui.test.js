@@ -85,7 +85,7 @@ module.exports = [
   { name: 'title screen has the weekly challenge button and modal', fn: async ctx => {
     const { page, errors } = await open(ctx);
     assert(/Weekly challenge · Week of/.test(await page.textContent('#chBtn')));
-    await page.click('#chBtn');
+    await page.click('#menuBtn'); await page.click('#chBtn');
     await page.waitForSelector('#mbg');
     const t = await page.textContent('.modal');
     assert(/same weather, outages and prices/.test(t) && /Compare scores/.test(t) && /Never mind/.test(t));

@@ -41,6 +41,10 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
+### New in 1.24.1: one menu on the start page
+
+- ☰ **One menu:** the start page's extra buttons (the weekly and daily challenges, Collections, Transfer a saved game, About Island Time) are now a single *Menu* button at the bottom. Its list opens upward over the page, so the start page still fits on one screen; tap outside or press Esc to close it. The Islander and Visitor cards keep Continue, Saves and 1 week / 1 month / 1 year.
+
 ### New in 1.24.0: pick how long you play, right on the start page
 
 - ⛴️ **A one-screen start page.** Each card, 🏝️ Islander and 🧳 Visitor, has *Continue*, *Saves* and three buttons to start a new game: **1 week**, **1 month** or **1 year**. It fits a phone screen without scrolling.

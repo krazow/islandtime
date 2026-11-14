@@ -4,8 +4,8 @@ module.exports = [
   { name: 'whats new: ℹ️ About on the title has a new tag; What’s new inside it opens this version’s changes, earlier releases below', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await page.evaluate(() => { MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); localStorage.removeItem('islandtime-wn-seen'); titleScreen(); });
-    assert.match(await page.textContent('#aboutBtn'), /About.*new/);
-    await page.click('#aboutBtn');
+    assert.match(await page.textContent('#menuBtn'), /Menu.*new/); assert.match(await page.textContent('#aboutBtn'), /About.*new/);
+    await page.click('#menuBtn'); await page.click('#aboutBtn');
     const a = await page.textContent('#mbg');
     assert.match(a, /About Island Time/); assert.match(a, /Islander/); assert.match(a, /Visitor/); assert.match(a, /1 year/); assert.match(a, /Missed the Boat/);
     assert.match(await page.textContent('#wnBtn'), new RegExp('What’s new in ' + (await page.evaluate(() => APP_VERSION)).replace(/\./g, '\\.')));

@@ -535,7 +535,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.24.0', SAVE_SCHEMA=7;
+const APP_VERSION='1.24.1', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -10256,6 +10256,10 @@ Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_pho
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
+  {v:'1.24.1',date:'Nov 13, 2026',title:'One menu on the start page',video:'tour/whatsnew-1.24.1.mp4',items:[
+    'The start page’s extra buttons are now one ☰ Menu at the bottom: the weekly and daily challenges, Collections, Transfer a saved game, and About Island Time.',
+    'The list opens upward over the page, so the start page still fits on one screen. Tap outside it, or press Esc, to close it.',
+    'The Islander and Visitor cards keep their Continue, Saves and 1 week / 1 month / 1 year buttons.']},
   {v:'1.24.0',date:'Nov 13, 2026',title:'Pick how long you play, right on the start page',video:'tour/whatsnew-1.24.0.mp4',items:[
     'The start page fits on one screen. Each card, 🏝️ Islander and 🧳 Visitor, has Continue, Saves, and three buttons to start a new game: 1 week, 1 month or 1 year.',
     'Islander: a week, a month (the co-op drive), or a year in story mode.',
@@ -10442,13 +10446,22 @@ function sideTitle(){const t=document.querySelector('.title .body');if(!t||t.que
   t.querySelectorAll('h1+p,ul,button.big,button[onclick="newGameModal()"],button[onclick="startNewWeek()"],button[onclick="slotsModal()"],button[onclick="openTransfer()"],#wnBtn').forEach(b=>b.remove());
   t.querySelectorAll('.hint').forEach(h=>{if(/Play it like an app/.test(h.textContent))h.remove()});
   const h1=t.querySelector('h1');
-  h1.insertAdjacentHTML('afterend',`<div class="sides">${sideCard('I')}${sideCard('V')}</div><div class="chips" id="chips"></div>`);
-  const chips=t.querySelector('#chips');
-  for(const id of ['chBtn','dayBtn','colBtn'])(()=>{const e=document.getElementById(id);if(e)chips.appendChild(e)})();
-  const seen=(()=>{try{return localStorage.getItem('islandtime-wn-seen')}catch(e){return null}})();
-  chips.insertAdjacentHTML('beforeend',`<button class="ghost" id="aboutBtn" onclick="aboutModal()">ℹ️ About${seen===APP_VERSION?'':' <span class="wndot">new</span>'}</button><button class="ghost" onclick="openTransfer()">🔁 Transfer</button>`);
-  const ib=document.getElementById('installBtn');if(ib)chips.appendChild(ib);
-  const note=t.querySelector('.small-note');if(note)note.innerHTML=`Version ${esc(APP_VERSION)} · <button class="linkbtn" onclick="aboutModal()">About Island Time</button>`}
+  const seen=(()=>{try{return localStorage.getItem('islandtime-wn-seen')}catch(e){return null}})(),dot=seen===APP_VERSION?'':' <span class="wndot">new</span>';
+  h1.insertAdjacentHTML('afterend',`<div class="sides">${sideCard('I')}${sideCard('V')}</div>`);
+  // everything else is one ☰ Menu at the bottom: a list that drops up over the page (so the page never scrolls)
+  const note=t.querySelector('.small-note');
+  const menu=`<details class="tmenu" id="tmenu"><summary id="menuBtn">☰ Menu${dot}</summary><div class="tlist" id="chips" role="menu"></div></details>`;
+  if(note)note.insertAdjacentHTML('beforebegin',menu);else t.insertAdjacentHTML('beforeend',menu);
+  const list=t.querySelector('#chips');
+  for(const id of ['chBtn','dayBtn','colBtn'])(()=>{const e=document.getElementById(id);if(e)list.appendChild(e)})();
+  list.insertAdjacentHTML('beforeend',`<button class="ghost" id="trBtn" onclick="openTransfer()">🔁 Transfer a saved game</button>`);
+  const ib=document.getElementById('installBtn');if(ib)list.appendChild(ib);
+  list.insertAdjacentHTML('beforeend',`<button class="ghost" id="aboutBtn" onclick="aboutModal()">ℹ️ About Island Time${dot}</button>`);
+  list.querySelectorAll('button').forEach(b=>{b.setAttribute('role','menuitem');b.addEventListener('click',()=>{const d=document.getElementById('tmenu');if(d)d.open=false})});
+  if(note)note.innerHTML=`Version ${esc(APP_VERSION)}`}
+// a tap outside the open menu, or Esc, closes it
+document.addEventListener('click',e=>{const d=document.getElementById('tmenu');if(d&&d.open&&!d.contains(e.target))d.open=false});
+document.addEventListener('keydown',e=>{const d=document.getElementById('tmenu');if(e.key==='Escape'&&d&&d.open){d.open=false;const s=document.getElementById('menuBtn');if(s)s.focus()}});
 {const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);try{sideTitle()}catch(e){console.error(e)}return r}}
 
 // ---- in the game: which way you're playing, and at what level ----
@@ -10467,9 +10480,13 @@ function sideTitle(){const t=document.querySelector('.title .body');if(!t||t.que
 .side .slen button{margin:0;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-height:44px}
 .side .slen button b{font-size:14px}.side .slen button span{font-size:10.5px;opacity:.8;line-height:1.15;text-align:center}
 .side .slen button:hover,.side .slen button:focus-visible{background:rgba(255,255,255,.22)}
-.chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}.chips button{margin:0!important;width:100%;font-size:12.5px;padding:8px 6px;min-height:40px;line-height:1.2}
-.chips #chBtn{grid-column:1/-1}.title .small-note{text-align:center}.title .linkbtn{background:none;border:0;color:inherit;text-decoration:underline;font:inherit;padding:0;cursor:pointer}
-@media (max-height:720px){.title .art{height:64px}.title h1{font-size:26px}.title h1 span,.side .sd{display:none}.side{gap:6px;padding:8px 10px}.title .body{gap:8px;padding-top:8px}.chips button{min-height:36px;padding:6px}}
+.tmenu{position:relative}.tmenu>summary{list-style:none;cursor:pointer;text-align:center;font-weight:700;font-size:15px;padding:10px;border-radius:12px;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px}
+.tmenu>summary::-webkit-details-marker{display:none}.tmenu[open]>summary{background:rgba(255,255,255,.2)}
+.tlist{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:5;display:flex;flex-direction:column;gap:2px;padding:6px;border-radius:14px;background:#163e4a;border:1.5px solid rgba(255,255,255,.3);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.tlist button{margin:0!important;width:100%;text-align:left;justify-content:flex-start;border:0!important;background:transparent!important;border-radius:9px;padding:11px 12px;font-size:14px;min-height:44px;line-height:1.25}
+.tlist button:hover,.tlist button:focus-visible{background:rgba(255,255,255,.12)!important}
+.title .small-note{text-align:center}.title .linkbtn{background:none;border:0;color:inherit;text-decoration:underline;font:inherit;padding:0;cursor:pointer}
+@media (max-height:720px){.title .art{height:64px}.title h1{font-size:26px}.title h1 span,.side .sd{display:none}.side{gap:6px;padding:8px 10px}.title .body{gap:8px;padding-top:8px}.tmenu>summary{min-height:38px;padding:6px}.title .art{height:56px}}
 .hud-side{font-size:11px;font-weight:700;letter-spacing:.02em;opacity:.85;margin-bottom:1px}`;document.head.appendChild(st)}
 // ---- ⛴️ Start page: how long you want to play, right on the title (86-start.js) ----
 // Each card on the title (85-sides.js) has 1 week / 1 month / 1 year:

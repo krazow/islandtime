@@ -6,7 +6,7 @@ module.exports = [
     const out = await page.evaluate(() => { const b = document.getElementById('dayBtn'), w = document.getElementById('chBtn'); return { t: b && b.textContent, adj: !!(w && w.nextElementSibling === b), id: dailyDateId(new Date(2026, 0, 5, 23, 59)), id2: dailyDateId(new Date(2026, 11, 31, 0, 1)) }; });
     assert(/^☀️ Daily challenge · [A-Z][a-z]{2} \d+$/.test(out.t), out.t);
     assert(out.adj); assert.strictEqual(out.id, 'D2026-01-05'); assert.strictEqual(out.id2, 'D2026-12-31');
-    const box = await page.locator('#dayBtn').boundingBox(); assert(box && box.width <= 400);
+    await page.click('#menuBtn'); const box = await page.locator('#dayBtn').boundingBox(); await page.click('#menuBtn'); assert(box && box.width <= 400);
     noErrors(errors);
   } },
   { name: 'the same date gives the same day (weather, sailings, prices, season, goal); other dates differ', fn: async ctx => {
@@ -49,7 +49,7 @@ module.exports = [
   } },
   { name: 'the daily start modal and a normal game stay separate', fn: async ctx => {
     const { page, errors } = await open(ctx);
-    await page.click('#dayBtn');
+    await page.click('#menuBtn'); await page.click('#dayBtn');
     await page.waitForSelector('.modal');
     assert(/Today’s goal/.test(await page.textContent('.modal')));
     await page.click('.modal button:has-text("Start")');

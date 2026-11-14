@@ -7,7 +7,7 @@ module.exports = [
   { name: 'collections: a title-screen button and a Settings row open the three collections', fn: async ctx => {
     const { page, errors } = await open(ctx);
     assert.ok(await page.$('#colBtn'), 'title button');
-    await page.click('#colBtn');
+    await page.click('#menuBtn'); await page.click('#colBtn');
     let t = await page.textContent('#mbg');
     assert.match(t, /Photo album \(0\)/); assert.match(t, /Crossing log \(0\)/); assert.match(t, /Island bingo \(0\/25\)/);
     await page.evaluate(() => { MBTN(2) });
@@ -88,7 +88,7 @@ module.exports = [
     const s = await page.evaluate(() => { const c = colGet().bingo; return ['orcas', 'first_ride', 'last_boat', 'storm', 'outage', 'five_friends', 'eagles', 'fawn', 'sea_lion', 'rainier'].every(k => c[k]) });
     assert.ok(s);
     await reload(page);
-    await page.click('#colBtn'); assert.match(await page.textContent('#mbg'), /Island bingo \((1\d)\/25\)/);
+    await page.click('#menuBtn'); await page.click('#colBtn'); assert.match(await page.textContent('#mbg'), /Island bingo \((1\d)\/25\)/);
     noErrors(errors);
   } },
   { name: 'collections: story endings, bingo night and the Riv fill squares; the 23 achievements are untouched', fn: async ctx => {
