@@ -8,11 +8,11 @@ Island Time is about living on Anderson Island, in the south of Puget Sound. The
 
 3
 00:00:09,000 --> 00:00:13,500
-The title screen has a card for each way to play: live there as an Islander, or come over as a Visitor.
+The start page has a card for each way to play: live there as an Islander, or come over as a Visitor.
 
 4
 00:00:13,500 --> 00:00:18,000
-Each card has its own Continue, Start a new game, and Saves.
+Tap 1 week, 1 month or 1 year on a card to start a new game. ℹ️ About explains every way to play.
 
 5
 00:00:18,000 --> 00:00:22,500
@@ -40,7 +40,7 @@ Ferry Hell brings summer crowds, constant breakdowns, weekly rent and car troubl
 
 11
 00:00:45,000 --> 00:00:49,500
-Next you choose a week, a month, or a whole year in story mode, and a season.
+Next you pick a season. If you chose 1 year, you play story mode instead: four chapters, one per season.
 
 12
 00:00:49,500 --> 00:00:54,000
@@ -196,7 +196,7 @@ Set your alarms first, so you don’t oversleep and miss the morning boat.
 
 50
 00:03:40,500 --> 00:03:45,000
-As a Visitor, you live on the mainland and come over for a day, a weekend or a week.
+As a Visitor, you live on the mainland. 1 week is a week’s visit in a rental cabin.
 
 51
 00:03:45,000 --> 00:03:49,500
@@ -212,7 +212,7 @@ The top of the screen always shows whether you’re an Islander or a Visitor, an
 
 54
 00:03:58,500 --> 00:04:03,000
-As a weekend regular, you work in the city and spend your weekends on the island.
+1 month makes you a weekend regular: a city job, and every weekend on the island. 1 year is four of those months, one per season.
 
 55
 00:04:03,000 --> 00:04:07,500

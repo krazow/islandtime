@@ -4,8 +4,13 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
-  {v:'1.23.1',date:'Nov 13, 2026',title:'A new tutorial, and Island Time spelled right',video:'tour/whatsnew-1.23.1.mp4',items:[
-    'A rebuilt video tutorial (4½ minutes, subtitled) that starts from the new Islander and Visitor cards, the three saves each, and both sets of difficulty levels. Watch it from this window.',
+  {v:'1.24.0',date:'Nov 13, 2026',title:'Pick how long you play, right on the start page',video:'tour/whatsnew-1.24.0.mp4',items:[
+    'The start page fits on one screen. Each card, 🏝️ Islander and 🧳 Visitor, has Continue, Saves, and three buttons to start a new game: 1 week, 1 month or 1 year.',
+    'Islander: a week, a month (the co-op drive), or a year in story mode.',
+    'Visitor: a week’s visit, a month as a weekend regular, or a new year as a weekend regular: four months, one in each season, with your money, island friends and reputation carried over. Buy a house any time.',
+    'Visitors now pick the season too.',
+    'ℹ️ About holds what the start page used to say: how each way to play works, the difficulty levels, installing, and What’s new with the video tutorial.',
+    'A rebuilt video tutorial (subtitled) for the new start page.',
     'The downloads now say Island Time: Island-Time-Setup.exe, Island-Time-offline.html, the Island-Time-web zip and the tutorial video. Old links still work.']},
   {v:'1.23.0',date:'Nov 13, 2026',title:'Islander or Visitor, right from the start',video:'tour/whatsnew-1.23.0.mp4',items:[
     'The title screen has a card for each way to play: 🏝️ Islander and 🧳 Visitor, each with its own Continue, Start a new game and Saves.',
@@ -70,7 +75,7 @@ function whatsNew(){
   let h=`<p class="wnhead"><b>${esc(cur.v)}</b> · ${esc(cur.date)} · ${esc(cur.title)}</p>`+wnVideoHTML(cur)+wnItems(cur);
   if(cur.video!==WN_TUTORIAL)h=`<details class="wnv"><summary>🎓 Watch the tutorial (how to play)</summary>${wnVideoHTML({v:'tutorial',video:WN_TUTORIAL})}</details>`+h;
   if(old.length)h+=`<details class="wnold"><summary>Earlier releases</summary>${old.map(e=>`<p class="wnhead"><b>${esc(e.v)}</b> · ${esc(e.date)} · ${esc(e.title)}</p>${e.video?`<details class="wnv"><summary>▶ Watch the ${esc(e.v)} video</summary>${wnVideoHTML(e)}</details>`:''}${wnItems(e)}`).join('')}</details>`;
-  modal('✨ What’s new in Island Time',h,[{l:'Close',fn:()=>{try{const ls=store();ls&&ls.setItem('islandtime-wn-seen',APP_VERSION)}catch(e){}const d=document.querySelector('#wnBtn .wndot');if(d)d.remove()}}]);
+  modal('✨ What’s new in Island Time',h,[{l:'Close',fn:()=>{try{const ls=store();ls&&ls.setItem('islandtime-wn-seen',APP_VERSION)}catch(e){}document.querySelectorAll('#wnBtn .wndot,#aboutBtn .wndot').forEach(d=>d.remove())}}]);
 }
 window.WHATSNEW_OPEN=whatsNew;
 // the title-screen button, just above Save slots (the title is first drawn before this module loads, so add it now too)

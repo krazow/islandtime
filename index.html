@@ -535,7 +535,7 @@ const GOSSIP=[
 
 // ---------------- state ----------------
 let S, tab='act', uiNarr=[];
-const APP_VERSION='1.23.1', SAVE_SCHEMA=7;
+const APP_VERSION='1.24.0', SAVE_SCHEMA=7;
 // Season of the current game: 'fall' (default, November), 'winter', 'spring' or 'summer'. The seasons module sets S.season.
 // Essentials (groceries, a prescription) can go on the credit card when you're broke, up to a limit,
 // like ferry fares and motels already do. Card debt counts against the score.
@@ -10256,8 +10256,13 @@ Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_pho
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
-  {v:'1.23.1',date:'Nov 13, 2026',title:'A new tutorial, and Island Time spelled right',video:'tour/whatsnew-1.23.1.mp4',items:[
-    'A rebuilt video tutorial (4½ minutes, subtitled) that starts from the new Islander and Visitor cards, the three saves each, and both sets of difficulty levels. Watch it from this window.',
+  {v:'1.24.0',date:'Nov 13, 2026',title:'Pick how long you play, right on the start page',video:'tour/whatsnew-1.24.0.mp4',items:[
+    'The start page fits on one screen. Each card, 🏝️ Islander and 🧳 Visitor, has Continue, Saves, and three buttons to start a new game: 1 week, 1 month or 1 year.',
+    'Islander: a week, a month (the co-op drive), or a year in story mode.',
+    'Visitor: a week’s visit, a month as a weekend regular, or a new year as a weekend regular: four months, one in each season, with your money, island friends and reputation carried over. Buy a house any time.',
+    'Visitors now pick the season too.',
+    'ℹ️ About holds what the start page used to say: how each way to play works, the difficulty levels, installing, and What’s new with the video tutorial.',
+    'A rebuilt video tutorial (subtitled) for the new start page.',
     'The downloads now say Island Time: Island-Time-Setup.exe, Island-Time-offline.html, the Island-Time-web zip and the tutorial video. Old links still work.']},
   {v:'1.23.0',date:'Nov 13, 2026',title:'Islander or Visitor, right from the start',video:'tour/whatsnew-1.23.0.mp4',items:[
     'The title screen has a card for each way to play: 🏝️ Islander and 🧳 Visitor, each with its own Continue, Start a new game and Saves.',
@@ -10322,7 +10327,7 @@ function whatsNew(){
   let h=`<p class="wnhead"><b>${esc(cur.v)}</b> · ${esc(cur.date)} · ${esc(cur.title)}</p>`+wnVideoHTML(cur)+wnItems(cur);
   if(cur.video!==WN_TUTORIAL)h=`<details class="wnv"><summary>🎓 Watch the tutorial (how to play)</summary>${wnVideoHTML({v:'tutorial',video:WN_TUTORIAL})}</details>`+h;
   if(old.length)h+=`<details class="wnold"><summary>Earlier releases</summary>${old.map(e=>`<p class="wnhead"><b>${esc(e.v)}</b> · ${esc(e.date)} · ${esc(e.title)}</p>${e.video?`<details class="wnv"><summary>▶ Watch the ${esc(e.v)} video</summary>${wnVideoHTML(e)}</details>`:''}${wnItems(e)}`).join('')}</details>`;
-  modal('✨ What’s new in Island Time',h,[{l:'Close',fn:()=>{try{const ls=store();ls&&ls.setItem('islandtime-wn-seen',APP_VERSION)}catch(e){}const d=document.querySelector('#wnBtn .wndot');if(d)d.remove()}}]);
+  modal('✨ What’s new in Island Time',h,[{l:'Close',fn:()=>{try{const ls=store();ls&&ls.setItem('islandtime-wn-seen',APP_VERSION)}catch(e){}document.querySelectorAll('#wnBtn .wndot,#aboutBtn .wndot').forEach(d=>d.remove())}}]);
 }
 window.WHATSNEW_OPEN=whatsNew;
 // the title-screen button, just above Save slots (the title is first drawn before this module loads, so add it now too)
@@ -10425,28 +10430,127 @@ if(typeof dailyStartModal==='function')dailyStartModal=sideGuard('I',dailyStartM
   modal(`${SIDES[side].ic} New ${SIDES[side].n.toLowerCase()} game`,`<p>${SIDES[side].d} It goes in ${SIDES[side].n.toLowerCase()} slot ${slotNo(curSlot())}.</p>`,opts)};
  window.newGameModal=newGameModal}
 
-// ---- title screen: a card for each group ----
+// ---- title screen: a card for each group, with Continue, Saves and 1 week / 1 month / 1 year right on it (86-start.js starts them) ----
+const SIDE_LINE={I:'Live on the island: work, the ferry, the house.',V:'Come over from the city: a visit, or weekends.'};
 function sideCard(side){const s=SIDES[side],b=sideLatest(side),n=sideSaves(side).length;
-  const cont=b?(()=>{const x=b.d.S;return `<button class="big" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button>`})():'';
-  return `<div class="side" id="side${side}"><div class="sh">${s.ic} ${s.n}</div><div class="sd">${s.d}</div>${cont}
-    <button class="${b?'ghost':'big'}" onclick="sideNew('${side}')">⛴️ Start a new game</button>
-    <button class="ghost" onclick="slotsModal('${side}')">💾 Saves (${n} of 3)</button></div>`}
+  const cont=b?(()=>{const x=b.d.S;return `<button class="big scont" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${x.visitor&&x.visitor.year?`Month ${(x.visitor.year.m|0)+1} of 4 · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button>`})():'';
+  return `<div class="side" id="side${side}"><div class="shead"><span class="sh">${s.ic} ${s.n}</span><button class="schip" onclick="slotsModal('${side}')">💾 Saves (${n} of 3)</button></div>
+    <div class="sd">${SIDE_LINE[side]}</div>${cont}
+    <div class="slen" role="group" aria-label="Start a new ${s.n.toLowerCase()} game">${['week','month','year'].map(k=>`<button onclick="startLen('${side}','${k}')" title="${esc(START_LENS[side][k].d)}"><b>1 ${k}</b><span>${START_LENS[side][k].s}</span></button>`).join('')}</div></div>`}
 function sideTitle(){const t=document.querySelector('.title .body');if(!t||t.querySelector('.sides'))return;
   sortSlots();
-  t.querySelectorAll('button.big,button[onclick="newGameModal()"],button[onclick="startNewWeek()"],button[onclick="slotsModal()"]').forEach(b=>b.remove());
-  const at=t.querySelector('h1+p')||t.querySelector('ul');
-  const h=`<div class="sides">${sideCard('I')}${sideCard('V')}</div>`;
-  if(at)at.insertAdjacentHTML('afterend',h);else t.insertAdjacentHTML('beforeend',h)}
+  t.querySelectorAll('h1+p,ul,button.big,button[onclick="newGameModal()"],button[onclick="startNewWeek()"],button[onclick="slotsModal()"],button[onclick="openTransfer()"],#wnBtn').forEach(b=>b.remove());
+  t.querySelectorAll('.hint').forEach(h=>{if(/Play it like an app/.test(h.textContent))h.remove()});
+  const h1=t.querySelector('h1');
+  h1.insertAdjacentHTML('afterend',`<div class="sides">${sideCard('I')}${sideCard('V')}</div><div class="chips" id="chips"></div>`);
+  const chips=t.querySelector('#chips');
+  for(const id of ['chBtn','dayBtn','colBtn'])(()=>{const e=document.getElementById(id);if(e)chips.appendChild(e)})();
+  const seen=(()=>{try{return localStorage.getItem('islandtime-wn-seen')}catch(e){return null}})();
+  chips.insertAdjacentHTML('beforeend',`<button class="ghost" id="aboutBtn" onclick="aboutModal()">ℹ️ About${seen===APP_VERSION?'':' <span class="wndot">new</span>'}</button><button class="ghost" onclick="openTransfer()">🔁 Transfer</button>`);
+  const ib=document.getElementById('installBtn');if(ib)chips.appendChild(ib);
+  const note=t.querySelector('.small-note');if(note)note.innerHTML=`Version ${esc(APP_VERSION)} · <button class="linkbtn" onclick="aboutModal()">About Island Time</button>`}
 {const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);try{sideTitle()}catch(e){console.error(e)}return r}}
 
 // ---- in the game: which way you're playing, and at what level ----
 {const _h=hud;hud=function(){const r=_h.apply(this,arguments);try{if(!S)return r;return r.replace('<div class="hud-day">',`<div class="hud-side">${sideBadge(S)}</div><div class="hud-day">`)}catch(e){return r}}}
 
-{const st=document.createElement('style');st.textContent=`.sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:12px 0 6px}
-.side{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.28);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
-.side .sh{font-family:var(--disp,inherit);font-weight:700;font-size:19px}.side .sd{font-size:13px;opacity:.8;margin-bottom:2px}
-.side button{margin:0!important;width:100%}#sideV{border-color:#d9bf87}#sideI{border-color:#8fc4a4}
+{const st=document.createElement('style');st.textContent=`.title .art{height:112px}.title .body{padding:10px 16px 14px;gap:10px}
+.title h1{font-size:30px;margin:0;line-height:1.1}.title h1 span{font-size:13px;margin-top:2px}
+.sides{display:flex;flex-direction:column;gap:10px}
+.side{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.28);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+#sideV{border-color:#d9bf87}#sideI{border-color:#8fc4a4}
+.side .shead{display:flex;align-items:center;justify-content:space-between;gap:8px}.side .sh{font-family:var(--disp,inherit);font-weight:700;font-size:18px}
+.side .schip{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;margin:0!important;width:auto}
+.side .sd{font-size:12.5px;opacity:.8;margin-top:-3px}
+.side .scont{margin:0!important;width:100%;font-size:14px;padding:9px 10px;line-height:1.25}
+.side .slen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.side .slen button{margin:0;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-height:44px}
+.side .slen button b{font-size:14px}.side .slen button span{font-size:10.5px;opacity:.8;line-height:1.15;text-align:center}
+.side .slen button:hover,.side .slen button:focus-visible{background:rgba(255,255,255,.22)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}.chips button{margin:0!important;width:100%;font-size:12.5px;padding:8px 6px;min-height:40px;line-height:1.2}
+.chips #chBtn{grid-column:1/-1}.title .small-note{text-align:center}.title .linkbtn{background:none;border:0;color:inherit;text-decoration:underline;font:inherit;padding:0;cursor:pointer}
+@media (max-height:720px){.title .art{height:64px}.title h1{font-size:26px}.title h1 span,.side .sd{display:none}.side{gap:6px;padding:8px 10px}.title .body{gap:8px;padding-top:8px}.chips button{min-height:36px;padding:6px}}
 .hud-side{font-size:11px;font-weight:700;letter-spacing:.02em;opacity:.85;margin-bottom:1px}`;document.head.appendChild(st)}
+// ---- ⛴️ Start page: how long you want to play, right on the title (86-start.js) ----
+// Each card on the title (85-sides.js) has 1 week / 1 month / 1 year:
+//   🏝️ Islander  week = a week on the island · month = four weeks (the co-op drive) · year = story mode (four chapters, one per season)
+//   🧳 Visitor   week = a week's visit in a rental cabin · month = a weekend regular · year = a weekend regular for a year:
+//                four months (summer, fall, winter, spring); money, friends and island reputation carry from month to month
+// startLen(side,len) picks the slot (sideNew), your name the first time, then the side's own questions and difficulty.
+// Everything the title used to explain lives in ℹ️ About: the description, What's new, every way to play, the levels and installing.
+const START_LENS={
+  I:{week:{s:'Mon–Sun',d:'Monday to Sunday on the island: the commute, the pantry, the gas tank. About 20–30 minutes.'},
+     month:{s:'4 weeks',d:'Four weeks; everything carries over week to week, and the island can raise $2,500 to reopen its store as a co-op.'},
+     year:{s:'story',d:'Story mode: four chapters, a month in each season, from moving in to the store reopening. About 3 hours.'}},
+  V:{week:{s:'a visit',d:'A week’s visit from Seattle, Tacoma or Olympia: a rental cabin, the sights, and the last boat home.'},
+     month:{s:'weekends',d:'A weekend regular: a city job on weekdays and every weekend on the island. Save up and you might move over.'},
+     year:{s:'4 seasons',d:'A year as a weekend regular: four months, one in each season. Your money, friends and reputation carry over.'}}};
+function islStart(len){diffModal(k=>{if(len==='year'){S=null;storyNew(k);tab='act';return render()}
+  seasonModal(sea=>{S=null;newGame(k,len==='month'?'month':'week',sea);tab='act';render()})})}
+function visStart(len){visitHomeModal(home=>{
+  if(len==='year')return vDiffModal(k=>{S=null;regYearNew(home,k);tab='act';render()});
+  seasonModal(sea=>vDiffModal(k=>{S=null;visitorNew(len==='week'?'week':'regular',home,k,sea);tab='act';render()}))})}
+window.startLen=(side,len)=>{side=side==='V'?'V':'I';len=['week','month','year'].includes(len)?len:'week';
+  sideNew(side,()=>{const go=()=>side==='I'?islStart(len):visStart(len);if(!profileName())nameModal({first:true,then:go});else go()})};
+// the chooser behind "Start new here" in the saves window: the same three lengths (and the challenges for islanders)
+{const _n=newGameModal;newGameModal=function(side){if(side!=='I'&&side!=='V')return _n.apply(this,arguments);
+  const opts=['week','month','year'].map(k=>({l:`${k==='week'?'⛴️':k==='month'?'🗓️':'📖'} 1 ${k}`,s:START_LENS[side][k].d,fn:()=>{const go=()=>side==='I'?islStart(k):visStart(k);if(!profileName())nameModal({first:true,then:go});else go()}}));
+  if(side==='I'&&typeof chStartModal==='function')opts.push({l:'🏆 Weekly challenge',s:'The same week for everyone. Share your code and compare scores.',fn:()=>chStartModal()});
+  if(side==='I'&&typeof dailyStartModal==='function')opts.push({l:'☀️ Daily challenge',s:'Today’s one-day game, the same for everyone.',fn:()=>dailyStartModal()});
+  opts.push({l:'Never mind',fn:()=>{}});
+  modal(`${SIDES[side].ic} New ${SIDES[side].n.toLowerCase()} game`,`<p>How long do you want to play? It goes in ${SIDES[side].n.toLowerCase()} slot ${slotNo(curSlot())}.</p>`,opts)};
+ window.newGameModal=newGameModal}
+
+// ---- 🧳 a year as a weekend regular: four months, one per season ----
+const REG_YEAR_SEASONS=['summer','fall','winter','spring'];
+const regYearOn=()=>typeof regOn==='function'&&regOn()&&!!(S.visitor&&S.visitor.year);
+function regYearNew(home,diff){
+  visitorNew('regular',home,diff,storySeasonOf(0));
+  S.visitor.year={m:0,log:[]};
+  modal('📅 A year as a weekend regular',`<p><b>Month 1 of 4: ${SEA(storySeasonOf(0)).ic} ${SEA(storySeasonOf(0)).n}.</b> A city job on weekdays, the island every weekend, for a whole year: one month in each season, with the months between skipped.</p><p>Your money, island friends and reputation carry from month to month. Buy a house on the island when one comes up, any time in the year.</p>`,[{l:'Start the first month',fn:()=>{}}]);
+  saveGame()}
+{const _e=regEndMonth;regEndMonth=function(){try{if(regYearOn()&&(S.visitor.year.m|0)<3)return regYearNext()}catch(e){console.error(e)}return _e.apply(this,arguments)}}
+function regYearNext(){const V=VS(),Y=V.year,g=regGoal(),m=Y.m|0,next=storySeasonOf(m+1),N=SEA(next);
+  Y.log.push({m,net:g.net,rep:V.rep,fr:regFriendsN()});
+  const carry={money:Math.round(S.money),friends:JSON.parse(JSON.stringify(S.friends||{})),rep:V.rep,name:S.name,home:V.home,diff:S.diff,
+    year:{m:m+1,log:Y.log.slice()},stats:JSON.parse(JSON.stringify(S.stats||{}))};
+  MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
+  modal(`📅 Month ${m+1} of 4 done`,`<p>${SEA(S.season).ic} ${esc(SEA(S.season).n)} is over. Savings after rent and bills: <b>${g.net<0?'−':''}${$(Math.abs(g.net))}</b> · island reputation <b>${V.rep>0?'+':''}${V.rep}</b> · <b>${g.fr}</b> island friends.</p>
+    <p>Next: <b>month ${m+2} of 4, ${N.ic} ${esc(N.n)}</b>. Your money, friends and reputation come with you.</p>`,
+    [{l:'Months later… ⛴️',s:`${N.n}: a new month in the city and on the island.`,fn:()=>regYearStart(carry,next)}],true)}
+function regYearStart(c,season){S=null;visitorNew('regular',c.home,c.diff,season);
+  MQ=[];document.querySelectorAll('.modal-bg').forEach(e=>e.remove());clearTiles();
+  const V=VS(),R=REG();S.name=c.name||S.name;S.money=c.money;R.start=c.money;S.friends=c.friends;V.rep=c.rep;V.year=c.year;
+  for(const k in c.stats)if(typeof c.stats[k]==='number'&&typeof S.stats[k]==='number')S.stats[k]=c.stats[k];
+  uiNarr=[];S.log=[];
+  say(`📅 <b>Month ${c.year.m+1} of 4: ${SEA(season).ic} ${SEA(season).n}.</b> Back to the city job on Monday, back on the boat on Friday.`);
+  showTile('📅',`Month ${c.year.m+1} of 4`,SEA(season).n,'info');
+  tab='act';render();saveGame()}
+window.regYearStart=regYearStart;
+// the end screen and the top of the screen know it's a year
+{const _es=regEndScreen;regEndScreen=function(){const r=_es.apply(this,arguments);try{if(S&&S.visitor&&S.visitor.year){const e=document.querySelector('.end .small-note');
+  if(e)e.innerHTML=e.innerHTML.replace('MONTH COMPLETE','YEAR COMPLETE').replace('MONTH CUT SHORT','YEAR CUT SHORT');
+  const k=document.querySelector('.end .kv');if(k)k.insertAdjacentHTML('beforebegin',`<div class="kv"><span>📅 A year as a weekend regular</span><b>month ${(S.visitor.year.m|0)+1} of 4</b></div>`)}}catch(e){console.error(e)}return r}}
+{const _h=hud;hud=function(){const r=_h.apply(this,arguments);try{if(S&&S.visitor&&S.visitor.year)return r.replace(/Week (\d)\/4/,`Month ${(S.visitor.year.m|0)+1}/4 · Week $1/4`)}catch(e){}return r}}
+
+// ---- ℹ️ About: what the title used to say, and more ----
+function aboutModal(){const seen=(()=>{try{return localStorage.getItem('islandtime-wn-seen')}catch(e){return null}})();
+  const L3=side=>`<ul class="ablist">${['week','month','year'].map(k=>`<li><b>1 ${k}:</b> ${esc(START_LENS[side][k].d)}</li>`).join('')}</ul>`;
+  const lv=o=>Object.keys(o).map(k=>`${o[k].ic} <b>${esc(o[k].n)}</b>`).join(', ');
+  modal('ℹ️ About Island Time',`<p>There’s no bridge. One small county ferry connects Anderson Island, in the south of Puget Sound, to the jobs, groceries, gas and doctors on the mainland. Island Time is a game about living with that boat, or visiting.</p>
+    <div class="abbtns"><button class="act primary" id="wnBtn" onclick="aboutWN()"><span class="tx"><b>✨ What’s new in ${esc(APP_VERSION)}${seen===APP_VERSION?'':' <span class="wndot">new</span>'}</b><span>The changes in each release, and the video tutorial</span></span></button></div>
+    <h3 class="abh">🏝️ Islander</h3><p>Live on the island and work in Lakewood. Keep food in the pantry and gas in the car (there’s no store or gas station on the island, and gas cans are banned on the ferry), make your doctor’s appointment, and be in the ferry line 20 minutes early.</p>${L3('I')}
+    <h3 class="abh">🧳 Visitor</h3><p>Live in Seattle, Tacoma or Olympia and come over. Beat I-5 traffic, see the sights, make friends, and catch the last boat home.</p>${L3('V')}
+    <h3 class="abh">🏆 Challenges</h3><p>The <b>weekly challenge</b> is the same week for everyone, and the <b>daily challenge</b> is today’s one-day game. Share your code and compare scores. Both are islander games.</p>
+    <h3 class="abh">🎚️ Difficulty</h3><p>Islanders: ${lv(DIFFS)}. From a forgiving boss and a warming shelter to weekly rent and car trouble.</p><p>Visitors: ${lv(VDIFFS)}. From light traffic and a last-boat heads-up to fog, full boats and no warning.</p>
+    <h3 class="abh">💾 Saves</h3><p>Three islander and three visitor games at once. Use 🔁 Transfer to move a game to another device.</p>
+    <h3 class="abh">📲 Play it like an app</h3><p>It works offline. On a phone: ${isIOS()?'tap the Share button in Safari, then <b>Add to Home Screen</b>.':'use your browser’s <b>Install app</b> or <b>Add to Home screen</b>.'} On Windows there’s an installer, and a single-file offline version, at <a href="https://krazow.github.io/islandtime/install.html" target="_blank" rel="noopener">krazow.github.io/islandtime/install.html</a>.</p>
+    <p class="small-note" style="margin-top:12px">Version ${esc(APP_VERSION)}. Fictionalized for fun: the islanders are made up. The 2026 ferry schedule and fares, the store closure and the fuel rules are real, and the mainland restaurants and attractions are real places (hours and prices may differ). Free and open source: <a href="https://github.com/krazow/islandtime" target="_blank" rel="noopener">github.com/krazow/islandtime</a>.</p>`,
+    [{l:'Close',fn:()=>{if(!S||S.over||document.querySelector('.title'))titleScreen()}}])}
+window.aboutModal=aboutModal;
+window.aboutWN=()=>{const el=document.getElementById('mbg');if(el)el.remove();try{localStorage.setItem('islandtime-wn-seen',APP_VERSION)}catch(e){}
+  document.querySelectorAll('#aboutBtn .wndot').forEach(d=>d.remove());whatsNew()};
+{const st=document.createElement('style');st.textContent=`.abh{font-family:var(--disp,inherit);font-size:17px;margin:14px 0 4px}.ablist{margin:4px 0 6px;padding-left:18px}.ablist li{margin:3px 0}.abbtns{margin:8px 0 4px}#wnBtn .wndot{display:inline-block;width:auto;margin-left:6px;font-size:11px}`;document.head.appendChild(st)}
 sideTitle();
 </script>
 </body>

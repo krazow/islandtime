@@ -1,0 +1,40 @@
+1
+00:00:00,000 --> 00:00:04,500
+What’s new in Island Time 1.24.0, shown with mock game data.
+
+2
+00:00:04,500 --> 00:00:09,000
+The start page now fits on one screen.
+
+3
+00:00:09,000 --> 00:00:13,500
+Each card has Continue, Saves, and three buttons to start a new game: 1 week, 1 month or 1 year.
+
+4
+00:00:13,500 --> 00:00:18,000
+Islanders play a week, a month, or a year in story mode.
+
+5
+00:00:18,000 --> 00:00:22,500
+Visitors play a week’s visit, a month as a weekend regular, or a whole year.
+
+6
+00:00:22,500 --> 00:00:27,000
+A year as a weekend regular is four months: summer, fall, winter and spring.
+
+7
+00:00:27,000 --> 00:00:31,500
+Your money, island friends and reputation carry from month to month.
+
+8
+00:00:31,500 --> 00:00:36,000
+ℹ️ About explains every way to play, the difficulty levels, and how to install the game.
+
+9
+00:00:36,000 --> 00:00:40,500
+What’s new and the rebuilt video tutorial are in there too.
+
+10
+00:00:40,500 --> 00:00:46,000
+Play free in your browser at krazow.github.io/islandtime
+

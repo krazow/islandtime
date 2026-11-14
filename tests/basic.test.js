@@ -5,7 +5,7 @@ module.exports = [
     const { page, errors } = await open(ctx);
     const t = await page.textContent('.title');
     assert.match(t, /Island Time/);
-    assert.match(t, /Start a new game/);
+    assert.match(t, /1 week/); assert.match(t, /1 month/); assert.match(t, /1 year/);
     const v = await page.evaluate(() => APP_VERSION);
     assert.ok(t.includes('Version ' + v), 'version shown on title');
     noErrors(errors);
@@ -32,20 +32,18 @@ module.exports = [
     assert.match(t, /Play another week/);
     noErrors(errors);
   } },
-  { name: 'start a new game: each card on the title opens its own chooser (islander: island and challenges; visitor: visit and weekend regular)', fn: async ctx => {
+  { name: 'start a new game: each card has 1 week / 1 month / 1 year right on the title', fn: async ctx => {
     const { page, errors } = await open(ctx);
     await page.evaluate(() => { MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); titleScreen(); });
     assert.strictEqual(await page.$('.title button[onclick="startNewWeek()"]'), null, 'no Start a new week / Start Monday');
-    await page.click('#sideI button:has-text("Start a new game")');
-    let t = await page.textContent('#mbg');
-    for (const m of ['Live on the island', 'Weekly challenge', 'Daily challenge']) assert.ok(t.includes(m), m);
-    assert.ok(!t.includes('Visit the island'), 'no visits on the islander side');
-    await page.click('#mbg >> text=Never mind');
-    await page.click('#sideV button:has-text("Start a new game")');
-    t = await page.textContent('#mbg');
-    for (const m of ['Visit the island', 'Weekend regular']) assert.ok(t.includes(m), m);
-    await page.click('#mbg >> text=Weekend regular');
-    assert.match(await page.textContent('#mbg'), /Where do you live|name/i);
+    await page.click('#sideI .slen button:has-text("1 week")');
+    assert.match(await page.textContent('#mbg'), /How hard is island life/);
+    await page.click('#mbg >> text=Normal'); assert.match(await page.textContent('#mbg'), /What time of year/);
+    await page.click('#mbg >> text=Winter'); await page.waitForSelector('.hud');
+    assert.deepStrictEqual(await page.evaluate(() => [S.mode, S.season, !!S.visitor, curSlot()]), ['week', 'winter', false, 1]);
+    await page.evaluate(() => { S = null; MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); titleScreen(); });
+    await page.click('#sideV .slen button:has-text("1 month")');
+    assert.match(await page.textContent('#mbg'), /Where do you live/);
     noErrors(errors);
   } },
 ];

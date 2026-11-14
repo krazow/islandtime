@@ -1,12 +1,14 @@
 // ✨ What's new: the title-screen button, the window, and the update pop-up's offer
 const { open, newGame, noErrors, assert } = require('./helpers');
 module.exports = [
-  { name: 'whats new: a button on the title screen opens the changes for this version, with earlier releases below', fn: async ctx => {
+  { name: 'whats new: ℹ️ About on the title has a new tag; What’s new inside it opens this version’s changes, earlier releases below', fn: async ctx => {
     const { page, errors } = await open(ctx);
-    await page.evaluate(() => { MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); titleScreen(); });
-    const b = await page.textContent('#wnBtn');
-    assert.match(b, new RegExp('What’s new in ' + (await page.evaluate(() => APP_VERSION)).replace(/\./g, '\\.')));
-    assert.match(b, /new/);
+    await page.evaluate(() => { MQ = []; document.querySelectorAll('.modal-bg').forEach(e => e.remove()); localStorage.removeItem('islandtime-wn-seen'); titleScreen(); });
+    assert.match(await page.textContent('#aboutBtn'), /About.*new/);
+    await page.click('#aboutBtn');
+    const a = await page.textContent('#mbg');
+    assert.match(a, /About Island Time/); assert.match(a, /Islander/); assert.match(a, /Visitor/); assert.match(a, /1 year/); assert.match(a, /Missed the Boat/);
+    assert.match(await page.textContent('#wnBtn'), new RegExp('What’s new in ' + (await page.evaluate(() => APP_VERSION)).replace(/\./g, '\\.')));
     await page.click('#wnBtn');
     const t = await page.textContent('#mbg');
     assert.match(t, /What’s new in Island Time/);
@@ -14,9 +16,8 @@ module.exports = [
     assert.match(t, /Earlier releases/);
     assert.ok(await page.$('#mbg .wnvid'), 'a video (or the offline note) for this release');
     await page.click('#mbg button.act:has-text("Close")');
-    assert.strictEqual(await page.$$eval('#wnBtn .wndot', e => e.length), 0, 'the new tag goes once read');
     await page.evaluate(() => titleScreen());
-    assert.strictEqual(await page.$$eval('#wnBtn .wndot', e => e.length), 0, 'and stays gone');
+    assert.strictEqual(await page.$$eval('#aboutBtn .wndot', e => e.length), 0, 'the new tag goes once read');
     noErrors(errors);
   } },
   { name: 'whats new: every entry has a version, date, title and items, newest first', fn: async ctx => {

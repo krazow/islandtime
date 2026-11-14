@@ -68,26 +68,44 @@ if(typeof dailyStartModal==='function')dailyStartModal=sideGuard('I',dailyStartM
   modal(`${SIDES[side].ic} New ${SIDES[side].n.toLowerCase()} game`,`<p>${SIDES[side].d} It goes in ${SIDES[side].n.toLowerCase()} slot ${slotNo(curSlot())}.</p>`,opts)};
  window.newGameModal=newGameModal}
 
-// ---- title screen: a card for each group ----
+// ---- title screen: a card for each group, with Continue, Saves and 1 week / 1 month / 1 year right on it (86-start.js starts them) ----
+const SIDE_LINE={I:'Live on the island: work, the ferry, the house.',V:'Come over from the city: a visit, or weekends.'};
 function sideCard(side){const s=SIDES[side],b=sideLatest(side),n=sideSaves(side).length;
-  const cont=b?(()=>{const x=b.d.S;return `<button class="big" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button>`})():'';
-  return `<div class="side" id="side${side}"><div class="sh">${s.ic} ${s.n}</div><div class="sd">${s.d}</div>${cont}
-    <button class="${b?'ghost':'big'}" onclick="sideNew('${side}')">⛴️ Start a new game</button>
-    <button class="ghost" onclick="slotsModal('${side}')">💾 Saves (${n} of 3)</button></div>`}
+  const cont=b?(()=>{const x=b.d.S;return `<button class="big scont" onclick="sideCont('${side}')">Continue as ${esc(x.name||currentName())}: ${x.visitor&&typeof VISIT_LENS!=='undefined'&&VISIT_LENS[x.visitor.len]?`🧳 ${VISIT_LENS[x.visitor.len].n} visit · `:''}${x.visitor&&x.visitor.year?`Month ${(x.visitor.year.m|0)+1} of 4 · `:''}${seasonBadge(x)} · ${x.story?`Chapter ${(x.story.ch|0)+1} of 4 · `:''}${DAYS[x.cur]} ${fmt(x.t)}${n>1?` (slot ${slotNo(b.n)})`:''} ⛴️</button>`})():'';
+  return `<div class="side" id="side${side}"><div class="shead"><span class="sh">${s.ic} ${s.n}</span><button class="schip" onclick="slotsModal('${side}')">💾 Saves (${n} of 3)</button></div>
+    <div class="sd">${SIDE_LINE[side]}</div>${cont}
+    <div class="slen" role="group" aria-label="Start a new ${s.n.toLowerCase()} game">${['week','month','year'].map(k=>`<button onclick="startLen('${side}','${k}')" title="${esc(START_LENS[side][k].d)}"><b>1 ${k}</b><span>${START_LENS[side][k].s}</span></button>`).join('')}</div></div>`}
 function sideTitle(){const t=document.querySelector('.title .body');if(!t||t.querySelector('.sides'))return;
   sortSlots();
-  t.querySelectorAll('button.big,button[onclick="newGameModal()"],button[onclick="startNewWeek()"],button[onclick="slotsModal()"]').forEach(b=>b.remove());
-  const at=t.querySelector('h1+p')||t.querySelector('ul');
-  const h=`<div class="sides">${sideCard('I')}${sideCard('V')}</div>`;
-  if(at)at.insertAdjacentHTML('afterend',h);else t.insertAdjacentHTML('beforeend',h)}
+  t.querySelectorAll('h1+p,ul,button.big,button[onclick="newGameModal()"],button[onclick="startNewWeek()"],button[onclick="slotsModal()"],button[onclick="openTransfer()"],#wnBtn').forEach(b=>b.remove());
+  t.querySelectorAll('.hint').forEach(h=>{if(/Play it like an app/.test(h.textContent))h.remove()});
+  const h1=t.querySelector('h1');
+  h1.insertAdjacentHTML('afterend',`<div class="sides">${sideCard('I')}${sideCard('V')}</div><div class="chips" id="chips"></div>`);
+  const chips=t.querySelector('#chips');
+  for(const id of ['chBtn','dayBtn','colBtn'])(()=>{const e=document.getElementById(id);if(e)chips.appendChild(e)})();
+  const seen=(()=>{try{return localStorage.getItem('islandtime-wn-seen')}catch(e){return null}})();
+  chips.insertAdjacentHTML('beforeend',`<button class="ghost" id="aboutBtn" onclick="aboutModal()">ℹ️ About${seen===APP_VERSION?'':' <span class="wndot">new</span>'}</button><button class="ghost" onclick="openTransfer()">🔁 Transfer</button>`);
+  const ib=document.getElementById('installBtn');if(ib)chips.appendChild(ib);
+  const note=t.querySelector('.small-note');if(note)note.innerHTML=`Version ${esc(APP_VERSION)} · <button class="linkbtn" onclick="aboutModal()">About Island Time</button>`}
 {const _ts=titleScreen;titleScreen=function(){const r=_ts.apply(this,arguments);try{sideTitle()}catch(e){console.error(e)}return r}}
 
 // ---- in the game: which way you're playing, and at what level ----
 {const _h=hud;hud=function(){const r=_h.apply(this,arguments);try{if(!S)return r;return r.replace('<div class="hud-day">',`<div class="hud-side">${sideBadge(S)}</div><div class="hud-day">`)}catch(e){return r}}}
 
-{const st=document.createElement('style');st.textContent=`.sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:12px 0 6px}
-.side{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.28);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
-.side .sh{font-family:var(--disp,inherit);font-weight:700;font-size:19px}.side .sd{font-size:13px;opacity:.8;margin-bottom:2px}
-.side button{margin:0!important;width:100%}#sideV{border-color:#d9bf87}#sideI{border-color:#8fc4a4}
+{const st=document.createElement('style');st.textContent=`.title .art{height:112px}.title .body{padding:10px 16px 14px;gap:10px}
+.title h1{font-size:30px;margin:0;line-height:1.1}.title h1 span{font-size:13px;margin-top:2px}
+.sides{display:flex;flex-direction:column;gap:10px}
+.side{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.28);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+#sideV{border-color:#d9bf87}#sideI{border-color:#8fc4a4}
+.side .shead{display:flex;align-items:center;justify-content:space-between;gap:8px}.side .sh{font-family:var(--disp,inherit);font-weight:700;font-size:18px}
+.side .schip{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;margin:0!important;width:auto}
+.side .sd{font-size:12.5px;opacity:.8;margin-top:-3px}
+.side .scont{margin:0!important;width:100%;font-size:14px;padding:9px 10px;line-height:1.25}
+.side .slen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.side .slen button{margin:0;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-height:44px}
+.side .slen button b{font-size:14px}.side .slen button span{font-size:10.5px;opacity:.8;line-height:1.15;text-align:center}
+.side .slen button:hover,.side .slen button:focus-visible{background:rgba(255,255,255,.22)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}.chips button{margin:0!important;width:100%;font-size:12.5px;padding:8px 6px;min-height:40px;line-height:1.2}
+.chips #chBtn{grid-column:1/-1}.title .small-note{text-align:center}.title .linkbtn{background:none;border:0;color:inherit;text-decoration:underline;font:inherit;padding:0;cursor:pointer}
+@media (max-height:720px){.title .art{height:64px}.title h1{font-size:26px}.title h1 span,.side .sd{display:none}.side{gap:6px;padding:8px 10px}.title .body{gap:8px;padding-top:8px}.chips button{min-height:36px;padding:6px}}
 .hud-side{font-size:11px;font-weight:700;letter-spacing:.02em;opacity:.85;margin-bottom:1px}`;document.head.appendChild(st)}
-sideTitle();

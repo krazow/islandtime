@@ -10,7 +10,7 @@ module.exports = [
     await page.evaluate(() => { S.money = 777; saveGame(); S = null; setSlot(4); visitorNew('weekend', 'tacoma', 'normal'); saveGame(); S = null; titleScreen(); });
     await clear(page);
     const I = await page.textContent('#sideI'), V = await page.textContent('#sideV');
-    assert.match(I, /🏝️ Islander/); assert.match(I, /Continue as T/); assert.match(I, /Start a new game/); assert.match(I, /Saves \(1 of 3\)/);
+    assert.match(I, /🏝️ Islander/); assert.match(I, /Continue as T/); assert.match(I, /1 week/); assert.match(I, /Saves \(1 of 3\)/);
     assert.match(V, /🧳 Visitor/); assert.match(V, /Continue as T: .*Friday/); assert.match(V, /Saves \(1 of 3\)/);
     await page.click('#sideI >> text=Continue as T'); await page.waitForSelector('.hud');
     assert.strictEqual(await page.evaluate(() => S.money), 777);
@@ -71,7 +71,7 @@ module.exports = [
       setSlot(5); S = null; visitorNew('day', 'olympia', 'normal'); saveGame(); S = null; titleScreen(); });
     await clear(page);
     assert.match(await page.textContent('#sideI'), /Saves \(3 of 3\)/);
-    await page.click('#sideI >> text=Start a new game');
+    await page.click('#sideI .slen button:has-text("1 month")');
     assert.match(await page.textContent('#mbg'), /All three islander slots are in use/);
     await page.click('#mbg .slot:nth-of-type(2) >> text=Start new here');
     assert.match(await page.textContent('#mbg'), /Start over in islander slot 2/);
@@ -80,8 +80,8 @@ module.exports = [
     assert.strictEqual(await page.evaluate(() => curSlot()), 2);
     await clear(page);
     await page.evaluate(() => { titleScreen(); }); await clear(page);
-    await page.click('#sideV >> text=Start a new game');
-    assert.match(await page.textContent('#mbg'), /New visitor game/);
+    await page.click('#sideV .slen button:has-text("1 week")');
+    assert.match(await page.textContent('#mbg'), /Where do you live/);
     assert.strictEqual(await page.evaluate(() => curSlot()), 4, 'the first free visitor slot');
     assert.strictEqual(await filled(page), 'III-V-');
     noErrors(errors);

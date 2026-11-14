@@ -41,9 +41,13 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
-### New in 1.23.1: a new tutorial, and the downloads say Island Time
+### New in 1.24.0: pick how long you play, right on the start page
 
-- 🎓 **A rebuilt video tutorial** (4½ minutes, subtitled): it starts from the Islander and Visitor cards, the three saves each and both sets of difficulty levels. Watch it from What's new or at [krazow.github.io/islandtime/tour](https://krazow.github.io/islandtime/tour/).
+- ⛴️ **A one-screen start page.** Each card, 🏝️ Islander and 🧳 Visitor, has *Continue*, *Saves* and three buttons to start a new game: **1 week**, **1 month** or **1 year**. It fits a phone screen without scrolling.
+- 🏝️ **Islander:** a week, a month (the co-op drive) or a year (story mode, four chapters).
+- 🧳 **Visitor:** a week's visit in a rental cabin, a month as a weekend regular, or **a year as a weekend regular**: four months, one per season (summer, fall, winter, spring), with your money, island friends and reputation carried over and a house to buy any time. Visitors now pick the season too. (Day trips and weekend visits are no longer on the start page; saved ones still load.)
+- ℹ️ **About** holds what the start page used to say: every way to play, the difficulty levels, saves, installing, and *What's new* with the video tutorial.
+- 🎓 **A rebuilt video tutorial** (subtitled) for the new start page, at [krazow.github.io/islandtime/tour](https://krazow.github.io/islandtime/tour/).
 - 📦 **Downloads renamed:** `Island-Time-Setup.exe`, `Island-Time-offline.html`, `Island-Time-web-<version>.zip` and `Island-Time-tutorial.mp4` (a hyphen, since a space breaks links). The old `IslandTime-` addresses on the website still work.
 
 ### New in 1.23.0: Islander or Visitor, right from the start
