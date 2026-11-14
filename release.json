@@ -4,19 +4,35 @@
   "description": "Survive a week of island life on Anderson Island, WA.",
   "site": ".",
   "app": ".",
-  "prebuild": ["python3 tools/build.py --check"],
-  "exclude": ["docs", "screenshots/raw"],
+  "prebuild": [
+    "python3 tools/build.py --check"
+  ],
+  "exclude": [
+    "docs",
+    "screenshots/raw"
+  ],
   "sw": "sw.js",
-  "version": [{ "file": "index.html", "pattern": "const APP_VERSION='([^']*)'" }],
-  "android": { "enabled": true, "appId": "com.krazow.islandtime" },
+  "version": [
+    {
+      "file": "index.html",
+      "pattern": "const APP_VERSION='([^']*)'"
+    }
+  ],
+  "android": {
+    "enabled": false
+  },
   "windows": {
     "enabled": true,
     "build": "custom",
     "betaBuild": false,
     "custom": "bash windows/build.sh && cp windows/dist/Island-Time-Setup.exe \"$OUT/\""
   },
-  "ios": { "enabled": false },
-  "macos": { "enabled": false },
+  "ios": {
+    "enabled": false
+  },
+  "macos": {
+    "enabled": false
+  },
   "extras": {
     "enabled": true,
     "betaBuild": false,

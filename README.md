@@ -41,9 +41,8 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
-### New in 1.25.1: Island Time for Android, and a beta for testers
+### New in 1.25.1: a beta for testers
 
-- 🤖 **Android app:** every release now has an APK on the GitHub release page, next to `Island-Time-Setup.exe` and `Island-Time-offline.html`.
 - 🧪 **Beta for testers** at [krazow.github.io/islandtime/beta](https://krazow.github.io/islandtime/beta/), with its own saved games. New versions go there first; only a promoted release changes the main address.
 - The offline cache only ever clears Island Time's own files.
 
@@ -559,8 +558,8 @@ Don't edit `index.html` directly: the next build overwrites it, and the Tests wo
 
 Type **`/release now`** in a Claude chat on this repo. It bumps `VERSION`, writes the `CHANGELOG.md` entry and pushes a beta tag; GitHub then tests and builds everything with the shared [Krazow release kit](https://github.com/krazow/release-kit):
 
-- **Beta:** the game at https://krazow.github.io/islandtime/beta/ (its own saves, so testers' real games are safe), a pre-release with the Android beta APK.
-- **`/release promote`:** the same version goes to https://krazow.github.io/islandtime/ and the Latest release: the Android APK, `Island-Time-Setup.exe`, `Island-Time-offline.html` and the web-app zip.
+- **Beta:** the game at https://krazow.github.io/islandtime/beta/ (its own saves, so testers' real games are safe), announced on a GitHub pre-release.
+- **`/release promote`:** the same version goes to https://krazow.github.io/islandtime/ and the Latest release: `Island-Time-Setup.exe`, `Island-Time-offline.html` and the web-app zip.
 - `/release all` does both in one go; `/release status` and `/release rollback` are there too.
 
 Pushing to `main` no longer changes the live game: only a promoted release does. Bump `APP_VERSION` in `src/js/01-core.js` and the What's new entry as before; `/release now` keeps `VERSION` in step. See [release.json](release.json) for the platforms this game builds.
