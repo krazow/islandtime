@@ -357,6 +357,9 @@ html.hc .tip .tut-k{color:#000}
 .fb-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .fb-gh,.fb-copy{flex:1 1 140px;text-align:center;border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px;text-decoration:none;border:1.5px solid var(--deep);cursor:pointer}
 .fb-gh{background:var(--deep);color:#fff}.fb-copy{background:#fff;color:var(--deep)}
+.fb-email{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+.fb-send{display:block;width:100%;margin-top:10px;border-radius:10px;padding:12px;font-weight:700;font-size:15px;border:1.5px solid var(--buoy);background:var(--buoy);color:#fff;cursor:pointer}
+.fb-send:disabled{opacity:.7;cursor:default}
 .fb-msg{min-height:1.2em;font-size:13px;margin:6px 0 0;color:var(--mute)}
 .fb-note{font-size:12px;color:var(--mute);margin-top:4px}
 .fb-end{text-align:center;margin-top:14px}
@@ -4859,8 +4862,14 @@ function tutSettingRows(inGame){
 // ======== 2. 💬 feedback ========
 const FB_REPO='https://github.com/krazow/islandtime/issues/new';
 const FB_MAX=6000, FB_TEXT=2000;
+// ✉️ Send: feedback goes straight to the developer's inbox through Formspree (formspree.io), no account needed.
+// FB_ENDPOINT is the form's endpoint ("https://formspree.io/f/…"); empty hides the button. In Formspree, reCAPTCHA must be
+// off for this form (it can't show on a submission sent by the game), and "Allowed domains" must not block the
+// offline copies (they send from a file, with no domain).
+let FB_ENDPOINT='https://formspree.io/f/xyewwazg';
+const FB_EMAIL_MAX=200;
 const FB_TYPES={bug:'Bug',idea:'Idea',unfair:'Something felt unfair'};
-let FB={type:'bug',text:'',name:false,from:null};
+let FB={type:'bug',text:'',name:false,email:'',from:null,sent:false};
 function fbInGame(){return typeof S!=='undefined'&&!!S&&!!S.week&&!!L[S.loc]}
 function fbSummary(){
   const lines=[`Version: ${APP_VERSION}`];
@@ -4896,7 +4905,25 @@ function fbUpdate(){
   if(r)r.value=fbReport();
   const n=document.getElementById('fbCount');if(n)n.textContent=`${Array.from(FB.text).length}/${FB_TEXT}`;
 }
-window.fbSet=(k,v)=>{if(k==='text')v=fbCut(String(v||''),FB_TEXT);FB[k]=v;fbUpdate()};
+window.fbSet=(k,v)=>{if(k==='text')v=fbCut(String(v||''),FB_TEXT);if(k==='email')v=String(v||'').trim().slice(0,FB_EMAIL_MAX);FB[k]=v;
+  if(k==='text'&&FB.sent){FB.sent=false;const b=document.getElementById('fbSend');if(b){b.disabled=false;b.textContent='✉️ Send'}}fbUpdate()};
+window.fbSend=async()=>{
+  const b=document.getElementById('fbSend'),msg=document.getElementById('fbMsg');
+  const show=t=>{if(msg)msg.textContent=t;try{a11yAnnounce(t)}catch(e){}};
+  if(!FB_ENDPOINT||FB.sent)return;
+  if(!FB.text.trim())return show('Write a sentence or two first: what happened, or what you’d like.');
+  if(FB.email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(FB.email))return show('That email address doesn’t look right. Fix it, or leave it blank.');
+  if(b){b.disabled=true;b.textContent='Sending…'}
+  const data={_subject:fbTitle()+' (Island Time '+APP_VERSION+')',type:FB_TYPES[FB.type],message:FB.text.trim(),report:fbSummary(),version:APP_VERSION};
+  if(FB.email)data.email=FB.email;
+  let ok=false,err='';
+  try{const ctl=typeof AbortController==='function'?new AbortController():null,tm=setTimeout(()=>ctl&&ctl.abort(),15000);
+    const r=await fetch(FB_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(data),signal:ctl&&ctl.signal});
+    clearTimeout(tm);ok=r.ok;if(!ok){try{const j=await r.json();err=(j&&(j.error||(j.errors&&j.errors.map(e=>e.message).join(' '))))||''}catch(e){}}}
+  catch(e){err=navigator.onLine===false?'You’re offline.':''}
+  if(ok){FB.sent=true;if(b){b.textContent='✅ Sent'}show('✅ Sent. Thank you! '+(FB.email?'You may get a reply by email.':''))}
+  else{if(b){b.disabled=false;b.textContent='✉️ Send'}show(`Couldn’t send it right now. ${err?err+' ':''}Try again later, or use 📋 Copy report and send it another way.`)}
+};
 window.fbCopy=()=>{
   const r=document.getElementById('fbReport'),msg=document.getElementById('fbMsg'),txt=fbReport();
   const show=t=>{if(msg)msg.textContent=t;try{a11yAnnounce(t)}catch(e){}};
@@ -4907,7 +4934,7 @@ window.fbCopy=()=>{
   fallback();
 };
 function feedbackOpen(){
-  FB={type:FB.type||'bug',text:'',name:false};
+  FB={type:FB.type||'bug',text:'',name:false,email:'',sent:false};
   const types=Object.keys(FB_TYPES).map(k=>`<label class="fb-type"><input type="radio" name="fbType" value="${k}" ${k===FB.type?'checked':''} onchange="fbSet('type','${k}')"> ${{bug:'🐞',idea:'💡',unfair:'⚖️'}[k]} ${FB_TYPES[k]}</label>`).join('');
   modal('💬 Send feedback',`<div class="fb"><div class="fb-types" role="radiogroup" aria-label="Kind of feedback">${types}</div>
     <label class="fb-lab" for="fbText">What happened? <span id="fbCount" class="fb-n">0/${FB_TEXT}</span></label>
@@ -4915,9 +4942,12 @@ function feedbackOpen(){
     <label class="fb-chk"><input type="checkbox" id="fbName" onchange="fbSet('name',this.checked)"> Include my in-game name</label>
     <label class="fb-lab" for="fbReport">Report (added automatically, nothing personal)</label>
     <textarea id="fbReport" class="fb-rep" rows="6" readonly></textarea>
+    ${FB_ENDPOINT?`<label class="fb-lab" for="fbEmail">Your email, if you’d like a reply <span class="fb-n">optional</span></label>
+    <input id="fbEmail" class="fb-email" type="email" maxlength="${FB_EMAIL_MAX}" autocomplete="email" placeholder="you@example.com" oninput="fbSet('email',this.value)">
+    <button type="button" id="fbSend" class="fb-send" onclick="fbSend()">✉️ Send</button>`:''}
     <div class="fb-btns"><a id="fbLink" class="fb-gh" target="_blank" rel="noopener" href="${FB_REPO}">🐙 Open a GitHub issue</a><button type="button" class="fb-copy" onclick="fbCopy()">📋 Copy report</button></div>
     <p id="fbMsg" class="fb-msg" aria-live="polite"></p>
-    <p class="fb-note">The GitHub page opens in a new tab; you need a free GitHub account to post. No account? Copy the report and send it however you like.</p></div>`,
+    <p class="fb-note">${FB_ENDPOINT?'✉️ Send goes straight to the developer (through Formspree); no account needed. Or post it on GitHub (a free account), or copy the report and send it however you like.':'The GitHub page opens in a new tab; you need a free GitHub account to post. No account? Copy the report and send it however you like.'}</p></div>`,
     [{l:'Close',fn:()=>{}}]);
   fbUpdate();
 }
@@ -10256,7 +10286,8 @@ Object.assign(TILE_META,{bx_sam_tow:['⛵','Sam needs a tow','info'],bx_hend_pho
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
-  {v:'1.25.1',date:'Nov 14, 2026',title:'A beta for testers',video:'tour/whatsnew-1.25.1.mp4',items:[
+  {v:'1.25.1',date:'Nov 18, 2026',title:'Send feedback straight from the game, and a beta for testers',video:'tour/whatsnew-1.25.1.mp4',items:[
+    '💬 Send feedback has a ✉️ Send button: your note goes straight to the developer, no GitHub account needed. Add your email if you’d like a reply. GitHub and Copy report still work too. (⚙️ Settings, or the end screen.)',
     'New versions go to testers first, at krazow.github.io/islandtime/beta/. The beta keeps its own saved games, so trying it never touches your real ones.',
     'Behind the scenes: the game’s offline copy only ever clears its own files, never another app’s.']},
   {v:'1.25.0',date:'Nov 13, 2026',title:'Updates find you, and delete from the start page',video:'tour/whatsnew-1.25.0.mp4',items:[

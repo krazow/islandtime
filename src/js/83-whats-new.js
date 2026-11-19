@@ -4,7 +4,8 @@
 // EVERY RELEASE: add an entry at the top of WHATSNEW (v, date, title, items) and its video (tour/whatsnew-<v>.mp4).
 const WN_SITE='https://krazow.github.io/islandtime/',WN_TUTORIAL='tour/Island-Time-tutorial.mp4';   // the how-to-play video tutorial (subtitled)
 const WHATSNEW=[
-  {v:'1.25.1',date:'Nov 14, 2026',title:'A beta for testers',video:'tour/whatsnew-1.25.1.mp4',items:[
+  {v:'1.25.1',date:'Nov 18, 2026',title:'Send feedback straight from the game, and a beta for testers',video:'tour/whatsnew-1.25.1.mp4',items:[
+    '💬 Send feedback has a ✉️ Send button: your note goes straight to the developer, no GitHub account needed. Add your email if you’d like a reply. GitHub and Copy report still work too. (⚙️ Settings, or the end screen.)',
     'New versions go to testers first, at krazow.github.io/islandtime/beta/. The beta keeps its own saved games, so trying it never touches your real ones.',
     'Behind the scenes: the game’s offline copy only ever clears its own files, never another app’s.']},
   {v:'1.25.0',date:'Nov 13, 2026',title:'Updates find you, and delete from the start page',video:'tour/whatsnew-1.25.0.mp4',items:[

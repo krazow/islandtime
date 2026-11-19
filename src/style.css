@@ -338,6 +338,9 @@ html.hc .tip .tut-k{color:#000}
 .fb-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .fb-gh,.fb-copy{flex:1 1 140px;text-align:center;border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px;text-decoration:none;border:1.5px solid var(--deep);cursor:pointer}
 .fb-gh{background:var(--deep);color:#fff}.fb-copy{background:#fff;color:var(--deep)}
+.fb-email{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+.fb-send{display:block;width:100%;margin-top:10px;border-radius:10px;padding:12px;font-weight:700;font-size:15px;border:1.5px solid var(--buoy);background:var(--buoy);color:#fff;cursor:pointer}
+.fb-send:disabled{opacity:.7;cursor:default}
 .fb-msg{min-height:1.2em;font-size:13px;margin:6px 0 0;color:var(--mute)}
 .fb-note{font-size:12px;color:var(--mute);margin-top:4px}
 .fb-end{text-align:center;margin-top:14px}

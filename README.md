@@ -41,8 +41,9 @@
 - **Sound** (synthesized ferry horn and chimes) and **accessibility** options: larger text, high contrast, reduce motion.
 - The doctor's appointment moved to **Thursday**, so Wednesday is just bingo night.
 
-### New in 1.25.1: a beta for testers
+### New in 1.25.1: send feedback straight from the game, and a beta for testers
 
+- ✉️ **Send feedback directly:** ⚙️ Settings → 💬 Send feedback (or the end screen) now has a *Send* button. The note, its kind, the game summary and an optional email for a reply go to the developer through [Formspree](https://formspree.io), with no GitHub account needed. *Open a GitHub issue* and *Copy report* still work.
 - 🧪 **Beta for testers** at [krazow.github.io/islandtime/beta](https://krazow.github.io/islandtime/beta/), with its own saved games. New versions go there first; only a promoted release changes the main address.
 - The offline cache only ever clears Island Time's own files.
 
